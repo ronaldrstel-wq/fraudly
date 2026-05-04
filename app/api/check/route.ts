@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { fetchAiScamReasons, mergeReasonsWithHeuristics } from "@/lib/aiScamReasons";
+import { fetchAiScamReasons, fetchWebsiteSignals, mergeReasonsWithHeuristics } from "@/lib/aiScamReasons";
+import { getReviewSignals } from "@/lib/reviewSignals";
 import { checkDailyLimiter, getClientIp } from "@/lib/rateLimiter";
 import type { ScamCheckResult, ScamVerdict } from "@/types/scam";
 
@@ -80,20 +81,43 @@ export async function POST(request: Request) {
     }
 
     const { score, domain, heuristicReasons } = runHeuristics(parsedUrl);
+    const reviewSignals = await getReviewSignals(domain);
+    console.log("[OpenAI] key exists:", Boolean(process.env.OPENAI_API_KEY));
 
     let mergedReasons = heuristicReasons;
+    let reviewSummary = reviewSignals.trustpilotFound
+      ? "Public review data was included in this analysis."
+      : "No public review data found yet.";
+    let aiUsed = false;
+
     try {
-      const ai = await fetchAiScamReasons(input);
-      mergedReasons = mergeReasonsWithHeuristics(ai, heuristicReasons);
-    } catch {
+      const signals = await fetchWebsiteSignals(parsedUrl.origin);
+      if (process.env.OPENAI_API_KEY) {
+        console.log("[OpenAI] calling model...");
+        const ai = await fetchAiScamReasons(input, signals, reviewSignals, heuristicReasons);
+        if (ai) {
+          console.log("[OpenAI] response received");
+          mergedReasons = mergeReasonsWithHeuristics(ai, heuristicReasons);
+          if (ai.reviewSummary) {
+            reviewSummary = ai.reviewSummary;
+          }
+          aiUsed = true;
+        }
+      }
+    } catch (error) {
+      console.error("[OpenAI] failed:", error);
       mergedReasons = heuristicReasons;
+      aiUsed = false;
     }
 
     const result: ScamCheckResult = {
       score,
       verdict: toVerdict(score),
       domain,
-      reasons: mergedReasons
+      reasons: mergedReasons,
+      reviewSignals,
+      reviewSummary,
+      aiUsed
     };
 
     return NextResponse.json(result);

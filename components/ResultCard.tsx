@@ -27,6 +27,8 @@ const verdictStyle = {
 
 export function ResultCard({ result }: ResultCardProps) {
   const style = verdictStyle[result.verdict];
+  const { reviewSignals } = result;
+  const hasPublicReviewData = reviewSignals.trustpilotFound;
 
   return (
     <div className="w-full rounded-xl bg-white p-6 shadow-lg shadow-slate-200/60 transition-all duration-300">
@@ -54,6 +56,32 @@ export function ResultCard({ result }: ResultCardProps) {
           <li key={`${index}-${reason.slice(0, 48)}`}>{reason}</li>
         ))}
       </ul>
+
+      <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">Review signals</p>
+        {hasPublicReviewData ? (
+          <div className="mt-2 space-y-1 text-sm text-slate-700">
+            <p>
+              Trustpilot score:{" "}
+              <span className="font-medium">{reviewSignals.trustpilotScore?.toFixed(1) ?? "n/a"}</span>
+            </p>
+            <p>
+              Review count: <span className="font-medium">{reviewSignals.reviewCount ?? "n/a"}</span>
+            </p>
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-slate-600">No public review data found yet.</p>
+        )}
+
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+          {reviewSignals.suspiciousReviewSignals.map((signal, index) => (
+            <li key={`${index}-${signal.slice(0, 40)}`}>{signal}</li>
+          ))}
+        </ul>
+        <p className="mt-2 text-xs text-slate-500">{result.reviewSummary}</p>
+      </div>
+
+      <p className="mt-3 text-xs text-slate-500">AI used: {result.aiUsed ? "yes" : "no"}</p>
 
       {(result.verdict === "scam" || result.verdict === "suspicious") && (
         <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
