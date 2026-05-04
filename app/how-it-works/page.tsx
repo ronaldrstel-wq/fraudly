@@ -1,13 +1,14 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
+import { buildPageMetadata } from "@/lib/seo-metadata";
 
-export const metadata: Metadata = {
-  title: "How it works — Fraudly",
+export const metadata = buildPageMetadata({
+  path: "/how-it-works",
+  titleSegment: "How it works",
   description:
     "Learn how Fraudly checks websites using trust signals, reviews, patterns, and AI before you click or buy."
-};
+});
 
 const steps = [
   {

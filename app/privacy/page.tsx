@@ -1,13 +1,15 @@
-import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
+import { buildPageMetadata } from "@/lib/seo-metadata";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy — Fraudly",
-  description: "How fraudly.app collects, uses, and protects personal data under GDPR."
-};
+export const metadata = buildPageMetadata({
+  path: "/privacy",
+  titleSegment: "Privacy Policy",
+  description:
+    "Learn how Fraudly collects, uses, stores, and protects your personal data and cookie preferences."
+});
 
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (

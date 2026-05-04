@@ -1,13 +1,15 @@
-import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
+import { buildPageMetadata } from "@/lib/seo-metadata";
 
-export const metadata: Metadata = {
-  title: "Disclaimer — Fraudly",
-  description: "Important limitations of fraudly.app: informational use only, no guarantees, and no professional advice."
-};
+export const metadata = buildPageMetadata({
+  path: "/disclaimer",
+  titleSegment: "Disclaimer",
+  description:
+    "Read the Fraudly disclaimer about fraud detection, professional advice, third-party services, and limitations of liability."
+});
 
 function Section({
   id,

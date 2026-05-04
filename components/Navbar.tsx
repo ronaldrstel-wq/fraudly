@@ -15,11 +15,12 @@ export function Navbar() {
         <Link href="/" className="mr-4 inline-flex items-center opacity-90 transition-opacity duration-200 hover:opacity-100">
           <Image
             src="/logo.png"
-            alt="Fraudly logo"
+            alt="Fraudly — scam and fraud checker"
             width={120}
             height={40}
+            sizes="120px"
             className="h-8 w-auto object-contain md:h-9"
-            priority
+            loading="lazy"
           />
         </Link>
 

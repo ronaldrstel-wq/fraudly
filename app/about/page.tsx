@@ -1,14 +1,15 @@
-import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
+import { buildPageMetadata } from "@/lib/seo-metadata";
 
-export const metadata: Metadata = {
-  title: "About — Fraudly",
+export const metadata = buildPageMetadata({
+  path: "/about",
+  titleSegment: "About Fraudly",
   description:
-    "What Fraudly is, why it exists, and how it helps you check websites before you click or buy."
-};
+    "What Fraudly is, why it exists, and how it helps you check suspicious links and websites before you click or buy."
+});
 
 const whatWeDoBullets = [
   "Checks public review data (like Google ratings)",

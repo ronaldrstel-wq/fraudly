@@ -1,26 +1,70 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import { CookieConsentProvider } from "@/components/CookieConsentProvider";
+import { JsonLd } from "@/components/JsonLd";
+import { OG_IMAGE } from "@/lib/seo-metadata";
+import {
+  defaultDescription,
+  defaultKeywords,
+  defaultOgDescription,
+  defaultTitle,
+  SITE_URL
+} from "@/lib/seo";
 import "./globals.css";
 
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter"
+});
+
+export const viewport: Viewport = {
+  themeColor: "#f9fafb",
+  width: "device-width",
+  initialScale: 1
+};
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://fraudly.app"),
-  title: "Fraudly — Know before you click",
-  description: "Check suspicious links for scam risk in seconds.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: defaultTitle,
+    template: "%s | Fraudly"
+  },
+  description: defaultDescription,
+  keywords: [...defaultKeywords],
+  applicationName: "Fraudly",
+  authors: [{ name: "Fraudly" }],
+  creator: "Fraudly",
   icons: {
     icon: "/icon.png"
   },
   openGraph: {
-    title: "Fraudly — Know before you click",
-    description: "Check suspicious links for scam risk in seconds.",
-    url: "https://fraudly.app",
+    type: "website",
     siteName: "Fraudly",
     locale: "en_US",
-    type: "website"
+    url: SITE_URL,
+    title: defaultTitle,
+    description: defaultOgDescription,
+    images: [OG_IMAGE]
   },
   twitter: {
     card: "summary_large_image",
-    title: "Fraudly — Know before you click",
-    description: "Check suspicious links for scam risk in seconds."
+    title: defaultTitle,
+    description: defaultOgDescription,
+    images: [OG_IMAGE.url]
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true
+    }
+  },
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false
   }
 };
 
@@ -30,8 +74,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="antialiased">
+    <html lang="en" className={inter.variable}>
+      <body className={`${inter.className} min-h-screen antialiased`}>
+        <JsonLd />
         <CookieConsentProvider>{children}</CookieConsentProvider>
       </body>
     </html>

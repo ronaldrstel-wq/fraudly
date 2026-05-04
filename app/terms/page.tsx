@@ -1,13 +1,15 @@
-import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
+import { buildPageMetadata } from "@/lib/seo-metadata";
 
-export const metadata: Metadata = {
-  title: "Terms of Service — Fraudly",
-  description: "Terms and conditions for using fraudly.app."
-};
+export const metadata = buildPageMetadata({
+  path: "/terms",
+  titleSegment: "Terms of Service",
+  description:
+    "Review the terms and conditions for using Fraudly, including user responsibilities, limitations, and service rules."
+});
 
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (

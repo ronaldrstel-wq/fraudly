@@ -16,13 +16,13 @@ export function Hero({ url, onUrlChange, onSubmit, loading, disabled }: HeroProp
       </div>
 
       <h1 className="text-balance text-4xl font-bold tracking-tight text-slate-900 md:text-6xl">
-        Know{" "}
-        <span className="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">before</span>{" "}
-        you click.
+        Detect scams, phishing, and{" "}
+        <span className="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">online fraud</span>
       </h1>
 
       <p className="mx-auto mt-5 max-w-2xl text-balance text-base text-slate-600 md:text-lg">
-        Fraudly analyzes links in seconds and helps you avoid scams, fake stores, and phishing sites.
+        Paste a link and get a fast, clear review before you click—so you can avoid fake shops, phishing pages, and
+        other risky sites.
       </p>
 
       <div className="mx-auto mt-8 max-w-3xl">
