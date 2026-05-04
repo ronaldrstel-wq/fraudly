@@ -1,4 +1,5 @@
 import type { CheckoutSku } from "@/lib/billing";
+import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 
 const PRICE_IDS: Record<CheckoutSku, string | undefined> = {
@@ -22,27 +23,31 @@ const MODE_BY_SKU: Record<CheckoutSku, "payment" | "subscription"> = {
   premium_monthly: "subscription"
 };
 
-export async function createCheckoutSession(
+function normalizeAppUrl(raw: string): string {
+  return raw.replace(/\/+$/, "");
+}
+
+function isMissingOrInvalidCustomerError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const e = error as { type?: string; code?: string; message?: string };
+  if (e.type !== "StripeInvalidRequestError") return false;
+  if (e.code === "resource_missing") return true;
+  const msg = (e.message ?? "").toLowerCase();
+  return msg.includes("no such customer") || msg.includes("similar object exists in live mode");
+}
+
+function buildSessionPayload(
   sku: CheckoutSku,
   userId: string,
-  customerId?: string | null
-): Promise<{ url: string }> {
-  if (!stripe) {
-    throw new Error("Stripe is not configured");
-  }
-
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (!appUrl) {
-    throw new Error("Missing NEXT_PUBLIC_APP_URL");
-  }
-
+  customerId: string | null | undefined,
+  appUrl: string
+): Stripe.Checkout.SessionCreateParams {
+  const mode = MODE_BY_SKU[sku];
   const priceId = PRICE_IDS[sku];
   if (!priceId) {
     throw new Error(`Missing Stripe price id for ${sku}`);
   }
-
-  const mode = MODE_BY_SKU[sku];
-  const session = await stripe.checkout.sessions.create({
+  return {
     mode,
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${appUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -61,10 +66,42 @@ export async function createCheckoutSession(
             }
           }
         : undefined
-  });
+  };
+}
 
-  if (!session.url) {
-    throw new Error(`Stripe checkout url missing for ${SKU_LABEL[sku]}`);
+export async function createCheckoutSession(
+  sku: CheckoutSku,
+  userId: string,
+  customerId?: string | null
+): Promise<{ url: string }> {
+  if (!stripe) {
+    throw new Error("Stripe is not configured");
   }
-  return { url: session.url };
+
+  const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!rawAppUrl?.trim()) {
+    throw new Error("Missing NEXT_PUBLIC_APP_URL");
+  }
+  const appUrl = normalizeAppUrl(rawAppUrl.trim());
+
+  const payload = buildSessionPayload(sku, userId, customerId, appUrl);
+
+  try {
+    const session = await stripe.checkout.sessions.create(payload);
+    if (!session.url) {
+      throw new Error(`Stripe checkout url missing for ${SKU_LABEL[sku]}`);
+    }
+    return { url: session.url };
+  } catch (first) {
+    if (customerId && isMissingOrInvalidCustomerError(first)) {
+      console.warn("[checkout] Retrying without Stripe customer id (invalid or wrong mode)", { userId });
+      const retryPayload = buildSessionPayload(sku, userId, null, appUrl);
+      const session = await stripe.checkout.sessions.create(retryPayload);
+      if (!session.url) {
+        throw new Error(`Stripe checkout url missing for ${SKU_LABEL[sku]}`);
+      }
+      return { url: session.url };
+    }
+    throw first;
+  }
 }

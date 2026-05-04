@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
+import Stripe from "stripe";
 import { createCheckoutSession } from "@/lib/checkout";
 import type { CheckoutSku } from "@/lib/billing";
 import { AuthRequiredError, requireBillingUser } from "@/lib/user-store";
+
+export const runtime = "nodejs";
 
 interface CheckoutBody {
   purchaseType?: CheckoutSku;
@@ -46,6 +49,12 @@ export async function POST(request: Request) {
       errorOut = "Serverconfiguratie ontbreekt. Neem contact op met support.";
     } else if (msg.startsWith("Missing Stripe price id")) {
       errorOut = "Dit product is tijdelijk niet beschikbaar.";
+    } else if (error instanceof Stripe.errors.StripeInvalidRequestError) {
+      if (error.code === "resource_missing" && (error.param === "line_items" || msg.includes("price"))) {
+        errorOut = "Stripe-prijs-ID ontbreekt of is ongeldig. Controleer je omgevingsvariabelen.";
+      } else if (error.code === "url_invalid") {
+        errorOut = "Ongeldige terugkeer-URL. Controleer NEXT_PUBLIC_APP_URL in Vercel.";
+      }
     }
     return NextResponse.json({ error: errorOut }, { status: 400 });
   }

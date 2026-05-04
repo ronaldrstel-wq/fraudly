@@ -25,6 +25,13 @@ function creditAmountForPurchase(purchaseType: Exclude<PurchaseType, "premium_mo
   return 20;
 }
 
+function subscriptionIdFromSession(session: Stripe.Checkout.Session): string | undefined {
+  const sub = session.subscription;
+  if (!sub) return undefined;
+  if (typeof sub === "string") return sub;
+  return sub.id;
+}
+
 async function runOnce(eventId: string, handler: (tx: Prisma.TransactionClient) => Promise<void>) {
   try {
     await db.$transaction(async (tx) => {
@@ -38,6 +45,99 @@ async function runOnce(eventId: string, handler: (tx: Prisma.TransactionClient) 
     }
     throw error;
   }
+}
+
+/** One fulfillment per Checkout Session (covers completed + async_payment_succeeded without double credits). */
+function checkoutFulfillmentId(sessionId: string): string {
+  return `checkout_fulfill:${sessionId}`;
+}
+
+function shouldFulfillCheckoutSession(session: Stripe.Checkout.Session): boolean {
+  if (session.mode === "payment") {
+    return session.payment_status === "paid";
+  }
+  if (session.mode === "subscription") {
+    return session.status === "complete";
+  }
+  return false;
+}
+
+async function fulfillCheckoutSession(session: Stripe.Checkout.Session): Promise<void> {
+  if (!shouldFulfillCheckoutSession(session)) {
+    console.info("[stripe/webhook] skip checkout fulfillment", session.id, {
+      mode: session.mode,
+      status: session.status,
+      payment_status: session.payment_status
+    });
+    return;
+  }
+
+  const userId = session.metadata?.userId;
+  const purchaseTypeRaw = session.metadata?.purchaseType;
+
+  if (!userId || !purchaseTypeRaw || !isPurchaseType(purchaseTypeRaw)) {
+    console.warn("[stripe/webhook] Missing or invalid checkout metadata", session.id);
+    return;
+  }
+
+  let sessionForWrite = session;
+  if (purchaseTypeRaw === "premium_monthly" && !subscriptionIdFromSession(session) && stripe) {
+    sessionForWrite = await stripe.checkout.sessions.retrieve(session.id, {
+      expand: ["subscription"]
+    });
+  }
+
+  const subscriptionId = subscriptionIdFromSession(sessionForWrite);
+
+  const idempotencyKey = checkoutFulfillmentId(session.id);
+
+  if (purchaseTypeRaw === "premium_monthly") {
+    const customerStr = sessionForWrite.customer ? String(sessionForWrite.customer) : undefined;
+    const result = await runOnce(idempotencyKey, async (tx) => {
+      await tx.user.upsert({
+        where: { id: userId },
+        update: {
+          plan: "premium",
+          subscriptionStatus: "active",
+          ...(customerStr ? { stripeCustomerId: customerStr } : {}),
+          ...(subscriptionId ? { stripeSubscriptionId: subscriptionId } : {})
+        },
+        create: {
+          id: userId,
+          authProvider: "legacy",
+          authProviderId: null,
+          plan: "premium",
+          subscriptionStatus: "active",
+          ...(customerStr ? { stripeCustomerId: customerStr } : {}),
+          ...(subscriptionId ? { stripeSubscriptionId: subscriptionId } : {})
+        }
+      });
+    });
+    console.info("[stripe/webhook] premium checkout", session.id, result);
+    return;
+  }
+
+  const creditsToAdd = creditAmountForPurchase(purchaseTypeRaw);
+  const customerStrOneTime = sessionForWrite.customer ? String(sessionForWrite.customer) : undefined;
+  const result = await runOnce(idempotencyKey, async (tx) => {
+    await tx.user.upsert({
+      where: { id: userId },
+      update: {
+        credits: { increment: creditsToAdd },
+        paidChecksCount: { increment: creditsToAdd },
+        ...(customerStrOneTime ? { stripeCustomerId: customerStrOneTime } : {})
+      },
+      create: {
+        id: userId,
+        authProvider: "legacy",
+        authProviderId: null,
+        credits: creditsToAdd,
+        paidChecksCount: creditsToAdd,
+        ...(customerStrOneTime ? { stripeCustomerId: customerStrOneTime } : {})
+      }
+    });
+  });
+  console.info("[stripe/webhook] credits checkout", session.id, creditsToAdd, result);
 }
 
 export async function POST(req: Request) {
@@ -63,60 +163,11 @@ export async function POST(req: Request) {
 
   try {
     switch (event.type) {
-      case "checkout.session.completed": {
+      case "checkout.session.completed":
+      case "checkout.session.async_payment_succeeded": {
         const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.metadata?.userId;
-        const purchaseTypeRaw = session.metadata?.purchaseType;
-
-        if (!userId || !purchaseTypeRaw || !isPurchaseType(purchaseTypeRaw)) {
-          console.warn("[stripe/webhook] Missing or invalid checkout metadata", session.id);
-          return NextResponse.json({ received: true });
-        }
-
-        if (purchaseTypeRaw === "premium_monthly") {
-          const result = await runOnce(event.id, async (tx) => {
-            await tx.user.upsert({
-              where: { id: userId },
-              update: {
-                plan: "premium",
-                subscriptionStatus: "active",
-                stripeCustomerId: session.customer ? String(session.customer) : undefined,
-                stripeSubscriptionId: session.subscription ? String(session.subscription) : undefined
-              },
-              create: {
-                id: userId,
-                authProvider: "legacy",
-                authProviderId: null,
-                plan: "premium",
-                subscriptionStatus: "active",
-                stripeCustomerId: session.customer ? String(session.customer) : undefined,
-                stripeSubscriptionId: session.subscription ? String(session.subscription) : undefined
-              }
-            });
-          });
-          return NextResponse.json({ received: true, duplicate: result === "duplicate" });
-        }
-
-        const creditsToAdd = creditAmountForPurchase(purchaseTypeRaw);
-        const result = await runOnce(event.id, async (tx) => {
-          await tx.user.upsert({
-            where: { id: userId },
-            update: {
-              credits: { increment: creditsToAdd },
-              paidChecksCount: { increment: creditsToAdd },
-              stripeCustomerId: session.customer ? String(session.customer) : undefined
-            },
-            create: {
-              id: userId,
-              authProvider: "legacy",
-              authProviderId: null,
-              credits: creditsToAdd,
-              paidChecksCount: creditsToAdd,
-              stripeCustomerId: session.customer ? String(session.customer) : undefined
-            }
-          });
-        });
-        return NextResponse.json({ received: true, duplicate: result === "duplicate" });
+        await fulfillCheckoutSession(session);
+        return NextResponse.json({ received: true });
       }
 
       case "invoice.payment_failed": {
@@ -132,7 +183,6 @@ export async function POST(req: Request) {
             where: { stripeCustomerId: customerId },
             data: { subscriptionStatus: "past_due" }
           });
-          // TODO: Decide whether to alert/monitor when Stripe customer has no linked user.
           if (updated.count === 0) {
             console.warn("[stripe/webhook] payment_failed customer not linked to user", customerId);
           }
@@ -159,7 +209,6 @@ export async function POST(req: Request) {
               monthlyChecksUsed: 0
             }
           });
-          // TODO: Decide whether to alert/monitor when Stripe customer has no linked user.
           if (updated.count === 0) {
             console.warn("[stripe/webhook] subscription_deleted customer not linked to user", customerId);
           }
