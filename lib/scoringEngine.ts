@@ -39,7 +39,6 @@ export type DomainAgeSignalsInput = {
 };
 
 export type AiRiskSignalsInput = {
-  /** Reserved for future use; does not affect score until explicitly wired. */
   level?: "low" | "medium" | "high";
 };
 
@@ -76,7 +75,7 @@ export function formatScoreSignalsForPrompt(signals: ScoreSignal[]): string {
 
 function verdictFromScore(score: number): ScoreResult["verdict"] {
   if (score >= 70) return "scam";
-  if (score >= 35) return "suspicious";
+  if (score >= 40) return "suspicious";
   return "safe";
 }
 
@@ -124,6 +123,25 @@ export function inferAddressSignals(websiteText: string): AddressSignalsInput {
   return { hasClearBusinessAddress, hasKvK, hasVat };
 }
 
+type ReviewTierFlags = { elitePositive: boolean; strongPublicReview: boolean };
+
+function computeReviewTierFlags(review?: ReviewSignals): ReviewTierFlags {
+  let elitePositive = false;
+  let strongPublicReview = false;
+  if (!review) return { elitePositive, strongPublicReview };
+
+  const check = (found: boolean, rating?: number, count?: number) => {
+    if (!found || rating == null || count == null) return;
+    if (rating >= 4.3 && count >= 1000) elitePositive = true;
+    if (rating >= 4.3 && count >= 100) strongPublicReview = true;
+  };
+
+  check(review.googleFound, review.googleRating, review.googleReviewCount);
+  check(review.trustpilotFound, review.trustpilotRating, review.trustpilotReviewCount);
+
+  return { elitePositive, strongPublicReview };
+}
+
 function pushDomainSignals(domain: string, out: ScoreSignal[]): void {
   const d = domain.toLowerCase();
   const risky = ["cheap", "free", "deal"];
@@ -160,6 +178,49 @@ function pushDomainSignals(domain: string, out: ScoreSignal[]): void {
   }
 }
 
+/** Trust nudges for “clean” domains; omitted when strong public reviews already imply baseline trust. */
+function pushDomainTrustSignals(domain: string, out: ScoreSignal[], tier: ReviewTierFlags): void {
+  const d = domain.toLowerCase();
+  const risky = ["cheap", "free", "deal"];
+  const matched = risky.filter((w) => d.includes(w));
+  const skipBaitAndLength = tier.strongPublicReview;
+
+  if (matched.length === 0 && !skipBaitAndLength) {
+    out.push({
+      id: "domain-no-bait-keywords",
+      label: "No bait keywords in domain",
+      category: "domain",
+      impact: -5,
+      confidence: "medium",
+      reason: "The domain does not contain common bait-style sales keywords."
+    });
+  }
+  if (d.length > 0 && d.length <= 20 && !skipBaitAndLength) {
+    out.push({
+      id: "domain-normal-length",
+      label: "Normal domain length",
+      category: "domain",
+      impact: -5,
+      confidence: "low",
+      reason: "Hostname length looks typical rather than excessively long."
+    });
+  }
+}
+
+function pushAiRiskSignals(level: AiRiskSignalsInput["level"], out: ScoreSignal[], tier: ReviewTierFlags): void {
+  if (!level) return;
+  if (level === "low" && !tier.elitePositive) {
+    out.push({
+      id: "ai-risk-low",
+      label: "AI assessment: low risk",
+      category: "ai",
+      impact: -8,
+      confidence: "medium",
+      reason: "Model assessed overall URL risk as low (scoring only; score is computed from all signals)."
+    });
+  }
+}
+
 function pushReviewSignals(review: ReviewSignals, out: ScoreSignal[]): void {
   const addGoogle = () => {
     if (!review.googleFound || review.googleRating == null || review.googleReviewCount == null) {
@@ -175,6 +236,17 @@ function pushReviewSignals(review: ReviewSignals, out: ScoreSignal[]): void {
     }
     const r = review.googleRating;
     const c = review.googleReviewCount;
+    if (r >= 4.3 && c >= 1000) {
+      out.push({
+        id: "reviews-google-elite-volume",
+        label: "Elite Google rating volume",
+        category: "reviews",
+        impact: -25,
+        confidence: "high",
+        reason: `Google rating ${r.toFixed(1)} with ${c} reviews indicates a very well-established presence.`
+      });
+      return;
+    }
     if (r >= 4.3 && c >= 100) {
       out.push({
         id: "reviews-google-strong-positive",
@@ -226,7 +298,16 @@ function pushReviewSignals(review: ReviewSignals, out: ScoreSignal[]): void {
     }
     const r = review.trustpilotRating;
     const c = review.trustpilotReviewCount;
-    if (r >= 4.3 && c >= 100) {
+    if (r >= 4.3 && c >= 1000) {
+      out.push({
+        id: "reviews-trustpilot-elite-volume",
+        label: "Elite Trustpilot rating volume",
+        category: "reviews",
+        impact: -25,
+        confidence: "high",
+        reason: `Trustpilot rating ${r.toFixed(1)} with ${c} reviews indicates a very well-established presence.`
+      });
+    } else if (r >= 4.3 && c >= 100) {
       out.push({
         id: "reviews-trustpilot-strong-positive",
         label: "Strong Trustpilot rating volume",
@@ -269,12 +350,16 @@ function pushReviewSignals(review: ReviewSignals, out: ScoreSignal[]): void {
   addTrustpilot();
 }
 
-function pushSupplyChainSignals(sc: SupplyChainSignals, out: ScoreSignal[]): void {
+function pushSupplyChainSignals(sc: SupplyChainSignals, out: ScoreSignal[], allowRiskIncrease: boolean): void {
   const china = sc.chinaConfidence ?? "low";
   const drop = sc.dropshipConfidence ?? "low";
   const loc = sc.localConfidence ?? "low";
 
-  if (sc.likelyChinaShipping && (china === "medium" || china === "high")) {
+  if (
+    allowRiskIncrease &&
+    sc.likelyChinaShipping &&
+    (china === "medium" || china === "high")
+  ) {
     const impact = china === "high" ? 25 : 15;
     const conf = china === "high" ? "high" : "medium";
     out.push({
@@ -287,7 +372,7 @@ function pushSupplyChainSignals(sc: SupplyChainSignals, out: ScoreSignal[]): voi
     });
   }
 
-  if (sc.likelyDropshipping && (drop === "medium" || drop === "high")) {
+  if (allowRiskIncrease && sc.likelyDropshipping && (drop === "medium" || drop === "high")) {
     const impact = drop === "high" ? 20 : 10;
     const conf = drop === "high" ? "high" : "medium";
     out.push({
@@ -402,21 +487,6 @@ function scaleCategoryWeights(
   return weights;
 }
 
-function seriousRisk(
-  signals: ScoreSignal[],
-  weights: Map<string, number>,
-  supply: SupplyChainSignals | undefined
-): boolean {
-  const chinaH = supply?.likelyChinaShipping && (supply.chinaConfidence ?? "low") === "high";
-  const dropH = supply?.likelyDropshipping && (supply.dropshipConfidence ?? "low") === "high";
-  if (chinaH || dropH) return true;
-  for (const s of signals) {
-    if (s.id === "domain-age-very-new" && (weights.get(s.id) ?? 0) > 0) return true;
-    if (s.id === "biz-no-address" && (weights.get(s.id) ?? 0) > 11) return true;
-  }
-  return false;
-}
-
 export function calculateScamScore(input: {
   domain: string;
   heuristicReasons: string[];
@@ -429,19 +499,24 @@ export function calculateScamScore(input: {
   websiteText?: string;
 }): ScoreResult {
   void input.heuristicReasons;
-  void input.aiRiskSignals;
 
   const signals: ScoreSignal[] = [];
   const domain = input.domain.toLowerCase();
+  const reviewTier = computeReviewTierFlags(input.reviewSignals);
 
   pushDomainSignals(domain, signals);
   if (input.reviewSignals) pushReviewSignals(input.reviewSignals, signals);
-  if (input.supplyChainSignals) pushSupplyChainSignals(input.supplyChainSignals, signals);
+  if (input.supplyChainSignals) {
+    const allowSupplyRisk = input.supplyChainSignals.scoreAdjustment > 0;
+    pushSupplyChainSignals(input.supplyChainSignals, signals, allowSupplyRisk);
+  }
 
   const inferredAddr = inferAddressSignals(input.websiteText ?? "");
   const addr: AddressSignalsInput = { ...inferredAddr, ...input.addressSignals };
   pushBusinessIdentitySignals(addr, input.websiteText ?? "", signals);
   pushDomainAgeSignals(input.domainAgeSignals, signals);
+  pushDomainTrustSignals(domain, signals, reviewTier);
+  pushAiRiskSignals(input.aiRiskSignals?.level, signals, reviewTier);
 
   const reviewW = scaleCategoryWeights(signals, "reviews", REVIEW_MAX_UP, REVIEW_MAX_DOWN);
 
@@ -503,10 +578,6 @@ export function calculateScamScore(input: {
 
   if (otherPositive < 1e-6) {
     total = Math.min(DOMAIN_ONLY_SCORE_CAP, total);
-  }
-
-  if (seriousRisk(signals, allWeights, input.supplyChainSignals) && total < 35) {
-    total = 35;
   }
 
   const finalScore = Math.max(0, Math.min(100, Math.round(total)));

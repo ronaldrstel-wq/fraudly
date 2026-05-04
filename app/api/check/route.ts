@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { fetchAiScamReasons, fetchWebsiteSignals, mergeReasonsWithHeuristics } from "@/lib/aiScamReasons";
+import {
+  fetchAiScamReasons,
+  fetchWebsiteSignals,
+  mergeReasonsWithHeuristics,
+  type AiScamReasonsResult
+} from "@/lib/aiScamReasons";
 import { getReviewSignals } from "@/lib/reviewSignals";
 import { checkDailyLimiter, getClientIp } from "@/lib/rateLimiter";
 import {
@@ -58,30 +63,35 @@ export async function POST(request: Request) {
     const websiteText = websiteSignals?.text ?? "";
     const supplyChainSignals = await getSupplyChainSignals(domain, websiteText);
 
-    const scoreResult = calculateScamScore({
+    const scoreInputBase = {
       domain,
       heuristicReasons,
       reviewSignals,
       supplyChainSignals,
       websiteText
-    });
+    };
 
-    const scoreSignalLines = [
-      ...scoreResult.topPositiveSignals.map((s) => `Scoring (risk↑): ${s.reason}`),
-      ...scoreResult.topNegativeSignals.map((s) => `Scoring (trust↑): ${s.reason}`)
+    const scorePre = calculateScamScore({
+      ...scoreInputBase,
+      aiRiskSignals: undefined
+    });
+    const scoringSignalsJson = formatScoreSignalsForPrompt(scorePre.signals);
+    const heuristicBase = [...heuristicReasons, ...supplyChainSignals.reasons];
+    const scoreLinesPre = [
+      ...scorePre.topPositiveSignals.map((s) => `Scoring (risk↑): ${s.reason}`),
+      ...scorePre.topNegativeSignals.map((s) => `Scoring (trust↑): ${s.reason}`)
     ];
-    const heuristicForAi = [...heuristicReasons, ...supplyChainSignals.reasons, ...scoreSignalLines];
-    const scoringSignalsJson = formatScoreSignalsForPrompt(scoreResult.signals);
+    const heuristicForOpenAi = [...heuristicBase, ...scoreLinesPre];
 
     console.log("[Env keys]", Object.keys(process.env).filter((k) => k.includes("OPENAI")));
     console.log("[OpenAI] key exists:", Boolean(process.env.OPENAI_API_KEY));
 
-    let mergedReasons = mergeReasonsWithHeuristics(null, heuristicForAi);
     let reviewSummary =
       reviewSignals.trustpilotFound || reviewSignals.googleFound
         ? "Public review data was included in this analysis."
         : "No public review data found yet.";
     let aiUsed = false;
+    let aiPayload: AiScamReasonsResult | null = null;
 
     try {
       if (!process.env.OPENAI_API_KEY) {
@@ -89,26 +99,37 @@ export async function POST(request: Request) {
       }
 
       console.log("[OpenAI] calling model...");
-      const ai = await fetchAiScamReasons(
+      aiPayload = await fetchAiScamReasons(
         input,
         websiteSignals,
         reviewSignals,
-        heuristicForAi,
+        heuristicForOpenAi,
         scoringSignalsJson
       );
-      if (ai) {
+      if (aiPayload) {
         console.log("[OpenAI] response received");
-        mergedReasons = mergeReasonsWithHeuristics(ai, heuristicForAi);
-        if (ai.reviewSummary) {
-          reviewSummary = ai.reviewSummary;
-        }
         aiUsed = true;
+        if (aiPayload.reviewSummary) {
+          reviewSummary = aiPayload.reviewSummary;
+        }
       }
     } catch (error) {
       console.error("[OpenAI] failed:", error);
-      mergedReasons = mergeReasonsWithHeuristics(null, heuristicForAi);
       aiUsed = false;
+      aiPayload = null;
     }
+
+    const scoreResult = calculateScamScore({
+      ...scoreInputBase,
+      aiRiskSignals: aiPayload?.risk ? { level: aiPayload.risk } : undefined
+    });
+
+    const scoreLinesFinal = [
+      ...scoreResult.topPositiveSignals.map((s) => `Scoring (risk↑): ${s.reason}`),
+      ...scoreResult.topNegativeSignals.map((s) => `Scoring (trust↑): ${s.reason}`)
+    ];
+    const heuristicForMerge = [...heuristicBase, ...scoreLinesFinal];
+    const mergedReasons = mergeReasonsWithHeuristics(aiPayload, heuristicForMerge);
 
     const result: ScamCheckResult = {
       score: scoreResult.finalScore,

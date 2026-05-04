@@ -126,9 +126,19 @@ export function ResultCard({ result }: ResultCardProps) {
 
       <p className="mt-3 text-xs text-slate-500">AI used: {result.aiUsed ? "yes" : "no"}</p>
 
-      {(result.verdict === "scam" || result.verdict === "suspicious") && (
-        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Be careful! This link shows strong indicators of being a scam.
+      {result.verdict === "safe" && (
+        <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          This website currently shows mostly positive trust signals.
+        </div>
+      )}
+      {result.verdict === "suspicious" && (
+        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Be careful. This website has mixed or uncertain trust signals.
+        </div>
+      )}
+      {result.verdict === "scam" && (
+        <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
+          Warning. This website shows strong scam indicators.
         </div>
       )}
     </div>
