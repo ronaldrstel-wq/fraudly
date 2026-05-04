@@ -4,44 +4,84 @@ interface ResultCardProps {
   result: ScamCheckResult;
 }
 
-const verdictStyle = {
-  safe: {
-    label: "Likely safe",
+type TrustBand = "high" | "medium" | "suspicious" | "low";
+
+function trustBandFromScore(trustScore: number): TrustBand {
+  if (trustScore >= 75) return "high";
+  if (trustScore >= 60) return "medium";
+  if (trustScore >= 30) return "suspicious";
+  return "low";
+}
+
+const trustPresentation: Record<
+  TrustBand,
+  {
+    label: string;
+    textColor: string;
+    bgColor: string;
+    advisory: string;
+    advisoryBorder: string;
+    advisoryBg: string;
+    advisoryText: string;
+  }
+> = {
+  high: {
+    label: "Safe",
     textColor: "text-emerald-700",
     bgColor: "bg-emerald-100",
-    progressColor: "bg-emerald-500"
+    advisory: "This website currently shows mostly positive trust signals.",
+    advisoryBorder: "border-emerald-200",
+    advisoryBg: "bg-emerald-50",
+    advisoryText: "text-emerald-900"
+  },
+  medium: {
+    label: "Likely safe",
+    textColor: "text-green-800",
+    bgColor: "bg-green-100",
+    advisory: "This website shows generally favorable trust signals, but stay alert for unusual requests or payments.",
+    advisoryBorder: "border-green-200",
+    advisoryBg: "bg-green-50",
+    advisoryText: "text-green-900"
   },
   suspicious: {
     label: "Suspicious",
     textColor: "text-orange-700",
     bgColor: "bg-orange-100",
-    progressColor: "bg-orange-500"
+    advisory: "Be careful. This website has mixed or uncertain trust signals.",
+    advisoryBorder: "border-amber-200",
+    advisoryBg: "bg-amber-50",
+    advisoryText: "text-amber-900"
   },
-  scam: {
-    label: "Likely scam",
+  low: {
+    label: "High risk",
     textColor: "text-rose-700",
     bgColor: "bg-rose-100",
-    progressColor: "bg-rose-500"
+    advisory: "Warning. This website shows strong scam indicators.",
+    advisoryBorder: "border-rose-200",
+    advisoryBg: "bg-rose-50",
+    advisoryText: "text-rose-900"
   }
-} as const;
+};
 
 export function ResultCard({ result }: ResultCardProps) {
-  const style = verdictStyle[result.verdict];
+  const trustScore = Math.round(100 - result.score);
+  const band = trustBandFromScore(trustScore);
+  const style = trustPresentation[band];
   const { reviewSignals } = result;
   const hasPublicReviewData = reviewSignals.trustpilotFound || reviewSignals.googleFound;
 
   return (
     <div className="w-full rounded-xl bg-white p-6 shadow-lg shadow-slate-200/60 transition-all duration-300">
       <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" aria-label={`Trust score ${trustScore} percent, ${style.label}`}>
           <div
             className={`flex h-24 w-24 items-center justify-center rounded-full border-8 border-white text-2xl font-bold shadow-sm ${style.bgColor} ${style.textColor}`}
           >
-            {result.score}%
+            {trustScore}%
           </div>
           <div>
             <p className={`text-lg font-semibold ${style.textColor}`}>{style.label}</p>
-            <p className="mt-1 text-sm text-slate-500">Fraud risk score</p>
+            <p className="mt-1 text-sm text-slate-500">Trust score</p>
           </div>
         </div>
 
@@ -126,21 +166,11 @@ export function ResultCard({ result }: ResultCardProps) {
 
       <p className="mt-3 text-xs text-slate-500">AI used: {result.aiUsed ? "yes" : "no"}</p>
 
-      {result.verdict === "safe" && (
-        <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          This website currently shows mostly positive trust signals.
-        </div>
-      )}
-      {result.verdict === "suspicious" && (
-        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Be careful. This website has mixed or uncertain trust signals.
-        </div>
-      )}
-      {result.verdict === "scam" && (
-        <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
-          Warning. This website shows strong scam indicators.
-        </div>
-      )}
+      <div
+        className={`mt-6 rounded-xl border px-4 py-3 text-sm ${style.advisoryBorder} ${style.advisoryBg} ${style.advisoryText}`}
+      >
+        {style.advisory}
+      </div>
     </div>
   );
 }
