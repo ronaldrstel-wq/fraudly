@@ -4,6 +4,8 @@ import { getReviewSignals } from "@/lib/reviewSignals";
 import { checkDailyLimiter, getClientIp } from "@/lib/rateLimiter";
 import type { ScamCheckResult, ScamVerdict } from "@/types/scam";
 
+export const runtime = "nodejs";
+
 interface CheckRequest {
   url?: string;
 }
@@ -82,6 +84,7 @@ export async function POST(request: Request) {
 
     const { score, domain, heuristicReasons } = runHeuristics(parsedUrl);
     const reviewSignals = await getReviewSignals(domain);
+    console.log("[Env keys]", Object.keys(process.env).filter((k) => k.includes("OPENAI")));
     console.log("[OpenAI] key exists:", Boolean(process.env.OPENAI_API_KEY));
 
     let mergedReasons = heuristicReasons;
@@ -92,17 +95,19 @@ export async function POST(request: Request) {
 
     try {
       const signals = await fetchWebsiteSignals(parsedUrl.origin);
-      if (process.env.OPENAI_API_KEY) {
-        console.log("[OpenAI] calling model...");
-        const ai = await fetchAiScamReasons(input, signals, reviewSignals, heuristicReasons);
-        if (ai) {
-          console.log("[OpenAI] response received");
-          mergedReasons = mergeReasonsWithHeuristics(ai, heuristicReasons);
-          if (ai.reviewSummary) {
-            reviewSummary = ai.reviewSummary;
-          }
-          aiUsed = true;
+      if (!process.env.OPENAI_API_KEY) {
+        throw new Error("Missing OPENAI_API_KEY in environment variables");
+      }
+
+      console.log("[OpenAI] calling model...");
+      const ai = await fetchAiScamReasons(input, signals, reviewSignals, heuristicReasons);
+      if (ai) {
+        console.log("[OpenAI] response received");
+        mergedReasons = mergeReasonsWithHeuristics(ai, heuristicReasons);
+        if (ai.reviewSummary) {
+          reviewSummary = ai.reviewSummary;
         }
+        aiUsed = true;
       }
     } catch (error) {
       console.error("[OpenAI] failed:", error);
