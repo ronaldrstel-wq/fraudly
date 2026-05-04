@@ -2,14 +2,15 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AnalysisPaywall } from "@/components/AnalysisPaywall";
+import { AnalysisPaywall, type PurchaseAction } from "@/components/AnalysisPaywall";
 import { BasicResultCard } from "@/components/BasicResultCard";
 import { Hero } from "@/components/Hero";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { trackCheckCompleted, trackCheckFailed, trackCheckStarted } from "@/lib/analytics";
+import { billingSnapshotToUser, canViewFullAnalysis, parseBillingSnapshot } from "@/lib/billing";
 import { GENERIC_CHECK_ERROR, INVALID_URL_MESSAGE } from "@/lib/messages";
-import { isCheckApiResponse, type BasicCheckResult, type CheckApiResponse, type ScamCheckResult } from "@/types/scam";
+import { isCheckApiResponse, type BasicCheckResult, type BillingSnapshot, type CheckApiResponse, type ScamCheckResult } from "@/types/scam";
 
 const ResultCard = dynamic(() => import("@/components/ResultCard").then((m) => ({ default: m.ResultCard })), {
   loading: () => <div className="min-h-[280px] w-full animate-pulse rounded-xl bg-slate-100" aria-hidden />
@@ -32,18 +33,31 @@ function isValidUrl(value: string) {
   }
 }
 
+function canUseFullFromBilling(b: BillingSnapshot | null): boolean {
+  if (!b) return false;
+  return canViewFullAnalysis(billingSnapshotToUser(b));
+}
+
 export function HomeClient() {
-  const [userId, setUserId] = useState<string>("guest");
+  const [userId, setUserId] = useState("guest");
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScamCheckResult | null>(null);
   const [basicResult, setBasicResult] = useState<BasicCheckResult | null>(null);
   const [apiState, setApiState] = useState<CheckApiResponse | null>(null);
+  const [billing, setBilling] = useState<BillingSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fullLocked, setFullLocked] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutActive, setCheckoutActive] = useState<PurchaseAction | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [fullRunPending, setFullRunPending] = useState(false);
   const inFlight = useRef(false);
+  const checkoutInFlight = useRef(false);
 
   const disabled = useMemo(() => url.trim().length === 0 || loading, [url, loading]);
+
+  const userReady = userId !== "guest";
 
   useEffect(() => {
     const key = "fraudly-user-id";
@@ -78,7 +92,11 @@ export function HomeClient() {
     inFlight.current = true;
     setLoading(true);
     setError(null);
-    setFullLocked(false);
+    if (detailLevel === "full") {
+      setFullRunPending(true);
+    } else {
+      setFullLocked(false);
+    }
 
     try {
       trackCheckStarted();
@@ -88,31 +106,54 @@ export function HomeClient() {
         body: JSON.stringify({ url: trimmed, detailLevel })
       });
 
-      if (response.status === 402) {
-        setResult(null);
-        setFullLocked(true);
-        trackCheckFailed("rate_limit");
-        return;
+      let payload: Record<string, unknown> | null = null;
+      try {
+        payload = (await response.json()) as Record<string, unknown>;
+      } catch {
+        payload = null;
       }
 
-      let payload: unknown;
-      try {
-        payload = await response.json();
-      } catch {
+      if (response.status === 402) {
+        const err = typeof payload?.error === "string" ? payload.error : "";
+        const snap = parseBillingSnapshot(payload?.billing);
+        if (snap) setBilling(snap);
+
+        if (detailLevel === "full" && err === "full_analysis_locked") {
+          setError("Geen credits beschikbaar voor volledige analyse. Koop checks of Premium.");
+          trackCheckFailed("full_locked");
+          return;
+        }
+
+        if (detailLevel === "basic" && err === "free_limit_reached") {
+          setResult(null);
+          setBasicResult(null);
+          setApiState(null);
+          setFullLocked(true);
+          setError(null);
+          trackCheckFailed("rate_limit");
+          return;
+        }
+
         setResult(null);
-        setError(GENERIC_CHECK_ERROR);
-        trackCheckFailed("json_parse");
+        setBasicResult(null);
+        setApiState(null);
+        setFullLocked(true);
+        setError(null);
+        trackCheckFailed("rate_limit");
         return;
       }
 
       if (!response.ok) {
         setResult(null);
+        setBasicResult(null);
+        setApiState(null);
+        setFullLocked(false);
         setError(GENERIC_CHECK_ERROR);
         trackCheckFailed(`http_${response.status}`);
         return;
       }
 
-      if (!isCheckApiResponse(payload)) {
+      if (!payload || !isCheckApiResponse(payload)) {
         setResult(null);
         setBasicResult(null);
         setApiState(null);
@@ -122,6 +163,7 @@ export function HomeClient() {
       }
 
       setApiState(payload);
+      setBilling(payload.billing);
       setFullLocked(false);
       if (payload.detailLevel === "full") {
         setResult(payload.result as ScamCheckResult);
@@ -140,6 +182,7 @@ export function HomeClient() {
     } finally {
       inFlight.current = false;
       setLoading(false);
+      setFullRunPending(false);
     }
   }
 
@@ -147,15 +190,68 @@ export function HomeClient() {
     runCheck("basic");
   }
 
-  async function handleCheckout(action: "single_check" | "five_checks" | "twenty_checks" | "premium_monthly") {
-    const response = await fetch("/api/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-fraudly-user-id": userId },
-      body: JSON.stringify({ sku: action })
-    });
-    const payload = (await response.json()) as { checkoutUrl?: string };
-    if (payload.checkoutUrl) window.location.href = payload.checkoutUrl;
+  async function handleCheckout(action: PurchaseAction) {
+    if (checkoutInFlight.current || !userReady) {
+      if (!userReady) setCheckoutError("Een moment, je sessie wordt opgestart…");
+      return;
+    }
+    checkoutInFlight.current = true;
+    setCheckoutLoading(true);
+    setCheckoutActive(action);
+    setCheckoutError(null);
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-fraudly-user-id": userId },
+        body: JSON.stringify({ purchaseType: action })
+      });
+
+      let data: { url?: string; error?: string };
+      try {
+        data = (await response.json()) as { url?: string; error?: string };
+      } catch {
+        console.error("[checkout] invalid json response", response.status);
+        setCheckoutError("Onverwacht antwoord van de server.");
+        return;
+      }
+
+      if (!response.ok) {
+        console.error("[checkout] failed", response.status, data.error);
+        setCheckoutError(data.error ?? "Checkout mislukt.");
+        return;
+      }
+
+      if (typeof data.url === "string" && data.url.length > 0) {
+        window.location.href = data.url;
+        return;
+      }
+
+      console.error("[checkout] missing url in success response");
+      setCheckoutError("Geen betaalpagina ontvangen.");
+    } catch (e) {
+      console.error("[checkout] network", e);
+      setCheckoutError("Netwerkfout. Controleer je verbinding.");
+    } finally {
+      checkoutInFlight.current = false;
+      setCheckoutLoading(false);
+      setCheckoutActive(null);
+    }
   }
+
+  function handleUseCredit() {
+    setCheckoutError(null);
+    runCheck("full");
+  }
+
+  const paywallVariant = fullLocked ? "no_free_checks" : "unlock";
+  const checkoutBusy = checkoutLoading || fullRunPending;
+  const canUseFull = canUseFullFromBilling(billing);
+
+  const useCreditRow = {
+    loading: fullRunPending,
+    canUse: canUseFull,
+    onUseCredit: handleUseCredit
+  };
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
@@ -164,31 +260,39 @@ export function HomeClient() {
       <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-12 sm:pt-14 md:pt-20">
         <Hero url={url} onUrlChange={setUrl} onSubmit={handleCheck} loading={loading} disabled={disabled} />
 
-        {fullLocked && <div className="result-in mx-auto mt-6 max-w-3xl"><AnalysisPaywall mode="limit" onBuy={handleCheckout} /></div>}
-
         {error && (
           <div className="mx-auto mt-6 max-w-3xl rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
             {error}
           </div>
         )}
 
-        {basicResult && (
-          <section className="result-in mt-8 grid gap-6 sm:mt-10 lg:grid-cols-[1.7fr_1fr]">
+        {fullLocked && !basicResult && (
+          <div className="result-in mx-auto mt-8 max-w-[860px] sm:mt-10">
+            <AnalysisPaywall
+              variant={paywallVariant}
+              checkoutLoading={checkoutBusy || !userReady}
+              activePurchase={checkoutActive}
+              checkoutError={checkoutError}
+              onPurchase={handleCheckout}
+              useCreditRow={useCreditRow}
+            />
+          </div>
+        )}
+
+        {basicResult && !fullLocked && (
+          <section className="result-in mt-8 grid gap-6 sm:mt-10 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,860px)] lg:items-start">
             <div className="min-w-0">
               <BasicResultCard result={basicResult} />
             </div>
-            <div className="min-w-0 lg:pt-0">
+            <div className="min-w-0">
               <AnalysisPaywall
-                mode={basicResult.verdict === "safe" ? "limit" : "suspicious"}
-                onBuy={handleCheckout}
+                variant={paywallVariant}
+                checkoutLoading={checkoutBusy || !userReady}
+                activePurchase={checkoutActive}
+                checkoutError={checkoutError}
+                onPurchase={handleCheckout}
+                useCreditRow={useCreditRow}
               />
-              <button
-                type="button"
-                onClick={() => runCheck("full")}
-                className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
-              >
-                Gebruik beschikbare credit / premium
-              </button>
             </div>
           </section>
         )}

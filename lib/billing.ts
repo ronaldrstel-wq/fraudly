@@ -1,3 +1,5 @@
+import type { BillingSnapshot } from "@/types/scam";
+
 export type UserPlan = "free" | "premium";
 export type SubscriptionStatus = "active" | "inactive" | "canceled" | "past_due";
 export type CheckoutSku = "single_check" | "five_checks" | "twenty_checks" | "premium_monthly";
@@ -45,6 +47,45 @@ export const consumeFullAnalysisCredit = consumeFullAnalysisAccess;
 
 export function shouldShowPremiumUpsell(user: BillingUser): boolean {
   return user.plan !== "premium" && user.paidChecksCount >= 3;
+}
+
+/** Parse billing from API error payloads (e.g. 402). */
+export function parseBillingSnapshot(value: unknown): BillingSnapshot | null {
+  if (!value || typeof value !== "object") return null;
+  const b = value as Record<string, unknown>;
+  if (b.plan !== "free" && b.plan !== "premium") return null;
+  if (typeof b.freeChecksUsed !== "number" || Number.isNaN(b.freeChecksUsed)) return null;
+  if (typeof b.credits !== "number" || Number.isNaN(b.credits)) return null;
+  if (typeof b.monthlyChecksUsed !== "number" || Number.isNaN(b.monthlyChecksUsed)) return null;
+  if (typeof b.paidChecksCount !== "number" || Number.isNaN(b.paidChecksCount)) return null;
+  if (
+    b.subscriptionStatus !== "active" &&
+    b.subscriptionStatus !== "inactive" &&
+    b.subscriptionStatus !== "canceled" &&
+    b.subscriptionStatus !== "past_due"
+  ) {
+    return null;
+  }
+  return {
+    plan: b.plan,
+    freeChecksUsed: b.freeChecksUsed,
+    credits: b.credits,
+    monthlyChecksUsed: b.monthlyChecksUsed,
+    paidChecksCount: b.paidChecksCount,
+    subscriptionStatus: b.subscriptionStatus
+  };
+}
+
+export function billingSnapshotToUser(snapshot: BillingSnapshot, id = ""): BillingUser {
+  return {
+    id,
+    plan: snapshot.plan,
+    freeChecksUsed: snapshot.freeChecksUsed,
+    credits: snapshot.credits,
+    monthlyChecksUsed: snapshot.monthlyChecksUsed,
+    paidChecksCount: snapshot.paidChecksCount,
+    subscriptionStatus: snapshot.subscriptionStatus
+  };
 }
 
 export function createDefaultUser(id: string): BillingUser {

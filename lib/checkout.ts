@@ -26,7 +26,7 @@ export async function createCheckoutSession(
   sku: CheckoutSku,
   userId: string,
   customerId?: string | null
-): Promise<{ checkoutUrl: string }> {
+): Promise<{ url: string }> {
   if (!stripe) {
     throw new Error("Stripe is not configured");
   }
@@ -66,5 +66,5 @@ export async function createCheckoutSession(
   if (!session.url) {
     throw new Error(`Stripe checkout url missing for ${SKU_LABEL[sku]}`);
   }
-  return { checkoutUrl: session.url };
+  return { url: session.url };
 }
