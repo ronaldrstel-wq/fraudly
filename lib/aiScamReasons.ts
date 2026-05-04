@@ -1,9 +1,11 @@
 import OpenAI from "openai";
+import { getCached, normalizeDomain, setCached } from "@/lib/cache";
 import type { ReviewSignals } from "@/lib/reviewSignals";
 
 const MODEL = "gpt-4o-mini";
 const REQUEST_MS = 7000;
 const WEBSITE_FETCH_MS = 4500;
+const WEBSITE_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
 const SYSTEM_PROMPT = "You are a cybersecurity assistant. Analyze if a URL might be a scam.";
 
@@ -14,6 +16,8 @@ export type WebsiteSignals = {
   /** Combined visible text for downstream heuristics (not sent to client as env). */
   text: string;
 };
+
+type WebsiteCacheBox = { v: WebsiteSignals | null };
 
 function cleanWhitespace(value: string): string {
   return value.replace(/\s+/g, " ").trim();
@@ -37,12 +41,36 @@ function extractBodyText(html: string): string {
   return cleanWhitespace(plain).slice(0, 900);
 }
 
+function resolveWebsiteFetchUrl(inputUrl: string, normalizedHost: string): string {
+  try {
+    const u = new URL(inputUrl.includes("://") ? inputUrl : `https://${inputUrl}`);
+    const proto = u.protocol === "http:" ? "http:" : "https:";
+    if (u.port) return `${proto}//${normalizedHost}:${u.port}`;
+    return `${proto}//${normalizedHost}`;
+  } catch {
+    return `https://${normalizedHost}`;
+  }
+}
+
 export async function fetchWebsiteSignals(url: string): Promise<WebsiteSignals | null> {
+  const normalizedHost = normalizeDomain(url);
+  const cacheKey = `website:${normalizedHost}`;
+  const boxed = getCached<WebsiteCacheBox>(cacheKey);
+  if (boxed) {
+    console.log("[Cache] website hit:", normalizedHost);
+    return boxed.v;
+  }
+  console.log("[Cache] website miss:", normalizedHost);
+
+  const fetchUrl = resolveWebsiteFetchUrl(url, normalizedHost);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), WEBSITE_FETCH_MS);
 
+  let cacheable = true;
+  let payload: WebsiteSignals | null = null;
+
   try {
-    const response = await fetch(url, {
+    const response = await fetch(fetchUrl, {
       method: "GET",
       redirect: "follow",
       signal: controller.signal,
@@ -52,26 +80,40 @@ export async function fetchWebsiteSignals(url: string): Promise<WebsiteSignals |
       }
     });
 
-    if (!response.ok) return null;
-    const contentType = response.headers.get("content-type") ?? "";
-    if (!contentType.includes("text/html")) return null;
+    if (!response.ok) {
+      payload = null;
+    } else {
+      const contentType = response.headers.get("content-type") ?? "";
+      if (!contentType.includes("text/html")) {
+        payload = null;
+      } else {
+        const html = await response.text();
+        const title = extractTag(html, /<title[^>]*>([\s\S]*?)<\/title>/i);
+        const metaDescription = extractTag(
+          html,
+          /<meta[^>]*name=["']description["'][^>]*content=["']([\s\S]*?)["'][^>]*>/i
+        );
+        const bodySnippet = extractBodyText(html);
 
-    const html = await response.text();
-    const title = extractTag(html, /<title[^>]*>([\s\S]*?)<\/title>/i);
-    const metaDescription = extractTag(
-      html,
-      /<meta[^>]*name=["']description["'][^>]*content=["']([\s\S]*?)["'][^>]*>/i
-    );
-    const bodySnippet = extractBodyText(html);
-
-    if (!title && !metaDescription && !bodySnippet) return null;
-    const text = [title, metaDescription, bodySnippet].filter(Boolean).join("\n\n");
-    return { title, metaDescription, bodySnippet, text };
+        if (!title && !metaDescription && !bodySnippet) {
+          payload = null;
+        } else {
+          const text = [title, metaDescription, bodySnippet].filter(Boolean).join("\n\n");
+          payload = { title, metaDescription, bodySnippet, text };
+        }
+      }
+    }
   } catch {
-    return null;
+    cacheable = false;
+    payload = null;
   } finally {
     clearTimeout(timeout);
   }
+
+  if (cacheable) {
+    setCached(cacheKey, { v: payload }, WEBSITE_CACHE_TTL_MS);
+  }
+  return payload;
 }
 
 function buildUserPrompt(url: string, signals: WebsiteSignals | null): string {

@@ -5,6 +5,7 @@ import {
   mergeReasonsWithHeuristics,
   type AiScamReasonsResult
 } from "@/lib/aiScamReasons";
+import { normalizeDomain } from "@/lib/cache";
 import { getReviewSignals } from "@/lib/reviewSignals";
 import { checkDailyLimiter, getClientIp } from "@/lib/rateLimiter";
 import {
@@ -56,15 +57,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const domain = parsedUrl.hostname.toLowerCase();
-    const heuristicReasons = buildDomainHeuristicReasons(domain);
-    const reviewSignals = await getReviewSignals(domain);
-    const websiteSignals = await fetchWebsiteSignals(parsedUrl.origin);
+    const normalizedDomain = normalizeDomain(parsedUrl.href);
+    const heuristicReasons = buildDomainHeuristicReasons(normalizedDomain);
+    const reviewSignals = await getReviewSignals(normalizedDomain);
+    const websiteSignals = await fetchWebsiteSignals(parsedUrl.href);
     const websiteText = websiteSignals?.text ?? "";
-    const supplyChainSignals = await getSupplyChainSignals(domain, websiteText);
+    const supplyChainSignals = await getSupplyChainSignals(normalizedDomain, websiteText);
 
     const scoreInputBase = {
-      domain,
+      domain: normalizedDomain,
       heuristicReasons,
       reviewSignals,
       supplyChainSignals,
@@ -134,7 +135,7 @@ export async function POST(request: Request) {
     const result: ScamCheckResult = {
       score: scoreResult.finalScore,
       verdict: scoreResult.verdict,
-      domain,
+      domain: normalizedDomain,
       reasons: mergedReasons,
       reviewSignals,
       reviewSummary,

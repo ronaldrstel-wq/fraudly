@@ -1,5 +1,13 @@
+import { getCached, normalizeDomain, setCached } from "@/lib/cache";
+
 const PLACES_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText";
-const PLACES_TIMEOUT_MS = 6000;
+const PLACES_TIMEOUT_MS = 4000;
+const REVIEWS_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const rawMaxReviews = process.env.MAX_GOOGLE_REVIEW_CALLS_PER_DAY?.trim();
+const MAX_GOOGLE_REVIEW_CALLS_PER_DAY =
+  rawMaxReviews && Number.isFinite(Number(rawMaxReviews)) && Number(rawMaxReviews) > 0
+    ? Number(rawMaxReviews)
+    : 500;
 
 export type ReviewSignals = {
   googleFound: boolean;
@@ -18,6 +26,27 @@ export type ReviewSignals = {
   /** Non-fatal issues (missing key, HTTP errors, no hostname match, etc.) */
   warnings: string[];
 };
+
+let reviewsBudgetDate = "";
+let reviewsApiCallsToday = 0;
+
+function resetDailyBudgetIfNeeded(): void {
+  const today = new Date().toISOString().slice(0, 10);
+  if (reviewsBudgetDate !== today) {
+    reviewsBudgetDate = today;
+    reviewsApiCallsToday = 0;
+  }
+}
+
+function canConsumeGoogleReviewCall(): boolean {
+  resetDailyBudgetIfNeeded();
+  return reviewsApiCallsToday < MAX_GOOGLE_REVIEW_CALLS_PER_DAY;
+}
+
+function recordGoogleReviewCall(): void {
+  resetDailyBudgetIfNeeded();
+  reviewsApiCallsToday += 1;
+}
 
 function stripWww(host: string): string {
   const h = host.toLowerCase().trim();
@@ -80,29 +109,20 @@ export function adjustScoreWithReviewSignals(baseScore: number, reviewSignals: R
   return Math.max(0, Math.min(100, score));
 }
 
+const emptyTrustpilot = {
+  trustpilotFound: false as const,
+  trustpilotRating: undefined,
+  trustpilotReviewCount: undefined
+};
+
 /**
- * Fetches public Google Places signals for a hostname (server-side only).
- *
- * TODO: Replace Trustpilot mock path with official Trustpilot API integration.
+ * Calls Google Places (New) searchText. Returns `{ result, cacheable }` where `cacheable` is false
+ * on thrown network/abort errors (do not persist those to cache).
  */
-export async function getReviewSignals(domain: string): Promise<ReviewSignals> {
-  const emptyTrustpilot = {
-    trustpilotFound: false as const,
-    trustpilotRating: undefined,
-    trustpilotReviewCount: undefined
-  };
-
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY?.trim();
-  if (!apiKey) {
-    return {
-      googleFound: false,
-      ...emptyTrustpilot,
-      suspiciousReviewSignals: ["No public review signals found"],
-      sources: [],
-      warnings: ["GOOGLE_MAPS_API_KEY is not configured."]
-    };
-  }
-
+async function fetchGooglePlacesReviewSignals(
+  normalizedDomain: string,
+  apiKey: string
+): Promise<{ result: ReviewSignals; cacheable: boolean }> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), PLACES_TIMEOUT_MS);
 
@@ -115,17 +135,20 @@ export async function getReviewSignals(domain: string): Promise<ReviewSignals> {
         "X-Goog-Api-Key": apiKey,
         "X-Goog-FieldMask": "places.websiteUri,places.rating,places.userRatingCount"
       },
-      body: JSON.stringify({ textQuery: domain })
+      body: JSON.stringify({ textQuery: normalizedDomain })
     });
 
     const rawBody = await response.text();
     if (!response.ok) {
       return {
-        googleFound: false,
-        ...emptyTrustpilot,
-        suspiciousReviewSignals: ["No public review signals found"],
-        sources: ["Google Places API (searchText)"],
-        warnings: [`Google Places request failed (${response.status}). ${rawBody.slice(0, 200)}`]
+        result: {
+          googleFound: false,
+          ...emptyTrustpilot,
+          suspiciousReviewSignals: ["No public review signals found"],
+          sources: ["Google Places API (searchText)"],
+          warnings: [`Google Places request failed (${response.status}). ${rawBody.slice(0, 200)}`]
+        },
+        cacheable: true
       };
     }
 
@@ -134,51 +157,109 @@ export async function getReviewSignals(domain: string): Promise<ReviewSignals> {
       data = JSON.parse(rawBody) as PlacesSearchResponse;
     } catch {
       return {
-        googleFound: false,
-        ...emptyTrustpilot,
-        suspiciousReviewSignals: ["No public review signals found"],
-        sources: ["Google Places API (searchText)"],
-        warnings: ["Google Places response was not valid JSON."]
+        result: {
+          googleFound: false,
+          ...emptyTrustpilot,
+          suspiciousReviewSignals: ["No public review signals found"],
+          sources: ["Google Places API (searchText)"],
+          warnings: ["Google Places response was not valid JSON."]
+        },
+        cacheable: true
       };
     }
 
     const places = data.places ?? [];
     for (const place of places) {
       const websiteUri = place.websiteUri;
-      if (!websiteUri || !websiteHostMatchesCheckedDomain(websiteUri, domain)) continue;
+      if (!websiteUri || !websiteHostMatchesCheckedDomain(websiteUri, normalizedDomain)) continue;
 
       const rating = typeof place.rating === "number" ? place.rating : undefined;
       const count = typeof place.userRatingCount === "number" ? place.userRatingCount : undefined;
       if (rating == null || count == null) continue;
 
       return {
-        googleFound: true,
-        googleRating: rating,
-        googleReviewCount: count,
-        ...emptyTrustpilot,
-        suspiciousReviewSignals: [],
-        sources: ["Google Places API (searchText)"],
-        warnings: []
+        result: {
+          googleFound: true,
+          googleRating: rating,
+          googleReviewCount: count,
+          ...emptyTrustpilot,
+          suspiciousReviewSignals: [],
+          sources: ["Google Places API (searchText)"],
+          warnings: []
+        },
+        cacheable: true
       };
     }
 
     return {
-      googleFound: false,
-      ...emptyTrustpilot,
-      suspiciousReviewSignals: ["No public review signals found"],
-      sources: ["Google Places API (searchText)"],
-      warnings: ["No Google Places result matched this domain's website."]
+      result: {
+        googleFound: false,
+        ...emptyTrustpilot,
+        suspiciousReviewSignals: ["No public review signals found"],
+        sources: ["Google Places API (searchText)"],
+        warnings: ["No Google Places result matched this domain's website."]
+      },
+      cacheable: true
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return {
-      googleFound: false,
-      ...emptyTrustpilot,
-      suspiciousReviewSignals: ["No public review signals found"],
-      sources: ["Google Places API (searchText)"],
-      warnings: [`Google Places lookup failed: ${message}`]
+      result: {
+        googleFound: false,
+        ...emptyTrustpilot,
+        suspiciousReviewSignals: ["No public review signals found"],
+        sources: ["Google Places API (searchText)"],
+        warnings: [`Google Places lookup failed: ${message}`]
+      },
+      cacheable: false
     };
   } finally {
     clearTimeout(timeout);
   }
+}
+
+/**
+ * Fetches public Google Places signals for a hostname (server-side only).
+ * Results are cached 24h per normalized domain. Daily outbound call cap via env.
+ *
+ * TODO: Replace Trustpilot mock path with official Trustpilot API integration.
+ */
+export async function getReviewSignals(domain: string): Promise<ReviewSignals> {
+  const normalizedDomain = normalizeDomain(domain);
+  const cacheKey = `reviews:${normalizedDomain}`;
+
+  const cached = getCached<ReviewSignals>(cacheKey);
+  if (cached) {
+    console.log("[Cache] reviews hit:", normalizedDomain);
+    return cached;
+  }
+  console.log("[Cache] reviews miss:", normalizedDomain);
+
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY?.trim();
+  if (!apiKey) {
+    return {
+      googleFound: false,
+      ...emptyTrustpilot,
+      suspiciousReviewSignals: ["No public review signals found"],
+      sources: [],
+      warnings: ["GOOGLE_MAPS_API_KEY is not configured."]
+    };
+  }
+
+  if (!canConsumeGoogleReviewCall()) {
+    return {
+      googleFound: false,
+      ...emptyTrustpilot,
+      suspiciousReviewSignals: ["No public review signals found"],
+      sources: [],
+      warnings: ["Google review lookup skipped due to daily API limit."]
+    };
+  }
+
+  recordGoogleReviewCall();
+  const { result, cacheable } = await fetchGooglePlacesReviewSignals(normalizedDomain, apiKey);
+  if (cacheable) {
+    setCached(cacheKey, result, REVIEWS_CACHE_TTL_MS);
+  }
+  return result;
 }
