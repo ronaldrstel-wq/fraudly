@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { CookieConsentProvider } from "@/components/CookieConsentProvider";
 import { JsonLd } from "@/components/JsonLd";
 import { OG_IMAGE } from "@/lib/seo-metadata";
@@ -78,6 +79,7 @@ export default function RootLayout({
       <body className={`${inter.className} min-h-screen antialiased`}>
         <JsonLd />
         <CookieConsentProvider>{children}</CookieConsentProvider>
+        <Analytics />
       </body>
     </html>
   );
