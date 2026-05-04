@@ -62,6 +62,9 @@ export const metadata: Metadata = {
       follow: true
     }
   },
+  verification: {
+    google: "yvX4fwn6V2j7VJX3YXVjh6qnuCuXndcSN2UXBhhve64"
+  },
   formatDetection: {
     email: false,
     address: false,
