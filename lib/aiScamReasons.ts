@@ -11,6 +11,8 @@ export type WebsiteSignals = {
   title: string;
   metaDescription: string;
   bodySnippet: string;
+  /** Combined visible text for downstream heuristics (not sent to client as env). */
+  text: string;
 };
 
 function cleanWhitespace(value: string): string {
@@ -63,7 +65,8 @@ export async function fetchWebsiteSignals(url: string): Promise<WebsiteSignals |
     const bodySnippet = extractBodyText(html);
 
     if (!title && !metaDescription && !bodySnippet) return null;
-    return { title, metaDescription, bodySnippet };
+    const text = [title, metaDescription, bodySnippet].filter(Boolean).join("\n\n");
+    return { title, metaDescription, bodySnippet, text };
   } catch {
     return null;
   } finally {
@@ -134,7 +137,8 @@ export async function fetchAiScamReasons(
   url: string,
   signals: WebsiteSignals | null,
   reviewSignals: ReviewSignals,
-  heuristicReasons: string[]
+  heuristicReasons: string[],
+  scoringSignalsJson: string
 ): Promise<AiScamReasonsResult | null> {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) return null;
@@ -158,13 +162,19 @@ export async function fetchAiScamReasons(
 Review signals:
 ${reviewSignalsContext}
 
-Domain heuristics:
+Domain / supply heuristics:
 ${heuristicContext}
 
+Server-side scoring signals (weighted; final numeric score is computed only on the server — do not invent a different score):
+${scoringSignalsJson}
+
 Analyze the URL using:
-- domain heuristics
+- domain and supply-chain heuristics
 - review signals
 - website text if available
+- the scoring signals above (explain and align with them; do not contradict the weighted risk picture)
+
+Consider supply-chain risk (dropshipping / long international fulfillment vs local stock) when relevant.
 
 Return JSON:
 {
@@ -184,8 +194,8 @@ Return JSON:
 
 /** Prefer 2–3 AI bullets; pad with heuristics if AI returned too little. */
 export function mergeReasonsWithHeuristics(ai: AiScamReasonsResult | null, heuristicReasons: string[]): string[] {
-  const h = heuristicReasons.slice(0, 3);
-  if (!ai?.reasons.length) return h;
+  const h = heuristicReasons.slice(0, 6);
+  if (!ai?.reasons.length) return h.slice(0, 3);
 
   const cleaned = ai.reasons.map((r) => r.trim()).filter(Boolean).slice(0, 2);
   const riskReason = `AI risk signal: ${ai.risk}`;

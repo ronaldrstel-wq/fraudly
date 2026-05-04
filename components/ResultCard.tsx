@@ -28,7 +28,7 @@ const verdictStyle = {
 export function ResultCard({ result }: ResultCardProps) {
   const style = verdictStyle[result.verdict];
   const { reviewSignals } = result;
-  const hasPublicReviewData = reviewSignals.trustpilotFound;
+  const hasPublicReviewData = reviewSignals.trustpilotFound || reviewSignals.googleFound;
 
   return (
     <div className="w-full rounded-xl bg-white p-6 shadow-lg shadow-slate-200/60 transition-all duration-300">
@@ -60,14 +60,31 @@ export function ResultCard({ result }: ResultCardProps) {
       <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
         <p className="text-sm font-semibold text-slate-900">Review signals</p>
         {hasPublicReviewData ? (
-          <div className="mt-2 space-y-1 text-sm text-slate-700">
-            <p>
-              Trustpilot score:{" "}
-              <span className="font-medium">{reviewSignals.trustpilotScore?.toFixed(1) ?? "n/a"}</span>
-            </p>
-            <p>
-              Review count: <span className="font-medium">{reviewSignals.reviewCount ?? "n/a"}</span>
-            </p>
+          <div className="mt-2 space-y-2 text-sm text-slate-700">
+            {reviewSignals.googleFound && (
+              <div>
+                <p className="font-medium text-slate-900">Google</p>
+                <p>
+                  Rating:{" "}
+                  <span className="font-medium">{reviewSignals.googleRating?.toFixed(1) ?? "n/a"}</span>
+                </p>
+                <p>
+                  Review count: <span className="font-medium">{reviewSignals.googleReviewCount ?? "n/a"}</span>
+                </p>
+              </div>
+            )}
+            {reviewSignals.trustpilotFound && (
+              <div>
+                <p className="font-medium text-slate-900">Trustpilot</p>
+                <p>
+                  Rating:{" "}
+                  <span className="font-medium">{reviewSignals.trustpilotRating?.toFixed(1) ?? "n/a"}</span>
+                </p>
+                <p>
+                  Review count: <span className="font-medium">{reviewSignals.trustpilotReviewCount ?? "n/a"}</span>
+                </p>
+              </div>
+            )}
           </div>
         ) : (
           <p className="mt-2 text-sm text-slate-600">No public review data found yet.</p>
@@ -79,6 +96,32 @@ export function ResultCard({ result }: ResultCardProps) {
           ))}
         </ul>
         <p className="mt-2 text-xs text-slate-500">{result.reviewSummary}</p>
+        {reviewSignals.sources.length > 0 && (
+          <p className="mt-2 text-xs text-slate-500">Sources: {reviewSignals.sources.join(", ")}</p>
+        )}
+        {reviewSignals.warnings.length > 0 && (
+          <ul className="mt-1 list-disc space-y-1 pl-5 text-xs text-amber-800">
+            {reviewSignals.warnings.map((w, i) => (
+              <li key={`${i}-${w.slice(0, 40)}`}>{w}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">Supply chain</p>
+        <p className="mt-2 text-xs text-slate-600">
+          Dropshipping: {result.supplyChainSignals.likelyDropshipping ? "likely" : "unlikely"} · China-linked
+          fulfillment: {result.supplyChainSignals.likelyChinaShipping ? "likely" : "unlikely"} · Local
+          stock/production: {result.supplyChainSignals.likelyLocalProduction ? "likely" : "unlikely"} · Confidence:{" "}
+          {result.supplyChainSignals.confidence} · Score nudge: {result.supplyChainSignals.scoreAdjustment > 0 ? "+" : ""}
+          {result.supplyChainSignals.scoreAdjustment}
+        </p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-700">
+          {result.supplyChainSignals.reasons.map((r, i) => (
+            <li key={`${i}-${r.slice(0, 48)}`}>{r}</li>
+          ))}
+        </ul>
       </div>
 
       <p className="mt-3 text-xs text-slate-500">AI used: {result.aiUsed ? "yes" : "no"}</p>

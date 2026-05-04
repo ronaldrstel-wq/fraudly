@@ -1,4 +1,8 @@
 import type { ReviewSignals } from "@/lib/reviewSignals";
+import type { ScoreResult, ScoreSignal } from "@/lib/scoringEngine";
+import type { SupplyChainSignals } from "@/lib/supplyChainSignals";
+
+export type { ScoreResult, ScoreSignal };
 
 export type ScamVerdict = "safe" | "suspicious" | "scam";
 
@@ -10,9 +14,44 @@ export interface ScamCheckResult {
   reviewSignals: ReviewSignals;
   reviewSummary: string;
   aiUsed: boolean;
+  supplyChainSignals: SupplyChainSignals;
+  scoreResult: ScoreResult;
 }
 
 const VERDICTS: ScamVerdict[] = ["safe", "suspicious", "scam"];
+
+const SCORE_CATEGORIES: ScoreSignal["category"][] = [
+  "domain",
+  "reviews",
+  "supply_chain",
+  "business_identity",
+  "website_quality",
+  "ai"
+];
+
+function isScoreSignal(value: unknown): value is ScoreSignal {
+  if (!value || typeof value !== "object") return false;
+  const s = value as Record<string, unknown>;
+  if (typeof s.id !== "string") return false;
+  if (typeof s.label !== "string") return false;
+  if (typeof s.category !== "string" || !SCORE_CATEGORIES.includes(s.category as ScoreSignal["category"])) return false;
+  if (typeof s.impact !== "number" || Number.isNaN(s.impact)) return false;
+  if (s.confidence !== "low" && s.confidence !== "medium" && s.confidence !== "high") return false;
+  if (typeof s.reason !== "string") return false;
+  return true;
+}
+
+function isScoreResult(value: unknown): value is ScoreResult {
+  if (!value || typeof value !== "object") return false;
+  const r = value as Record<string, unknown>;
+  if (typeof r.baseScore !== "number" || Number.isNaN(r.baseScore)) return false;
+  if (typeof r.finalScore !== "number" || Number.isNaN(r.finalScore)) return false;
+  if (typeof r.verdict !== "string" || !VERDICTS.includes(r.verdict as ScamVerdict)) return false;
+  if (!Array.isArray(r.signals) || !r.signals.every(isScoreSignal)) return false;
+  if (!Array.isArray(r.topPositiveSignals) || !r.topPositiveSignals.every(isScoreSignal)) return false;
+  if (!Array.isArray(r.topNegativeSignals) || !r.topNegativeSignals.every(isScoreSignal)) return false;
+  return true;
+}
 
 export function isScamCheckResult(value: unknown): value is ScamCheckResult {
   if (!value || typeof value !== "object") return false;
@@ -27,15 +66,43 @@ export function isScamCheckResult(value: unknown): value is ScamCheckResult {
   if (!o.reviewSignals || typeof o.reviewSignals !== "object") return false;
 
   const review = o.reviewSignals as Record<string, unknown>;
+  if (typeof review.googleFound !== "boolean") return false;
   if (typeof review.trustpilotFound !== "boolean") return false;
   if (!Array.isArray(review.suspiciousReviewSignals)) return false;
   if (!review.suspiciousReviewSignals.every((r) => typeof r === "string")) return false;
-  if (review.trustpilotScore !== undefined && typeof review.trustpilotScore !== "number") return false;
-  if (review.reviewCount !== undefined && typeof review.reviewCount !== "number") return false;
+  if (review.googleRating !== undefined && typeof review.googleRating !== "number") return false;
+  if (review.googleReviewCount !== undefined && typeof review.googleReviewCount !== "number") return false;
+  if (review.trustpilotRating !== undefined && typeof review.trustpilotRating !== "number") return false;
+  if (review.trustpilotReviewCount !== undefined && typeof review.trustpilotReviewCount !== "number") return false;
   if (review.recentReviewSummary !== undefined) {
     if (!Array.isArray(review.recentReviewSummary)) return false;
     if (!review.recentReviewSummary.every((r) => typeof r === "string")) return false;
   }
+  if (!Array.isArray(review.sources)) return false;
+  if (!review.sources.every((s) => typeof s === "string")) return false;
+  if (!Array.isArray(review.warnings)) return false;
+  if (!review.warnings.every((w) => typeof w === "string")) return false;
+
+  if (!o.supplyChainSignals || typeof o.supplyChainSignals !== "object") return false;
+  const sc = o.supplyChainSignals as Record<string, unknown>;
+  if (typeof sc.likelyDropshipping !== "boolean") return false;
+  if (typeof sc.likelyChinaShipping !== "boolean") return false;
+  if (typeof sc.likelyLocalProduction !== "boolean") return false;
+  if (sc.confidence !== "low" && sc.confidence !== "medium" && sc.confidence !== "high") return false;
+  if (typeof sc.scoreAdjustment !== "number" || Number.isNaN(sc.scoreAdjustment)) return false;
+  if (!Array.isArray(sc.reasons)) return false;
+  if (!sc.reasons.every((r) => typeof r === "string")) return false;
+  if (sc.dropshipConfidence !== "low" && sc.dropshipConfidence !== "medium" && sc.dropshipConfidence !== "high") {
+    return false;
+  }
+  if (sc.chinaConfidence !== "low" && sc.chinaConfidence !== "medium" && sc.chinaConfidence !== "high") {
+    return false;
+  }
+  if (sc.localConfidence !== "low" && sc.localConfidence !== "medium" && sc.localConfidence !== "high") {
+    return false;
+  }
+
+  if (!o.scoreResult || !isScoreResult(o.scoreResult)) return false;
 
   return true;
 }
