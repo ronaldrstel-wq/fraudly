@@ -1,10 +1,11 @@
+import type { User } from "@prisma/client";
 import { NextResponse } from "next/server";
 import {
   canRunBasicCheck,
   canViewFullAnalysis,
   consumeFullAnalysisAccess,
   shouldShowPremiumUpsell,
-  type BillingUser
+  toBillingSnapshot
 } from "@/lib/billing";
 import {
   fetchAiScamReasons,
@@ -21,7 +22,7 @@ import {
   formatScoreSignalsForPrompt
 } from "@/lib/scoringEngine";
 import { getSupplyChainSignals } from "@/lib/supplyChainSignals";
-import { getOrCreateUser, getUserIdFromRequest, saveUser } from "@/lib/user-store";
+import { AuthRequiredError, requireBillingUser, saveUser } from "@/lib/user-store";
 import type { BasicCheckResult, ScamCheckResult } from "@/types/scam";
 
 export const runtime = "nodejs";
@@ -31,19 +32,21 @@ interface CheckRequest {
   detailLevel?: "basic" | "full";
 }
 
-function toBillingSnapshot(user: BillingUser) {
-  return {
-    plan: user.plan,
-    freeChecksUsed: user.freeChecksUsed,
-    credits: user.credits,
-    monthlyChecksUsed: user.monthlyChecksUsed,
-    paidChecksCount: user.paidChecksCount,
-    subscriptionStatus: user.subscriptionStatus
-  } as const;
-}
-
 export async function POST(request: Request) {
   try {
+    let user: User;
+    try {
+      user = await requireBillingUser();
+    } catch (e) {
+      if (e instanceof AuthRequiredError) {
+        return NextResponse.json(
+          { error: "unauthorized", message: "Log in om deze actie uit te voeren." },
+          { status: 401 }
+        );
+      }
+      throw e;
+    }
+
     let body: CheckRequest;
     try {
       body = (await request.json()) as CheckRequest;
@@ -68,9 +71,6 @@ export async function POST(request: Request) {
     if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
       return NextResponse.json({ error: "invalid url" }, { status: 400 });
     }
-
-    const userId = getUserIdFromRequest(request);
-    let user = await getOrCreateUser(userId);
 
     if (!canRunBasicCheck(user)) {
       return NextResponse.json({ error: "free_limit_reached", billing: toBillingSnapshot(user) }, { status: 402 });

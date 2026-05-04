@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 export type PurchaseAction = "single_check" | "five_checks" | "twenty_checks" | "premium_monthly";
 
 interface AnalysisPaywallProps {
@@ -8,6 +10,8 @@ interface AnalysisPaywallProps {
   activePurchase: PurchaseAction | null;
   checkoutError: string | null;
   onPurchase: (action: PurchaseAction) => void;
+  /** e.g. Clerk SignInButton when checkout returns 401 */
+  checkoutLoginSlot?: ReactNode;
   useCreditRow?: {
     loading: boolean;
     canUse: boolean;
@@ -23,6 +27,7 @@ export function AnalysisPaywall({
   checkoutLoading,
   activePurchase,
   checkoutError,
+  checkoutLoginSlot,
   onPurchase,
   useCreditRow
 }: AnalysisPaywallProps) {
@@ -49,6 +54,8 @@ export function AnalysisPaywall({
           {checkoutError}
         </p>
       ) : null}
+
+      {checkoutLoginSlot ? <div className="mt-3">{checkoutLoginSlot}</div> : null}
 
       <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {rows.map(({ action, label, primary }) => {

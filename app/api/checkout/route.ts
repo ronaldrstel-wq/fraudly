@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createCheckoutSession } from "@/lib/checkout";
 import type { CheckoutSku } from "@/lib/billing";
-import { getOrCreateUser } from "@/lib/user-store";
+import { AuthRequiredError, requireBillingUser } from "@/lib/user-store";
 
 interface CheckoutBody {
   purchaseType?: CheckoutSku;
@@ -10,14 +10,18 @@ interface CheckoutBody {
 
 const VALID_SKUS: CheckoutSku[] = ["single_check", "five_checks", "twenty_checks", "premium_monthly"];
 
-function checkoutUserIdOrNull(request: Request): string | null {
-  const fromHeader = request.headers.get("x-fraudly-user-id")?.trim();
-  if (!fromHeader || fromHeader === "guest") return null;
-  return fromHeader;
-}
-
 export async function POST(request: Request) {
   try {
+    let user;
+    try {
+      user = await requireBillingUser();
+    } catch (e) {
+      if (e instanceof AuthRequiredError) {
+        return NextResponse.json({ error: "Je moet ingelogd zijn om af te rekenen." }, { status: 401 });
+      }
+      throw e;
+    }
+
     let body: CheckoutBody;
     try {
       body = (await request.json()) as CheckoutBody;
@@ -30,12 +34,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Ongeldig betaalproduct." }, { status: 400 });
     }
 
-    const userId = checkoutUserIdOrNull(request);
-    if (!userId) {
-      return NextResponse.json({ error: "Je moet ingelogd zijn om af te rekenen." }, { status: 401 });
-    }
-
-    const user = await getOrCreateUser(userId);
     const session = await createCheckoutSession(purchaseType, user.id, user.stripeCustomerId);
     return NextResponse.json({ url: session.url });
   } catch (error) {

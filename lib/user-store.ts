@@ -1,16 +1,71 @@
-import type { BillingUser } from "@/lib/billing";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { Prisma } from "@prisma/client";
+import type { User } from "@prisma/client";
 import { db } from "@/lib/db";
 
-export async function getOrCreateUser(userId: string): Promise<BillingUser> {
-  const user = await db.user.upsert({
-    where: { id: userId },
-    update: {},
-    create: { id: userId }
-  });
-  return user;
+export class AuthRequiredError extends Error {
+  override name = "AuthRequiredError";
 }
 
-export async function saveUser(user: BillingUser): Promise<BillingUser> {
+export async function requireBillingUser(): Promise<User> {
+  const { userId } = await auth();
+  if (!userId) {
+    throw new AuthRequiredError();
+  }
+  return getOrCreateUserForClerk(userId);
+}
+
+async function getOrCreateUserForClerk(clerkUserId: string): Promise<User> {
+  const existing = await db.user.findUnique({
+    where: { authProviderId: clerkUserId }
+  });
+  if (existing) {
+    return existing;
+  }
+
+  const clerk = await currentUser();
+  const email =
+    clerk?.primaryEmailAddress?.emailAddress ?? clerk?.emailAddresses?.[0]?.emailAddress ?? null;
+
+  try {
+    return await db.user.create({
+      data: {
+        authProvider: "clerk",
+        authProviderId: clerkUserId,
+        email,
+        plan: "free",
+        credits: 0,
+        freeChecksUsed: 0,
+        monthlyChecksUsed: 0,
+        paidChecksCount: 0,
+        subscriptionStatus: "inactive"
+      }
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const race = await db.user.findUnique({
+        where: { authProviderId: clerkUserId }
+      });
+      if (race) return race;
+      return db.user.create({
+        data: {
+          authProvider: "clerk",
+          authProviderId: clerkUserId,
+          email: null,
+          plan: "free",
+          credits: 0,
+          freeChecksUsed: 0,
+          monthlyChecksUsed: 0,
+          paidChecksCount: 0,
+          subscriptionStatus: "inactive"
+        }
+      });
+    }
+    throw error;
+  }
+}
+
+export async function saveUser(user: User): Promise<User> {
   const updated = await db.user.update({
     where: { id: user.id },
     data: {
@@ -21,18 +76,9 @@ export async function saveUser(user: BillingUser): Promise<BillingUser> {
       paidChecksCount: user.paidChecksCount,
       subscriptionStatus: user.subscriptionStatus,
       stripeCustomerId: user.stripeCustomerId ?? null,
-      stripeSubscriptionId: user.stripeSubscriptionId ?? null
+      stripeSubscriptionId: user.stripeSubscriptionId ?? null,
+      email: user.email ?? null
     }
   });
   return updated;
-}
-
-export function getUserIdFromRequest(request: Request): string {
-  // TODO: Replace this fallback with your project auth (e.g. Clerk/NextAuth) and return authenticated user id.
-  const fromHeader = request.headers.get("x-fraudly-user-id")?.trim();
-  if (fromHeader) return fromHeader;
-
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return `ip:${forwarded.split(",")[0]?.trim() ?? "unknown"}`;
-  return "guest";
 }

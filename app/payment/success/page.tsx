@@ -1,6 +1,13 @@
+import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
-export default function PaymentSuccessPage() {
+export default async function PaymentSuccessPage() {
+  const { userId } = await auth();
+  if (!userId) {
+    redirect("/sign-in?redirect_url=/payment/success");
+  }
+
   return (
     <main className="mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col items-center justify-center px-4 text-center">
       <h1 className="text-3xl font-bold text-slate-900">Betaling ontvangen</h1>

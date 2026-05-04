@@ -1,14 +1,15 @@
 "use client";
 
+import { SignInButton, useAuth } from "@clerk/nextjs";
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { AnalysisPaywall, type PurchaseAction } from "@/components/AnalysisPaywall";
 import { BasicResultCard } from "@/components/BasicResultCard";
 import { Hero } from "@/components/Hero";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { trackCheckCompleted, trackCheckFailed, trackCheckStarted } from "@/lib/analytics";
-import { billingSnapshotToUser, canViewFullAnalysis, parseBillingSnapshot } from "@/lib/billing";
+import { canViewFullFromBillingSnapshot, parseBillingSnapshot } from "@/lib/billing";
 import { GENERIC_CHECK_ERROR, INVALID_URL_MESSAGE } from "@/lib/messages";
 import { isCheckApiResponse, type BasicCheckResult, type BillingSnapshot, type CheckApiResponse, type ScamCheckResult } from "@/types/scam";
 
@@ -33,13 +34,8 @@ function isValidUrl(value: string) {
   }
 }
 
-function canUseFullFromBilling(b: BillingSnapshot | null): boolean {
-  if (!b) return false;
-  return canViewFullAnalysis(billingSnapshotToUser(b));
-}
-
 export function HomeClient() {
-  const [userId, setUserId] = useState("guest");
+  const { isSignedIn, isLoaded } = useAuth();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScamCheckResult | null>(null);
@@ -51,25 +47,17 @@ export function HomeClient() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutActive, setCheckoutActive] = useState<PurchaseAction | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [checkoutAuthRequired, setCheckoutAuthRequired] = useState(false);
   const [fullRunPending, setFullRunPending] = useState(false);
   const inFlight = useRef(false);
   const checkoutInFlight = useRef(false);
 
-  const disabled = useMemo(() => url.trim().length === 0 || loading, [url, loading]);
+  const disabled = useMemo(
+    () => url.trim().length === 0 || loading || (isLoaded && !isSignedIn),
+    [url, loading, isLoaded, isSignedIn]
+  );
 
-  const userReady = userId !== "guest";
-
-  useEffect(() => {
-    const key = "fraudly-user-id";
-    const existing = window.localStorage.getItem(key);
-    if (existing) {
-      setUserId(existing);
-      return;
-    }
-    const generated = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `anon-${Date.now()}`;
-    window.localStorage.setItem(key, generated);
-    setUserId(generated);
-  }, []);
+  const checkoutBlocked = checkoutLoading || fullRunPending || !isSignedIn || !isLoaded;
 
   async function runCheck(detailLevel: "basic" | "full") {
     if (inFlight.current) return;
@@ -79,6 +67,11 @@ export function HomeClient() {
     if (!trimmed) {
       setFullLocked(false);
       setError("Please enter a URL to check.");
+      return;
+    }
+
+    if (!isSignedIn) {
+      setError("Log in om een URL te controleren.");
       return;
     }
 
@@ -102,7 +95,7 @@ export function HomeClient() {
       trackCheckStarted();
       const response = await fetch("/api/check", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-fraudly-user-id": userId },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: trimmed, detailLevel })
       });
 
@@ -111,6 +104,20 @@ export function HomeClient() {
         payload = (await response.json()) as Record<string, unknown>;
       } catch {
         payload = null;
+      }
+
+      if (response.status === 401) {
+        setResult(null);
+        setBasicResult(null);
+        setApiState(null);
+        setFullLocked(false);
+        const msg =
+          typeof payload?.message === "string"
+            ? payload.message
+            : "Log in om een URL te controleren.";
+        setError(msg);
+        trackCheckFailed("unauthorized");
+        return;
       }
 
       if (response.status === 402) {
@@ -191,18 +198,22 @@ export function HomeClient() {
   }
 
   async function handleCheckout(action: PurchaseAction) {
-    if (checkoutInFlight.current || !userReady) {
-      if (!userReady) setCheckoutError("Een moment, je sessie wordt opgestart…");
+    if (checkoutInFlight.current || !isSignedIn) {
+      if (!isSignedIn) {
+        setCheckoutAuthRequired(true);
+        setCheckoutError("Log in om af te rekenen.");
+      }
       return;
     }
     checkoutInFlight.current = true;
     setCheckoutLoading(true);
     setCheckoutActive(action);
     setCheckoutError(null);
+    setCheckoutAuthRequired(false);
     try {
       const response = await fetch("/api/checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-fraudly-user-id": userId },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ purchaseType: action })
       });
 
@@ -212,6 +223,13 @@ export function HomeClient() {
       } catch {
         console.error("[checkout] invalid json response", response.status);
         setCheckoutError("Onverwacht antwoord van de server.");
+        return;
+      }
+
+      if (response.status === 401) {
+        console.error("[checkout] unauthorized", data.error);
+        setCheckoutAuthRequired(true);
+        setCheckoutError(data.error ?? "Log in om af te rekenen.");
         return;
       }
 
@@ -240,29 +258,69 @@ export function HomeClient() {
 
   function handleUseCredit() {
     setCheckoutError(null);
+    setCheckoutAuthRequired(false);
     runCheck("full");
   }
 
   const paywallVariant = fullLocked ? "no_free_checks" : "unlock";
   const checkoutBusy = checkoutLoading || fullRunPending;
-  const canUseFull = canUseFullFromBilling(billing);
+  const canUseFull = billing ? canViewFullFromBillingSnapshot(billing) : false;
 
-  const useCreditRow = {
-    loading: fullRunPending,
-    canUse: canUseFull,
-    onUseCredit: handleUseCredit
-  };
+  const useCreditRow =
+    isSignedIn && isLoaded
+      ? {
+          loading: fullRunPending,
+          canUse: canUseFull,
+          onUseCredit: handleUseCredit
+        }
+      : undefined;
+
+  const signInModalButton = (
+    <SignInButton mode="modal">
+      <button
+        type="button"
+        className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+      >
+        Inloggen
+      </button>
+    </SignInButton>
+  );
+
+  const checkoutLoginSlot = checkoutAuthRequired ? (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-center text-sm text-slate-800">
+      <p className="font-medium">Log in om af te rekenen.</p>
+      <div className="mt-2 flex justify-center">{signInModalButton}</div>
+    </div>
+  ) : undefined;
+
+  const heroAuthGate =
+    isLoaded && !isSignedIn ? (
+      <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center">
+        <p className="text-sm font-medium text-slate-800">Log in om een URL te controleren.</p>
+        <div className="mt-3 flex justify-center">{signInModalButton}</div>
+      </div>
+    ) : null;
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
       <Navbar />
 
       <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-12 sm:pt-14 md:pt-20">
-        <Hero url={url} onUrlChange={setUrl} onSubmit={handleCheck} loading={loading} disabled={disabled} />
+        <Hero
+          url={url}
+          onUrlChange={setUrl}
+          onSubmit={handleCheck}
+          loading={loading}
+          disabled={disabled}
+          authGate={heroAuthGate}
+        />
 
         {error && (
           <div className="mx-auto mt-6 max-w-3xl rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
             {error}
+            {error.includes("Log in") ? (
+              <div className="mt-3 flex justify-center">{signInModalButton}</div>
+            ) : null}
           </div>
         )}
 
@@ -270,9 +328,10 @@ export function HomeClient() {
           <div className="result-in mx-auto mt-8 max-w-[860px] sm:mt-10">
             <AnalysisPaywall
               variant={paywallVariant}
-              checkoutLoading={checkoutBusy || !userReady}
+              checkoutLoading={checkoutBusy || checkoutBlocked}
               activePurchase={checkoutActive}
               checkoutError={checkoutError}
+              checkoutLoginSlot={checkoutLoginSlot}
               onPurchase={handleCheckout}
               useCreditRow={useCreditRow}
             />
@@ -287,9 +346,10 @@ export function HomeClient() {
             <div className="min-w-0">
               <AnalysisPaywall
                 variant={paywallVariant}
-                checkoutLoading={checkoutBusy || !userReady}
+                checkoutLoading={checkoutBusy || checkoutBlocked}
                 activePurchase={checkoutActive}
                 checkoutError={checkoutError}
+                checkoutLoginSlot={checkoutLoginSlot}
                 onPurchase={handleCheckout}
                 useCreditRow={useCreditRow}
               />

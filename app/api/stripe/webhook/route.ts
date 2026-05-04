@@ -85,6 +85,8 @@ export async function POST(req: Request) {
               },
               create: {
                 id: userId,
+                authProvider: "legacy",
+                authProviderId: null,
                 plan: "premium",
                 subscriptionStatus: "active",
                 stripeCustomerId: session.customer ? String(session.customer) : undefined,
@@ -106,6 +108,8 @@ export async function POST(req: Request) {
             },
             create: {
               id: userId,
+              authProvider: "legacy",
+              authProviderId: null,
               credits: creditsToAdd,
               paidChecksCount: creditsToAdd,
               stripeCustomerId: session.customer ? String(session.customer) : undefined
