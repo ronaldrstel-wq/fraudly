@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CookieSettingsLink } from "@/components/CookieSettingsLink";
 
 export function SiteFooter() {
   return (
@@ -12,6 +13,10 @@ export function SiteFooter() {
           <Link href="/terms" className="font-medium text-slate-700 transition hover:text-slate-900">
             Terms
           </Link>
+          <Link href="/disclaimer" className="font-medium text-slate-700 transition hover:text-slate-900">
+            Disclaimer
+          </Link>
+          <CookieSettingsLink />
           <a href="mailto:support@fraudly.app" className="font-medium text-slate-700 transition hover:text-slate-900">
             Contact
           </a>
