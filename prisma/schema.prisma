@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserPlan {
+  free
+  premium
+}
+
+enum SubscriptionStatus {
+  inactive
+  active
+  canceled
+  past_due
+}
+
+model User {
+  id                  String             @id @default(cuid())
+  email               String?            @unique
+  plan                UserPlan           @default(free)
+  credits             Int                @default(0)
+  freeChecksUsed      Int                @default(0)
+  monthlyChecksUsed   Int                @default(0)
+  paidChecksCount     Int                @default(0)
+  subscriptionStatus  SubscriptionStatus @default(inactive)
+  stripeCustomerId    String?            @unique
+  stripeSubscriptionId String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+}
+
+model StripeEvent {
+  id        String   @id
+  createdAt DateTime @default(now())
+}

@@ -18,6 +18,28 @@ export interface ScamCheckResult {
   scoreResult: ScoreResult;
 }
 
+export interface BasicCheckResult {
+  score: number;
+  verdict: ScamVerdict;
+  domain: string;
+}
+
+export interface BillingSnapshot {
+  plan: "free" | "premium";
+  freeChecksUsed: number;
+  credits: number;
+  monthlyChecksUsed: number;
+  paidChecksCount: number;
+  subscriptionStatus: "active" | "inactive" | "canceled" | "past_due";
+}
+
+export interface CheckApiResponse {
+  result: ScamCheckResult | BasicCheckResult;
+  detailLevel: "basic" | "full";
+  upsellPremium: boolean;
+  billing: BillingSnapshot;
+}
+
 const VERDICTS: ScamVerdict[] = ["safe", "suspicious", "scam"];
 
 const SCORE_CATEGORIES: ScoreSignal["category"][] = [
@@ -105,4 +127,37 @@ export function isScamCheckResult(value: unknown): value is ScamCheckResult {
   if (!o.scoreResult || !isScoreResult(o.scoreResult)) return false;
 
   return true;
+}
+
+export function isBasicCheckResult(value: unknown): value is BasicCheckResult {
+  if (!value || typeof value !== "object") return false;
+  const o = value as Record<string, unknown>;
+  if (typeof o.score !== "number" || Number.isNaN(o.score)) return false;
+  if (typeof o.verdict !== "string" || !VERDICTS.includes(o.verdict as ScamVerdict)) return false;
+  if (typeof o.domain !== "string") return false;
+  return true;
+}
+
+export function isCheckApiResponse(value: unknown): value is CheckApiResponse {
+  if (!value || typeof value !== "object") return false;
+  const o = value as Record<string, unknown>;
+  if (o.detailLevel !== "basic" && o.detailLevel !== "full") return false;
+  if (typeof o.upsellPremium !== "boolean") return false;
+  if (!o.billing || typeof o.billing !== "object") return false;
+  const billing = o.billing as Record<string, unknown>;
+  if (billing.plan !== "free" && billing.plan !== "premium") return false;
+  if (typeof billing.freeChecksUsed !== "number") return false;
+  if (typeof billing.credits !== "number") return false;
+  if (typeof billing.monthlyChecksUsed !== "number") return false;
+  if (typeof billing.paidChecksCount !== "number") return false;
+  if (
+    billing.subscriptionStatus !== "active" &&
+    billing.subscriptionStatus !== "inactive" &&
+    billing.subscriptionStatus !== "canceled" &&
+    billing.subscriptionStatus !== "past_due"
+  ) {
+    return false;
+  }
+  if (!o.result || typeof o.result !== "object") return false;
+  return o.detailLevel === "full" ? isScamCheckResult(o.result) : isBasicCheckResult(o.result);
 }

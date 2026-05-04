@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server";
 import {
+  canRunBasicCheck,
+  canViewFullAnalysis,
+  consumeFullAnalysisAccess,
+  shouldShowPremiumUpsell,
+  type BillingUser
+} from "@/lib/billing";
+import {
   fetchAiScamReasons,
   fetchWebsiteSignals,
   mergeReasonsWithHeuristics,
@@ -14,12 +21,25 @@ import {
   formatScoreSignalsForPrompt
 } from "@/lib/scoringEngine";
 import { getSupplyChainSignals } from "@/lib/supplyChainSignals";
-import type { ScamCheckResult } from "@/types/scam";
+import { getOrCreateUser, getUserIdFromRequest, saveUser } from "@/lib/user-store";
+import type { BasicCheckResult, ScamCheckResult } from "@/types/scam";
 
 export const runtime = "nodejs";
 
 interface CheckRequest {
   url?: string;
+  detailLevel?: "basic" | "full";
+}
+
+function toBillingSnapshot(user: BillingUser) {
+  return {
+    plan: user.plan,
+    freeChecksUsed: user.freeChecksUsed,
+    credits: user.credits,
+    monthlyChecksUsed: user.monthlyChecksUsed,
+    paidChecksCount: user.paidChecksCount,
+    subscriptionStatus: user.subscriptionStatus
+  } as const;
 }
 
 export async function POST(request: Request) {
@@ -32,6 +52,7 @@ export async function POST(request: Request) {
     }
 
     const input = typeof body?.url === "string" ? body.url.trim() : "";
+    const detailLevel = body?.detailLevel === "full" ? "full" : "basic";
 
     if (!input) {
       return NextResponse.json({ error: "url is required" }, { status: 400 });
@@ -48,13 +69,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "invalid url" }, { status: 400 });
     }
 
-    const ip = getClientIp(request);
-    const limitResult = checkDailyLimiter.consume(ip);
-    if (!limitResult.allowed) {
-      return NextResponse.json(
-        { error: "Daily free check limit reached", limit: limitResult.limit },
-        { status: 429 }
-      );
+    const userId = getUserIdFromRequest(request);
+    let user = await getOrCreateUser(userId);
+
+    if (!canRunBasicCheck(user)) {
+      return NextResponse.json({ error: "free_limit_reached", billing: toBillingSnapshot(user) }, { status: 402 });
+    }
+
+    if (detailLevel === "full" && !canViewFullAnalysis(user)) {
+      return NextResponse.json({ error: "full_analysis_locked", billing: toBillingSnapshot(user) }, { status: 402 });
+    }
+
+    if (detailLevel === "basic" && user.plan === "free" && user.credits <= 0) {
+      const ip = getClientIp(request);
+      const limitResult = checkDailyLimiter.consume(ip);
+      if (!limitResult.allowed) {
+        return NextResponse.json({ error: "free_limit_reached", billing: toBillingSnapshot(user) }, { status: 402 });
+      }
+      user = await saveUser({ ...user, freeChecksUsed: user.freeChecksUsed + 1 });
     }
 
     const normalizedDomain = normalizeDomain(parsedUrl.href);
@@ -84,9 +116,6 @@ export async function POST(request: Request) {
     ];
     const heuristicForOpenAi = [...heuristicBase, ...scoreLinesPre];
 
-    console.log("[Env keys]", Object.keys(process.env).filter((k) => k.includes("OPENAI")));
-    console.log("[OpenAI] key exists:", Boolean(process.env.OPENAI_API_KEY));
-
     let reviewSummary =
       reviewSignals.trustpilotFound || reviewSignals.googleFound
         ? "Public review data was included in this analysis."
@@ -99,7 +128,6 @@ export async function POST(request: Request) {
         throw new Error("Missing OPENAI_API_KEY in environment variables");
       }
 
-      console.log("[OpenAI] calling model...");
       aiPayload = await fetchAiScamReasons(
         input,
         websiteSignals,
@@ -108,7 +136,6 @@ export async function POST(request: Request) {
         scoringSignalsJson
       );
       if (aiPayload) {
-        console.log("[OpenAI] response received");
         aiUsed = true;
         if (aiPayload.reviewSummary) {
           reviewSummary = aiPayload.reviewSummary;
@@ -125,6 +152,16 @@ export async function POST(request: Request) {
       aiRiskSignals: aiPayload?.risk ? { level: aiPayload.risk } : undefined
     });
 
+    if (detailLevel === "full") {
+      user = await saveUser(consumeFullAnalysisAccess(user));
+    }
+
+    const basicResult: BasicCheckResult = {
+      score: scoreResult.finalScore,
+      verdict: scoreResult.verdict,
+      domain: normalizedDomain
+    };
+
     const scoreLinesFinal = [
       ...scoreResult.topPositiveSignals.map((s) => `Scoring (risk↑): ${s.reason}`),
       ...scoreResult.topNegativeSignals.map((s) => `Scoring (trust↑): ${s.reason}`)
@@ -132,7 +169,7 @@ export async function POST(request: Request) {
     const heuristicForMerge = [...heuristicBase, ...scoreLinesFinal];
     const mergedReasons = mergeReasonsWithHeuristics(aiPayload, heuristicForMerge);
 
-    const result: ScamCheckResult = {
+    const fullResult: ScamCheckResult = {
       score: scoreResult.finalScore,
       verdict: scoreResult.verdict,
       domain: normalizedDomain,
@@ -143,8 +180,12 @@ export async function POST(request: Request) {
       supplyChainSignals,
       scoreResult
     };
-
-    return NextResponse.json(result);
+    return NextResponse.json({
+      detailLevel,
+      result: detailLevel === "full" ? fullResult : basicResult,
+      upsellPremium: shouldShowPremiumUpsell(user),
+      billing: toBillingSnapshot(user)
+    });
   } catch (err) {
     console.error("[api/check]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
