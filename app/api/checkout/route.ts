@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createCheckoutSession } from "@/lib/checkout";
 import type { CheckoutSku } from "@/lib/billing";
+import { stripeKeyMode } from "@/lib/stripe";
 import { AuthRequiredError, requireBillingUser } from "@/lib/user-store";
 
 export const runtime = "nodejs";
@@ -37,7 +38,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Ongeldig betaalproduct." }, { status: 400 });
     }
 
+    console.info("[api/checkout] Request accepted", {
+      userId: user.id,
+      purchaseType,
+      hasStripeCustomerId: Boolean(user.stripeCustomerId),
+      stripeKeyMode
+    });
+
     const session = await createCheckoutSession(purchaseType, user.id, user.stripeCustomerId);
+    console.info("[api/checkout] Returning checkout URL", {
+      userId: user.id,
+      purchaseType,
+      sessionId: session.sessionId,
+      livemode: session.livemode
+    });
     return NextResponse.json({ url: session.url });
   } catch (error) {
     console.error("[api/checkout]", error);

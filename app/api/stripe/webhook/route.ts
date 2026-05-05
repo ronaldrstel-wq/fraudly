@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
-import { stripe } from "@/lib/stripe";
+import { stripe, stripeKeyMode } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 
@@ -113,7 +113,16 @@ async function fulfillCheckoutSession(session: Stripe.Checkout.Session): Promise
         }
       });
     });
-    console.info("[stripe/webhook] premium checkout", session.id, result);
+    const persisted = await db.user.findUnique({
+      where: { id: userId },
+      select: { id: true, plan: true, subscriptionStatus: true, stripeCustomerId: true, stripeSubscriptionId: true }
+    });
+    console.info("[stripe/webhook] premium checkout fulfilled", {
+      sessionId: session.id,
+      purchaseType: purchaseTypeRaw,
+      result,
+      persisted
+    });
     return;
   }
 
@@ -137,7 +146,17 @@ async function fulfillCheckoutSession(session: Stripe.Checkout.Session): Promise
       }
     });
   });
-  console.info("[stripe/webhook] credits checkout", session.id, creditsToAdd, result);
+  const persisted = await db.user.findUnique({
+    where: { id: userId },
+    select: { id: true, credits: true, paidChecksCount: true, stripeCustomerId: true }
+  });
+  console.info("[stripe/webhook] credits checkout fulfilled", {
+    sessionId: session.id,
+    purchaseType: purchaseTypeRaw,
+    creditsAdded: creditsToAdd,
+    result,
+    persisted
+  });
 }
 
 export async function POST(req: Request) {
@@ -162,6 +181,21 @@ export async function POST(req: Request) {
   }
 
   try {
+    console.info("[stripe/webhook] Event received", {
+      eventId: event.id,
+      type: event.type,
+      livemode: event.livemode,
+      stripeKeyMode
+    });
+    const eventMode = event.livemode ? "live" : "test";
+    if (stripeKeyMode !== "unknown" && eventMode !== stripeKeyMode) {
+      console.error("[stripe/webhook] Mode mismatch between key and event", {
+        eventId: event.id,
+        eventMode,
+        stripeKeyMode
+      });
+    }
+
     switch (event.type) {
       case "checkout.session.completed":
       case "checkout.session.async_payment_succeeded": {

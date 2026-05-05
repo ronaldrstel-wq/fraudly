@@ -1,6 +1,6 @@
 import type { CheckoutSku } from "@/lib/billing";
 import Stripe from "stripe";
-import { stripe } from "@/lib/stripe";
+import { stripe, stripeKeyMode } from "@/lib/stripe";
 
 const PRICE_IDS: Record<CheckoutSku, string | undefined> = {
   single_check: process.env.STRIPE_PRICE_SINGLE_CHECK,
@@ -73,7 +73,7 @@ export async function createCheckoutSession(
   sku: CheckoutSku,
   userId: string,
   customerId?: string | null
-): Promise<{ url: string }> {
+): Promise<{ url: string; sessionId: string; livemode: boolean }> {
   if (!stripe) {
     throw new Error("Stripe is not configured");
   }
@@ -85,13 +85,27 @@ export async function createCheckoutSession(
   const appUrl = normalizeAppUrl(rawAppUrl.trim());
 
   const payload = buildSessionPayload(sku, userId, customerId, appUrl);
+  console.info("[checkout] Creating Stripe session", {
+    sku,
+    userId,
+    appUrl,
+    hasCustomerId: Boolean(customerId),
+    mode: MODE_BY_SKU[sku],
+    stripeKeyMode
+  });
 
   try {
     const session = await stripe.checkout.sessions.create(payload);
     if (!session.url) {
       throw new Error(`Stripe checkout url missing for ${SKU_LABEL[sku]}`);
     }
-    return { url: session.url };
+    console.info("[checkout] Stripe session created", {
+      sessionId: session.id,
+      livemode: session.livemode,
+      mode: session.mode,
+      paymentStatus: session.payment_status
+    });
+    return { url: session.url, sessionId: session.id, livemode: session.livemode };
   } catch (first) {
     if (customerId && isMissingOrInvalidCustomerError(first)) {
       console.warn("[checkout] Retrying without Stripe customer id (invalid or wrong mode)", { userId });
@@ -100,7 +114,13 @@ export async function createCheckoutSession(
       if (!session.url) {
         throw new Error(`Stripe checkout url missing for ${SKU_LABEL[sku]}`);
       }
-      return { url: session.url };
+      console.info("[checkout] Stripe session created (retry without customer)", {
+        sessionId: session.id,
+        livemode: session.livemode,
+        mode: session.mode,
+        paymentStatus: session.payment_status
+      });
+      return { url: session.url, sessionId: session.id, livemode: session.livemode };
     }
     throw first;
   }
