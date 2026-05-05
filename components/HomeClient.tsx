@@ -17,6 +17,7 @@ import {
   trackRegisteredCheckCompleted,
   trackRegisteredCheckStarted
 } from "@/lib/analytics";
+import { getOrCreateAnonRecentSessionEcho } from "@/lib/recent-search/client-session";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { GENERIC_CHECK_ERROR, INVALID_URL_MESSAGE } from "@/lib/messages";
 import { isCheckApiResponse, type ScamCheckResult } from "@/types/scam";
@@ -93,10 +94,17 @@ export function HomeClient({ children }: { children?: ReactNode }) {
       } else {
         trackAnonymousCheckStarted();
       }
+      const anonEcho = typeof window !== "undefined" && !isSignedIn ? getOrCreateAnonRecentSessionEcho() : null;
       const response = await fetch("/api/check", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: trimmed, detailLevel: "full", language: "en" })
+        body: JSON.stringify({
+          url: trimmed,
+          detailLevel: "full",
+          language: "en",
+          ...(anonEcho ? { recentSessionEcho: anonEcho } : {})
+        })
       });
 
       let payload: Record<string, unknown> | null = null;

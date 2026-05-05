@@ -112,6 +112,77 @@ export const EN_MESSAGES = {
       added: "Added",
       actions: "Actions"
     }
+  },
+  recentSearches: {
+    navLabelShort: "Recent",
+    navLabel: "Recent searches",
+    pageTitle: "Recent searches",
+    pageIntroPrivatelyStored: "Shown only on your account.",
+    pageIntroAnonymous: "Stored privately for this browser. Sign in later to attach history to your account.",
+    loading: "Loading your recent searches…",
+    emptyState: "Your recent searches will appear here after you run a fraud check.",
+    loadError: "Could not load your history. Refresh the page or try again.",
+    reopenResult: "View result",
+    deleteOne: "Delete",
+    clearing: "Removing…",
+    clearAll: "Clear all history",
+    clearModalTitle: "Clear all search history?",
+    clearModalBody:
+      "This removes every recent fraud check snapshot from your private history here. Saved Watchlist entries are unchanged.",
+    clearModalConfirm: "Yes, clear history",
+    clearModalCancel: "Cancel",
+    needSession:
+      "We could not confirm this browser’s private session cookie. Refresh the page and try again, or log in.",
+    invalidClearConfirm: "Confirmation mismatch. Close the dialog and try again.",
+    entityLabels: {
+      domain: "Domain",
+      url: "URL",
+      email: "Email",
+      phone: "Phone"
+    },
+    columns: {
+      query: "Searched",
+      entity: "Entity type",
+      score: "Trust-style score",
+      status: "Status",
+      searchedAt: "Searched at",
+      action: "Open"
+    },
+    verdictLabels: {
+      safe: "lower risk snapshot",
+      suspicious: "mixed signals",
+      scam: "strong risk snapshot"
+    }
+  },
+  latestChecks: {
+    navLabel: "Latest checks",
+    navLabelShort: "Latest",
+    overline: "Public discovery · anonymized summaries",
+    pageTitle: "Latest Fraud Checks",
+    intro:
+      "Recently checked domains and URLs that cleared our privacy filter—no accounts, IPs, or private search history. Stronger scores mean more risk-style signals in that snapshot. When in doubt, we exclude items from this list.",
+    emptyState: "No public fraud checks yet. Recent public-safe checks will appear here.",
+    ctaPrimary: "Run a website check",
+    listAria: "Latest public fraud check summaries",
+    riskHint: "risk-style score",
+    viewSnapshot: "View public result",
+    labels: {
+      risk: "Risk score",
+      status: "Status label"
+    },
+    entityLabels: {
+      domain: "Domain / website",
+      url: "URL",
+      company: "Company / brand",
+      crypto_wallet: "Crypto wallet",
+      username: "Public username / handle"
+    },
+    entityFallback: "Checked item",
+    paginationPrev: "Previous page",
+    paginationPrevDisabled: "Previous",
+    paginationNext: "Next page",
+    paginationNextDisabled: "Next",
+    paginationPage: "Page"
   }
 } as const;
 

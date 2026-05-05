@@ -42,6 +42,26 @@ model User {
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
   watchlistItems       WatchlistItem[]
+  recentSearches       RecentSearch[]
+}
+
+/// Private per-user / per-session fraud check history (not publicly exposed).
+model RecentSearch {
+  id                  String   @id @default(cuid())
+  userId              String?
+  user                User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Opaque key for anonymous browsers (httpOnly cookie); never shown in analytics exports as PII tied to Clerk.
+  anonymousSessionKey String?  @db.VarChar(64)
+  originalQuery       String   @db.Text
+  normalizedQuery     String   @db.VarChar(2048)
+  entityType          String   @db.VarChar(32)
+  trustScoreSnap      Int?
+  verdictSnap         String?  @db.VarChar(32)
+  resultPath          String   @db.VarChar(2048)
+  createdAt           DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([anonymousSessionKey, createdAt(sort: Desc)])
 }
 
 model WatchlistItem {
@@ -63,4 +83,19 @@ model WatchlistItem {
 model StripeEvent {
   id        String   @id
   createdAt DateTime @default(now())
+}
+
+/// Anonymized, user-unlinked summaries for `/latest-checks` discovery only — never populated from `/recent-searches`.
+model LatestPublicCheck {
+  id                 String   @id @default(cuid())
+  normalizedValue    String   @unique @db.VarChar(2048)
+  checkedValue       String   @db.VarChar(4096)
+  entityType         String   @db.VarChar(64)
+  riskScoreSnapshot  Int
+  statusLabel        String   @db.VarChar(128)
+  publicResultPath   String   @db.VarChar(2048)
+  firstSeenAt        DateTime @default(now())
+  lastSeenAt         DateTime @default(now()) @updatedAt
+
+  @@index([lastSeenAt(sort: Desc)])
 }

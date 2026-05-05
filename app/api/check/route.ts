@@ -1,10 +1,15 @@
 import type { User } from "@prisma/client";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { runWebsiteAnalysis } from "@/lib/analysis/runWebsiteAnalysis";
 import { toBillingSnapshot } from "@/lib/billing";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { canRunCheck, getAnonymousFreeCheckCookieName, hasUsedAnonymousFreeCheckCookie } from "@/lib/accessControl";
 import { checkDailyLimiter, getClientIp } from "@/lib/rateLimiter";
+import { RECENT_SEARCH_SESSION_COOKIE } from "@/lib/recent-search/constants";
+import { sanitizeRecentSessionEcho } from "@/lib/recent-search/session-echo";
+import { upsertLatestPublicCheckFromCompletedScan } from "@/lib/latest-public-checks/persist";
+import { tryRecordRecentSearch } from "@/lib/recent-search/service";
 import { getBillingUserOrNull } from "@/lib/user-store";
 
 export const runtime = "nodejs";
@@ -13,7 +18,11 @@ interface CheckRequest {
   url?: string;
   detailLevel?: "basic" | "full";
   language?: "en" | "nl";
+  /** Optional UUID echo from anonymous browsers (paired with LocalStorage fallback). Never a user id. */
+  recentSessionEcho?: string;
 }
+
+const isProd = process.env.NODE_ENV === "production";
 
 const ANON_FREE_CHECK_COOKIE = getAnonymousFreeCheckCookieName();
 const ANON_BILLING_SNAPSHOT = {
@@ -77,6 +86,32 @@ export async function POST(request: Request) {
 
     const fullResult = await runWebsiteAnalysis(parsedUrl.href, language);
 
+    const jar = await cookies();
+    const echoSession = sanitizeRecentSessionEcho(body.recentSessionEcho);
+    let anonymousRecentKey: string | null = null;
+    if (!billingUser?.id) {
+      anonymousRecentKey =
+        jar.get(RECENT_SEARCH_SESSION_COOKIE)?.value?.trim() || echoSession || crypto.randomUUID();
+    }
+
+    await tryRecordRecentSearch({
+      userId: billingUser?.id ?? null,
+      anonymousSessionKey: billingUser?.id ? null : anonymousRecentKey,
+      originalUrlInput: input,
+      analyzedHref: parsedUrl.href,
+      result: fullResult
+    });
+
+    try {
+      await upsertLatestPublicCheckFromCompletedScan({
+        parsedUrl,
+        originalInput: input,
+        result: fullResult
+      });
+    } catch (e) {
+      console.warn("[api/check] latest public snapshot skipped:", e);
+    }
+
     const payload = {
       detailLevel: "full" as const,
       result: fullResult,
@@ -85,11 +120,20 @@ export async function POST(request: Request) {
     };
 
     const response = NextResponse.json(payload);
+    if (!billingUser?.id && anonymousRecentKey) {
+      response.cookies.set(RECENT_SEARCH_SESSION_COOKIE, anonymousRecentKey, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: isProd,
+        path: "/",
+        maxAge: 60 * 60 * 24 * 395
+      });
+    }
     if (!billingUser) {
       response.cookies.set(ANON_FREE_CHECK_COOKIE, "true", {
         httpOnly: true,
         sameSite: "lax",
-        secure: true,
+        secure: isProd,
         path: "/",
         maxAge: 60 * 60 * 24 * 30
       });

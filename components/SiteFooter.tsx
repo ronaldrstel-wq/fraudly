@@ -19,6 +19,9 @@ export function SiteFooter() {
           <Link href="/scam-checker" className="font-medium text-slate-700 transition hover:text-slate-900">
             Scam checker
           </Link>
+          <Link href="/latest-checks" className="font-medium text-slate-700 transition hover:text-slate-900">
+            Latest checks
+          </Link>
           <Link href="/privacy" className="font-medium text-slate-700 transition hover:text-slate-900">
             Privacy
           </Link>

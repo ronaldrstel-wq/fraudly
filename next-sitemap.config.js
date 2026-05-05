@@ -21,7 +21,8 @@ module.exports = {
     "/checkout/*",
     "/settings",
     "/settings/*",
-    "/watchlist"
+    "/watchlist",
+    "/recent-searches"
   ],
   robotsTxtOptions: {
     policies: [
@@ -29,19 +30,26 @@ module.exports = {
         userAgent: "*",
         allow: "/"
       }
-    ],
-    additionalSitemaps: ["https://fraudly.app/sitemap.xml"]
+    ]
+    // Do not set additionalSitemaps to the main sitemap URL: next-sitemap merges
+    // robotsTxtOptions.additionalSitemaps into sitemap.xml (index) as child sitemaps,
+    // which would create a self-referential index and Google Search Console errors.
+    // The index URL is added to robots.txt automatically via generateIndexSitemap.
   },
   transform: async (config, path) => {
     if (path.startsWith("/api/")) return null;
+    const isLatestChecks = path === "/latest-checks";
     return {
       loc: path,
-      changefreq: path === "/" ? "daily" : config.changefreq,
-      priority: path === "/" ? 1.0 : path.startsWith("/check/") ? 0.8 : 0.7,
+      changefreq: path === "/" || isLatestChecks ? "daily" : config.changefreq,
+      priority: path === "/" ? 1.0 : path.startsWith("/check/") || isLatestChecks ? 0.8 : 0.7,
       lastmod: new Date().toISOString()
     };
   },
   additionalPaths: async () => {
-    return [{ loc: "/check/example.com", changefreq: "daily", priority: 0.8 }];
+    return [
+      { loc: "/check/example.com", changefreq: "daily", priority: 0.8 },
+      { loc: "/latest-checks", changefreq: "daily", priority: 0.8 }
+    ];
   }
 };
