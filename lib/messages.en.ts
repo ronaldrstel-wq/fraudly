@@ -2,25 +2,24 @@ export const EN_MESSAGES = {
   auth: {
     loginCta: "Log in",
     signUpCta: "Sign up",
-    loginForFullAnalysis: "Log in to use the full analysis.",
-    loginForAnotherCheck: "Your free check has been used. Log in to run another check.",
+    loginForFullAnalysis: "Log in to continue checking websites.",
+    loginForAnotherCheck: "Your first free check is complete. Create a free account or log in to check another website.",
     loginForUrlCheck: "Log in to run a URL check.",
-    loginForCheckout: "Log in to continue to checkout.",
+    loginForCheckout: "Log in to continue.",
     loginForAccount: "Log in to view your account."
   },
   check: {
     missingUrl: "Please enter a URL to check.",
-    fullAnalysisLocked: "No credits available for full analysis. Buy checks or start Premium.",
-    upsellPremium:
-      "You have already run several checks. Premium gives you lower cost checks with less friction.",
-    viewPremium: "View Premium"
+    fullAnalysisLocked: "Log in to continue checking websites.",
+    upsellPremium: "Create a free account to continue checking websites.",
+    viewPremium: "Continue"
   },
   checkout: {
     invalidResponse: "Unexpected server response.",
     checkoutFailed: "Checkout failed.",
     noCheckoutUrl: "No checkout page returned.",
     networkError: "Network error. Please check your connection.",
-    unauthorized: "You must be logged in to continue to checkout.",
+    unauthorized: "You must be logged in to continue.",
     invalidRequest: "Invalid request.",
     invalidPurchaseType: "Invalid purchase type.",
     genericFailure: "Checkout failed. Please try again later.",
@@ -28,7 +27,8 @@ export const EN_MESSAGES = {
     missingAppUrl: "Server configuration is missing. Please contact support.",
     missingPriceId: "This product is temporarily unavailable.",
     invalidStripePriceId: "Stripe price ID is missing or invalid. Check your environment variables.",
-    invalidReturnUrl: "Invalid return URL. Check NEXT_PUBLIC_APP_URL in Vercel."
+    invalidReturnUrl: "Invalid return URL. Check NEXT_PUBLIC_APP_URL in Vercel.",
+    temporarilyDisabled: "Creating a free account is currently the way to continue checking websites."
   },
   paywall: {
     titleNoFree: "Your free checks are used up",
@@ -55,7 +55,7 @@ export const EN_MESSAGES = {
     suspiciousExplanation: "Signals were found that require extra caution.",
     highRiskLabel: "High risk",
     highRiskExplanation: "Multiple signals indicate an elevated fraud risk.",
-    unlockHint: "Unlock the full analysis for complete details, risk signals, and next-step advice."
+    unlockHint: "Create a free account to continue checking more websites."
   },
   payment: {
     successTitle: "Payment received",

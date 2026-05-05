@@ -1,12 +1,6 @@
 import type { User } from "@prisma/client";
 import { NextResponse } from "next/server";
-import {
-  canRunBasicCheck,
-  canViewFullAnalysis,
-  consumeFullAnalysisAccess,
-  shouldShowPremiumUpsell,
-  toBillingSnapshot
-} from "@/lib/billing";
+import { toBillingSnapshot } from "@/lib/billing";
 import {
   fetchAiScamReasons,
   fetchWebsiteSignals,
@@ -23,8 +17,9 @@ import {
 } from "@/lib/scoringEngine";
 import { getSupplyChainSignals } from "@/lib/supplyChainSignals";
 import { EN_MESSAGES } from "@/lib/messages.en";
-import { getBillingUserOrNull, saveUser } from "@/lib/user-store";
-import type { BasicCheckResult, ScamCheckResult } from "@/types/scam";
+import { canRunCheck, getAnonymousFreeCheckCookieName, hasUsedAnonymousFreeCheckCookie } from "@/lib/accessControl";
+import { getBillingUserOrNull } from "@/lib/user-store";
+import type { ScamCheckResult } from "@/types/scam";
 
 export const runtime = "nodejs";
 
@@ -34,7 +29,7 @@ interface CheckRequest {
   language?: "en" | "nl";
 }
 
-const ANON_FREE_CHECK_COOKIE = "fraudly_free_check_used";
+const ANON_FREE_CHECK_COOKIE = getAnonymousFreeCheckCookieName();
 const ANON_BILLING_SNAPSHOT = {
   plan: "free",
   freeChecksUsed: 1,
@@ -54,7 +49,7 @@ export async function POST(request: Request) {
     }
 
     const input = typeof body?.url === "string" ? body.url.trim() : "";
-    const detailLevel = body?.detailLevel === "full" ? "full" : "basic";
+    const detailLevel = "full";
     const language = body?.language === "nl" ? "nl" : "en";
 
     if (!input) {
@@ -73,43 +68,27 @@ export async function POST(request: Request) {
     }
 
     const user = await getBillingUserOrNull();
-    const hasUsedAnonFreeCheck = request.headers.get("cookie")?.includes(`${ANON_FREE_CHECK_COOKIE}=1`) ?? false;
+    const hasUsedAnonFreeCheck = hasUsedAnonymousFreeCheckCookie(request.headers.get("cookie"));
 
     if (!user) {
-      if (detailLevel !== "basic") {
+      if (!canRunCheck(user, { hasUsedAnonymousFreeCheck: hasUsedAnonFreeCheck })) {
         return NextResponse.json(
-          { error: "unauthorized", message: EN_MESSAGES.auth.loginForFullAnalysis },
+          { error: "second_check_requires_signup", message: EN_MESSAGES.auth.loginForAnotherCheck },
           { status: 401 }
         );
       }
-      if (hasUsedAnonFreeCheck) {
+
+      const ip = getClientIp(request);
+      const limitResult = checkDailyLimiter.consume(`anon-free:${ip}`);
+      if (!limitResult.allowed) {
         return NextResponse.json(
-          { error: "unauthorized", message: EN_MESSAGES.auth.loginForAnotherCheck },
+          { error: "second_check_requires_signup", message: EN_MESSAGES.auth.loginForAnotherCheck },
           { status: 401 }
         );
       }
     }
 
-    let billingUser: User | null = user;
-
-    if (billingUser) {
-      if (!canRunBasicCheck(billingUser)) {
-        return NextResponse.json({ error: "free_limit_reached", billing: toBillingSnapshot(billingUser) }, { status: 402 });
-      }
-
-      if (detailLevel === "full" && !canViewFullAnalysis(billingUser)) {
-        return NextResponse.json({ error: "full_analysis_locked", billing: toBillingSnapshot(billingUser) }, { status: 402 });
-      }
-
-      if (detailLevel === "basic" && billingUser.plan === "free" && billingUser.credits <= 0) {
-        const ip = getClientIp(request);
-        const limitResult = checkDailyLimiter.consume(ip);
-        if (!limitResult.allowed) {
-          return NextResponse.json({ error: "free_limit_reached", billing: toBillingSnapshot(billingUser) }, { status: 402 });
-        }
-        billingUser = await saveUser({ ...billingUser, freeChecksUsed: billingUser.freeChecksUsed + 1 });
-      }
-    }
+    const billingUser: User | null = user;
 
     const normalizedDomain = normalizeDomain(parsedUrl.href);
     const heuristicReasons = buildDomainHeuristicReasons(normalizedDomain);
@@ -175,16 +154,6 @@ export async function POST(request: Request) {
       aiRiskSignals: aiPayload?.risk ? { level: aiPayload.risk } : undefined
     });
 
-    if (detailLevel === "full" && billingUser) {
-      billingUser = await saveUser(consumeFullAnalysisAccess(billingUser));
-    }
-
-    const basicResult: BasicCheckResult = {
-      score: scoreResult.finalScore,
-      verdict: scoreResult.verdict,
-      domain: normalizedDomain
-    };
-
     const scoreLinesFinal = [
       ...scoreResult.topPositiveSignals.map((s) => `Scoring (risk↑): ${s.reason}`),
       ...scoreResult.topNegativeSignals.map((s) => `Scoring (trust↑): ${s.reason}`)
@@ -204,15 +173,15 @@ export async function POST(request: Request) {
       scoreResult
     };
     const payload = {
-      detailLevel,
-      result: detailLevel === "full" ? fullResult : basicResult,
-      upsellPremium: billingUser ? shouldShowPremiumUpsell(billingUser) : false,
+      detailLevel: "full" as const,
+      result: fullResult,
+      upsellPremium: false,
       billing: billingUser ? toBillingSnapshot(billingUser) : ANON_BILLING_SNAPSHOT
     };
 
     const response = NextResponse.json(payload);
-    if (!billingUser && detailLevel === "basic") {
-      response.cookies.set(ANON_FREE_CHECK_COOKIE, "1", {
+    if (!billingUser) {
+      response.cookies.set(ANON_FREE_CHECK_COOKIE, "true", {
         httpOnly: true,
         sameSite: "lax",
         secure: true,

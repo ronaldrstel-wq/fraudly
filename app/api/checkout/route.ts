@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { createCheckoutSession } from "@/lib/checkout";
 import type { CheckoutSku } from "@/lib/billing";
 import { EN_MESSAGES } from "@/lib/messages.en";
+import { isMonetizationEnabled } from "@/lib/monetization";
 import { stripeKeyMode } from "@/lib/stripe";
 import { AuthRequiredError, requireBillingUser } from "@/lib/user-store";
 
@@ -17,6 +18,10 @@ const VALID_SKUS: CheckoutSku[] = ["single_check", "five_checks", "twenty_checks
 
 export async function POST(request: Request) {
   try {
+    if (!isMonetizationEnabled()) {
+      return NextResponse.json({ error: EN_MESSAGES.checkout.temporarilyDisabled }, { status: 403 });
+    }
+
     let user;
     try {
       user = await requireBillingUser();

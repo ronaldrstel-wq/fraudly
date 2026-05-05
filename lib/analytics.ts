@@ -15,17 +15,35 @@ function devLog(event: string, payload?: Record<string, unknown>) {
   }
 }
 
-export function trackCheckStarted() {
+export function trackEvent(name: string, payload?: Record<string, unknown>) {
   if (!isAnalyticsConsentGranted()) return;
-  devLog("check_started");
+  devLog(name, payload);
+}
+
+export function trackCheckStarted() {
+  trackEvent("check_started");
 }
 
 export function trackCheckCompleted(score: number) {
-  if (!isAnalyticsConsentGranted()) return;
-  devLog("check_completed", { score });
+  trackEvent("check_completed", { score });
 }
 
 export function trackCheckFailed(reason: string) {
-  if (!isAnalyticsConsentGranted()) return;
-  devLog("check_failed", { reason });
+  trackEvent("check_failed", { reason });
+}
+
+export function trackAnonymousCheckStarted() {
+  trackEvent("anonymous_check_started");
+}
+
+export function trackAnonymousCheckCompleted(score: number) {
+  trackEvent("anonymous_check_completed", { score });
+}
+
+export function trackRegisteredCheckStarted() {
+  trackEvent("registered_check_started");
+}
+
+export function trackRegisteredCheckCompleted(score: number) {
+  trackEvent("registered_check_completed", { score });
 }
