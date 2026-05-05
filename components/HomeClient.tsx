@@ -2,6 +2,8 @@
 
 import { SignInButton, SignUpButton, useAuth } from "@clerk/nextjs";
 import dynamic from "next/dynamic";
+import Link from "next/link";
+import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Hero } from "@/components/Hero";
 import { Navbar } from "@/components/Navbar";
@@ -40,7 +42,7 @@ function isValidUrl(value: string) {
   }
 }
 
-export function HomeClient() {
+export function HomeClient({ children }: { children?: ReactNode }) {
   const { isSignedIn } = useAuth();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -238,8 +240,17 @@ export function HomeClient() {
         {result && (
           <>
             <section className="result-in mt-8 grid gap-6 sm:mt-10 lg:grid-cols-[1.7fr_1fr]">
-              <div className="min-w-0">
+              <div className="min-w-0 space-y-3">
                 <ResultCard result={result} />
+                <p className="text-center text-sm text-slate-600 md:text-left">
+                  Share or revisit this snapshot:{" "}
+                  <Link
+                    href={`/check/${encodeURIComponent(result.domain)}`}
+                    className="font-semibold text-blue-600 underline decoration-blue-600/40 underline-offset-2 hover:decoration-blue-600"
+                  >
+                    /check/{result.domain}
+                  </Link>
+                </p>
               </div>
               <div className="min-w-0 lg:pt-0">
                 <FeatureCards stacked />
@@ -261,6 +272,7 @@ export function HomeClient() {
             <FeatureCards />
           </section>
         )}
+        {children}
       </main>
 
       <SiteFooter />

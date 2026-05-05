@@ -23,14 +23,20 @@ function inspectTls(host: string): Promise<SslCheck> {
           const validTo = cert?.valid_to ? new Date(cert.valid_to) : null;
           const now = new Date();
           const validCertificate = Boolean(validTo && validTo.getTime() > now.getTime() && socket.authorized);
+          const authErr =
+            typeof socket.authorizationError === "string"
+              ? socket.authorizationError
+              : socket.authorizationError instanceof Error
+                ? socket.authorizationError.message
+                : "";
           resolve({
             httpsEnabled: true,
             validCertificate,
             certificateIssuer: issuer,
             certificateExpiry: validTo?.toISOString(),
-            selfSigned: !socket.authorized && /self.?signed/i.test(socket.authorizationError ?? ""),
+            selfSigned: !socket.authorized && /self.?signed/i.test(authErr),
             source: SOURCE,
-            warnings: socket.authorized ? [] : [socket.authorizationError ?? "Certificate not authorized"]
+            warnings: socket.authorized ? [] : [authErr || "Certificate not authorized"]
           });
         } catch (error) {
           resolve({

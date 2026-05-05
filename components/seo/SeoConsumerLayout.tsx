@@ -16,7 +16,7 @@ export function SeoConsumerLayout({
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
       <Navbar />
       <main className={`mx-auto w-full max-w-3xl px-4 pb-16 pt-10 sm:pt-14 md:pt-16 ${mainClassName}`}>
-        <article itemScope itemType="https://schema.org/Article">{children}</article>
+        <article>{children}</article>
       </main>
       <SiteFooter />
     </div>

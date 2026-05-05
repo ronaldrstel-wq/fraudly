@@ -7,6 +7,18 @@ export function SiteFooter() {
       <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-4 text-sm text-slate-600 md:flex-row md:justify-between">
         <p className="text-center md:text-left">Fraudly helps you review suspicious links before you click.</p>
         <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+          <Link href="/features" className="font-medium text-slate-700 transition hover:text-slate-900">
+            Features
+          </Link>
+          <Link href="/how-it-works" className="font-medium text-slate-700 transition hover:text-slate-900">
+            How it works
+          </Link>
+          <Link href="/learn" className="font-medium text-slate-700 transition hover:text-slate-900">
+            Learn
+          </Link>
+          <Link href="/scam-checker" className="font-medium text-slate-700 transition hover:text-slate-900">
+            Scam checker
+          </Link>
           <Link href="/privacy" className="font-medium text-slate-700 transition hover:text-slate-900">
             Privacy
           </Link>

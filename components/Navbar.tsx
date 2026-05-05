@@ -8,6 +8,7 @@ import { EN_MESSAGES } from "@/lib/messages.en";
 const navLinks = [
   { label: "How it works", href: "/how-it-works" },
   { label: "Features", href: "/features" },
+  { label: "Learn", href: "/learn" },
   { label: "About", href: "/about" }
 ] as const;
 
@@ -25,7 +26,7 @@ export function Navbar() {
             height={40}
             sizes="120px"
             className="h-8 w-auto object-contain md:h-9"
-            loading="lazy"
+            priority
           />
         </Link>
 
