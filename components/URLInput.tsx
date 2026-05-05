@@ -20,7 +20,7 @@ export function URLInput({
       <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-end sm:gap-3">
         <div className="min-w-0 flex-1">
           <label htmlFor="fraudly-url-input" className="mb-1.5 block text-left text-sm font-medium text-slate-700">
-            Website or message link
+            Paste a website link
           </label>
           <input
             id="fraudly-url-input"
