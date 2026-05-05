@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { EN_MESSAGES } from "@/lib/messages.en";
 
 export type PurchaseAction = "single_check" | "five_checks" | "twenty_checks" | "premium_monthly";
 
@@ -32,16 +33,16 @@ export function AnalysisPaywall({
   useCreditRow
 }: AnalysisPaywallProps) {
   const isNoFree = variant === "no_free_checks";
-  const title = isNoFree ? "Je gratis checks zijn op" : "Ontgrendel de volledige analyse";
+  const title = isNoFree ? EN_MESSAGES.paywall.titleNoFree : EN_MESSAGES.paywall.titleUnlock;
   const subtitle = isNoFree
-    ? "Koop losse checks of start Premium om volledige analyses te blijven bekijken."
-    : "We tonen nu alleen het basisresultaat. Bekijk de volledige uitleg, risicosignalen en advies voordat je verdergaat.";
+    ? EN_MESSAGES.paywall.subtitleNoFree
+    : EN_MESSAGES.paywall.subtitleUnlock;
 
   const rows: { action: PurchaseAction; label: string; primary?: boolean }[] = [
-    { action: "single_check", label: "Ontgrendel voor €0,99", primary: true },
-    { action: "five_checks", label: "5 checks voor €3,99" },
-    { action: "twenty_checks", label: "20 checks voor €9,99" },
-    { action: "premium_monthly", label: "Premium €6,99/mnd" }
+    { action: "single_check", label: EN_MESSAGES.paywall.unlockSingle, primary: true },
+    { action: "five_checks", label: EN_MESSAGES.paywall.bundleFive },
+    { action: "twenty_checks", label: EN_MESSAGES.paywall.bundleTwenty },
+    { action: "premium_monthly", label: EN_MESSAGES.paywall.premiumMonthly }
   ];
 
   return (
@@ -73,7 +74,7 @@ export function AnalysisPaywall({
                   : `${BTN_BASE} border border-slate-200 bg-white text-slate-900 [text-wrap:balance] hover:bg-slate-50`
               }
             >
-              {busy ? "Bezig..." : label}
+              {busy ? EN_MESSAGES.paywall.working : label}
             </button>
           );
         })}
@@ -88,10 +89,10 @@ export function AnalysisPaywall({
             className={`${BTN_BASE} w-full border border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100/90 disabled:cursor-not-allowed disabled:opacity-60`}
           >
             {useCreditRow.loading
-              ? "Bezig..."
+              ? EN_MESSAGES.paywall.working
               : useCreditRow.canUse
-                ? "Gebruik credit / Premium"
-                : "Geen credits beschikbaar"}
+                ? EN_MESSAGES.paywall.useCreditPremium
+                : EN_MESSAGES.paywall.noCredits}
           </button>
         </div>
       ) : null}

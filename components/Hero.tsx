@@ -39,7 +39,7 @@ export function Hero({ url, onUrlChange, onSubmit, loading, disabled, authGate }
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm text-slate-500">
-        <span className="rounded-full bg-white px-3 py-1 shadow-sm">Veilig met account</span>
+        <span className="rounded-full bg-white px-3 py-1 shadow-sm">Account-backed safety</span>
         <span className="rounded-full bg-white px-3 py-1 shadow-sm">Checks in seconds</span>
         <span className="rounded-full bg-white px-3 py-1 shadow-sm">Powered by AI</span>
       </div>

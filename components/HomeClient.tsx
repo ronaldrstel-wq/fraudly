@@ -10,6 +10,7 @@ import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { trackCheckCompleted, trackCheckFailed, trackCheckStarted } from "@/lib/analytics";
 import { canViewFullFromBillingSnapshot, parseBillingSnapshot } from "@/lib/billing";
+import { EN_MESSAGES } from "@/lib/messages.en";
 import { GENERIC_CHECK_ERROR, INVALID_URL_MESSAGE } from "@/lib/messages";
 import { isCheckApiResponse, type BasicCheckResult, type BillingSnapshot, type CheckApiResponse, type ScamCheckResult } from "@/types/scam";
 
@@ -75,17 +76,17 @@ export function HomeClient() {
 
     if (!trimmed) {
       setFullLocked(false);
-      setError("Please enter a URL to check.");
+      setError(EN_MESSAGES.check.missingUrl);
       return;
     }
 
     if (!isSignedIn && detailLevel === "full") {
-      setError("Log in om volledige analyse te gebruiken.");
+      setError(EN_MESSAGES.auth.loginForFullAnalysis);
       return;
     }
 
     if (!isSignedIn && hasUsedFreeCheck) {
-      setError("Je gratis check is gebruikt. Log in om nog een check te doen.");
+      setError(EN_MESSAGES.auth.loginForAnotherCheck);
       return;
     }
 
@@ -110,7 +111,7 @@ export function HomeClient() {
       const response = await fetch("/api/check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: trimmed, detailLevel })
+        body: JSON.stringify({ url: trimmed, detailLevel, language: "en" })
       });
 
       let payload: Record<string, unknown> | null = null;
@@ -128,7 +129,7 @@ export function HomeClient() {
         const msg =
           typeof payload?.message === "string"
             ? payload.message
-            : "Log in om een URL te controleren.";
+            : EN_MESSAGES.auth.loginForUrlCheck;
         setError(msg);
         trackCheckFailed("unauthorized");
         return;
@@ -140,7 +141,7 @@ export function HomeClient() {
         if (snap) setBilling(snap);
 
         if (detailLevel === "full" && err === "full_analysis_locked") {
-          setError("Geen credits beschikbaar voor volledige analyse. Koop checks of Premium.");
+          setError(EN_MESSAGES.check.fullAnalysisLocked);
           trackCheckFailed("full_locked");
           return;
         }
@@ -223,7 +224,7 @@ export function HomeClient() {
     if (checkoutInFlight.current || !isSignedIn) {
       if (!isSignedIn) {
         setCheckoutAuthRequired(true);
-        setCheckoutError("Log in om af te rekenen.");
+        setCheckoutError("Log in to continue to checkout.");
       }
       return;
     }
@@ -244,20 +245,20 @@ export function HomeClient() {
         data = (await response.json()) as { url?: string; error?: string };
       } catch {
         console.error("[checkout] invalid json response", response.status);
-        setCheckoutError("Onverwacht antwoord van de server.");
+        setCheckoutError(EN_MESSAGES.checkout.invalidResponse);
         return;
       }
 
       if (response.status === 401) {
         console.error("[checkout] unauthorized", data.error);
         setCheckoutAuthRequired(true);
-        setCheckoutError(data.error ?? "Log in om af te rekenen.");
+        setCheckoutError(data.error ?? EN_MESSAGES.auth.loginForCheckout);
         return;
       }
 
       if (!response.ok) {
         console.error("[checkout] failed", response.status, data.error);
-        setCheckoutError(data.error ?? "Checkout mislukt.");
+        setCheckoutError(data.error ?? EN_MESSAGES.checkout.checkoutFailed);
         return;
       }
 
@@ -267,10 +268,10 @@ export function HomeClient() {
       }
 
       console.error("[checkout] missing url in success response");
-      setCheckoutError("Geen betaalpagina ontvangen.");
+      setCheckoutError(EN_MESSAGES.checkout.noCheckoutUrl);
     } catch (e) {
       console.error("[checkout] network", e);
-      setCheckoutError("Netwerkfout. Controleer je verbinding.");
+      setCheckoutError(EN_MESSAGES.checkout.networkError);
     } finally {
       checkoutInFlight.current = false;
       setCheckoutLoading(false);
@@ -303,14 +304,14 @@ export function HomeClient() {
         type="button"
         className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
       >
-        Inloggen
+        {EN_MESSAGES.auth.loginCta}
       </button>
     </SignInButton>
   );
 
   const checkoutLoginSlot = checkoutAuthRequired ? (
     <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-center text-sm text-slate-800">
-      <p className="font-medium">Log in om af te rekenen.</p>
+      <p className="font-medium">{EN_MESSAGES.auth.loginForCheckout}</p>
       <div className="mt-2 flex justify-center">{signInModalButton}</div>
     </div>
   ) : undefined;
@@ -318,7 +319,7 @@ export function HomeClient() {
   const heroAuthGate =
     isLoaded && !isSignedIn && hasUsedFreeCheck ? (
       <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center">
-        <p className="text-sm font-medium text-slate-800">Je gratis check is gebruikt. Log in voor meer checks.</p>
+        <p className="text-sm font-medium text-slate-800">{EN_MESSAGES.auth.loginForAnotherCheck}</p>
         <div className="mt-3 flex justify-center">{signInModalButton}</div>
       </div>
     ) : null;
@@ -361,7 +362,7 @@ export function HomeClient() {
         )}
 
         {basicResult && !fullLocked && (
-          <section className="result-in mt-8 grid gap-6 sm:mt-10 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,860px)] lg:items-start">
+          <section className="result-in mx-auto mt-8 max-w-4xl space-y-5 sm:mt-10 sm:space-y-6">
             <div className="min-w-0">
               <BasicResultCard result={basicResult} />
             </div>
@@ -394,9 +395,9 @@ export function HomeClient() {
             </div>
             {apiState?.upsellPremium && (
               <div className="result-in mx-auto mt-6 max-w-3xl rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
-                Je hebt al meerdere checks gedaan. Met Premium check je goedkoper en zonder gedoe.
+                {EN_MESSAGES.check.upsellPremium}
                 <a href="/pricing" className="ml-2 font-semibold underline">
-                  Bekijk Premium
+                  {EN_MESSAGES.check.viewPremium}
                 </a>
               </div>
             )}

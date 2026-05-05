@@ -7,7 +7,8 @@ const REQUEST_MS = 7000;
 const WEBSITE_FETCH_MS = 4500;
 const WEBSITE_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
-const SYSTEM_PROMPT = "You are a cybersecurity assistant. Analyze if a URL might be a scam.";
+const SYSTEM_PROMPT =
+  "You are a cybersecurity assistant. Analyze if a URL might be a scam. Always respond in English. Do not use Dutch.";
 
 export type WebsiteSignals = {
   title: string;
@@ -116,7 +117,7 @@ export async function fetchWebsiteSignals(url: string): Promise<WebsiteSignals |
   return payload;
 }
 
-function buildUserPrompt(url: string, signals: WebsiteSignals | null): string {
+function buildUserPrompt(url: string, signals: WebsiteSignals | null, language: "en" | "nl"): string {
   const title = signals?.title || "(missing)";
   const meta = signals?.metaDescription || "(missing)";
   const body = signals?.bodySnippet || "(missing)";
@@ -126,7 +127,11 @@ function buildUserPrompt(url: string, signals: WebsiteSignals | null): string {
 Website text signals:
 - title: ${title}
 - meta: ${meta}
-- body_snippet: ${body}`;
+- body_snippet: ${body}
+
+Language requirement:
+- requested language: ${language}
+- output language: English only`;
 }
 
 export type AiScamReasonsResult = {
@@ -180,7 +185,8 @@ export async function fetchAiScamReasons(
   signals: WebsiteSignals | null,
   reviewSignals: ReviewSignals,
   heuristicReasons: string[],
-  scoringSignalsJson: string
+  scoringSignalsJson: string,
+  language: "en" | "nl" = "en"
 ): Promise<AiScamReasonsResult | null> {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) return null;
@@ -199,7 +205,7 @@ export async function fetchAiScamReasons(
       { role: "system", content: SYSTEM_PROMPT },
       {
         role: "user",
-        content: `${buildUserPrompt(url, signals)}
+        content: `${buildUserPrompt(url, signals, language)}
 
 Review signals:
 ${reviewSignalsContext}

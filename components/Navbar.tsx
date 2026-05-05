@@ -3,6 +3,7 @@
 import { SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
+import { EN_MESSAGES } from "@/lib/messages.en";
 
 const navLinks = [
   { label: "How it works", href: "/how-it-works" },
@@ -55,7 +56,7 @@ export function Navbar() {
                   type="button"
                   className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 sm:px-4"
                 >
-                  Log in
+                  {EN_MESSAGES.auth.loginCta}
                 </button>
               </SignInButton>
               <SignUpButton mode="modal">
@@ -63,7 +64,7 @@ export function Navbar() {
                   type="button"
                   className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition duration-200 hover:brightness-110 sm:px-4"
                 >
-                  Registreren
+                  {EN_MESSAGES.auth.signUpCta}
                 </button>
               </SignUpButton>
             </>

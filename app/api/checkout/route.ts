@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createCheckoutSession } from "@/lib/checkout";
 import type { CheckoutSku } from "@/lib/billing";
+import { EN_MESSAGES } from "@/lib/messages.en";
 import { stripeKeyMode } from "@/lib/stripe";
 import { AuthRequiredError, requireBillingUser } from "@/lib/user-store";
 
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
       user = await requireBillingUser();
     } catch (e) {
       if (e instanceof AuthRequiredError) {
-        return NextResponse.json({ error: "Je moet ingelogd zijn om af te rekenen." }, { status: 401 });
+        return NextResponse.json({ error: EN_MESSAGES.checkout.unauthorized }, { status: 401 });
       }
       throw e;
     }
@@ -30,12 +31,12 @@ export async function POST(request: Request) {
     try {
       body = (await request.json()) as CheckoutBody;
     } catch {
-      return NextResponse.json({ error: "Ongeldig verzoek." }, { status: 400 });
+      return NextResponse.json({ error: EN_MESSAGES.checkout.invalidRequest }, { status: 400 });
     }
 
     const purchaseType = body?.purchaseType ?? body?.sku;
     if (!purchaseType || !VALID_SKUS.includes(purchaseType)) {
-      return NextResponse.json({ error: "Ongeldig betaalproduct." }, { status: 400 });
+      return NextResponse.json({ error: EN_MESSAGES.checkout.invalidPurchaseType }, { status: 400 });
     }
 
     console.info("[api/checkout] Request accepted", {
@@ -56,18 +57,18 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("[api/checkout]", error);
     const msg = error instanceof Error ? error.message : "";
-    let errorOut = "Checkout mislukt. Probeer het later opnieuw.";
+    let errorOut: string = EN_MESSAGES.checkout.genericFailure;
     if (msg === "Stripe is not configured") {
-      errorOut = "Betalingen zijn nog niet geconfigureerd (Stripe).";
+      errorOut = EN_MESSAGES.checkout.stripeNotConfigured;
     } else if (msg.startsWith("Missing NEXT_PUBLIC_APP_URL")) {
-      errorOut = "Serverconfiguratie ontbreekt. Neem contact op met support.";
+      errorOut = EN_MESSAGES.checkout.missingAppUrl;
     } else if (msg.startsWith("Missing Stripe price id")) {
-      errorOut = "Dit product is tijdelijk niet beschikbaar.";
+      errorOut = EN_MESSAGES.checkout.missingPriceId;
     } else if (error instanceof Stripe.errors.StripeInvalidRequestError) {
       if (error.code === "resource_missing" && (error.param === "line_items" || msg.includes("price"))) {
-        errorOut = "Stripe-prijs-ID ontbreekt of is ongeldig. Controleer je omgevingsvariabelen.";
+        errorOut = EN_MESSAGES.checkout.invalidStripePriceId;
       } else if (error.code === "url_invalid") {
-        errorOut = "Ongeldige terugkeer-URL. Controleer NEXT_PUBLIC_APP_URL in Vercel.";
+        errorOut = EN_MESSAGES.checkout.invalidReturnUrl;
       }
     }
     return NextResponse.json({ error: errorOut }, { status: 400 });

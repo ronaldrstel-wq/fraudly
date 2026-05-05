@@ -6,7 +6,7 @@ import { buildPageMetadata } from "@/lib/seo-metadata";
 export const metadata = buildPageMetadata({
   path: "/pricing",
   titleSegment: "Pricing",
-  description: "Kies tussen Gratis, losse checks of Premium voor uitgebreide fraudeanalyse met Fraudly."
+  description: "Choose between Free, one-time checks, or Premium for deeper fraud analysis with Fraudly."
 });
 
 function Card({
@@ -49,26 +49,28 @@ export default function PricingPage() {
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
       <Navbar />
       <main className="mx-auto w-full max-w-6xl px-4 pb-20 pt-12">
-        <h1 className="text-center text-4xl font-bold tracking-tight text-slate-900">Kies je plan</h1>
-        <p className="mx-auto mt-3 max-w-2xl text-center text-slate-600">Start gratis en ontgrendel volledige analyses wanneer je ze nodig hebt.</p>
+        <h1 className="text-center text-4xl font-bold tracking-tight text-slate-900">Choose your plan</h1>
+        <p className="mx-auto mt-3 max-w-2xl text-center text-slate-600">
+          Start free and unlock full analyses whenever you need them.
+        </p>
         <section className="mt-10 grid gap-6 md:grid-cols-3">
           <Card
-            title="Gratis"
+            title="Free"
             price="€0"
-            features={["5 gratis checks", "Basis fraudedetectie", "Snelle scan", "Beperkte details"]}
-            cta="Start gratis"
+            features={["5 free checks", "Basic fraud detection", "Fast scan", "Limited details"]}
+            cta="Start free"
           />
           <Card
-            title="Losse checks"
-            badge="Aanbevolen"
-            price="1 check: €0,99 · 5 checks: €3,99 · 20 checks: €9,99"
-            features={["Geen abonnement", "Direct volledige analyse", "Credits blijven beschikbaar"]}
-            cta="Koop checks"
+            title="One-time checks"
+            badge="Recommended"
+            price="1 check: €0.99 · 5 checks: €3.99 · 20 checks: €9.99"
+            features={["No subscription", "Immediate full analysis", "Credits stay available"]}
+            cta="Buy checks"
           />
           <Card
             title="Premium"
-            price="€6,99/mnd"
-            features={["200 checks per maand", "Volledige analyse", "Geschiedenis", "Alerts", "Ideaal voor wie vaker checkt"]}
+            price="€6.99/mo"
+            features={["200 checks per month", "Full analysis", "History", "Alerts", "Best for frequent checks"]}
             cta="Start Premium"
           />
         </section>

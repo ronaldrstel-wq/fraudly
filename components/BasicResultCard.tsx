@@ -1,26 +1,55 @@
 "use client";
 
 import type { BasicCheckResult } from "@/types/scam";
+import { EN_MESSAGES } from "@/lib/messages.en";
 
 function verdictLabel(verdict: BasicCheckResult["verdict"]) {
-  if (verdict === "safe") return { label: "Veilig", tone: "text-emerald-700 bg-emerald-100" };
-  if (verdict === "suspicious") return { label: "Mogelijk verdacht", tone: "text-amber-700 bg-amber-100" };
-  return { label: "Hoog risico", tone: "text-rose-700 bg-rose-100" };
+  if (verdict === "safe") {
+    return {
+      label: EN_MESSAGES.basicResult.safeLabel,
+      tone: "border-emerald-200 bg-emerald-50 text-emerald-800",
+      explanation: EN_MESSAGES.basicResult.safeExplanation
+    };
+  }
+  if (verdict === "suspicious") {
+    return {
+      label: EN_MESSAGES.basicResult.suspiciousLabel,
+      tone: "border-amber-200 bg-amber-50 text-amber-800",
+      explanation: EN_MESSAGES.basicResult.suspiciousExplanation
+    };
+  }
+  return {
+    label: EN_MESSAGES.basicResult.highRiskLabel,
+    tone: "border-rose-200 bg-rose-50 text-rose-800",
+    explanation: EN_MESSAGES.basicResult.highRiskExplanation
+  };
 }
 
 export function BasicResultCard({ result }: { result: BasicCheckResult }) {
   const verdict = verdictLabel(result.verdict);
   return (
-    <div className="w-full rounded-xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60">
-      <p className="text-sm font-medium text-slate-500">Basisresultaat</p>
-      <div className="mt-4 flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm text-slate-500">Domein</p>
-          <p className="text-lg font-semibold text-slate-900 break-all">{result.domain}</p>
-        </div>
-        <span className={`rounded-full px-3 py-1 text-sm font-semibold ${verdict.tone}`}>{verdict.label}</span>
+    <article className="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/60 sm:p-7">
+      <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">{EN_MESSAGES.basicResult.heading}</h2>
+      <p className="mt-2 text-sm text-slate-600">
+        {EN_MESSAGES.basicResult.intro}
+      </p>
+
+      <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{EN_MESSAGES.basicResult.checkedLink}</p>
+        <p className="mt-1 break-all text-base font-semibold text-slate-900 sm:text-lg">{result.domain}</p>
       </div>
-      <p className="mt-4 text-sm text-slate-600">Volledige uitleg en advies zijn beschikbaar na ontgrendelen.</p>
-    </div>
+
+      <div className={`mt-5 rounded-xl border p-4 sm:p-5 ${verdict.tone}`}>
+        <p className="text-xs font-semibold uppercase tracking-wide opacity-80">{EN_MESSAGES.basicResult.riskStatus}</p>
+        <p className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">{verdict.label}</p>
+        <p className="mt-2 text-sm leading-relaxed opacity-90">{verdict.explanation}</p>
+      </div>
+
+      <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50 p-4">
+        <p className="text-sm font-medium text-blue-900">
+          {EN_MESSAGES.basicResult.unlockHint}
+        </p>
+      </div>
+    </article>
   );
 }

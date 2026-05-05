@@ -22,6 +22,7 @@ import {
   formatScoreSignalsForPrompt
 } from "@/lib/scoringEngine";
 import { getSupplyChainSignals } from "@/lib/supplyChainSignals";
+import { EN_MESSAGES } from "@/lib/messages.en";
 import { getBillingUserOrNull, saveUser } from "@/lib/user-store";
 import type { BasicCheckResult, ScamCheckResult } from "@/types/scam";
 
@@ -30,6 +31,7 @@ export const runtime = "nodejs";
 interface CheckRequest {
   url?: string;
   detailLevel?: "basic" | "full";
+  language?: "en" | "nl";
 }
 
 const ANON_FREE_CHECK_COOKIE = "fraudly_free_check_used";
@@ -53,6 +55,7 @@ export async function POST(request: Request) {
 
     const input = typeof body?.url === "string" ? body.url.trim() : "";
     const detailLevel = body?.detailLevel === "full" ? "full" : "basic";
+    const language = body?.language === "nl" ? "nl" : "en";
 
     if (!input) {
       return NextResponse.json({ error: "url is required" }, { status: 400 });
@@ -75,13 +78,13 @@ export async function POST(request: Request) {
     if (!user) {
       if (detailLevel !== "basic") {
         return NextResponse.json(
-          { error: "unauthorized", message: "Log in om volledige analyse te gebruiken." },
+          { error: "unauthorized", message: EN_MESSAGES.auth.loginForFullAnalysis },
           { status: 401 }
         );
       }
       if (hasUsedAnonFreeCheck) {
         return NextResponse.json(
-          { error: "unauthorized", message: "Log in om nog een check te doen." },
+          { error: "unauthorized", message: EN_MESSAGES.auth.loginForAnotherCheck },
           { status: 401 }
         );
       }
@@ -152,7 +155,8 @@ export async function POST(request: Request) {
         websiteSignals,
         reviewSignals,
         heuristicForOpenAi,
-        scoringSignalsJson
+        scoringSignalsJson,
+        language
       );
       if (aiPayload) {
         aiUsed = true;
