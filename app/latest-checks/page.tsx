@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Prisma } from "@prisma/client";
 import { LatestChecksJsonLd } from "@/components/seo/LatestChecksJsonLd";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -61,15 +62,30 @@ function entityBadge(type: string): string {
   return k in labels ? labels[k] : EN_MESSAGES.latestChecks.entityFallback;
 }
 
+async function fetchLatestPublicChecks(skip: number, take: number) {
+  try {
+    return await db.latestPublicCheck.findMany({
+      orderBy: { lastSeenAt: "desc" },
+      skip,
+      take
+    });
+  } catch (err) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      (err.code === "P2021" || err.code === "P1001")
+    ) {
+      console.warn("[latest-checks] prisma read skipped:", err.code, err.message);
+      return [];
+    }
+    throw err;
+  }
+}
+
 export default async function LatestChecksPage({ searchParams }: PageProps) {
   const page = clampPage((await searchParams).page);
   const skip = (page - 1) * PAGE_SIZE;
 
-  const batch = await db.latestPublicCheck.findMany({
-    orderBy: { lastSeenAt: "desc" },
-    skip,
-    take: PAGE_SIZE + 1
-  });
+  const batch = await fetchLatestPublicChecks(skip, PAGE_SIZE + 1);
 
   const hasNext = batch.length > PAGE_SIZE;
   const rows = hasNext ? batch.slice(0, PAGE_SIZE) : batch;

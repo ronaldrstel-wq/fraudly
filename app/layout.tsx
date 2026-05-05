@@ -80,7 +80,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className={`${inter.className} min-h-screen antialiased`}>
-        <ClerkProvider>
+        <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up">
           <JsonLd />
           <CookieConsentProvider>{children}</CookieConsentProvider>
         </ClerkProvider>
