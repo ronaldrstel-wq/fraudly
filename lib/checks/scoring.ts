@@ -1,220 +1,221 @@
 import type { ExternalChecksResult, TrustSignal } from "@/lib/checks/types";
+import type { ProviderEvidenceResult } from "@/lib/checks/providers/types";
 import type { ScoreSignal } from "@/lib/scoringEngine";
 
-export function buildTrustSignalsFromChecks(checks: ExternalChecksResult): TrustSignal[] {
-  const trustSignals: TrustSignal[] = [];
+export type IntelScoreBreakdownEntry = {
+  id: string;
+  source?: string;
+  label: string;
+  impact: number;
+  category: ScoreSignal["category"];
+  confidence: ScoreSignal["confidence"];
+  rationale: string;
+};
 
-  if (checks.police.listedInPoliceScamDatabase) {
-    trustSignals.push({
-      type: "danger",
-      title: "Matched Dutch police scam reference",
-      description: checks.police.policeWarningReason ?? "This domain appears in public Dutch police scam references.",
-      source: checks.police.source
-    });
-  }
+const severityOrder: Record<ProviderEvidenceResult["severity"], number> = {
+  danger: 0,
+  warning: 1,
+  info: 2,
+  positive: 3
+};
 
-  if (checks.safeBrowsing.safeBrowsingStatus === "flagged") {
-    trustSignals.push({
-      type: "danger",
-      title: "Flagged by Safe Browsing",
-      description: `Threats: ${checks.safeBrowsing.safeBrowsingThreats.join(", ") || "unknown type"}.`,
-      source: checks.safeBrowsing.source
-    });
-  } else if (checks.safeBrowsing.safeBrowsingStatus === "safe") {
-    trustSignals.push({
-      type: "positive",
-      title: "No Safe Browsing hit",
-      description: "No malware or phishing listing found for this URL in this check.",
-      source: checks.safeBrowsing.source
-    });
-  }
-
-  if (checks.openPhish.listed) {
-    trustSignals.push({
-      type: "danger",
-      title: "Listed in OpenPhish feed",
-      description: "This URL/domain appears in a public phishing feed.",
-      source: checks.openPhish.source
-    });
-  }
-
-  if (checks.urlHaus.listed) {
-    trustSignals.push({
-      type: "danger",
-      title: "Listed in URLHaus feed",
-      description: "This host appears in a public malware/phishing URL feed.",
-      source: checks.urlHaus.source
-    });
-  }
-
-  if (typeof checks.domainIntelligence.ageDays === "number" && checks.domainIntelligence.ageDays <= 30) {
-    trustSignals.push({
-      type: "warning",
-      title: "Very new domain",
-      description: `Domain age is about ${checks.domainIntelligence.ageDays} days.`,
-      source: checks.domainIntelligence.source
-    });
-  } else if (typeof checks.domainIntelligence.ageDays === "number" && checks.domainIntelligence.ageDays >= 365 * 3) {
-    trustSignals.push({
-      type: "positive",
-      title: "Established domain age",
-      description: `Domain has existed for about ${Math.floor(checks.domainIntelligence.ageDays / 365)} years.`,
-      source: checks.domainIntelligence.source
-    });
-  }
-
-  if (checks.domainIntelligence.suspiciouslyShortRegistration) {
-    trustSignals.push({
-      type: "warning",
-      title: "Short registration period",
-      description: "The registration lifecycle looks short, which can indicate disposable setup.",
-      source: checks.domainIntelligence.source
-    });
-  }
-
-  if (checks.domainIntelligence.hasPrivacyProtection) {
-    trustSignals.push({
-      type: "warning",
-      title: "Ownership privacy protection detected",
-      description: "Ownership data appears privacy-protected or redacted.",
-      source: checks.domainIntelligence.source
-    });
-  }
-
-  if (!checks.ssl.httpsEnabled) {
-    trustSignals.push({
-      type: "danger",
-      title: "HTTPS/TLS not available",
-      description: "Could not establish a secure TLS connection.",
-      source: checks.ssl.source
-    });
-  } else if (!checks.ssl.validCertificate) {
-    trustSignals.push({
-      type: "warning",
-      title: "TLS certificate issue",
-      description: "The certificate is invalid, expired, or not fully trusted.",
-      source: checks.ssl.source
-    });
-  } else {
-    trustSignals.push({
-      type: "positive",
-      title: "Valid TLS certificate",
-      description: "HTTPS is enabled and the certificate looks valid.",
-      source: checks.ssl.source
-    });
-  }
-
-  return trustSignals;
+export function buildTrustSignalsFromEvidence(evidence: ProviderEvidenceResult[]): TrustSignal[] {
+  return [...evidence]
+    .sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity])
+    .map((row) => ({
+      type: row.severity,
+      title: row.title,
+      description: row.description,
+      source: row.source,
+      confidence: row.confidence
+    }));
 }
 
-export function buildScoreSignalsFromChecks(checks: ExternalChecksResult): ScoreSignal[] {
+function pushContribution(
+  signals: ScoreSignal[],
+  breakdown: IntelScoreBreakdownEntry[],
+  contribution: {
+    id: string;
+    source?: string;
+    label: string;
+    impact: number;
+    category: ScoreSignal["category"];
+    confidence: ScoreSignal["confidence"];
+    reason: string;
+  }
+) {
+  signals.push({
+    id: contribution.id,
+    label: contribution.label,
+    category: contribution.category,
+    impact: contribution.impact,
+    confidence: contribution.confidence,
+    reason: contribution.reason
+  });
+  breakdown.push({
+    id: contribution.id,
+    source: contribution.source,
+    label: contribution.label,
+    impact: contribution.impact,
+    category: contribution.category,
+    confidence: contribution.confidence,
+    rationale: contribution.reason
+  });
+}
+
+/** Weighted, explainable intel contributions mirrored into {@link ScoreSignal} for `calculateScamScore`. */
+export function buildIntelScoring(checks: ExternalChecksResult): {
+  scoreSignals: ScoreSignal[];
+  breakdown: IntelScoreBreakdownEntry[];
+} {
   const signals: ScoreSignal[] = [];
+  const breakdown: IntelScoreBreakdownEntry[] = [];
 
   if (checks.police.listedInPoliceScamDatabase) {
-    signals.push({
+    pushContribution(signals, breakdown, {
       id: "intel-police-match",
-      label: "Police scam reference match",
+      source: checks.police.source,
+      label: "Public police reference overlap (heuristic)",
       category: "website_quality",
-      impact: 35,
-      confidence: "high",
-      reason: "Domain matched public Dutch police scam references."
+      impact: 34,
+      confidence: "medium",
+      reason:
+        checks.police.policeWarningReason ??
+        "Heuristic overlap with Dutch Police public guidance pages surfaced the same domain string."
     });
   }
 
   if (checks.safeBrowsing.safeBrowsingStatus === "flagged") {
-    signals.push({
+    pushContribution(signals, breakdown, {
       id: "intel-safe-browsing-flagged",
-      label: "Safe Browsing threat match",
+      source: checks.safeBrowsing.source,
+      label: "Google Safe Browsing match",
       category: "website_quality",
-      impact: 30,
+      impact: 32,
       confidence: "high",
-      reason: `Google Safe Browsing flagged this URL (${checks.safeBrowsing.safeBrowsingThreats.join(", ") || "unknown"}).`
+      reason: `Google Safe Browsing reported threat categories: ${checks.safeBrowsing.safeBrowsingThreats.join(", ") || "unknown"}.`
     });
   }
 
   if (checks.openPhish.listed) {
-    signals.push({
+    pushContribution(signals, breakdown, {
       id: "intel-openphish-listed",
-      label: "OpenPhish feed match",
+      source: checks.openPhish.source,
+      label: "OpenPhish intelligence match",
       category: "website_quality",
       impact: 28,
       confidence: "high",
-      reason: "URL/domain appears in OpenPhish feed."
+      reason: "The URL/domain appears in the fetched OpenPhish feed."
     });
   }
 
   if (checks.urlHaus.listed) {
-    signals.push({
+    pushContribution(signals, breakdown, {
       id: "intel-urlhaus-listed",
-      label: "URLHaus feed match",
+      source: checks.urlHaus.source,
+      label: "URLhaus intelligence match",
       category: "website_quality",
       impact: 28,
       confidence: "high",
-      reason: "Domain appears in URLHaus feed."
+      reason: checks.urlHaus.matches[0]
+        ? `URLhaus returned malicious URL entries referencing this host (sample: ${checks.urlHaus.matches[0]}).`
+        : "URLhaus returned malicious URL entries referencing this host."
     });
   }
 
   if (typeof checks.domainIntelligence.ageDays === "number" && checks.domainIntelligence.ageDays <= 14) {
-    signals.push({
+    pushContribution(signals, breakdown, {
       id: "intel-domain-very-new",
-      label: "Very new domain intelligence",
+      source: checks.domainIntelligence.source,
+      label: "Very new registration (RDAP)",
       category: "domain",
-      impact: 20,
+      impact: 18,
       confidence: "high",
-      reason: `Domain age is ${checks.domainIntelligence.ageDays} days.`
+      reason: `RDAP-derived domain age ≈ ${checks.domainIntelligence.ageDays} days.`
+    });
+  } else if (typeof checks.domainIntelligence.ageDays === "number" && checks.domainIntelligence.ageDays <= 45) {
+    pushContribution(signals, breakdown, {
+      id: "intel-domain-young",
+      source: checks.domainIntelligence.source,
+      label: "Young domain registration",
+      category: "domain",
+      impact: 10,
+      confidence: "medium",
+      reason: `RDAP-derived domain age ≈ ${checks.domainIntelligence.ageDays} days.`
     });
   }
 
   if (checks.domainIntelligence.suspiciouslyShortRegistration) {
-    signals.push({
+    pushContribution(signals, breakdown, {
       id: "intel-short-registration",
-      label: "Short registration period",
+      source: checks.domainIntelligence.source,
+      label: "Short RDAP registration window",
       category: "domain",
       impact: 10,
       confidence: "medium",
-      reason: "Registration period appears shorter than typical long-term domains."
+      reason: "Registration horizon between creation and expiry looks shorter than many established domains."
     });
   }
 
   if (checks.domainIntelligence.hasPrivacyProtection) {
-    signals.push({
+    pushContribution(signals, breakdown, {
       id: "intel-hidden-ownership",
-      label: "Ownership details protected",
+      source: checks.domainIntelligence.source,
+      label: "Privacy-protected WHOIS/RDAP data",
       category: "domain",
       impact: 8,
       confidence: "low",
-      reason: "Ownership records appear privacy-protected."
+      reason: "Registrar or RDAP hints suggest privacy/redaction on ownership fields."
     });
   }
 
   if (checks.ssl.httpsEnabled && checks.ssl.validCertificate) {
-    signals.push({
+    pushContribution(signals, breakdown, {
       id: "intel-valid-ssl",
-      label: "Valid SSL/TLS certificate",
+      source: checks.ssl.source,
+      label: "Valid TLS certificate observed",
       category: "website_quality",
-      impact: -10,
+      impact: -11,
       confidence: "high",
-      reason: "HTTPS is active with a valid certificate."
+      reason: "HTTPS handshake succeeded with a certificate trusted by the runtime."
     });
   } else if (!checks.ssl.httpsEnabled) {
-    signals.push({
-      id: "intel-no-ssl",
-      label: "No valid HTTPS/TLS",
+    pushContribution(signals, breakdown, {
+      id: "intel-no-tls",
+      source: checks.ssl.source,
+      label: "No reliable HTTPS endpoint",
       category: "website_quality",
       impact: 22,
       confidence: "high",
-      reason: "Secure TLS connection could not be established."
+      reason: "Port 443 probe did not complete a TLS session."
     });
   } else {
-    signals.push({
-      id: "intel-invalid-ssl",
-      label: "Certificate validation issue",
+    pushContribution(signals, breakdown, {
+      id: "intel-tls-issue",
+      source: checks.ssl.source,
+      label: "TLS certificate validation issue",
       category: "website_quality",
       impact: 12,
       confidence: "medium",
-      reason: "Certificate appears invalid or expired."
+      reason: checks.ssl.selfSigned ? "Likely untrusted / self-signed material." : "Certificate failed validation against trust anchors."
     });
   }
 
-  return signals;
+  if (
+    checks.safeBrowsing.safeBrowsingStatus === "safe" &&
+    !checks.openPhish.listed &&
+    !checks.urlHaus.listed
+  ) {
+    pushContribution(signals, breakdown, {
+      id: "intel-no-feed-hits-composite",
+      source: "Composite intelligence",
+      label: "No URLhaus/OpenPhish hit and Safe Browsing clean",
+      category: "website_quality",
+      impact: -6,
+      confidence: "medium",
+      reason: "Feeds consulted in this run did not produce active listing hits (subject to TTL and coverage limits)."
+    });
+  }
+
+  return { scoreSignals: signals, breakdown };
 }

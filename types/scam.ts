@@ -1,3 +1,5 @@
+import type { IntelScoreBreakdownEntry } from "@/lib/checks/scoring";
+import type { ProviderEvidenceResult } from "@/lib/checks/providers/types";
 import type { ReviewSignals } from "@/lib/reviewSignals";
 import type { ScoreResult, ScoreSignal } from "@/lib/scoringEngine";
 import type { SupplyChainSignals } from "@/lib/supplyChainSignals";
@@ -13,6 +15,10 @@ export interface ScamCheckResult {
   domain: string;
   reasons: string[];
   trustSignals: TrustSignal[];
+  /** Modular intel providers (normalized). */
+  providerEvidence: ProviderEvidenceResult[];
+  /** Explainable weighted contributions derived from Tier‑1 structured checks. */
+  intelScoreBreakdown: IntelScoreBreakdownEntry[];
   domainIntelligence: DomainIntelligence;
   safeBrowsing: SafeBrowsingCheck;
   openPhish: { listed: boolean; matches: string[]; source: string; warnings: string[] };
@@ -68,10 +74,50 @@ const SCORE_CATEGORIES: ScoreSignal["category"][] = [
 function isTrustSignal(value: unknown): value is TrustSignal {
   if (!value || typeof value !== "object") return false;
   const s = value as Record<string, unknown>;
-  if (s.type !== "positive" && s.type !== "warning" && s.type !== "danger") return false;
+  if (s.type !== "positive" && s.type !== "info" && s.type !== "warning" && s.type !== "danger") return false;
   if (typeof s.title !== "string") return false;
   if (typeof s.description !== "string") return false;
   if (s.source !== undefined && typeof s.source !== "string") return false;
+  if (s.confidence !== undefined && s.confidence !== "low" && s.confidence !== "medium" && s.confidence !== "high") {
+    return false;
+  }
+  return true;
+}
+
+const PROVIDER_CATEGORIES: ProviderEvidenceResult["category"][] = [
+  "government",
+  "phishing",
+  "malware",
+  "domain",
+  "ssl",
+  "reputation"
+];
+
+function isProviderEvidenceResult(value: unknown): value is ProviderEvidenceResult {
+  if (!value || typeof value !== "object") return false;
+  const p = value as Record<string, unknown>;
+  if (typeof p.source !== "string") return false;
+  if (!PROVIDER_CATEGORIES.includes(p.category as ProviderEvidenceResult["category"])) return false;
+  if (p.severity !== "positive" && p.severity !== "info" && p.severity !== "warning" && p.severity !== "danger") {
+    return false;
+  }
+  if (typeof p.matched !== "boolean") return false;
+  if (typeof p.title !== "string") return false;
+  if (typeof p.description !== "string") return false;
+  if (p.confidence !== "low" && p.confidence !== "medium" && p.confidence !== "high") return false;
+  return true;
+}
+
+function isIntelScoreBreakdownEntry(value: unknown): value is IntelScoreBreakdownEntry {
+  if (!value || typeof value !== "object") return false;
+  const e = value as Record<string, unknown>;
+  if (typeof e.id !== "string") return false;
+  if (e.source !== undefined && typeof e.source !== "string") return false;
+  if (typeof e.label !== "string") return false;
+  if (typeof e.impact !== "number" || Number.isNaN(e.impact)) return false;
+  if (typeof e.category !== "string" || !SCORE_CATEGORIES.includes(e.category as ScoreSignal["category"])) return false;
+  if (e.confidence !== "low" && e.confidence !== "medium" && e.confidence !== "high") return false;
+  if (typeof e.rationale !== "string") return false;
   return true;
 }
 
@@ -110,6 +156,8 @@ export function isScamCheckResult(value: unknown): value is ScamCheckResult {
   if (!Array.isArray(o.reasons)) return false;
   if (!o.reasons.every((r) => typeof r === "string")) return false;
   if (!Array.isArray(o.trustSignals) || !o.trustSignals.every(isTrustSignal)) return false;
+  if (!Array.isArray(o.providerEvidence) || !o.providerEvidence.every(isProviderEvidenceResult)) return false;
+  if (!Array.isArray(o.intelScoreBreakdown) || !o.intelScoreBreakdown.every(isIntelScoreBreakdownEntry)) return false;
   if (!o.reviewSignals || typeof o.reviewSignals !== "object") return false;
   if (!o.domainIntelligence || typeof o.domainIntelligence !== "object") return false;
   if (!o.safeBrowsing || typeof o.safeBrowsing !== "object") return false;

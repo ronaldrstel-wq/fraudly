@@ -6,7 +6,7 @@ import {
 } from "@/lib/aiScamReasons";
 import { normalizeDomain } from "@/lib/cache";
 import { runAllChecks } from "@/lib/checks";
-import { buildScoreSignalsFromChecks, buildTrustSignalsFromChecks } from "@/lib/checks/scoring";
+import { buildIntelScoring, buildTrustSignalsFromEvidence } from "@/lib/checks/scoring";
 import { getReviewSignals } from "@/lib/reviewSignals";
 import {
   buildDomainHeuristicReasons,
@@ -28,8 +28,8 @@ export async function runWebsiteAnalysis(inputUrl: string, language: "en" | "nl"
   const websiteText = websiteSignals?.text ?? "";
   const supplyChainSignals = await getSupplyChainSignals(normalizedDomain, websiteText);
   const externalChecks = await runAllChecks(inputUrl);
-  const trustSignals = buildTrustSignalsFromChecks(externalChecks);
-  const externalScoreSignals = buildScoreSignalsFromChecks(externalChecks);
+  const { scoreSignals: externalScoreSignals, breakdown: intelScoreBreakdown } = buildIntelScoring(externalChecks);
+  const trustSignals = buildTrustSignalsFromEvidence(externalChecks.providerEvidence);
 
   const scoreInputBase = {
     domain: normalizedDomain,
@@ -53,12 +53,16 @@ export async function runWebsiteAnalysis(inputUrl: string, language: "en" | "nl"
   const heuristicForOpenAi = [...heuristicBase, ...scoreLinesPre];
   const trustIntelJson = JSON.stringify(
     {
-      police: externalChecks.police,
-      domainIntelligence: externalChecks.domainIntelligence,
-      safeBrowsing: externalChecks.safeBrowsing,
-      openPhish: externalChecks.openPhish,
-      urlHaus: externalChecks.urlHaus,
-      ssl: externalChecks.ssl,
+      providerEvidence: externalChecks.providerEvidence,
+      intelScoreBreakdown,
+      supplemental: {
+        police: externalChecks.police,
+        domainIntelligence: externalChecks.domainIntelligence,
+        safeBrowsing: externalChecks.safeBrowsing,
+        openPhish: externalChecks.openPhish,
+        urlHaus: externalChecks.urlHaus,
+        ssl: externalChecks.ssl
+      },
       trustSignals
     },
     null,
@@ -116,6 +120,8 @@ export async function runWebsiteAnalysis(inputUrl: string, language: "en" | "nl"
     domain: normalizedDomain,
     reasons: mergedReasons,
     trustSignals,
+    providerEvidence: externalChecks.providerEvidence,
+    intelScoreBreakdown,
     domainIntelligence: externalChecks.domainIntelligence,
     safeBrowsing: externalChecks.safeBrowsing,
     openPhish: externalChecks.openPhish,

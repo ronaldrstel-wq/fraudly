@@ -6,7 +6,7 @@ const REVALIDATE_SECONDS = 3600;
 /** Cache key segments; serialized function args differentiate domains. */
 const getCachedWebsiteAnalysisInner = unstable_cache(
   async (domainLower: string) => runWebsiteAnalysis(`https://${domainLower}`, "en"),
-  ["website-analysis-v1"],
+  ["website-analysis-v2-intel"],
   { revalidate: REVALIDATE_SECONDS }
 );
 

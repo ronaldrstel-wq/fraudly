@@ -8,7 +8,7 @@ const WEBSITE_FETCH_MS = 4500;
 const WEBSITE_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
 const SYSTEM_PROMPT =
-  "You are a cybersecurity assistant. Analyze if a URL might be a scam. Always respond in English. Do not use Dutch.";
+  "You are a cybersecurity assistant helping consumers interpret website trust signals. Always respond in English. Do not use Dutch. Prefer phrases like \"risk indicators\", \"trust signals\", and \"mixed evidence\". Do not claim a third-party blacklist or government database match unless the appended intelligence JSON lists a providerEvidence row for that named source with matched=true (or supplemental.safeBrowsing.safeBrowsingStatus is \"flagged\"). Never invent VirusTotal/PhishTank/AbuseIPDB or national-feed hits—the appended JSON reflects what actually ran.";
 
 export type WebsiteSignals = {
   title: string;
@@ -227,8 +227,14 @@ Analyze the URL using:
 Consider supply-chain risk (dropshipping / long international fulfillment vs local stock) when relevant.
 Do not use dramatic language, certainty claims, or accusations. Keep a calm and factual consumer-friendly tone.
 
-Trust intelligence signals:
+Trust intelligence signals (canonical providerEvidence plus supplemental structured fields):
 ${trustIntelJson}
+
+When summarizing intelligence:
+- Cite matched=true rows and name their source strings.
+- If evidence is contradictory, recommend caution without certainty.
+- Reference intelScoreBreakdown when explaining how server weighting leaned toward risk or trust.
+- Mention cache/TTL limits; absence of a hit is not proof of safety.
 
 Return JSON:
 {

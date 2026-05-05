@@ -1,3 +1,4 @@
+import type { TrustSignal } from "@/lib/checks/types";
 import type { ScamCheckResult } from "@/types/scam";
 
 interface ResultCardProps {
@@ -13,6 +14,19 @@ function trustBandFromScore(trustScore: number): TrustBand {
   return "low";
 }
 
+function toneForTrustSignal(signal: Pick<TrustSignal, "type">): string {
+  switch (signal.type) {
+    case "positive":
+      return "border-emerald-200 bg-emerald-50 text-emerald-900";
+    case "info":
+      return "border-slate-200 bg-slate-50 text-slate-800";
+    case "warning":
+      return "border-amber-200 bg-amber-50 text-amber-900";
+    case "danger":
+      return "border-rose-200 bg-rose-50 text-rose-900";
+  }
+}
+
 const trustPresentation: Record<
   TrustBand,
   {
@@ -26,42 +40,61 @@ const trustPresentation: Record<
   }
 > = {
   high: {
-    label: "Safe",
+    label: "High trust indicators",
     textColor: "text-emerald-700",
     bgColor: "bg-emerald-100",
-    advisory: "This website currently shows mostly positive trust signals.",
+    advisory: "Automated checks returned mostly supportive trust signals for this snapshot.",
     advisoryBorder: "border-emerald-200",
     advisoryBg: "bg-emerald-50",
     advisoryText: "text-emerald-900"
   },
   medium: {
-    label: "Likely safe",
+    label: "Generally favorable",
     textColor: "text-green-800",
     bgColor: "bg-green-100",
-    advisory: "This website shows generally favorable trust signals, but stay alert for unusual requests or payments.",
+    advisory: "Signals look broadly reasonable, but stay alert for unusual payment or data requests.",
     advisoryBorder: "border-green-200",
     advisoryBg: "bg-green-50",
     advisoryText: "text-green-900"
   },
   suspicious: {
-    label: "Suspicious",
+    label: "Mixed signals",
     textColor: "text-orange-700",
     bgColor: "bg-orange-100",
-    advisory: "Be careful. This website has mixed or uncertain trust signals.",
+    advisory: "Some checks disagree or surfaced warnings. Pause before sharing personal or financial details.",
     advisoryBorder: "border-amber-200",
     advisoryBg: "bg-amber-50",
     advisoryText: "text-amber-900"
   },
   low: {
-    label: "High risk",
+    label: "Lower trust context",
     textColor: "text-rose-700",
     bgColor: "bg-rose-100",
-    advisory: "Warning. This website shows strong scam indicators.",
+    advisory:
+      "Multiple automated checks surfaced stronger risk indicators. Extra caution is warranted; verify through independent channels.",
     advisoryBorder: "border-rose-200",
     advisoryBg: "bg-rose-50",
     advisoryText: "text-rose-900"
   }
 };
+
+function SignalList({ signals, empty }: { signals: TrustSignal[]; empty: string }) {
+  if (signals.length === 0) return <p className="mt-2 text-sm text-slate-600">{empty}</p>;
+  return (
+    <ul className="mt-3 space-y-2">
+      {signals.map((signal, index) => (
+        <li key={`${index}-${signal.title}`} className={`rounded-lg border px-3 py-2 text-sm ${toneForTrustSignal(signal)}`}>
+          <p className="font-semibold">{signal.title}</p>
+          <p className="mt-0.5">{signal.description}</p>
+          <div className="mt-1 flex flex-wrap gap-x-2 text-xs opacity-80">
+            {signal.source ? <span>Source: {signal.source}</span> : null}
+            {signal.confidence ? <span>Confidence: {signal.confidence}</span> : null}
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export function ResultCard({ result }: ResultCardProps) {
   const trustScore = Math.round(100 - result.score);
@@ -69,6 +102,9 @@ export function ResultCard({ result }: ResultCardProps) {
   const style = trustPresentation[band];
   const { reviewSignals } = result;
   const hasPublicReviewData = reviewSignals.trustpilotFound || reviewSignals.googleFound;
+
+  const keyRisks = result.trustSignals.filter((s) => s.type === "danger" || s.type === "warning");
+  const supportiveSignals = result.trustSignals.filter((s) => s.type === "positive" || s.type === "info");
 
   return (
     <div className="w-full rounded-xl bg-white p-6 shadow-lg shadow-slate-200/60 transition-all duration-300">
@@ -81,7 +117,7 @@ export function ResultCard({ result }: ResultCardProps) {
           </div>
           <div>
             <p className={`text-lg font-semibold ${style.textColor}`}>{style.label}</p>
-            <p className="mt-1 text-sm text-slate-500">Trust score</p>
+            <p className="mt-1 text-sm text-slate-500">Trust score (automated)</p>
           </div>
         </div>
 
@@ -91,33 +127,98 @@ export function ResultCard({ result }: ResultCardProps) {
         </div>
       </div>
 
-      <ul className="mt-6 list-disc space-y-2 pl-5 text-sm text-slate-700">
-        {result.reasons.map((reason, index) => (
-          <li key={`${index}-${reason.slice(0, 48)}`}>{reason}</li>
-        ))}
-      </ul>
+      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">Key risk indicators</p>
+        <p className="mt-1 text-xs text-slate-500">Warnings and higher-severity context from this run.</p>
+        <SignalList
+          signals={keyRisks}
+          empty="No high-priority risk rows were raised by the configured intelligence checks."
+        />
+      </div>
 
       <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Risk signals</p>
-        {result.trustSignals.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-600">No explicit external trust signals were available in this run.</p>
+        <p className="text-sm font-semibold text-slate-900">Trust signals</p>
+        <p className="mt-1 text-xs text-slate-500">Supportive or informational context (including “no hit” messages).</p>
+        <SignalList signals={supportiveSignals} empty="No supportive or informational trust rows were returned." />
+      </div>
+
+      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">Domain information</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-700">
+          <li>
+            Registration date: <span className="font-medium">{result.domainIntelligence.registrationDate ?? "unknown"}</span>
+          </li>
+          <li>
+            Domain age (days): <span className="font-medium">{result.domainIntelligence.ageDays ?? "unknown"}</span>
+          </li>
+          <li>
+            Registrar: <span className="font-medium">{result.domainIntelligence.registrar ?? "unknown"}</span>
+          </li>
+          <li>
+            Country: <span className="font-medium">{result.domainIntelligence.country ?? "unknown"}</span>
+          </li>
+          <li>
+            Expiration date: <span className="font-medium">{result.domainIntelligence.expirationDate ?? "unknown"}</span>
+          </li>
+          <li>
+            Privacy / redacted ownership hints:{" "}
+            <span className="font-medium">{result.domainIntelligence.hasPrivacyProtection ? "yes" : "no / unknown"}</span>
+          </li>
+        </ul>
+        <p className="mt-2 text-xs text-slate-500">Source: {result.domainIntelligence.source}</p>
+      </div>
+
+      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">Security checks</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-700">
+          <li>
+            HTTPS/TLS reachable:{" "}
+            <span className="font-medium">{result.ssl.httpsEnabled ? "yes" : "no"}</span>
+          </li>
+          <li>
+            Certificate trusted in probe:{" "}
+            <span className="font-medium">{result.ssl.validCertificate ? "yes" : "no"}</span>
+          </li>
+          <li>
+            Possibly self-signed / untrusted:{" "}
+            <span className="font-medium">{result.ssl.selfSigned ? "possible" : "no / unknown"}</span>
+          </li>
+          <li>
+            Issuer: <span className="font-medium">{result.ssl.certificateIssuer ?? "unknown"}</span>
+          </li>
+          <li>
+            Expiry: <span className="font-medium">{result.ssl.certificateExpiry ?? "unknown"}</span>
+          </li>
+        </ul>
+        <p className="mt-2 text-xs text-slate-500">Source: {result.ssl.source}</p>
+      </div>
+
+      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">Intelligence sources</p>
+        <p className="mt-1 text-xs text-slate-500">
+          Normalized provider output. “Matched” means the provider reported a hit or pattern in this run.
+        </p>
+        {result.providerEvidence.length === 0 ? (
+          <p className="mt-2 text-sm text-slate-600">No modular provider rows were recorded.</p>
         ) : (
-          <ul className="mt-3 space-y-2">
-            {result.trustSignals.map((signal, index) => {
-              const tone =
-                signal.type === "positive"
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-                  : signal.type === "warning"
-                    ? "border-amber-200 bg-amber-50 text-amber-900"
-                    : "border-rose-200 bg-rose-50 text-rose-900";
-              return (
-                <li key={`${index}-${signal.title}`} className={`rounded-lg border px-3 py-2 text-sm ${tone}`}>
-                  <p className="font-semibold">{signal.title}</p>
-                  <p className="mt-0.5">{signal.description}</p>
-                  {signal.source ? <p className="mt-1 text-xs opacity-80">Source: {signal.source}</p> : null}
-                </li>
-              );
-            })}
+          <ul className="mt-3 max-h-80 space-y-2 overflow-y-auto text-sm">
+            {result.providerEvidence.map((row, index) => (
+              <li key={`${row.source}-${index}-${row.title}`} className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2">
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <span className="font-semibold text-slate-900">{row.title}</span>
+                  <span className="text-xs uppercase tracking-wide text-slate-500">{row.category}</span>
+                  {row.matched ? (
+                    <span className="rounded bg-amber-100 px-1.5 text-xs font-medium text-amber-900">matched</span>
+                  ) : (
+                    <span className="rounded bg-slate-200 px-1.5 text-xs font-medium text-slate-700">no match</span>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-slate-700">{row.description}</p>
+                <p className="mt-1 text-[11px] text-slate-500">
+                  Source: {row.source} · severity: {row.severity} · confidence: {row.confidence}
+                </p>
+              </li>
+            ))}
           </ul>
         )}
       </div>
@@ -189,64 +290,39 @@ export function ResultCard({ result }: ResultCardProps) {
         </ul>
       </div>
 
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Technical checks</p>
-        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-700">
-          <li>
-            HTTPS/TLS:{" "}
-            <span className="font-medium">
-              {result.ssl.httpsEnabled ? (result.ssl.validCertificate ? "valid certificate" : "certificate issue") : "not available"}
-            </span>
-          </li>
-          <li>
-            Certificate issuer: <span className="font-medium">{result.ssl.certificateIssuer ?? "unknown"}</span>
-          </li>
-          <li>
-            Certificate expiry: <span className="font-medium">{result.ssl.certificateExpiry ?? "unknown"}</span>
-          </li>
-          <li>
-            Safe Browsing: <span className="font-medium">{result.safeBrowsing.safeBrowsingStatus}</span>
-            {result.safeBrowsing.safeBrowsingThreats.length > 0 ? ` (${result.safeBrowsing.safeBrowsingThreats.join(", ")})` : ""}
-          </li>
-          <li>
-            OpenPhish: <span className="font-medium">{result.openPhish.listed ? "listed" : "not listed"}</span>
-          </li>
-          <li>
-            URLHaus: <span className="font-medium">{result.urlHaus.listed ? "listed" : "not listed"}</span>
-          </li>
-          <li>
-            Dutch police reference:{" "}
-            <span className="font-medium">{result.police.listedInPoliceScamDatabase ? "match found" : "no match found"}</span>
-          </li>
-        </ul>
-      </div>
+      <details className="mt-6 rounded-xl border border-dashed border-slate-200 bg-white px-4 py-3 text-sm">
+        <summary className="cursor-pointer font-semibold text-slate-900">Score evidence (debug)</summary>
+        <p className="mt-2 text-xs text-slate-500">
+          Signed contributions toward the server risk score (positive numbers increase risk, negative numbers reduce it).
+        </p>
+        {result.intelScoreBreakdown.length === 0 ? (
+          <p className="mt-2 text-xs text-slate-600">No weighted intel contributions in this run.</p>
+        ) : (
+          <ul className="mt-2 space-y-1 text-xs text-slate-700">
+            {result.intelScoreBreakdown.map((row) => (
+              <li key={row.id}>
+                <span className="font-medium">{row.label}</span> ({row.impact >= 0 ? "+" : ""}
+                {row.impact}) — {row.rationale}
+                {row.source ? <span className="text-slate-500"> · {row.source}</span> : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </details>
 
       <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Domain information</p>
-        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-700">
-          <li>
-            Registration date: <span className="font-medium">{result.domainIntelligence.registrationDate ?? "unknown"}</span>
-          </li>
-          <li>
-            Domain age (days): <span className="font-medium">{result.domainIntelligence.ageDays ?? "unknown"}</span>
-          </li>
-          <li>
-            Registrar: <span className="font-medium">{result.domainIntelligence.registrar ?? "unknown"}</span>
-          </li>
-          <li>
-            Country: <span className="font-medium">{result.domainIntelligence.country ?? "unknown"}</span>
-          </li>
-          <li>
-            Expiration date: <span className="font-medium">{result.domainIntelligence.expirationDate ?? "unknown"}</span>
-          </li>
-          <li>
-            Ownership privacy detected:{" "}
-            <span className="font-medium">{result.domainIntelligence.hasPrivacyProtection ? "yes" : "no / unknown"}</span>
-          </li>
+        <p className="text-sm font-semibold text-slate-900">AI summary & key factors</p>
+        <p className="mt-1 text-xs text-slate-500">
+          Blended automated notes (heuristics, intel-weighted scoring context, and optional AI). This is not legal or
+          financial advice.
+        </p>
+        <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-700">
+          {result.reasons.map((reason, index) => (
+            <li key={`${index}-${reason.slice(0, 48)}`}>{reason}</li>
+          ))}
         </ul>
+        <p className="mt-3 text-xs text-slate-500">AI model used in this run: {result.aiUsed ? "yes" : "no"}</p>
       </div>
-
-      <p className="mt-3 text-xs text-slate-500">AI used: {result.aiUsed ? "yes" : "no"}</p>
 
       <div
         className={`mt-6 rounded-xl border px-4 py-3 text-sm ${style.advisoryBorder} ${style.advisoryBg} ${style.advisoryText}`}

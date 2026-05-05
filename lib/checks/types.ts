@@ -1,8 +1,11 @@
+import type { ProviderEvidenceResult } from "@/lib/checks/providers/types";
+
 export type TrustSignal = {
-  type: "positive" | "warning" | "danger";
+  type: "positive" | "info" | "warning" | "danger";
   title: string;
   description: string;
   source?: string;
+  confidence?: ProviderEvidenceResult["confidence"];
 };
 
 export type PoliceScamCheck = {
@@ -56,5 +59,7 @@ export type ExternalChecksResult = {
   openPhish: FeedThreatCheck;
   urlHaus: FeedThreatCheck;
   ssl: SslCheck;
+  /** Normalized modular provider output (includes Tier 1 + optional Tier 2 stubs). */
+  providerEvidence: ProviderEvidenceResult[];
   warnings: string[];
 };
