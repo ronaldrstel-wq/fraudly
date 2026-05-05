@@ -1,25 +1,11 @@
 import type { User } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { runWebsiteAnalysis } from "@/lib/analysis/runWebsiteAnalysis";
 import { toBillingSnapshot } from "@/lib/billing";
-import {
-  fetchAiScamReasons,
-  fetchWebsiteSignals,
-  mergeReasonsWithHeuristics,
-  type AiScamReasonsResult
-} from "@/lib/aiScamReasons";
-import { normalizeDomain } from "@/lib/cache";
-import { getReviewSignals } from "@/lib/reviewSignals";
-import { checkDailyLimiter, getClientIp } from "@/lib/rateLimiter";
-import {
-  buildDomainHeuristicReasons,
-  calculateScamScore,
-  formatScoreSignalsForPrompt
-} from "@/lib/scoringEngine";
-import { getSupplyChainSignals } from "@/lib/supplyChainSignals";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { canRunCheck, getAnonymousFreeCheckCookieName, hasUsedAnonymousFreeCheckCookie } from "@/lib/accessControl";
+import { checkDailyLimiter, getClientIp } from "@/lib/rateLimiter";
 import { getBillingUserOrNull } from "@/lib/user-store";
-import type { ScamCheckResult } from "@/types/scam";
 
 export const runtime = "nodejs";
 
@@ -49,7 +35,6 @@ export async function POST(request: Request) {
     }
 
     const input = typeof body?.url === "string" ? body.url.trim() : "";
-    const detailLevel = "full";
     const language = body?.language === "nl" ? "nl" : "en";
 
     if (!input) {
@@ -90,88 +75,8 @@ export async function POST(request: Request) {
 
     const billingUser: User | null = user;
 
-    const normalizedDomain = normalizeDomain(parsedUrl.href);
-    const heuristicReasons = buildDomainHeuristicReasons(normalizedDomain);
-    const reviewSignals = await getReviewSignals(normalizedDomain);
-    const websiteSignals = await fetchWebsiteSignals(parsedUrl.href);
-    const websiteText = websiteSignals?.text ?? "";
-    const supplyChainSignals = await getSupplyChainSignals(normalizedDomain, websiteText);
+    const fullResult = await runWebsiteAnalysis(parsedUrl.href, language);
 
-    const scoreInputBase = {
-      domain: normalizedDomain,
-      heuristicReasons,
-      reviewSignals,
-      supplyChainSignals,
-      websiteText
-    };
-
-    const scorePre = calculateScamScore({
-      ...scoreInputBase,
-      aiRiskSignals: undefined
-    });
-    const scoringSignalsJson = formatScoreSignalsForPrompt(scorePre.signals);
-    const heuristicBase = [...heuristicReasons, ...supplyChainSignals.reasons];
-    const scoreLinesPre = [
-      ...scorePre.topPositiveSignals.map((s) => `Scoring (risk↑): ${s.reason}`),
-      ...scorePre.topNegativeSignals.map((s) => `Scoring (trust↑): ${s.reason}`)
-    ];
-    const heuristicForOpenAi = [...heuristicBase, ...scoreLinesPre];
-
-    let reviewSummary =
-      reviewSignals.trustpilotFound || reviewSignals.googleFound
-        ? "Public review data was included in this analysis."
-        : "No public review data found yet.";
-    let aiUsed = false;
-    let aiPayload: AiScamReasonsResult | null = null;
-
-    try {
-      if (!process.env.OPENAI_API_KEY) {
-        throw new Error("Missing OPENAI_API_KEY in environment variables");
-      }
-
-      aiPayload = await fetchAiScamReasons(
-        input,
-        websiteSignals,
-        reviewSignals,
-        heuristicForOpenAi,
-        scoringSignalsJson,
-        language
-      );
-      if (aiPayload) {
-        aiUsed = true;
-        if (aiPayload.reviewSummary) {
-          reviewSummary = aiPayload.reviewSummary;
-        }
-      }
-    } catch (error) {
-      console.error("[OpenAI] failed:", error);
-      aiUsed = false;
-      aiPayload = null;
-    }
-
-    const scoreResult = calculateScamScore({
-      ...scoreInputBase,
-      aiRiskSignals: aiPayload?.risk ? { level: aiPayload.risk } : undefined
-    });
-
-    const scoreLinesFinal = [
-      ...scoreResult.topPositiveSignals.map((s) => `Scoring (risk↑): ${s.reason}`),
-      ...scoreResult.topNegativeSignals.map((s) => `Scoring (trust↑): ${s.reason}`)
-    ];
-    const heuristicForMerge = [...heuristicBase, ...scoreLinesFinal];
-    const mergedReasons = mergeReasonsWithHeuristics(aiPayload, heuristicForMerge);
-
-    const fullResult: ScamCheckResult = {
-      score: scoreResult.finalScore,
-      verdict: scoreResult.verdict,
-      domain: normalizedDomain,
-      reasons: mergedReasons,
-      reviewSignals,
-      reviewSummary,
-      aiUsed,
-      supplyChainSignals,
-      scoreResult
-    };
     const payload = {
       detailLevel: "full" as const,
       result: fullResult,

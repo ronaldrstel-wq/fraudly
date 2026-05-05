@@ -186,6 +186,7 @@ export async function fetchAiScamReasons(
   reviewSignals: ReviewSignals,
   heuristicReasons: string[],
   scoringSignalsJson: string,
+  trustIntelJson: string,
   language: "en" | "nl" = "en"
 ): Promise<AiScamReasonsResult | null> {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
@@ -219,10 +220,15 @@ ${scoringSignalsJson}
 Analyze the URL using:
 - domain and supply-chain heuristics
 - review signals
+- technical trust intelligence (blacklist checks, SSL/TLS, domain intelligence)
 - website text if available
 - the scoring signals above (explain and align with them; do not contradict the weighted risk picture)
 
 Consider supply-chain risk (dropshipping / long international fulfillment vs local stock) when relevant.
+Do not use dramatic language, certainty claims, or accusations. Keep a calm and factual consumer-friendly tone.
+
+Trust intelligence signals:
+${trustIntelJson}
 
 Return JSON:
 {

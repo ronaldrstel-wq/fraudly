@@ -1,6 +1,7 @@
 import type { ReviewSignals } from "@/lib/reviewSignals";
 import type { ScoreResult, ScoreSignal } from "@/lib/scoringEngine";
 import type { SupplyChainSignals } from "@/lib/supplyChainSignals";
+import type { DomainIntelligence, SafeBrowsingCheck, SslCheck, TrustSignal } from "@/lib/checks/types";
 
 export type { ScoreResult, ScoreSignal };
 
@@ -11,6 +12,19 @@ export interface ScamCheckResult {
   verdict: ScamVerdict;
   domain: string;
   reasons: string[];
+  trustSignals: TrustSignal[];
+  domainIntelligence: DomainIntelligence;
+  safeBrowsing: SafeBrowsingCheck;
+  openPhish: { listed: boolean; matches: string[]; source: string; warnings: string[] };
+  urlHaus: { listed: boolean; matches: string[]; source: string; warnings: string[] };
+  ssl: SslCheck;
+  police: {
+    listedInPoliceScamDatabase: boolean;
+    policeScamMatch?: string;
+    policeWarningReason?: string;
+    source: string;
+    warnings: string[];
+  };
   reviewSignals: ReviewSignals;
   reviewSummary: string;
   aiUsed: boolean;
@@ -51,6 +65,16 @@ const SCORE_CATEGORIES: ScoreSignal["category"][] = [
   "ai"
 ];
 
+function isTrustSignal(value: unknown): value is TrustSignal {
+  if (!value || typeof value !== "object") return false;
+  const s = value as Record<string, unknown>;
+  if (s.type !== "positive" && s.type !== "warning" && s.type !== "danger") return false;
+  if (typeof s.title !== "string") return false;
+  if (typeof s.description !== "string") return false;
+  if (s.source !== undefined && typeof s.source !== "string") return false;
+  return true;
+}
+
 function isScoreSignal(value: unknown): value is ScoreSignal {
   if (!value || typeof value !== "object") return false;
   const s = value as Record<string, unknown>;
@@ -85,7 +109,14 @@ export function isScamCheckResult(value: unknown): value is ScamCheckResult {
   if (typeof o.aiUsed !== "boolean") return false;
   if (!Array.isArray(o.reasons)) return false;
   if (!o.reasons.every((r) => typeof r === "string")) return false;
+  if (!Array.isArray(o.trustSignals) || !o.trustSignals.every(isTrustSignal)) return false;
   if (!o.reviewSignals || typeof o.reviewSignals !== "object") return false;
+  if (!o.domainIntelligence || typeof o.domainIntelligence !== "object") return false;
+  if (!o.safeBrowsing || typeof o.safeBrowsing !== "object") return false;
+  if (!o.openPhish || typeof o.openPhish !== "object") return false;
+  if (!o.urlHaus || typeof o.urlHaus !== "object") return false;
+  if (!o.ssl || typeof o.ssl !== "object") return false;
+  if (!o.police || typeof o.police !== "object") return false;
 
   const review = o.reviewSignals as Record<string, unknown>;
   if (typeof review.googleFound !== "boolean") return false;

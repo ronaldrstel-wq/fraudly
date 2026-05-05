@@ -4,6 +4,7 @@ import { SITE_URL } from "@/lib/seo";
 const paths = [
   "/",
   "/about",
+  "/features",
   "/how-it-works",
   "/privacy",
   "/terms",

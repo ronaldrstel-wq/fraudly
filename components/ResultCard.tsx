@@ -97,6 +97,31 @@ export function ResultCard({ result }: ResultCardProps) {
         ))}
       </ul>
 
+      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">Risk signals</p>
+        {result.trustSignals.length === 0 ? (
+          <p className="mt-2 text-sm text-slate-600">No explicit external trust signals were available in this run.</p>
+        ) : (
+          <ul className="mt-3 space-y-2">
+            {result.trustSignals.map((signal, index) => {
+              const tone =
+                signal.type === "positive"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                  : signal.type === "warning"
+                    ? "border-amber-200 bg-amber-50 text-amber-900"
+                    : "border-rose-200 bg-rose-50 text-rose-900";
+              return (
+                <li key={`${index}-${signal.title}`} className={`rounded-lg border px-3 py-2 text-sm ${tone}`}>
+                  <p className="font-semibold">{signal.title}</p>
+                  <p className="mt-0.5">{signal.description}</p>
+                  {signal.source ? <p className="mt-1 text-xs opacity-80">Source: {signal.source}</p> : null}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
       <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
         <p className="text-sm font-semibold text-slate-900">Review signals</p>
         {hasPublicReviewData ? (
@@ -161,6 +186,63 @@ export function ResultCard({ result }: ResultCardProps) {
           {result.supplyChainSignals.reasons.map((r, i) => (
             <li key={`${i}-${r.slice(0, 48)}`}>{r}</li>
           ))}
+        </ul>
+      </div>
+
+      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">Technical checks</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-700">
+          <li>
+            HTTPS/TLS:{" "}
+            <span className="font-medium">
+              {result.ssl.httpsEnabled ? (result.ssl.validCertificate ? "valid certificate" : "certificate issue") : "not available"}
+            </span>
+          </li>
+          <li>
+            Certificate issuer: <span className="font-medium">{result.ssl.certificateIssuer ?? "unknown"}</span>
+          </li>
+          <li>
+            Certificate expiry: <span className="font-medium">{result.ssl.certificateExpiry ?? "unknown"}</span>
+          </li>
+          <li>
+            Safe Browsing: <span className="font-medium">{result.safeBrowsing.safeBrowsingStatus}</span>
+            {result.safeBrowsing.safeBrowsingThreats.length > 0 ? ` (${result.safeBrowsing.safeBrowsingThreats.join(", ")})` : ""}
+          </li>
+          <li>
+            OpenPhish: <span className="font-medium">{result.openPhish.listed ? "listed" : "not listed"}</span>
+          </li>
+          <li>
+            URLHaus: <span className="font-medium">{result.urlHaus.listed ? "listed" : "not listed"}</span>
+          </li>
+          <li>
+            Dutch police reference:{" "}
+            <span className="font-medium">{result.police.listedInPoliceScamDatabase ? "match found" : "no match found"}</span>
+          </li>
+        </ul>
+      </div>
+
+      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">Domain information</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-700">
+          <li>
+            Registration date: <span className="font-medium">{result.domainIntelligence.registrationDate ?? "unknown"}</span>
+          </li>
+          <li>
+            Domain age (days): <span className="font-medium">{result.domainIntelligence.ageDays ?? "unknown"}</span>
+          </li>
+          <li>
+            Registrar: <span className="font-medium">{result.domainIntelligence.registrar ?? "unknown"}</span>
+          </li>
+          <li>
+            Country: <span className="font-medium">{result.domainIntelligence.country ?? "unknown"}</span>
+          </li>
+          <li>
+            Expiration date: <span className="font-medium">{result.domainIntelligence.expirationDate ?? "unknown"}</span>
+          </li>
+          <li>
+            Ownership privacy detected:{" "}
+            <span className="font-medium">{result.domainIntelligence.hasPrivacyProtection ? "yes" : "no / unknown"}</span>
+          </li>
         </ul>
       </div>
 

@@ -495,6 +495,7 @@ export function calculateScamScore(input: {
   addressSignals?: AddressSignalsInput;
   domainAgeSignals?: DomainAgeSignalsInput;
   aiRiskSignals?: AiRiskSignalsInput;
+  externalSignals?: ScoreSignal[];
   /** Snippet used only for business-identity heuristics when addressSignals omit fields. */
   websiteText?: string;
 }): ScoreResult {
@@ -517,6 +518,9 @@ export function calculateScamScore(input: {
   pushDomainAgeSignals(input.domainAgeSignals, signals);
   pushDomainTrustSignals(domain, signals, reviewTier);
   pushAiRiskSignals(input.aiRiskSignals?.level, signals, reviewTier);
+  if (input.externalSignals?.length) {
+    signals.push(...input.externalSignals);
+  }
 
   const reviewW = scaleCategoryWeights(signals, "reviews", REVIEW_MAX_UP, REVIEW_MAX_DOWN);
 

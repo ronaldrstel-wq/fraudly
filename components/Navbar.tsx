@@ -7,7 +7,7 @@ import { EN_MESSAGES } from "@/lib/messages.en";
 
 const navLinks = [
   { label: "How it works", href: "/how-it-works" },
-  { label: "Features", href: "#" },
+  { label: "Features", href: "/features" },
   { label: "About", href: "/about" }
 ] as const;
 
