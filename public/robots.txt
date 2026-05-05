@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://fraudly.app
+
+# Sitemaps
+Sitemap: https://fraudly.app/sitemap.xml
