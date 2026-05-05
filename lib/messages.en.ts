@@ -87,8 +87,15 @@ export const EN_MESSAGES = {
     loginToManage: "Log in to save or remove watchlist items.",
     addToWatchlist: "Add to Watchlist",
     watching: "Watching",
+    /** Shorter label for dense rows (e.g. latest checks). */
+    watchShort: "Watch",
+    watchingShort: "Watching",
+    watchShortSignedOut: "Watch · Log in",
+    stateLoading: "Checking…",
     removeFromWatchlist: "Remove from Watchlist",
     signedOutWatchHint: "Watch · Log in",
+    updatingList: "Updating watchlist…",
+    openItem: "Open",
     emptyState:
       "Your watchlist is empty. Save suspicious items to review or monitor them later.",
     loadError: "Could not load your watchlist. Try again shortly.",

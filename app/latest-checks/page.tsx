@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Prisma } from "@prisma/client";
+import { LatestCheckWatchCell } from "@/components/latest-checks/LatestCheckWatchCell";
 import { LatestChecksJsonLd } from "@/components/seo/LatestChecksJsonLd";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -164,10 +165,17 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
                         </div>
                       </dl>
                     </div>
-                    <div className="mt-4 flex justify-end border-t border-slate-100 pt-3">
+                    <div className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-3 sm:flex-row sm:items-center sm:justify-between">
+                      <LatestCheckWatchCell
+                        entityType={row.entityType}
+                        normalizedKey={row.normalizedValue}
+                        checkedValue={row.checkedValue}
+                        publicResultPath={row.publicResultPath}
+                        riskScoreSnapshot={row.riskScoreSnapshot}
+                      />
                       <Link
                         href={row.publicResultPath}
-                        className="inline-flex rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 md:text-sm"
+                        className="inline-flex shrink-0 justify-center rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 md:text-sm"
                       >
                         {EN_MESSAGES.latestChecks.viewSnapshot}
                       </Link>
