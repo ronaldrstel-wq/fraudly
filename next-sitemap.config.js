@@ -20,7 +20,8 @@ module.exports = {
     "/checkout",
     "/checkout/*",
     "/settings",
-    "/settings/*"
+    "/settings/*",
+    "/watchlist"
   ],
   robotsTxtOptions: {
     policies: [

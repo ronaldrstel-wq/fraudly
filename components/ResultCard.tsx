@@ -1,3 +1,4 @@
+import { WatchlistToggle } from "@/components/WatchlistToggle";
 import type { TrustSignal } from "@/lib/checks/types";
 import type { ScamCheckResult } from "@/types/scam";
 
@@ -102,28 +103,40 @@ export function ResultCard({ result }: ResultCardProps) {
   const style = trustPresentation[band];
   const { reviewSignals } = result;
   const hasPublicReviewData = reviewSignals.trustpilotFound || reviewSignals.googleFound;
+  const detailPath = `/check/${encodeURIComponent(result.domain)}`;
 
   const keyRisks = result.trustSignals.filter((s) => s.type === "danger" || s.type === "warning");
   const supportiveSignals = result.trustSignals.filter((s) => s.type === "positive" || s.type === "info");
 
   return (
     <div className="w-full rounded-xl bg-white p-6 shadow-lg shadow-slate-200/60 transition-all duration-300">
-      <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
-        <div className="flex items-center gap-4" aria-label={`Trust score ${trustScore} percent, ${style.label}`}>
+      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
+        <div className="flex min-w-0 items-center gap-4" aria-label={`Trust score ${trustScore} percent, ${style.label}`}>
           <div
-            className={`flex h-24 w-24 items-center justify-center rounded-full border-8 border-white text-2xl font-bold shadow-sm ${style.bgColor} ${style.textColor}`}
+            className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-8 border-white text-2xl font-bold shadow-sm ${style.bgColor} ${style.textColor}`}
           >
             {trustScore}%
           </div>
-          <div>
+          <div className="min-w-0">
             <p className={`text-lg font-semibold ${style.textColor}`}>{style.label}</p>
             <p className="mt-1 text-sm text-slate-500">Trust score (automated)</p>
           </div>
         </div>
 
-        <div className="text-sm text-slate-600">
-          <p className="font-medium text-slate-900">Analyzed domain</p>
-          <p className="mt-1 break-all">{result.domain}</p>
+        <div className="flex w-full min-w-0 flex-col gap-3 sm:w-auto sm:max-w-md sm:items-end sm:text-right">
+          <WatchlistToggle
+            itemType="domain"
+            rawKey={result.domain}
+            title={result.domain}
+            detailPath={detailPath}
+            trustScore={trustScore}
+            verdict={result.verdict}
+            className="w-full sm:w-auto"
+          />
+          <div className="text-sm text-slate-600 sm:text-right">
+            <p className="font-medium text-slate-900">Analyzed domain</p>
+            <p className="mt-1 break-all">{result.domain}</p>
+          </div>
         </div>
       </div>
 

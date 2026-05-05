@@ -77,6 +77,41 @@ export const EN_MESSAGES = {
     cancelTitle: "Payment canceled",
     cancelBody: "No worries, you can restart checkout at any time.",
     cancelCta: "Back to pricing"
+  },
+  watchlist: {
+    navLabel: "Watchlist",
+    navLabelShort: "Saved",
+    pageTitle: "Watchlist",
+    pageIntro: "Sites and items you chose to watch appear here. Open a saved link to review risk indicators and trust signals again.",
+    loginToView: "Log in to view your watchlist.",
+    loginToManage: "Log in to save or remove watchlist items.",
+    addToWatchlist: "Add to Watchlist",
+    watching: "Watching",
+    removeFromWatchlist: "Remove from Watchlist",
+    signedOutWatchHint: "Watch · Log in",
+    emptyState:
+      "Your watchlist is empty. Save suspicious items to review or monitor them later.",
+    loadError: "Could not load your watchlist. Try again shortly.",
+    saveError: "Could not save. Check your connection and try again.",
+    removeError: "Could not remove this item.",
+    itemTypeLabels: {
+      domain: "Domain",
+      url: "URL",
+      email: "Email",
+      phone: "Phone"
+    },
+    verdictLabels: {
+      safe: "lower risk context",
+      suspicious: "mixed signals",
+      scam: "strong risk indicators"
+    },
+    columns: {
+      item: "Item",
+      type: "Type",
+      status: "Trust / risk snapshot",
+      added: "Added",
+      actions: "Actions"
+    }
   }
 } as const;
 

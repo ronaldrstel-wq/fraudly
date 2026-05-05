@@ -19,6 +19,13 @@ enum SubscriptionStatus {
   past_due
 }
 
+enum WatchlistItemType {
+  domain
+  url
+  email
+  phone
+}
+
 model User {
   id                   String             @id @default(cuid())
   authProvider         String             @default("legacy")
@@ -34,6 +41,23 @@ model User {
   stripeSubscriptionId String?
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
+  watchlistItems       WatchlistItem[]
+}
+
+model WatchlistItem {
+  id          String            @id @default(cuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemType    WatchlistItemType
+  externalKey String            @db.VarChar(768)
+  title       String            @db.VarChar(512)
+  detailPath  String            @db.VarChar(2048)
+  trustScore  Int?
+  verdict     String?           @db.VarChar(32)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@unique([userId, itemType, externalKey])
 }
 
 model StripeEvent {
