@@ -2,7 +2,7 @@
 
 import { SignInButton, useAuth } from "@clerk/nextjs";
 import dynamic from "next/dynamic";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnalysisPaywall, type PurchaseAction } from "@/components/AnalysisPaywall";
 import { BasicResultCard } from "@/components/BasicResultCard";
 import { Hero } from "@/components/Hero";
@@ -24,6 +24,8 @@ const FeatureCards = dynamic(() => import("@/components/FeatureCards").then((m) 
 const PostScanAppPromo = dynamic(() => import("@/components/PostScanAppPromo").then((m) => ({ default: m.PostScanAppPromo })), {
   loading: () => <div className="h-32 w-full animate-pulse rounded-xl bg-slate-100" aria-hidden />
 });
+
+const FREE_CHECK_STORAGE_KEY = "fraudly_has_used_free_check";
 
 function isValidUrl(value: string) {
   try {
@@ -49,15 +51,22 @@ export function HomeClient() {
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkoutAuthRequired, setCheckoutAuthRequired] = useState(false);
   const [fullRunPending, setFullRunPending] = useState(false);
+  const [hasUsedFreeCheck, setHasUsedFreeCheck] = useState(false);
   const inFlight = useRef(false);
   const checkoutInFlight = useRef(false);
 
-  const disabled = useMemo(
-    () => url.trim().length === 0 || loading || (isLoaded && !isSignedIn),
-    [url, loading, isLoaded, isSignedIn]
-  );
+  const disabled = useMemo(() => url.trim().length === 0 || loading, [url, loading]);
 
   const checkoutBlocked = checkoutLoading || fullRunPending || !isSignedIn || !isLoaded;
+
+  useEffect(() => {
+    try {
+      const value = window.localStorage.getItem(FREE_CHECK_STORAGE_KEY);
+      if (value === "1") setHasUsedFreeCheck(true);
+    } catch {
+      // Ignore storage access issues (private mode, blocked storage).
+    }
+  }, []);
 
   async function runCheck(detailLevel: "basic" | "full") {
     if (inFlight.current) return;
@@ -70,8 +79,13 @@ export function HomeClient() {
       return;
     }
 
-    if (!isSignedIn) {
-      setError("Log in om een URL te controleren.");
+    if (!isSignedIn && detailLevel === "full") {
+      setError("Log in om volledige analyse te gebruiken.");
+      return;
+    }
+
+    if (!isSignedIn && hasUsedFreeCheck) {
+      setError("Je gratis check is gebruikt. Log in om nog een check te doen.");
       return;
     }
 
@@ -178,6 +192,14 @@ export function HomeClient() {
       } else {
         setResult(null);
         setBasicResult(payload.result as BasicCheckResult);
+      }
+      if (!isSignedIn && payload.detailLevel === "basic") {
+        setHasUsedFreeCheck(true);
+        try {
+          window.localStorage.setItem(FREE_CHECK_STORAGE_KEY, "1");
+        } catch {
+          // Ignore storage access issues.
+        }
       }
       trackCheckCompleted(payload.result.score);
     } catch {
@@ -294,9 +316,9 @@ export function HomeClient() {
   ) : undefined;
 
   const heroAuthGate =
-    isLoaded && !isSignedIn ? (
+    isLoaded && !isSignedIn && hasUsedFreeCheck ? (
       <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center">
-        <p className="text-sm font-medium text-slate-800">Log in om een URL te controleren.</p>
+        <p className="text-sm font-medium text-slate-800">Je gratis check is gebruikt. Log in voor meer checks.</p>
         <div className="mt-3 flex justify-center">{signInModalButton}</div>
       </div>
     ) : null;

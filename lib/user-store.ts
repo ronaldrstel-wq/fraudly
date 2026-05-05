@@ -15,6 +15,13 @@ export async function requireBillingUser(): Promise<User> {
   return getOrCreateUserForClerk(userId);
 }
 
+/** Returns authenticated billing user, or null when signed out. */
+export async function getBillingUserOrNull(): Promise<User | null> {
+  const { userId } = await auth();
+  if (!userId) return null;
+  return getOrCreateUserForClerk(userId);
+}
+
 async function getOrCreateUserForClerk(clerkUserId: string): Promise<User> {
   const existing = await db.user.findUnique({
     where: { authProviderId: clerkUserId }
