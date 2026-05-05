@@ -1,3 +1,8 @@
+/**
+ * Shared client-safe English strings.
+ * For fuller UI copy see `lib/messages.en.ts` and `lib/uiCopy.ts`.
+ */
+
 /** Generic copy for unexpected API / network failures (not validation or 429). */
 export const GENERIC_CHECK_ERROR = "Something went wrong. Please try again.";
 

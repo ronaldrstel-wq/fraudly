@@ -183,7 +183,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
         onClick={() => trackEvent("signup_started", { source: "signup_prompt" })}
       >
-        Gratis account aanmaken
+        {EN_MESSAGES.freemium.createFreeAccount}
       </button>
     </SignUpButton>
   );
@@ -191,13 +191,8 @@ export function HomeClient({ children }: { children?: ReactNode }) {
   const signupPrompt =
     showSignupPrompt && !isSignedIn ? (
       <div className="mx-auto mt-8 w-full max-w-[860px] rounded-[18px] border border-sky-100 bg-white p-[18px] shadow-md shadow-slate-200/40 md:p-6">
-        <h3 className="text-lg font-bold tracking-tight text-slate-900 md:text-xl">
-          Maak een gratis account om meer websites te checken
-        </h3>
-        <p className="mt-2 text-sm leading-relaxed text-slate-600">
-          Je eerste website-check is gratis en volledig beschikbaar. Wil je nog een website controleren? Maak dan
-          gratis een account aan.
-        </p>
+        <h3 className="text-lg font-bold tracking-tight text-slate-900 md:text-xl">{EN_MESSAGES.freemium.promptTitle}</h3>
+        <p className="mt-2 text-sm leading-relaxed text-slate-600">{EN_MESSAGES.freemium.promptBody}</p>
         <div className="mt-5 flex flex-col gap-3 sm:flex-row">
           {signUpModalButton}
           <SignInButton mode="modal">
@@ -206,7 +201,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
               className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
               onClick={() => trackEvent("login_started", { source: "signup_prompt" })}
             >
-              Inloggen
+              {EN_MESSAGES.auth.loginCta}
             </button>
           </SignInButton>
         </div>
@@ -261,7 +256,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
             </div>
             {!isSignedIn && (
               <div className="result-in mx-auto mt-6 max-w-3xl rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                Wil je nog een website controleren? Maak gratis een account aan.
+                {EN_MESSAGES.freemium.afterResultBanner}
               </div>
             )}
           </>

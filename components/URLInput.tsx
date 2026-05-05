@@ -39,7 +39,7 @@ export function URLInput({
           disabled={disabled || loading}
           className="h-12 w-full shrink-0 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-5 text-base font-semibold text-white shadow-lg shadow-blue-500/20 outline-none transition hover:opacity-90 focus-visible:ring-4 focus-visible:ring-blue-300 disabled:cursor-not-allowed disabled:opacity-50 sm:mt-6 sm:w-auto sm:min-w-[10.5rem]"
         >
-          {loading ? "Analyzing link..." : "Check website"}
+          {loading ? "Checking website..." : "Check website"}
         </button>
       </div>
     </div>

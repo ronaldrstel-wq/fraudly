@@ -27,8 +27,8 @@ export function RateLimitCTA() {
             You&apos;ve reached your free checks for today.
           </h3>
           <p className="mt-2 text-sm leading-relaxed text-slate-600">
-            Free web checks reset daily. For instant checks from social apps, use the Fraudly app when it&apos;s
-            available.
+            Free website checks reset daily. When the Fraudly app launches, you&apos;ll be able to run checks faster
+            from social links.
           </p>
           <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
             <button

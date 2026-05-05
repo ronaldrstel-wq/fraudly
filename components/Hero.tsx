@@ -35,7 +35,7 @@ export function Hero({ url, onUrlChange, onSubmit, loading, disabled, authGate }
         {authGate ? <div className="mt-4">{authGate}</div> : null}
         {loading && (
           <p className="mt-3 text-center text-sm text-slate-500" role="status" aria-live="polite">
-            Analyzing link...
+            Checking website...
           </p>
         )}
       </div>

@@ -21,9 +21,9 @@ export function PostScanAppPromo() {
           <PhoneIcon className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="text-base font-semibold text-slate-900">Scan faster next time</h3>
+          <h3 className="text-base font-semibold text-slate-900">Check links faster next time</h3>
           <p className="mt-1.5 text-sm leading-relaxed text-slate-600">
-            Use the Fraudly iOS app to check links instantly from TikTok or Instagram
+            The Fraudly iOS app (coming soon) will help you run website checks straight from TikTok or Instagram links.
           </p>
           <a
             href="#"

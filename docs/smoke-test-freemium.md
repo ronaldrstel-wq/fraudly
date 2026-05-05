@@ -27,11 +27,11 @@ Short manual QA for the temporary freemium checker flow.
    - Expected: signup/login prompt appears **after** clicking `Check website`.
 
 5. **Signup button behavior + event**
-   - Click `Gratis account aanmaken` in the prompt.
+   - Click **Create free account** in the prompt.
    - Expected: signup modal/flow opens and `signup_started` is logged.
 
 6. **Login button behavior + event**
-   - Click `Inloggen` in the prompt.
+   - Click **Log in** in the prompt.
    - Expected: login modal/flow opens and `login_started` is logged.
 
 7. **Logged-in multiple checks**

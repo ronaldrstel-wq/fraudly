@@ -1,4 +1,16 @@
+/**
+ * Canonical English UI copy for Fraudly (single locale for production).
+ * Future i18n: split per locale file and swap this export for the active locale.
+ */
 export const EN_MESSAGES = {
+  /** Homepage / onboarding — second check gate (aligned with analytics event labels in docs). */
+  freemium: {
+    createFreeAccount: "Create free account",
+    promptTitle: "Create a free account to check more websites",
+    promptBody:
+      "Your first website check is free and gives you the full breakdown. Want to check another website? Create a free account—or log in if you already have one.",
+    afterResultBanner: "Want to check another website? Create a free account."
+  },
   auth: {
     loginCta: "Log in",
     signUpCta: "Sign up",
