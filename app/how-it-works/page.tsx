@@ -7,7 +7,7 @@ export const metadata = buildPageMetadata({
   path: "/how-it-works",
   titleSegment: "How it works",
   description:
-    "Learn how Fraudly checks websites using trust signals, reviews, patterns, and AI before you click or buy."
+    "Learn how Fraudly combines identity, behavior, device, payment, network, reputation, and AI risk signals to help detect suspicious activity early."
 });
 
 const steps = [
@@ -31,24 +31,101 @@ const steps = [
 
 const signalCards = [
   {
-    title: "Public reviews",
-    text: "Google review ratings and review counts help identify established businesses."
+    title: "Identity & account signals",
+    text: "We assess account-level trust context to catch identity risks early.",
+    bullets: [
+      "Email reputation and disposable email detection",
+      "Phone number validity",
+      "Device fingerprint consistency",
+      "VPN, proxy, Tor, and datacenter IP detection",
+      "Geolocation mismatches",
+      "Account age and linked-account detection"
+    ]
   },
   {
-    title: "Website patterns",
-    text: "We look for suspicious wording, unusual domains, fake urgency, and unclear business information."
+    title: "Behavioral signals",
+    text: "Session and authentication behavior can reveal abuse before losses occur.",
+    bullets: [
+      "Session behavior",
+      "Velocity checks",
+      "Login/authentication anomalies",
+      "Repeated failed attempts",
+      "Bot-like or automated behavior",
+      "Suspicious referral or invite activity"
+    ]
   },
   {
-    title: "Shipping & supply chain",
-    text: "Fraudly checks for clues of dropshipping, long delivery times, or China-linked fulfillment."
+    title: "Payment & transaction signals",
+    text: "Payment patterns help surface fraud attempts and high-risk transactions.",
+    bullets: [
+      "Card testing patterns",
+      "High-risk BIN/issuer analysis",
+      "Billing/shipping mismatches",
+      "Transaction amount anomalies",
+      "Refund and chargeback indicators",
+      "Cross-account payment reuse"
+    ]
   },
   {
-    title: "Business transparency",
-    text: "Clear contact details, return policies, VAT/KvK signals, and local business information increase trust."
+    title: "Reputation & network intelligence",
+    text: "Network relationships and external intelligence add context beyond one event.",
+    bullets: [
+      "Shared device/IP relationships",
+      "Known bad actor indicators",
+      "Abuse history and blacklist matches",
+      "Fraud rings/coordinated activity",
+      "ASN and hosting provider risk",
+      "Country/region risk analysis"
+    ]
   },
   {
-    title: "AI risk summary",
-    text: "AI combines the findings and explains the result in understandable language."
+    title: "Security & trust checks",
+    text: "Security integrity checks help identify account compromise and abuse.",
+    bullets: [
+      "MFA/authentication integrity",
+      "Session hijacking indicators",
+      "Credential stuffing patterns",
+      "API abuse detection",
+      "Automation/scraping detection",
+      "Rate limit and abuse monitoring",
+      "Spoofing/tampering attempts"
+    ]
+  },
+  {
+    title: "AI-powered risk analysis",
+    text: "Fraudly combines deterministic rules with adaptive AI models for explainable scoring.",
+    bullets: [
+      "Rule-based + AI risk modeling",
+      "Adaptive fraud detection",
+      "False-positive reduction",
+      "Transparent risk scoring and explanations"
+    ]
+  },
+  {
+    title: "Custom rules & workflows",
+    text: "Teams can tailor decisioning and operations to their risk appetite.",
+    bullets: [
+      "Custom risk thresholds",
+      "Real-time alerts/actions",
+      "Review queues",
+      "Block, allow, or challenge flows",
+      "Webhook/API integrations",
+      "Case management and audit trails"
+    ]
+  },
+  {
+    title: "Real-time monitoring",
+    text: "Continuous monitoring helps detect and respond to abuse patterns quickly.",
+    bullets: [
+      "Account takeovers",
+      "Fake accounts",
+      "Promo/coupon abuse",
+      "Payment fraud",
+      "Marketplace scams",
+      "Subscription abuse",
+      "Spam/bot attacks",
+      "Coordinated fraud campaigns"
+    ]
   }
 ] as const;
 
@@ -66,8 +143,8 @@ export default function HowItWorksPage() {
             How Fraudly checks a website
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-balance text-base text-slate-600 md:text-lg">
-            Fraudly analyzes public trust signals, review data, website patterns, and AI risk indicators to help you
-            spot suspicious links before you buy or share personal details.
+            Fraudly looks at identity, behavior, device, payment, network, and reputation signals — then combines
+            them with AI-powered risk analysis to detect suspicious activity before it impacts your business.
           </p>
           <div className="mt-8">
             <Link
@@ -102,9 +179,9 @@ export default function HowItWorksPage() {
         <section className="mt-14 sm:mt-16 md:mt-20">
           <h2 className="text-center text-xl font-bold text-slate-900 md:text-2xl">What Fraudly looks at</h2>
           <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-slate-600">
-            Multiple layers of public and on-page signals feed your trust score and summary.
+            Scan-ready coverage across identity, behavior, security, payment, and network risk layers.
           </p>
-          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid gap-4 md:grid-cols-2">
             {signalCards.map((card) => (
               <article
                 key={card.title}
@@ -112,6 +189,14 @@ export default function HowItWorksPage() {
               >
                 <h3 className="text-base font-semibold text-slate-900">{card.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-600">{card.text}</p>
+                <ul className="mt-3 space-y-1.5 text-sm text-slate-700">
+                  {card.bullets.map((bullet) => (
+                    <li key={bullet} className="flex gap-2">
+                      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400" aria-hidden />
+                      <span>{bullet}</span>
+                    </li>
+                  ))}
+                </ul>
               </article>
             ))}
           </div>
