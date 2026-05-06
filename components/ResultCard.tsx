@@ -72,6 +72,9 @@ export function ResultCard({ result }: ResultCardProps) {
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const payload = (await response.json()) as { enrichment?: ReputationEnrichment };
+      if (process.env.NODE_ENV !== "production") {
+        console.info("[ResultCard] enrichment payload", payload);
+      }
       setReputation(payload.enrichment ?? null);
     } catch (e) {
       setRepError(e instanceof Error ? e.message : "Unknown error");
@@ -98,6 +101,9 @@ export function ResultCard({ result }: ResultCardProps) {
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const payload = (await response.json()) as { enrichment?: ReputationEnrichment };
+        if (process.env.NODE_ENV !== "production") {
+          console.info("[ResultCard] enrichment payload", payload);
+        }
         if (!active) return;
         setReputation(payload.enrichment ?? null);
       } catch (e) {

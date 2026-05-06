@@ -24,6 +24,13 @@ export async function POST(request: Request) {
   const baseRiskScore = typeof body.baseRiskScore === "number" ? body.baseRiskScore : 50;
   const deepScan = body.deepScan === true;
 
+  console.info("[enrichment/reputation] route called", {
+    deepScan,
+    hasDomain: Boolean(domain),
+    enableOutscraper: process.env.ENABLE_OUTSCRAPER_ENRICHMENT === "true",
+    hasOutscraperKey: Boolean(process.env.OUTSCRAPER_API_KEY?.trim())
+  });
+
   if (!domain) {
     return NextResponse.json({ error: "domain_required" }, { status: 400 });
   }
@@ -38,6 +45,15 @@ export async function POST(request: Request) {
     domain,
     baseRiskScore,
     deepScan
+  });
+
+  console.info("[enrichment/reputation] response summary", {
+    normalizedDomain: enrichment.normalizedDomain,
+    source: enrichment.source,
+    trustpilotRating: enrichment.trustpilotRating,
+    trustpilotReviewCount: enrichment.trustpilotReviewCount,
+    googleRating: enrichment.googleRating,
+    googleReviewCount: enrichment.googleReviewCount
   });
 
   return NextResponse.json({ enrichment });

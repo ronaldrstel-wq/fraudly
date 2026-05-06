@@ -26,6 +26,8 @@ export interface ReputationEnrichment {
   lastUpdated: string;
   fromCache: boolean;
   source: "outscraper" | "cache" | "none";
+  trustpilot?: { rating: number | null; reviewCount: number | null };
+  google?: { rating: number | null; reviewCount: number | null };
   message?: string;
 }
 
@@ -144,7 +146,15 @@ function toResponse(domain: string, baseRiskScore: number, payload: OutscraperPa
     adjustedTrustScore: 100 - adjustedRisk,
     lastUpdated: new Date().toISOString(),
     fromCache: source === "cache",
-    source
+    source,
+    trustpilot: {
+      rating: payload.trustpilotRating,
+      reviewCount: payload.trustpilotReviewCount
+    },
+    google: {
+      rating: payload.googleRating,
+      reviewCount: payload.googleReviewCount
+    }
   };
 }
 
@@ -179,6 +189,14 @@ async function fetchOutscraperAggregates(domain: string, apiKey: string): Promis
     typeof first.review_sentiment_summary === "string" ? first.review_sentiment_summary : null;
   const reviewSpikeSuspected = typeof first.review_spike === "boolean" ? first.review_spike : false;
 
+  console.info("[outscraper] parsed provider payload", {
+    normalizedDomain: domain,
+    trustpilotRating,
+    trustpilotReviewCount,
+    googleRating,
+    googleReviewCount
+  });
+
   return {
     trustpilotRating,
     trustpilotReviewCount,
@@ -199,6 +217,11 @@ export async function getReputationEnrichment(input: {
 }): Promise<ReputationEnrichment> {
   const normalizedDomain = normalizeDomain(input.domain);
   const now = new Date();
+  console.info("[outscraper] enrichment start", {
+    normalizedDomain,
+    deepScan: input.deepScan,
+    baseRiskScore: input.baseRiskScore
+  });
 
   if (process.env.ENABLE_OUTSCRAPER_ENRICHMENT !== "true") {
     return {
