@@ -1,7 +1,6 @@
 "use client";
 
 import type { BasicCheckResult } from "@/types/scam";
-import { WatchlistToggle } from "@/components/WatchlistToggle";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { trustIconGlyph, trustPresentationFromScore } from "@/lib/trustSystem";
 
@@ -31,21 +30,11 @@ export function BasicResultCard({ result }: { result: BasicCheckResult }) {
   const verdict = verdictLabel(result.verdict);
   const trustStyle = Math.max(0, Math.min(100, Math.round(100 - result.score)));
   const trust = trustPresentationFromScore(trustStyle);
-  const detailPath = `/check/${encodeURIComponent(result.domain)}`;
 
   return (
     <article className="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/60 sm:p-7">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-4">
         <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">{EN_MESSAGES.basicResult.heading}</h2>
-        <WatchlistToggle
-          itemType="domain"
-          rawKey={result.domain}
-          title={result.domain}
-          detailPath={detailPath}
-          trustScore={trustStyle}
-          verdict={result.verdict}
-          className="sm:max-w-[14rem]"
-        />
       </div>
       <p className="mt-2 text-sm text-slate-600">
         {EN_MESSAGES.basicResult.intro}

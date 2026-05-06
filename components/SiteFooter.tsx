@@ -1,10 +1,6 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 
-const SaveFraudlyTrigger = dynamic(
-  () => import("@/components/save-fraudly/SaveFraudlyTrigger").then((m) => m.SaveFraudlyTrigger),
-  { loading: () => <span className="inline-block h-5 w-24 rounded bg-slate-100" aria-hidden /> }
-);
 const CookieSettingsLink = dynamic(
   () => import("@/components/CookieSettingsLink").then((m) => m.CookieSettingsLink),
   { loading: () => <span className="inline-block h-5 w-28 rounded bg-slate-100" aria-hidden /> }
@@ -31,7 +27,6 @@ export function SiteFooter() {
           <Link href="/latest-checks" className="font-medium text-slate-700 transition hover:text-slate-900">
             Latest checks
           </Link>
-          <SaveFraudlyTrigger variant="footer" instanceSuffix="-footer" />
           <Link href="/privacy" className="font-medium text-slate-700 transition hover:text-slate-900">
             Privacy
           </Link>

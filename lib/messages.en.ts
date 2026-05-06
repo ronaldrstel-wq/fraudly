@@ -82,48 +82,6 @@ export const EN_MESSAGES = {
     cancelBody: "No worries, you can restart checkout at any time.",
     cancelCta: "Back to pricing"
   },
-  watchlist: {
-    navLabel: "Watchlist",
-    navLabelShort: "Saved",
-    pageTitle: "Watchlist",
-    pageIntro: "Sites and items you chose to watch appear here. Open a saved link to review risk indicators and trust signals again.",
-    loginToView: "Log in to view your watchlist.",
-    loginToManage: "Log in to save or remove watchlist items.",
-    addToWatchlist: "Add to Watchlist",
-    watching: "Watching",
-    /** Shorter label for dense rows (e.g. latest checks). */
-    watchShort: "Watch",
-    watchingShort: "Watching",
-    watchShortSignedOut: "Watch · Log in",
-    stateLoading: "Checking…",
-    removeFromWatchlist: "Remove from Watchlist",
-    signedOutWatchHint: "Watch · Log in",
-    updatingList: "Updating watchlist…",
-    openItem: "Open",
-    emptyState:
-      "Your watchlist is empty. Save suspicious items to review or monitor them later.",
-    loadError: "Could not load your watchlist. Try again shortly.",
-    saveError: "Could not save. Check your connection and try again.",
-    removeError: "Could not remove this item.",
-    itemTypeLabels: {
-      domain: "Domain",
-      url: "URL",
-      email: "Email",
-      phone: "Phone"
-    },
-    verdictLabels: {
-      safe: "lower risk context",
-      suspicious: "mixed signals",
-      scam: "strong risk indicators"
-    },
-    columns: {
-      item: "Item",
-      type: "Type",
-      status: "Trust / risk snapshot",
-      added: "Added",
-      actions: "Actions"
-    }
-  },
   recentSearches: {
     navLabelShort: "Recent",
     navLabel: "Recent searches",
@@ -139,7 +97,7 @@ export const EN_MESSAGES = {
     clearAll: "Clear all history",
     clearModalTitle: "Clear all search history?",
     clearModalBody:
-      "This removes every recent fraud check snapshot from your private history here. Saved Watchlist entries are unchanged.",
+      "This removes every recent fraud check snapshot from your private history here.",
     clearModalConfirm: "Yes, clear history",
     clearModalCancel: "Cancel",
     needSession:
@@ -194,21 +152,6 @@ export const EN_MESSAGES = {
     paginationNext: "Next page",
     paginationNextDisabled: "Next",
     paginationPage: "Page"
-  },
-  saveFraudly: {
-    navCtaDesktop: "⭐ Save Fraudly",
-    navCtaMobile: "📲 Add to Home Screen",
-    desktopTitle: "Save Fraudly",
-    desktopBody:
-      "Press Ctrl+D (Windows/Linux) or Cmd+D (Mac) to bookmark Fraudly and access quick fraud checks anytime.",
-    desktopHint: "Keep Fraudly handy for quick fraud checks anytime.",
-    mobileTitle: "Add Fraudly to Home Screen",
-    mobileBodyLead: "Install Fraudly for faster access and quick fraud checks on the go.",
-    iosSteps: "Tap Share → Add to Home Screen.",
-    androidSteps: "Tap Menu (⋮) → Add to Home Screen or Install app.",
-    genericMobileSteps: "Use your browser menu: look for “Add to Home Screen” or “Install app”.",
-    mobileSupport: "Install Fraudly for faster fraud checks and quick access.",
-    closeCta: "Got it"
   }
 } as const;
 

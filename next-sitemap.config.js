@@ -21,7 +21,6 @@ module.exports = {
     "/checkout/*",
     "/settings",
     "/settings/*",
-    "/watchlist",
     "/recent-searches"
   ],
   robotsTxtOptions: {
