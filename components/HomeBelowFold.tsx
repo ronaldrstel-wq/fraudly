@@ -66,6 +66,48 @@ export function HomeBelowFold() {
         </div>
       </section>
 
+      <section id="testimonials" aria-labelledby="testimonials-heading">
+        <h2 id="testimonials-heading" className="text-center text-xl font-bold text-slate-900 md:text-2xl">
+          What people say
+        </h2>
+        <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-lg shadow-slate-200/60">
+            <p className="text-sm leading-relaxed text-slate-700">
+              “Luckily I didn’t buy this product — Fraudly showed me it was a scam site.”
+            </p>
+            <p className="mt-3 text-sm font-semibold text-slate-900">— Emma</p>
+          </article>
+          <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-lg shadow-slate-200/60">
+            <p className="text-sm leading-relaxed text-slate-700">
+              “I now check every Instagram ad with Fraudly before ordering.”
+            </p>
+            <p className="mt-3 text-sm font-semibold text-slate-900">— Noah</p>
+          </article>
+          <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-lg shadow-slate-200/60">
+            <p className="text-sm leading-relaxed text-slate-700">“Saved me from buying from a fake sneaker store.”</p>
+            <p className="mt-3 text-sm font-semibold text-slate-900">— Jason</p>
+          </article>
+          <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-lg shadow-slate-200/60">
+            <p className="text-sm leading-relaxed text-slate-700">
+              “Within seconds I knew that TikTok shop couldn’t be trusted.”
+            </p>
+            <p className="mt-3 text-sm font-semibold text-slate-900">— Mila</p>
+          </article>
+          <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-lg shadow-slate-200/60">
+            <p className="text-sm leading-relaxed text-slate-700">
+              “The ad looked legit. Fraudly showed all the red flags instantly.”
+            </p>
+            <p className="mt-3 text-sm font-semibold text-slate-900">— Olivia</p>
+          </article>
+          <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-lg shadow-slate-200/60">
+            <p className="text-sm leading-relaxed text-slate-700">
+              “Perfect for impulse buys from social media ads.”
+            </p>
+            <p className="mt-3 text-sm font-semibold text-slate-900">— Daan</p>
+          </article>
+        </div>
+      </section>
+
       <section className="rounded-2xl border border-blue-100 bg-blue-50/60 p-6 text-center md:p-8">
         <h2 className="text-lg font-bold text-slate-900 md:text-xl">Ready to check a link?</h2>
         <p className="mx-auto mt-2 max-w-xl text-sm text-slate-600">
