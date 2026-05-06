@@ -38,14 +38,6 @@ export function RateLimitCTA() {
             >
               Try again tomorrow
             </button>
-            <button
-              type="button"
-              disabled
-              className="inline-flex min-h-[44px] flex-1 cursor-not-allowed items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-400 sm:flex-initial sm:min-w-[11rem]"
-              title="Coming soon"
-            >
-              Download the app
-            </button>
           </div>
         </div>
       </div>

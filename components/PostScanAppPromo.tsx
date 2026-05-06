@@ -25,12 +25,6 @@ export function PostScanAppPromo() {
           <p className="mt-1.5 text-sm leading-relaxed text-slate-600">
             The Fraudly iOS app (coming soon) will help you run website checks straight from TikTok or Instagram links.
           </p>
-          <a
-            href="#"
-            className="mt-4 inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
-          >
-            Download the app
-          </a>
         </div>
       </div>
     </div>
