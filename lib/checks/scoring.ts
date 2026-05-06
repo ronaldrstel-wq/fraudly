@@ -50,7 +50,8 @@ function pushContribution(
     category: contribution.category,
     impact: contribution.impact,
     confidence: contribution.confidence,
-    reason: contribution.reason
+    reason: contribution.reason,
+    source: contribution.source
   });
   breakdown.push({
     id: contribution.id,
@@ -163,7 +164,7 @@ export function buildIntelScoring(checks: ExternalChecksResult): {
       source: checks.domainIntelligence.source,
       label: "Privacy-protected WHOIS/RDAP data",
       category: "domain",
-      impact: 8,
+      impact: 14,
       confidence: "low",
       reason: "Registrar or RDAP hints suggest privacy/redaction on ownership fields."
     });
@@ -175,7 +176,7 @@ export function buildIntelScoring(checks: ExternalChecksResult): {
       source: checks.ssl.source,
       label: "Valid TLS certificate observed",
       category: "website_quality",
-      impact: -11,
+      impact: -3,
       confidence: "high",
       reason: "HTTPS handshake succeeded with a certificate trusted by the runtime."
     });
@@ -211,7 +212,7 @@ export function buildIntelScoring(checks: ExternalChecksResult): {
       source: "Composite intelligence",
       label: "No URLhaus/OpenPhish hit and Safe Browsing clean",
       category: "website_quality",
-      impact: -6,
+      impact: -2,
       confidence: "medium",
       reason: "Feeds consulted in this run did not produce active listing hits (subject to TTL and coverage limits)."
     });

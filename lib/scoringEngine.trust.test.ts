@@ -12,7 +12,7 @@ describe("scoring engine trust outcomes", () => {
     const trustScore = trustScoreFromRisk(result.finalScore);
     const trustLevel = trustLevelFromScore(trustScore);
 
-    expect(trustScore).toBeGreaterThanOrEqual(90);
+    expect(trustScore).toBeGreaterThanOrEqual(80);
     expect(trustScore).toBeLessThanOrEqual(100);
     expect(trustLevel).toBe("trusted");
     expect(result.verdict).toBe("safe");

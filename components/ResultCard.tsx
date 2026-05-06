@@ -11,6 +11,17 @@ interface ResultCardProps {
   result: ScamCheckResult;
 }
 
+export function getScoreUiModel(scoreResult: ScamCheckResult["scoreResult"] | undefined) {
+  return {
+    confidence: scoreResult?.confidence ?? "low",
+    riskLabels: Array.isArray(scoreResult?.riskLabels) ? scoreResult.riskLabels : [],
+    riskLabelDetails: Array.isArray(scoreResult?.riskLabelDetails) ? scoreResult.riskLabelDetails : [],
+    scoreBreakdown: scoreResult?.scoreBreakdown,
+    scoreCapsApplied: Array.isArray(scoreResult?.scoreCapsApplied) ? scoreResult.scoreCapsApplied : [],
+    userExplanation: scoreResult?.userExplanation
+  };
+}
+
 function toneForTrustSignal(signal: Pick<TrustSignal, "type">): string {
   switch (signal.type) {
     case "positive":
@@ -53,6 +64,23 @@ export function ResultCard({ result }: ResultCardProps) {
   const [reputation, setReputation] = useState<ReputationEnrichment | null>(null);
   const [repLoading, setRepLoading] = useState(false);
   const [repError, setRepError] = useState<string | null>(null);
+  const scoreUi = getScoreUiModel(result.scoreResult);
+  const scoreConfidence = scoreUi.confidence;
+  const riskLabels = scoreUi.riskLabels;
+  const relatedDomains = Array.isArray(result.scoreResult?.relatedDomains) ? result.scoreResult.relatedDomains : [];
+  const rebrandNetwork = result.scoreResult?.rebrandNetworkSignals;
+  const companyIdentity = result.scoreResult?.companyIdentitySignals;
+  const outscraper = result.scoreResult?.outscraperReputation;
+  const usedSources = Array.from(
+    new Set(
+      [
+        ...(result.scoreResult?.signalSources ?? []),
+        ...result.trustSignals
+          .map((s) => s.source?.trim())
+          .filter((v): v is string => Boolean(v))
+      ].filter((v): v is string => Boolean(v))
+    )
+  ).slice(0, 8);
 
   async function loadReputationSignals(deepScan: boolean) {
     setRepLoading(true);
@@ -389,6 +417,152 @@ export function ResultCard({ result }: ResultCardProps) {
           : style.level === "caution"
             ? "Some warnings were found. Verify payment safety and seller legitimacy before buying."
             : "Multiple risk indicators were detected. Avoid sharing personal or payment details until independently verified."}
+      </div>
+
+      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">Scoring transparency</p>
+        <p className="mt-1 text-xs text-slate-600">
+          Confidence level: <span className="font-medium">{scoreConfidence}</span>
+        </p>
+        {riskLabels.length > 0 ? (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {riskLabels.map((label) => (
+              <span
+                key={label}
+                className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900"
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-slate-600">No major ecommerce risk labels were triggered in this run.</p>
+        )}
+        {usedSources.length > 0 ? (
+          <p className="mt-3 text-xs text-slate-500">Signals used: {usedSources.join(", ")}</p>
+        ) : (
+          <p className="mt-3 text-xs text-slate-500">Signals used: internal heuristic scoring and provider checks.</p>
+        )}
+        {relatedDomains.length > 0 ? (
+          <p className="mt-2 text-xs text-slate-500">Related domains: {relatedDomains.join(", ")}</p>
+        ) : null}
+        {rebrandNetwork ? (
+          <div className="mt-3 space-y-1 text-xs text-slate-600">
+            <p>
+              Rebrand-network confidence: <span className="font-medium">{rebrandNetwork.confidence}</span>
+            </p>
+            {Array.isArray(rebrandNetwork.matchedSignals) && rebrandNetwork.matchedSignals.length > 0 ? (
+              <p>Matched network signals: {rebrandNetwork.matchedSignals.slice(0, 6).join(" · ")}</p>
+            ) : (
+              <p>No strong rebrand-network overlap detected.</p>
+            )}
+          </div>
+        ) : null}
+        {companyIdentity ? (
+          <div className="mt-3 space-y-1 text-xs text-slate-600">
+            <p>
+              Company identity confidence: <span className="font-medium">{companyIdentity.confidence}</span>
+            </p>
+            {companyIdentity.companyName ? <p>Company: {companyIdentity.companyName}</p> : null}
+            {companyIdentity.legalEntityName ? <p>Legal entity: {companyIdentity.legalEntityName}</p> : null}
+            {companyIdentity.claimedLocation ? <p>Claimed location: {companyIdentity.claimedLocation}</p> : null}
+            {companyIdentity.legalAddress ? <p>Legal address: {companyIdentity.legalAddress}</p> : null}
+            {companyIdentity.returnAddress ? <p>Return address: {companyIdentity.returnAddress}</p> : null}
+            {companyIdentity.supportEmail ? <p>Support email: {companyIdentity.supportEmail}</p> : null}
+            {companyIdentity.phoneNumber ? <p>Phone: {companyIdentity.phoneNumber}</p> : null}
+            {Array.isArray(companyIdentity.registrationNumbers) && companyIdentity.registrationNumbers.length > 0 ? (
+              <p>Registration numbers: {companyIdentity.registrationNumbers.join(", ")}</p>
+            ) : null}
+            {Array.isArray(companyIdentity.mismatches) && companyIdentity.mismatches.length > 0 ? (
+              <p>Mismatches: {companyIdentity.mismatches.slice(0, 4).join(" · ")}</p>
+            ) : null}
+          </div>
+        ) : null}
+        {scoreUi.userExplanation ? (
+          <div className="mt-3 space-y-1 text-xs text-slate-600">
+            <p className="font-semibold text-slate-800">Why this score?</p>
+            <p>{scoreUi.userExplanation.summary}</p>
+            {scoreUi.userExplanation.mainReasons.length > 0 ? (
+              <p>Main reasons: {scoreUi.userExplanation.mainReasons.join(" · ")}</p>
+            ) : null}
+            {scoreUi.userExplanation.cautionNotes.length > 0 ? (
+              <p>Cautions: {scoreUi.userExplanation.cautionNotes.join(" · ")}</p>
+            ) : null}
+            <p>Recommendation: {scoreUi.userExplanation.recommendation}</p>
+          </div>
+        ) : null}
+        {scoreUi.scoreCapsApplied.length > 0 ? (
+          <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs text-amber-900">
+            <p className="font-semibold">Score caps applied</p>
+            {scoreUi.scoreCapsApplied.map((cap) => (
+              <p key={`${cap.cap}-${cap.reason}`}>Max {cap.cap}% trust: {cap.reason}</p>
+            ))}
+          </div>
+        ) : null}
+        {scoreUi.scoreBreakdown ? (
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {(
+              [
+                ["Technical safety", scoreUi.scoreBreakdown.technicalSafety],
+                ["Merchant trust", scoreUi.scoreBreakdown.merchantTrust],
+                ["Company identity", scoreUi.scoreBreakdown.companyIdentity],
+                ["Policy / refund risk", scoreUi.scoreBreakdown.policyRisk],
+                ["Reputation / reviews", scoreUi.scoreBreakdown.reputationReviews]
+              ] as const
+            ).map(([title, part]) => (
+              <div key={title} className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-xs">
+                <p className="font-semibold text-slate-800">
+                  {title}: {part.score}/100 ({part.label})
+                </p>
+                <p className="mt-0.5 text-slate-600">{part.explanation}</p>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        {scoreUi.riskLabelDetails.length > 0 ? (
+          <div className="mt-3 space-y-1 text-xs text-slate-600">
+            <p className="font-semibold text-slate-800">Risk labels explained</p>
+            {scoreUi.riskLabelDetails.map((item) => (
+              <p key={`${item.label}-${item.explanation}`}>
+                <span className="font-medium">{item.label}:</span> {item.explanation}
+              </p>
+            ))}
+          </div>
+        ) : null}
+        {outscraper ? (
+          <div className="mt-3 space-y-1 text-xs text-slate-600">
+            <p>
+              Outscraper source: <span className="font-medium">{outscraper.source}</span>
+            </p>
+            <p>
+              Availability: <span className="font-medium">{outscraper.available ? "available" : "unavailable"}</span>
+            </p>
+            {outscraper.available ? (
+              <>
+                <p>
+                  Rating / count:{" "}
+                  <span className="font-medium">
+                    {outscraper.rating ?? "n/a"} · {outscraper.reviewCount ?? "n/a"} reviews
+                  </span>
+                </p>
+                <p>
+                  Negative review ratio:{" "}
+                  <span className="font-medium">
+                    {outscraper.negativeReviewRatio == null ? "n/a" : `${Math.round(outscraper.negativeReviewRatio * 100)}%`}
+                  </span>
+                </p>
+                <p>
+                  Outscraper confidence: <span className="font-medium">{outscraper.confidence}</span>
+                </p>
+                {outscraper.strongestComplaintThemes.length > 0 ? (
+                  <p>Complaint themes: {outscraper.strongestComplaintThemes.join(", ")}</p>
+                ) : null}
+              </>
+            ) : (
+              <p>Outscraper data was not available for this scan; scoring safely falls back to other signals.</p>
+            )}
+          </div>
+        ) : null}
       </div>
     </div>
   );

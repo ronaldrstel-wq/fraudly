@@ -6,6 +6,19 @@ const MODEL = "gpt-4o-mini";
 const REQUEST_MS = 7000;
 const WEBSITE_FETCH_MS = 4500;
 const WEBSITE_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const POLICY_PATH_CANDIDATES = [
+  "/policies/shipping-policy",
+  "/policies/refund-policy",
+  "/policies/terms-of-service",
+  "/shipping",
+  "/shipping-policy",
+  "/returns",
+  "/return-policy",
+  "/refund-policy",
+  "/terms",
+  "/terms-and-conditions"
+];
+const POLICY_FETCH_LIMIT = 4;
 
 const SYSTEM_PROMPT =
   "You are a cybersecurity assistant helping consumers interpret website trust signals. Always respond in English. Do not use Dutch. Prefer phrases like \"risk indicators\", \"trust signals\", and \"mixed evidence\". Do not claim a third-party blacklist or government database match unless the appended intelligence JSON lists a providerEvidence row for that named source with matched=true (or supplemental.safeBrowsing.safeBrowsingStatus is \"flagged\"). Never invent VirusTotal/PhishTank/AbuseIPDB or national-feed hits—the appended JSON reflects what actually ran.";
@@ -39,7 +52,26 @@ function extractBodyText(html: string): string {
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/gi, " ")
     .replace(/&amp;/gi, "&");
-  return cleanWhitespace(plain).slice(0, 900);
+  return cleanWhitespace(plain).slice(0, 2200);
+}
+
+function extractPolicyLinks(html: string, baseUrl: string): string[] {
+  const links = new Set<string>();
+  const re = /<a[^>]+href=["']([^"']+)["'][^>]*>/gi;
+  const pathHint = /(ship|return|refund|policy|terms|delivery)/i;
+  for (const m of html.matchAll(re)) {
+    const href = m[1]?.trim();
+    if (!href || href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) continue;
+    try {
+      const u = new URL(href, baseUrl);
+      if (!/^https?:$/.test(u.protocol)) continue;
+      if (!pathHint.test(u.pathname)) continue;
+      links.add(`${u.protocol}//${u.host}${u.pathname}`);
+    } catch {
+      // ignore invalid href
+    }
+  }
+  return [...links];
 }
 
 function resolveWebsiteFetchUrl(inputUrl: string, normalizedHost: string): string {
@@ -95,11 +127,50 @@ export async function fetchWebsiteSignals(url: string): Promise<WebsiteSignals |
           /<meta[^>]*name=["']description["'][^>]*content=["']([\s\S]*?)["'][^>]*>/i
         );
         const bodySnippet = extractBodyText(html);
+        const base = fetchUrl.includes("://") ? fetchUrl : `https://${normalizedHost}`;
+        const policyUrls = new Set<string>();
+        for (const p of POLICY_PATH_CANDIDATES) {
+          try {
+            const u = new URL(p, base);
+            policyUrls.add(`${u.protocol}//${u.host}${u.pathname}`);
+          } catch {
+            // noop
+          }
+        }
+        for (const found of extractPolicyLinks(html, base)) {
+          policyUrls.add(found);
+        }
 
-        if (!title && !metaDescription && !bodySnippet) {
+        const policyTextParts: string[] = [];
+        const candidates = [...policyUrls].slice(0, POLICY_FETCH_LIMIT);
+        for (const policyUrl of candidates) {
+          try {
+            const policyResp = await fetch(policyUrl, {
+              method: "GET",
+              redirect: "follow",
+              signal: controller.signal,
+              headers: {
+                "user-agent": "Mozilla/5.0 (compatible; FraudlyBot/1.0; +https://fraudly.app)"
+              }
+            });
+            if (!policyResp.ok) continue;
+            const policyCt = policyResp.headers.get("content-type") ?? "";
+            if (!policyCt.includes("text/html")) continue;
+            const policyHtml = await policyResp.text();
+            const policyBody = extractBodyText(policyHtml);
+            if (policyBody) {
+              policyTextParts.push(`${policyUrl}: ${policyBody}`);
+            }
+          } catch {
+            // best-effort; skip failing policy pages
+          }
+        }
+        const policySnippet = policyTextParts.join("\n\n").slice(0, 3600);
+
+        if (!title && !metaDescription && !bodySnippet && !policySnippet) {
           payload = null;
         } else {
-          const text = [title, metaDescription, bodySnippet].filter(Boolean).join("\n\n");
+          const text = [title, metaDescription, bodySnippet, policySnippet].filter(Boolean).join("\n\n");
           payload = { title, metaDescription, bodySnippet, text };
         }
       }

@@ -1,4 +1,5 @@
 import { getCached, normalizeDomain, setCached } from "@/lib/cache";
+import { getReputationEnrichment } from "@/lib/outscraper/reputation";
 
 const PLACES_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText";
 const PLACES_TIMEOUT_MS = 4000;
@@ -20,6 +21,22 @@ export type ReviewSignals = {
 
   recentReviewSummary?: string[];
   suspiciousReviewSignals: string[];
+  outscraper?: {
+    source: "Outscraper Google Reviews";
+    available: boolean;
+    rating: number | null;
+    reviewCount: number | null;
+    negativeReviewRatio: number | null;
+    strongestComplaintThemes: string[];
+    confidence: "low" | "medium" | "high";
+    negativeTrend: boolean;
+    suspiciousPositivePattern: boolean;
+    businessIdentityMismatch: boolean;
+    businessAddress?: string | null;
+    businessPhone?: string | null;
+    businessCategory?: string | null;
+    websiteMatch?: boolean | null;
+  };
 
   /** e.g. "Google Places API (searchText)" */
   sources: string[];
@@ -114,6 +131,27 @@ const emptyTrustpilot = {
   trustpilotRating: undefined,
   trustpilotReviewCount: undefined
 };
+
+function inferNegativeRatio(rating: number | null): number | null {
+  if (rating == null) return null;
+  if (rating <= 2.0) return 0.65;
+  if (rating <= 2.5) return 0.5;
+  if (rating <= 3.0) return 0.35;
+  if (rating <= 3.5) return 0.2;
+  if (rating <= 4.0) return 0.12;
+  return 0.06;
+}
+
+function extractComplaintThemes(summary: string | null): string[] {
+  if (!summary) return [];
+  const s = summary.toLowerCase();
+  const themes: string[] = [];
+  if (/\brefund|return|chargeback|money back\b/.test(s)) themes.push("refund/returns");
+  if (/\bshipping|delivery|late|delay|arrived\b/.test(s)) themes.push("shipping delays");
+  if (/\bquality|damaged|not as described|cheap\b/.test(s)) themes.push("product quality");
+  if (/\bscam|fraud|fake|misleading\b/.test(s)) themes.push("scam/misleading claims");
+  return themes;
+}
 
 /**
  * Calls Google Places (New) searchText. Returns `{ result, cacheable }` where `cacheable` is false
@@ -236,30 +274,130 @@ export async function getReviewSignals(domain: string): Promise<ReviewSignals> {
   console.log("[Cache] reviews miss:", normalizedDomain);
 
   const apiKey = process.env.GOOGLE_MAPS_API_KEY?.trim();
+  const baseFallback: ReviewSignals = {
+    googleFound: false,
+    ...emptyTrustpilot,
+    suspiciousReviewSignals: ["No public review signals found"],
+    sources: [],
+    warnings: []
+  };
+
+  let googleResult: ReviewSignals = baseFallback;
   if (!apiKey) {
-    return {
-      googleFound: false,
-      ...emptyTrustpilot,
-      suspiciousReviewSignals: ["No public review signals found"],
-      sources: [],
-      warnings: ["GOOGLE_MAPS_API_KEY is not configured."]
-    };
+    googleResult.warnings.push("GOOGLE_MAPS_API_KEY is not configured.");
+  } else if (!canConsumeGoogleReviewCall()) {
+    googleResult.warnings.push("Google review lookup skipped due to daily API limit.");
+  } else {
+    recordGoogleReviewCall();
+    const { result } = await fetchGooglePlacesReviewSignals(normalizedDomain, apiKey);
+    googleResult = result;
   }
 
-  if (!canConsumeGoogleReviewCall()) {
-    return {
-      googleFound: false,
-      ...emptyTrustpilot,
-      suspiciousReviewSignals: ["No public review signals found"],
-      sources: [],
-      warnings: ["Google review lookup skipped due to daily API limit."]
+  let outscraperBlock: ReviewSignals["outscraper"] | undefined;
+  try {
+    const enrichment = await getReputationEnrichment({
+      domain: normalizedDomain,
+      baseRiskScore: 55,
+      deepScan: false
+    });
+    if (enrichment.source === "outscraper" || enrichment.source === "cache") {
+      const rating = enrichment.googleRating ?? null;
+      const count = enrichment.googleReviewCount ?? null;
+      const themes = extractComplaintThemes(enrichment.sentimentSummary);
+      const negativeRatio = inferNegativeRatio(rating);
+      const confidence: "low" | "medium" | "high" =
+        typeof count === "number" && count >= 150
+          ? "high"
+          : typeof count === "number" && count >= 40
+            ? "medium"
+            : "low";
+      const identityMismatch = enrichment.businessNameMatch === false;
+
+      outscraperBlock = {
+        source: "Outscraper Google Reviews",
+        available: true,
+        rating,
+        reviewCount: count,
+        negativeReviewRatio: negativeRatio,
+        strongestComplaintThemes: themes,
+        confidence,
+        negativeTrend: Boolean(enrichment.latestReviewDate && (Date.now() - new Date(enrichment.latestReviewDate).getTime()) < 1000 * 60 * 60 * 24 * 120 && (negativeRatio ?? 0) >= 0.2),
+        suspiciousPositivePattern: Boolean(enrichment.reviewSpikeSuspected),
+        businessIdentityMismatch: identityMismatch,
+        businessAddress: null,
+        businessPhone: null,
+        businessCategory: null,
+        websiteMatch: identityMismatch ? false : null
+      };
+
+      googleResult.sources = [...new Set([...googleResult.sources, "Outscraper Google Reviews"])];
+      if ((negativeRatio ?? 0) >= 0.3) {
+        googleResult.suspiciousReviewSignals.push("High complaint volume in Outscraper Google Reviews profile");
+      }
+      if (outscraperBlock.negativeTrend) {
+        googleResult.suspiciousReviewSignals.push("Recent negative review trend detected in Outscraper profile");
+      }
+      if (outscraperBlock.suspiciousPositivePattern) {
+        googleResult.suspiciousReviewSignals.push("Suspicious positive-review spike pattern in Outscraper profile");
+      }
+      if (themes.includes("refund/returns") || themes.includes("shipping delays")) {
+        googleResult.suspiciousReviewSignals.push("Outscraper themes include refund/shipping complaints");
+      }
+      if (identityMismatch) {
+        googleResult.suspiciousReviewSignals.push("Outscraper business identity mismatch with domain");
+      }
+      if (!googleResult.googleFound && rating != null && count != null) {
+        googleResult.googleFound = true;
+        googleResult.googleRating = rating;
+        googleResult.googleReviewCount = count;
+      }
+    } else {
+      outscraperBlock = {
+        source: "Outscraper Google Reviews",
+        available: false,
+        rating: null,
+        reviewCount: null,
+        negativeReviewRatio: null,
+        strongestComplaintThemes: [],
+        confidence: "low",
+        negativeTrend: false,
+        suspiciousPositivePattern: false,
+        businessIdentityMismatch: false,
+        businessAddress: null,
+        businessPhone: null,
+        businessCategory: null,
+        websiteMatch: null
+      };
+      googleResult.warnings.push(enrichment.message ?? "Outscraper review data unavailable.");
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    outscraperBlock = {
+      source: "Outscraper Google Reviews",
+      available: false,
+      rating: null,
+      reviewCount: null,
+      negativeReviewRatio: null,
+      strongestComplaintThemes: [],
+      confidence: "low",
+      negativeTrend: false,
+      suspiciousPositivePattern: false,
+      businessIdentityMismatch: false,
+      businessAddress: null,
+      businessPhone: null,
+      businessCategory: null,
+      websiteMatch: null
     };
+    googleResult.warnings.push(`Outscraper review lookup failed: ${message}`);
   }
 
-  recordGoogleReviewCall();
-  const { result, cacheable } = await fetchGooglePlacesReviewSignals(normalizedDomain, apiKey);
-  if (cacheable) {
-    setCached(cacheKey, result, REVIEWS_CACHE_TTL_MS);
-  }
-  return result;
+  const mergedResult: ReviewSignals = {
+    ...googleResult,
+    suspiciousReviewSignals: [...new Set(googleResult.suspiciousReviewSignals)],
+    sources: [...new Set(googleResult.sources)],
+    warnings: [...new Set(googleResult.warnings)],
+    outscraper: outscraperBlock
+  };
+  setCached(cacheKey, mergedResult, REVIEWS_CACHE_TTL_MS);
+  return mergedResult;
 }

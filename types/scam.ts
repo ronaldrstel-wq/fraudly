@@ -60,6 +60,17 @@ export interface CheckApiResponse {
   billing: BillingSnapshot;
 }
 
+export interface ScanProgressState {
+  percentage: number;
+  currentStage: string;
+  completedStages: string[];
+  activeStages: string[];
+  findings: string[];
+  confidence: "low" | "medium" | "high";
+  assessmentLabel?: "Initial assessment" | "Refining reputation analysis" | "Final confidence calculated";
+  provisionalRiskScore?: number;
+}
+
 const VERDICTS: ScamVerdict[] = ["safe", "suspicious", "scam"];
 
 const SCORE_CATEGORIES: ScoreSignal["category"][] = [
@@ -68,6 +79,8 @@ const SCORE_CATEGORIES: ScoreSignal["category"][] = [
   "supply_chain",
   "business_identity",
   "website_quality",
+  "rebrand_network",
+  "company_identity",
   "ai"
 ];
 
@@ -130,6 +143,7 @@ function isScoreSignal(value: unknown): value is ScoreSignal {
   if (typeof s.impact !== "number" || Number.isNaN(s.impact)) return false;
   if (s.confidence !== "low" && s.confidence !== "medium" && s.confidence !== "high") return false;
   if (typeof s.reason !== "string") return false;
+  if (s.source !== undefined && typeof s.source !== "string") return false;
   return true;
 }
 
@@ -138,6 +152,99 @@ function isScoreResult(value: unknown): value is ScoreResult {
   const r = value as Record<string, unknown>;
   if (typeof r.baseScore !== "number" || Number.isNaN(r.baseScore)) return false;
   if (typeof r.finalScore !== "number" || Number.isNaN(r.finalScore)) return false;
+  if (r.confidence !== "low" && r.confidence !== "medium" && r.confidence !== "high") return false;
+  if (!Array.isArray(r.riskLabels) || !r.riskLabels.every((x) => typeof x === "string")) return false;
+  if (!Array.isArray(r.riskLabelDetails)) return false;
+  if (
+    !r.riskLabelDetails.every(
+      (x) =>
+        x &&
+        typeof x === "object" &&
+        typeof (x as Record<string, unknown>).label === "string" &&
+        typeof (x as Record<string, unknown>).explanation === "string"
+    )
+  ) {
+    return false;
+  }
+  if (!Array.isArray(r.signalSources) || !r.signalSources.every((x) => typeof x === "string")) return false;
+  if (!Array.isArray(r.relatedDomains) || !r.relatedDomains.every((x) => typeof x === "string")) return false;
+  if (!r.rebrandNetworkSignals || typeof r.rebrandNetworkSignals !== "object") return false;
+  const rn = r.rebrandNetworkSignals as Record<string, unknown>;
+  if (rn.confidence !== "low" && rn.confidence !== "medium" && rn.confidence !== "high") return false;
+  if (!Array.isArray(rn.matchedSignals) || !rn.matchedSignals.every((x) => typeof x === "string")) return false;
+  if (!Array.isArray(rn.sharedContentMatches) || !rn.sharedContentMatches.every((x) => typeof x === "string")) return false;
+  if (
+    !Array.isArray(rn.sharedInfrastructureMatches) ||
+    !rn.sharedInfrastructureMatches.every((x) => typeof x === "string")
+  ) {
+    return false;
+  }
+  if (!Array.isArray(rn.sharedIdentityMatches) || !rn.sharedIdentityMatches.every((x) => typeof x === "string")) {
+    return false;
+  }
+  if (!r.companyIdentitySignals || typeof r.companyIdentitySignals !== "object") return false;
+  const ci = r.companyIdentitySignals as Record<string, unknown>;
+  if (ci.confidence !== "low" && ci.confidence !== "medium" && ci.confidence !== "high") return false;
+  if (ci.companyName !== undefined && typeof ci.companyName !== "string") return false;
+  if (ci.legalEntityName !== undefined && typeof ci.legalEntityName !== "string") return false;
+  if (ci.claimedLocation !== undefined && typeof ci.claimedLocation !== "string") return false;
+  if (ci.legalAddress !== undefined && typeof ci.legalAddress !== "string") return false;
+  if (ci.returnAddress !== undefined && typeof ci.returnAddress !== "string") return false;
+  if (ci.supportEmail !== undefined && typeof ci.supportEmail !== "string") return false;
+  if (ci.phoneNumber !== undefined && typeof ci.phoneNumber !== "string") return false;
+  if (!Array.isArray(ci.registrationNumbers) || !ci.registrationNumbers.every((x) => typeof x === "string")) return false;
+  if (!Array.isArray(ci.mismatches) || !ci.mismatches.every((x) => typeof x === "string")) return false;
+  if (!Array.isArray(ci.positiveSignals) || !ci.positiveSignals.every((x) => typeof x === "string")) return false;
+  if (!Array.isArray(ci.riskSignals) || !ci.riskSignals.every((x) => typeof x === "string")) return false;
+  if (r.outscraperReputation !== undefined) {
+    if (!r.outscraperReputation || typeof r.outscraperReputation !== "object") return false;
+    const o = r.outscraperReputation as Record<string, unknown>;
+    if (o.source !== "Outscraper Google Reviews") return false;
+    if (typeof o.available !== "boolean") return false;
+    if (o.rating !== null && o.rating !== undefined && typeof o.rating !== "number") return false;
+    if (o.reviewCount !== null && o.reviewCount !== undefined && typeof o.reviewCount !== "number") return false;
+    if (o.negativeReviewRatio !== null && o.negativeReviewRatio !== undefined && typeof o.negativeReviewRatio !== "number") {
+      return false;
+    }
+    if (!Array.isArray(o.strongestComplaintThemes) || !o.strongestComplaintThemes.every((x) => typeof x === "string")) {
+      return false;
+    }
+    if (o.confidence !== "low" && o.confidence !== "medium" && o.confidence !== "high") return false;
+    if (typeof o.negativeTrend !== "boolean") return false;
+    if (typeof o.suspiciousPositivePattern !== "boolean") return false;
+    if (typeof o.businessIdentityMismatch !== "boolean") return false;
+  }
+  if (!r.scoreBreakdown || typeof r.scoreBreakdown !== "object") return false;
+  const sb = r.scoreBreakdown as Record<string, unknown>;
+  const keys = ["technicalSafety", "merchantTrust", "companyIdentity", "policyRisk", "reputationReviews"] as const;
+  for (const key of keys) {
+    const part = sb[key] as Record<string, unknown> | undefined;
+    if (!part || typeof part !== "object") return false;
+    if (typeof part.score !== "number") return false;
+    if (typeof part.label !== "string") return false;
+    if (typeof part.explanation !== "string") return false;
+    if (!Array.isArray(part.positiveSignals) || !part.positiveSignals.every((x) => typeof x === "string")) return false;
+    if (!Array.isArray(part.negativeSignals) || !part.negativeSignals.every((x) => typeof x === "string")) return false;
+  }
+  if (!Array.isArray(r.scoreCapsApplied)) return false;
+  if (
+    !r.scoreCapsApplied.every(
+      (x) =>
+        x &&
+        typeof x === "object" &&
+        typeof (x as Record<string, unknown>).cap === "number" &&
+        typeof (x as Record<string, unknown>).reason === "string"
+    )
+  ) {
+    return false;
+  }
+  if (!r.userExplanation || typeof r.userExplanation !== "object") return false;
+  const ue = r.userExplanation as Record<string, unknown>;
+  if (typeof ue.summary !== "string") return false;
+  if (!Array.isArray(ue.mainReasons) || !ue.mainReasons.every((x) => typeof x === "string")) return false;
+  if (!Array.isArray(ue.positiveNotes) || !ue.positiveNotes.every((x) => typeof x === "string")) return false;
+  if (!Array.isArray(ue.cautionNotes) || !ue.cautionNotes.every((x) => typeof x === "string")) return false;
+  if (typeof ue.recommendation !== "string") return false;
   if (typeof r.verdict !== "string" || !VERDICTS.includes(r.verdict as ScamVerdict)) return false;
   if (!Array.isArray(r.signals) || !r.signals.every(isScoreSignal)) return false;
   if (!Array.isArray(r.topPositiveSignals) || !r.topPositiveSignals.every(isScoreSignal)) return false;

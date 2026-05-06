@@ -9,6 +9,7 @@ import { parseFlexibleWebsiteInput } from "@/lib/check-input/normalizeWebsiteInp
 import { upsertLatestPublicCheckFromCompletedScan } from "@/lib/latest-public-checks/persist";
 import { tryRecordRecentSearch } from "@/lib/recent-search/service";
 import { getBillingUserOrNull } from "@/lib/user-store";
+import type { ScanProgressState } from "@/types/scam";
 
 export const runtime = "nodejs";
 
@@ -16,6 +17,7 @@ interface CheckRequest {
   url?: string;
   detailLevel?: "basic" | "full";
   language?: "en" | "nl";
+  streamProgress?: boolean;
 }
 
 const isProd = process.env.NODE_ENV === "production";
@@ -95,6 +97,49 @@ export async function POST(request: Request) {
     }
 
     const billingUser: User | null = user;
+
+    if (body?.streamProgress === true) {
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          const push = (obj: unknown) => controller.enqueue(encoder.encode(`${JSON.stringify(obj)}\n`));
+          void (async () => {
+            try {
+              const fullResult = await runWebsiteAnalysis(canonicalHref, language, (progress: ScanProgressState) => {
+                push({ type: "progress", progress });
+              });
+              push({
+                type: "result",
+                payload: {
+                  detailLevel: "full" as const,
+                  result: fullResult,
+                  upsellPremium: false,
+                  billing: billingUser ? toBillingSnapshot(billingUser) : ANON_BILLING_SNAPSHOT
+                }
+              });
+            } catch (err) {
+              const requestId = globalThis.crypto?.randomUUID?.() ?? `req_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+              push({
+                type: "error",
+                payload: {
+                  error: "Internal server error",
+                  requestId,
+                  message: "We couldn’t complete this check right now. Please try again."
+                }
+              });
+            } finally {
+              controller.close();
+            }
+          })();
+        }
+      });
+      return new Response(stream, {
+        headers: {
+          "Content-Type": "application/x-ndjson; charset=utf-8",
+          "Cache-Control": "no-cache, no-transform"
+        }
+      });
+    }
 
     const fullResult = await runWebsiteAnalysis(canonicalHref, language);
 
