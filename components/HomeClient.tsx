@@ -261,7 +261,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         )}
 
         {!result && (
-          <section className="mt-8 sm:mt-10">
+          <section className="mt-6 sm:mt-8">
             <FeatureCards />
           </section>
         )}
