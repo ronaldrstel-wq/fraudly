@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ReviewSummary } from "@/components/ReviewSummary";
 import { WatchlistToggle } from "@/components/WatchlistToggle";
 import type { TrustSignal } from "@/lib/checks/types";
 import { trustIconGlyph, trustPresentationFromScore } from "@/lib/trustSystem";
@@ -300,34 +301,16 @@ export function ResultCard({ result }: ResultCardProps) {
       </div>
 
       <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Reputation Signals</p>
+        <p className="text-sm font-semibold text-slate-900">Review Summary</p>
         {repLoading ? (
-          <p className="mt-2 text-sm text-slate-600">Checking external reputation signals...</p>
+          <p className="mt-2 text-sm text-slate-600">Checking external review signals...</p>
         ) : repError ? (
           <p className="mt-2 text-sm text-slate-600">
             No external reputation profile found. This does not automatically mean unsafe.
           </p>
         ) : reputation ? (
           <div className="mt-2 space-y-2 text-sm text-slate-700">
-            <p>
-              Signal status: <span className="font-medium">{reputation.signalStatus}</span>
-            </p>
-            <p>
-              Trustpilot:{" "}
-              <span className="font-medium">
-                {reputation.trustpilotRating != null
-                  ? `${reputation.trustpilotRating.toFixed(1)} (${reputation.trustpilotReviewCount ?? 0} reviews)`
-                  : "n/a"}
-              </span>
-            </p>
-            <p>
-              Google:{" "}
-              <span className="font-medium">
-                {reputation.googleRating != null
-                  ? `${reputation.googleRating.toFixed(1)} (${reputation.googleReviewCount ?? 0} reviews)`
-                  : "n/a"}
-              </span>
-            </p>
+            <ReviewSummary enrichment={reputation} />
             <p>
               Last updated: <span className="font-medium">{new Date(reputation.lastUpdated).toLocaleString("en")}</span>
             </p>
@@ -338,12 +321,8 @@ export function ResultCard({ result }: ResultCardProps) {
                 {reputation.impactOnRisk} risk points
               </span>
             </p>
-            {reputation.sentimentSummary ? (
-              <p className="text-xs text-slate-600">{reputation.sentimentSummary}</p>
-            ) : null}
-            {reputation.message ? (
-              <p className="text-xs text-slate-500">{reputation.message}</p>
-            ) : null}
+            {reputation.sentimentSummary ? <p className="text-xs text-slate-600">{reputation.sentimentSummary}</p> : null}
+            {reputation.message ? <p className="text-xs text-slate-500">{reputation.message}</p> : null}
             <button
               type="button"
               onClick={() => void loadReputationSignals(true)}
