@@ -1,4 +1,5 @@
 export type TrustLevel = "trusted" | "caution" | "highRisk";
+export type ScamVerdict = "safe" | "suspicious" | "scam";
 
 export type TrustPresentation = {
   level: TrustLevel;
@@ -22,6 +23,17 @@ export function trustLevelFromScore(trustScore: number): TrustLevel {
   if (trustScore >= 80) return "trusted";
   if (trustScore >= 50) return "caution";
   return "highRisk";
+}
+
+export function verdictFromTrustScore(trustScore: number): ScamVerdict {
+  const level = trustLevelFromScore(trustScore);
+  if (level === "trusted") return "safe";
+  if (level === "caution") return "suspicious";
+  return "scam";
+}
+
+export function verdictFromRiskScore(riskScore: number): ScamVerdict {
+  return verdictFromTrustScore(trustScoreFromRisk(riskScore));
 }
 
 export function trustPresentationFromScore(score: number): TrustPresentation {

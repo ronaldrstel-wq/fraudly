@@ -1,5 +1,6 @@
 import type { ReviewSignals } from "@/lib/reviewSignals";
 import type { SupplyChainSignals } from "@/lib/supplyChainSignals";
+import { verdictFromRiskScore } from "@/lib/trustSystem";
 
 export type ScoreConfidence = "low" | "medium" | "high";
 
@@ -48,7 +49,9 @@ const CONF_MULT: Record<ScoreConfidence, number> = {
   high: 1.0
 };
 
-const BASE_SCORE = 35;
+// Keep neutral baseline low enough that reputable low-risk domains (e.g. apple.com)
+// do not accidentally land in Caution when major risk signals are absent.
+const BASE_SCORE = 16;
 const REVIEW_MAX_DOWN = 25;
 const REVIEW_MAX_UP = 20;
 const SUPPLY_MAX_UP = 30;
@@ -74,9 +77,7 @@ export function formatScoreSignalsForPrompt(signals: ScoreSignal[]): string {
 }
 
 function verdictFromScore(score: number): ScoreResult["verdict"] {
-  if (score >= 70) return "scam";
-  if (score >= 40) return "suspicious";
-  return "safe";
+  return verdictFromRiskScore(score);
 }
 
 /** Same narrative lines as legacy domain heuristics (for AI / UI copy). */

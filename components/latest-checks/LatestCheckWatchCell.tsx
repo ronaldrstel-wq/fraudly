@@ -1,15 +1,7 @@
 "use client";
 
-import type { ScamVerdict } from "@/types/scam";
 import { WatchlistToggle } from "@/components/WatchlistToggle";
-import { trustLevelFromScore, trustScoreFromRisk } from "@/lib/trustSystem";
-
-function verdictFromTrustScore(trustScore: number): ScamVerdict {
-  const level = trustLevelFromScore(trustScore);
-  if (level === "trusted") return "safe";
-  if (level === "caution") return "suspicious";
-  return "scam";
-}
+import { trustScoreFromRisk, verdictFromTrustScore } from "@/lib/trustSystem";
 
 type Props = {
   entityType: string;

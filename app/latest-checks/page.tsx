@@ -10,11 +10,12 @@ import { db } from "@/lib/db";
 import { OG_IMAGE } from "@/lib/seo-metadata";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { SITE_URL } from "@/lib/seo";
-import { trustIconGlyph, trustPresentationFromScore, trustScoreFromRisk } from "@/lib/trustSystem";
+import { trustDisplayFromRiskScore } from "@/lib/trustDisplay";
+import { trustIconGlyph } from "@/lib/trustSystem";
 
 export const revalidate = 120;
 
-const PAGE_SIZE = 24;
+const PAGE_SIZE = 10;
 
 type PageProps = { searchParams: Promise<{ page?: string }> };
 
@@ -133,8 +134,8 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
                 <li key={row.id}>
                   <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md md:p-5">
                     {(() => {
-                      const trustScore = trustScoreFromRisk(row.riskScoreSnapshot);
-                      const trust = trustPresentationFromScore(trustScore);
+                      const trust = trustDisplayFromRiskScore(row.riskScoreSnapshot);
+                      const trustScore = trust.trustScore;
                       return (
                         <>
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
