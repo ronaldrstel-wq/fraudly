@@ -193,7 +193,19 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
                   </p>
                   <p className="mt-0.5 text-sm text-slate-600">{formatSearched(row.createdAt)}</p>
                 </div>
-                <div className="mt-4 flex flex-wrap gap-2 pt-3 lg:mt-0 lg:flex-col lg:justify-self-end lg:pt-0">
+                <div className="mt-3 lg:col-span-6 lg:mt-2">
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200/85">
+                    <div
+                      className="h-full rounded-full transition-all duration-500 ease-out"
+                      style={{
+                        width: `${normalizedScore}%`,
+                        backgroundColor: fillColor,
+                        boxShadow: `0 0 8px ${fillColor}66`
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2 pt-1 lg:col-span-6 lg:mt-0 lg:justify-self-end lg:pt-0">
                   <Link
                     href={row.resultPath}
                     className="inline-flex flex-1 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600 px-4 py-2 text-center text-xs font-semibold text-white shadow-md hover:brightness-110 sm:flex-none lg:min-w-[7.5rem]"
@@ -208,19 +220,6 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
                   >
                     {busyRow ? EN_MESSAGES.recentSearches.clearing : EN_MESSAGES.recentSearches.deleteOne}
                   </button>
-                </div>
-                <div className="mt-3 lg:col-span-6 lg:mt-2">
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200/85">
-                    <div
-                      className="h-full rounded-full transition-all duration-500 ease-out"
-                      style={{
-                        width: `${normalizedScore}%`,
-                        backgroundColor: fillColor,
-                        boxShadow: `0 0 8px ${fillColor}66`
-                      }}
-                    />
-                  </div>
-                  <p className="mt-1 text-[11px] text-slate-500">Score: {normalizedScore} | Color: {fillColor}</p>
                 </div>
               </article>
             );
