@@ -10,6 +10,7 @@ import { db } from "@/lib/db";
 import { OG_IMAGE } from "@/lib/seo-metadata";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { SITE_URL } from "@/lib/seo";
+import { trustIconGlyph, trustPresentationFromScore, trustScoreFromRisk } from "@/lib/trustSystem";
 
 export const revalidate = 120;
 
@@ -131,6 +132,11 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
               {rows.map((row) => (
                 <li key={row.id}>
                   <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md md:p-5">
+                    {(() => {
+                      const trustScore = trustScoreFromRisk(row.riskScoreSnapshot);
+                      const trust = trustPresentationFromScore(trustScore);
+                      return (
+                        <>
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
@@ -152,18 +158,22 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
                       <dl className="grid shrink-0 grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-700 md:text-right md:text-sm">
                         <div className="md:col-span-2">
                           <dt className="sr-only">{EN_MESSAGES.latestChecks.labels.risk}</dt>
-                          <dd>
-                            <span className="font-semibold tabular-nums text-slate-900">
-                              {row.riskScoreSnapshot}/100
+                          <dd className="flex items-center gap-2 md:justify-end">
+                            <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${trust.toneSoftBorder} ${trust.toneSoftBg} ${trust.toneText}`}>
+                              <span aria-hidden>{trustIconGlyph(trust.icon)}</span>
+                              {trust.label}
                             </span>
-                            <span className="ml-1 text-slate-500">{EN_MESSAGES.latestChecks.riskHint}</span>
+                            <span className={`font-semibold tabular-nums ${trust.toneText}`}>{trustScore}/100</span>
                           </dd>
                         </div>
                         <div className="md:col-span-2">
                           <dt className="sr-only">{EN_MESSAGES.latestChecks.labels.status}</dt>
-                          <dd className="text-slate-800">{row.statusLabel}</dd>
+                          <dd className="text-slate-600">Unified trust system</dd>
                         </div>
                       </dl>
+                    </div>
+                    <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                      <div className={`h-full ${trust.progressBar}`} style={{ width: `${trustScore}%` }} />
                     </div>
                     <div className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-3 sm:flex-row sm:items-center sm:justify-between">
                       <LatestCheckWatchCell
@@ -180,6 +190,9 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
                         {EN_MESSAGES.latestChecks.viewSnapshot}
                       </Link>
                     </div>
+                        </>
+                      );
+                    })()}
                   </article>
                 </li>
               ))}

@@ -1,18 +1,10 @@
 import { WatchlistToggle } from "@/components/WatchlistToggle";
 import type { TrustSignal } from "@/lib/checks/types";
+import { trustIconGlyph, trustPresentationFromScore } from "@/lib/trustSystem";
 import type { ScamCheckResult } from "@/types/scam";
 
 interface ResultCardProps {
   result: ScamCheckResult;
-}
-
-type TrustBand = "high" | "medium" | "suspicious" | "low";
-
-function trustBandFromScore(trustScore: number): TrustBand {
-  if (trustScore >= 75) return "high";
-  if (trustScore >= 60) return "medium";
-  if (trustScore >= 30) return "suspicious";
-  return "low";
 }
 
 function toneForTrustSignal(signal: Pick<TrustSignal, "type">): string {
@@ -27,57 +19,6 @@ function toneForTrustSignal(signal: Pick<TrustSignal, "type">): string {
       return "border-rose-200 bg-rose-50 text-rose-900";
   }
 }
-
-const trustPresentation: Record<
-  TrustBand,
-  {
-    label: string;
-    textColor: string;
-    bgColor: string;
-    advisory: string;
-    advisoryBorder: string;
-    advisoryBg: string;
-    advisoryText: string;
-  }
-> = {
-  high: {
-    label: "High trust indicators",
-    textColor: "text-emerald-700",
-    bgColor: "bg-emerald-100",
-    advisory: "Automated checks returned mostly supportive trust signals for this snapshot.",
-    advisoryBorder: "border-emerald-200",
-    advisoryBg: "bg-emerald-50",
-    advisoryText: "text-emerald-900"
-  },
-  medium: {
-    label: "Generally favorable",
-    textColor: "text-green-800",
-    bgColor: "bg-green-100",
-    advisory: "Signals look broadly reasonable, but stay alert for unusual payment or data requests.",
-    advisoryBorder: "border-green-200",
-    advisoryBg: "bg-green-50",
-    advisoryText: "text-green-900"
-  },
-  suspicious: {
-    label: "Mixed signals",
-    textColor: "text-orange-700",
-    bgColor: "bg-orange-100",
-    advisory: "Some checks disagree or surfaced warnings. Pause before sharing personal or financial details.",
-    advisoryBorder: "border-amber-200",
-    advisoryBg: "bg-amber-50",
-    advisoryText: "text-amber-900"
-  },
-  low: {
-    label: "Lower trust context",
-    textColor: "text-rose-700",
-    bgColor: "bg-rose-100",
-    advisory:
-      "Multiple automated checks surfaced stronger risk indicators. Extra caution is warranted; verify through independent channels.",
-    advisoryBorder: "border-rose-200",
-    advisoryBg: "bg-rose-50",
-    advisoryText: "text-rose-900"
-  }
-};
 
 function SignalList({ signals, empty }: { signals: TrustSignal[]; empty: string }) {
   if (signals.length === 0) return <p className="mt-2 text-sm text-slate-600">{empty}</p>;
@@ -99,8 +40,7 @@ function SignalList({ signals, empty }: { signals: TrustSignal[]; empty: string 
 
 export function ResultCard({ result }: ResultCardProps) {
   const trustScore = Math.round(100 - result.score);
-  const band = trustBandFromScore(trustScore);
-  const style = trustPresentation[band];
+  const style = trustPresentationFromScore(trustScore);
   const { reviewSignals } = result;
   const hasPublicReviewData = reviewSignals.trustpilotFound || reviewSignals.googleFound;
   const detailPath = `/check/${encodeURIComponent(result.domain)}`;
@@ -113,12 +53,17 @@ export function ResultCard({ result }: ResultCardProps) {
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
         <div className="flex min-w-0 items-center gap-4" aria-label={`Trust score ${trustScore} percent, ${style.label}`}>
           <div
-            className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-8 border-white text-2xl font-bold shadow-sm ${style.bgColor} ${style.textColor}`}
+            className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-8 border-white text-2xl font-bold shadow-sm ${style.toneSoftBg} ${style.toneText}`}
           >
             {trustScore}%
           </div>
           <div className="min-w-0">
-            <p className={`text-lg font-semibold ${style.textColor}`}>{style.label}</p>
+            <p
+              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-semibold ${style.toneSoftBorder} ${style.toneSoftBg} ${style.toneText}`}
+            >
+              <span aria-hidden>{trustIconGlyph(style.icon)}</span>
+              {style.label}
+            </p>
             <p className="mt-1 text-sm text-slate-500">Trust score (automated)</p>
           </div>
         </div>
@@ -138,6 +83,9 @@ export function ResultCard({ result }: ResultCardProps) {
             <p className="mt-1 break-all">{result.domain}</p>
           </div>
         </div>
+      </div>
+      <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+        <div className={`h-full ${style.progressBar}`} style={{ width: `${trustScore}%` }} />
       </div>
 
       <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
@@ -337,10 +285,12 @@ export function ResultCard({ result }: ResultCardProps) {
         <p className="mt-3 text-xs text-slate-500">AI model used in this run: {result.aiUsed ? "yes" : "no"}</p>
       </div>
 
-      <div
-        className={`mt-6 rounded-xl border px-4 py-3 text-sm ${style.advisoryBorder} ${style.advisoryBg} ${style.advisoryText}`}
-      >
-        {style.advisory}
+      <div className={`mt-6 rounded-xl border px-4 py-3 text-sm ${style.toneSoftBorder} ${style.toneSoftBg} ${style.toneText}`}>
+        {style.level === "trusted"
+          ? "Signals are mostly supportive for this snapshot, but still use normal checkout caution."
+          : style.level === "caution"
+            ? "Some warnings were found. Verify payment safety and seller legitimacy before buying."
+            : "Multiple risk indicators were detected. Avoid sharing personal or payment details until independently verified."}
       </div>
     </div>
   );

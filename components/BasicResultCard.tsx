@@ -3,6 +3,7 @@
 import type { BasicCheckResult } from "@/types/scam";
 import { WatchlistToggle } from "@/components/WatchlistToggle";
 import { EN_MESSAGES } from "@/lib/messages.en";
+import { trustIconGlyph, trustPresentationFromScore } from "@/lib/trustSystem";
 
 function verdictLabel(verdict: BasicCheckResult["verdict"]) {
   if (verdict === "safe") {
@@ -29,6 +30,7 @@ function verdictLabel(verdict: BasicCheckResult["verdict"]) {
 export function BasicResultCard({ result }: { result: BasicCheckResult }) {
   const verdict = verdictLabel(result.verdict);
   const trustStyle = Math.max(0, Math.min(100, Math.round(100 - result.score)));
+  const trust = trustPresentationFromScore(trustStyle);
   const detailPath = `/check/${encodeURIComponent(result.domain)}`;
 
   return (
@@ -58,6 +60,17 @@ export function BasicResultCard({ result }: { result: BasicCheckResult }) {
         <p className="text-xs font-semibold uppercase tracking-wide opacity-80">{EN_MESSAGES.basicResult.riskStatus}</p>
         <p className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">{verdict.label}</p>
         <p className="mt-2 text-sm leading-relaxed opacity-90">{verdict.explanation}</p>
+      </div>
+
+      <div className={`mt-5 rounded-xl border p-4 ${trust.toneSoftBorder} ${trust.toneSoftBg}`}>
+        <p className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${trust.toneSoftBorder} ${trust.toneSoftBg} ${trust.toneText}`}>
+          <span aria-hidden>{trustIconGlyph(trust.icon)}</span>
+          {trust.label}
+        </p>
+        <p className={`mt-2 text-sm font-semibold tabular-nums ${trust.toneText}`}>Trust score: {trustStyle}/100</p>
+        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/80">
+          <div className={`h-full ${trust.progressBar}`} style={{ width: `${trustStyle}%` }} />
+        </div>
       </div>
 
       <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50 p-4">
