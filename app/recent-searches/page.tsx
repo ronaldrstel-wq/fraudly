@@ -15,20 +15,38 @@ export const metadata: Metadata = {
 };
 
 export default async function RecentSearchesPage() {
-  const user = await getBillingUserOrNull();
+  let user: Awaited<ReturnType<typeof getBillingUserOrNull>> = null;
+  try {
+    user = await getBillingUserOrNull();
+  } catch (e) {
+    console.error("[recent-searches page] user lookup failed", e);
+  }
+
   if (!user) {
     redirect(`/sign-in?redirect_url=${encodeURIComponent("/recent-searches")}`);
   }
 
-  const initialItems = await listRecentSearchesForScope({
-    userId: user.id,
-    anonymousSessionKey: null
-  });
+  let initialItems: Awaited<ReturnType<typeof listRecentSearchesForScope>> = [];
+  let hadLoadError = false;
+  try {
+    initialItems = await listRecentSearchesForScope({
+      userId: user.id,
+      anonymousSessionKey: null
+    });
+  } catch (e) {
+    hadLoadError = true;
+    console.error("[recent-searches page] list failed", e);
+  }
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
       <Navbar />
       <main className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:pt-10 md:pt-12">
+        {hadLoadError ? (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            We couldn't load your recent searches right now. Please refresh and try again.
+          </div>
+        ) : null}
         <RecentSearchesDashboard initialItems={initialItems} />
       </main>
       <SiteFooter />
