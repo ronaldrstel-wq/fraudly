@@ -81,13 +81,18 @@ export async function POST(request: Request) {
     const fullResult = await runWebsiteAnalysis(canonicalHref, language);
 
     if (billingUser?.id) {
-      await tryRecordRecentSearch({
-        userId: billingUser.id,
-        anonymousSessionKey: null,
-        originalUrlInput: userTrimmed,
-        analyzedHref: canonicalHref,
-        result: fullResult
-      });
+      try {
+        await tryRecordRecentSearch({
+          userId: billingUser.id,
+          anonymousSessionKey: null,
+          originalUrlInput: userTrimmed,
+          analyzedHref: canonicalHref,
+          result: fullResult
+        });
+      } catch (e) {
+        // Recent-search persistence should never block the primary website check response.
+        console.warn("[api/check] recent search persistence skipped:", e);
+      }
     }
 
     try {
