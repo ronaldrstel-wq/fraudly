@@ -1284,10 +1284,12 @@ function clamp(v: number, min: number, max: number): number {
 }
 
 function labelForTrustScore(score: number): string {
-  if (score >= 75) return "Strong";
-  if (score >= 55) return "Moderate";
-  if (score >= 35) return "Weak";
-  return "High Risk";
+  if (score >= 85) return "Highly Trusted";
+  if (score >= 70) return "Established";
+  if (score >= 55) return "Mixed";
+  if (score >= 40) return "Risky";
+  if (score >= 20) return "High Risk";
+  return "Dangerous";
 }
 
 function buildSubscoreFromSignals(args: {

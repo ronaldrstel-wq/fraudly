@@ -45,13 +45,13 @@ export function BasicResultCard({ result }: { result: BasicCheckResult }) {
         <p className="mt-1 break-all text-base font-semibold text-slate-900 sm:text-lg">{result.domain}</p>
       </div>
 
-      <div className={`mt-5 rounded-xl border p-4 sm:p-5 ${verdict.tone}`}>
+      <section className={`mt-5 rounded-xl border p-4 sm:p-5 ${verdict.tone}`}>
         <p className="text-xs font-semibold uppercase tracking-wide opacity-80">{EN_MESSAGES.basicResult.riskStatus}</p>
         <p className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">{verdict.label}</p>
         <p className="mt-2 text-sm leading-relaxed opacity-90">{verdict.explanation}</p>
-      </div>
+      </section>
 
-      <div className={`mt-5 rounded-xl border p-4 ${trust.toneSoftBorder} ${trust.toneSoftBg}`}>
+      <section className={`mt-5 rounded-xl border p-4 ${trust.toneSoftBorder} ${trust.toneSoftBg}`}>
         <p className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${trust.toneSoftBorder} ${trust.toneSoftBg} ${trust.toneText}`}>
           <span aria-hidden>{trustIconGlyph(trust.icon)}</span>
           {trust.label}
@@ -60,7 +60,12 @@ export function BasicResultCard({ result }: { result: BasicCheckResult }) {
         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/80">
           <div className={`h-full ${trust.progressBar}`} style={{ width: `${trustStyle}%` }} />
         </div>
-      </div>
+      </section>
+
+      <details className="mt-5 rounded-xl border border-dashed border-slate-200 bg-white p-4 text-sm">
+        <summary className="cursor-pointer font-semibold text-slate-900">Show technical details</summary>
+        <p className="mt-2 text-xs text-slate-600">Risk score: {result.score} · Verdict: {result.verdict}</p>
+      </details>
 
       <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50 p-4">
         <p className="text-sm font-medium text-blue-900">
