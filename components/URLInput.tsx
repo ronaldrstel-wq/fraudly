@@ -39,14 +39,14 @@ export function URLInput({
               }
             }}
             placeholder={EN_MESSAGES.check.urlPlaceholder}
-            className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3.5 text-base text-slate-900 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 sm:h-12 sm:rounded-xl sm:px-4"
+            className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-base text-slate-900 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
           />
         </div>
         <button
           type="button"
           onClick={onSubmit}
           disabled={disabled || loading}
-          className="h-11 w-full shrink-0 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 px-5 text-base font-semibold text-white shadow-lg shadow-blue-500/20 outline-none transition hover:opacity-90 focus-visible:ring-4 focus-visible:ring-blue-300 disabled:cursor-not-allowed disabled:opacity-50 sm:h-12 sm:w-auto sm:min-w-[10.5rem] sm:rounded-xl"
+          className="h-12 w-full shrink-0 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-5 text-base font-semibold text-white shadow-lg shadow-blue-500/20 outline-none transition hover:opacity-90 focus-visible:ring-4 focus-visible:ring-blue-300 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:min-w-[10.5rem]"
         >
           {loading ? "Checking website..." : "Check website"}
         </button>

@@ -29,11 +29,11 @@ export function Hero({ url, onUrlChange, onSubmit, loading, disabled, authGate }
         Check websites for phishing risks, fake stores, suspicious patterns, and trust signals before you click or buy.
       </p>
 
-      <div className="mx-auto mt-5 max-w-3xl sm:mt-6">
+      <div className="mx-auto mt-4 max-w-3xl sm:mt-5">
         <URLInput value={url} onChange={onUrlChange} onSubmit={onSubmit} disabled={disabled} loading={loading} />
-        {authGate ? <div className="mt-3 sm:mt-4">{authGate}</div> : null}
+        {authGate ? <div className="mt-2.5 sm:mt-3">{authGate}</div> : null}
         {loading && (
-          <p className="mt-2 text-center text-sm text-slate-500 sm:mt-3" role="status" aria-live="polite">
+          <p className="mt-2 text-center text-sm text-slate-500" role="status" aria-live="polite">
             Checking website...
           </p>
         )}
