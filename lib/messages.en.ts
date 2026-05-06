@@ -190,6 +190,21 @@ export const EN_MESSAGES = {
     paginationNext: "Next page",
     paginationNextDisabled: "Next",
     paginationPage: "Page"
+  },
+  saveFraudly: {
+    navCtaDesktop: "⭐ Save Fraudly",
+    navCtaMobile: "📲 Add to Home Screen",
+    desktopTitle: "Save Fraudly",
+    desktopBody:
+      "Press Ctrl+D (Windows/Linux) or Cmd+D (Mac) to bookmark Fraudly and access quick fraud checks anytime.",
+    desktopHint: "Keep Fraudly handy for quick fraud checks anytime.",
+    mobileTitle: "Add Fraudly to Home Screen",
+    mobileBodyLead: "Install Fraudly for faster access and quick fraud checks on the go.",
+    iosSteps: "Tap Share → Add to Home Screen.",
+    androidSteps: "Tap Menu (⋮) → Add to Home Screen or Install app.",
+    genericMobileSteps: "Use your browser menu: look for “Add to Home Screen” or “Install app”.",
+    mobileSupport: "Install Fraudly for faster fraud checks and quick access.",
+    closeCta: "Got it"
   }
 } as const;
 

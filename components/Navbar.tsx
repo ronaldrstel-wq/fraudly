@@ -3,6 +3,7 @@
 import { SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
+import { SaveFraudlyTrigger } from "@/components/save-fraudly/SaveFraudlyTrigger";
 import { EN_MESSAGES } from "@/lib/messages.en";
 
 const navLinks = [
@@ -46,6 +47,7 @@ export function Navbar() {
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-1 sm:gap-2 md:gap-3">
+          <SaveFraudlyTrigger variant="nav" instanceSuffix="-nav" />
           {isLoaded && isSignedIn ? (
             <>
               <Link
