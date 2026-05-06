@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { CLEAR_ALL_CONFIRM_BODY } from "@/lib/recent-search/constants";
-import { getOrCreateAnonRecentSessionEcho } from "@/lib/recent-search/client-session";
 import type { RecentSearchPublic } from "@/lib/recent-search/service";
 import { EN_MESSAGES } from "@/lib/messages.en";
 
@@ -25,21 +24,9 @@ function formatSearched(iso: string): string {
   }
 }
 
-function anonEchoHeaders(): HeadersInit {
-  const echo = getOrCreateAnonRecentSessionEcho();
-  return echo ? { "X-Fraudly-Recent-Echo": echo } : {};
-}
-
-export function RecentSearchesDashboard({
-  initialItems,
-  signedIn
-}: {
-  initialItems: RecentSearchPublic[];
-  signedIn: boolean;
-}) {
+export function RecentSearchesDashboard({ initialItems }: { initialItems: RecentSearchPublic[] }) {
   const router = useRouter();
   const [rows, setRows] = useState<RecentSearchPublic[]>(initialItems);
-  const [loadingGuest, setLoadingGuest] = useState(!signedIn);
   const [loadError, setLoadError] = useState(false);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [clearBusy, setClearBusy] = useState(false);
@@ -49,53 +36,20 @@ export function RecentSearchesDashboard({
     setRows(initialItems);
   }, [initialItems]);
 
-  useEffect(() => {
-    if (signedIn) {
-      setLoadingGuest(false);
-      return;
-    }
-
-    let cancelled = false;
-    (async () => {
-      setLoadError(false);
-      try {
-        const r = await fetch("/api/recent-searches", {
-          credentials: "same-origin",
-          headers: anonEchoHeaders()
-        });
-        const data = (await r.json()) as { items?: RecentSearchPublic[] };
-        if (!cancelled && Array.isArray(data.items)) {
-          setRows(data.items);
-        } else if (!cancelled) {
-          setLoadError(true);
-        }
-      } catch {
-        if (!cancelled) setLoadError(true);
-      } finally {
-        if (!cancelled) setLoadingGuest(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [signedIn]);
-
-  const refreshSignedIn = useCallback(() => {
-    if (signedIn) router.refresh();
-  }, [router, signedIn]);
+  const refresh = useCallback(() => {
+    router.refresh();
+  }, [router]);
 
   async function removeRow(id: string) {
     setPendingId(id);
     try {
       const res = await fetch(`/api/recent-searches/${encodeURIComponent(id)}`, {
         method: "DELETE",
-        credentials: "same-origin",
-        headers: signedIn ? {} : anonEchoHeaders()
+        credentials: "same-origin"
       });
       if (!res.ok) throw new Error();
       setRows((prev) => prev.filter((r) => r.id !== id));
-      refreshSignedIn();
+      refresh();
     } catch {
       setLoadError(true);
     } finally {
@@ -110,16 +64,13 @@ export function RecentSearchesDashboard({
       const res = await fetch("/api/recent-searches/clear", {
         method: "POST",
         credentials: "same-origin",
-        headers: {
-          "Content-Type": "application/json",
-          ...(signedIn ? {} : anonEchoHeaders())
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ confirm: CLEAR_ALL_CONFIRM_BODY })
       });
       if (!res.ok) throw new Error();
       setRows([]);
       setShowClearModal(false);
-      refreshSignedIn();
+      refresh();
     } catch {
       setLoadError(true);
     } finally {
@@ -127,32 +78,22 @@ export function RecentSearchesDashboard({
     }
   }
 
-  const banner = signedIn
-    ? EN_MESSAGES.recentSearches.pageIntroPrivatelyStored
-    : EN_MESSAGES.recentSearches.pageIntroAnonymous;
-
   return (
     <>
       <header className="text-center sm:text-left">
         <h1 className="text-balance text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
           {EN_MESSAGES.recentSearches.pageTitle}
         </h1>
-        <p className="mx-auto mt-3 max-w-2xl text-pretty text-sm text-slate-600 sm:mx-0 md:text-base">{banner}</p>
+        <p className="mx-auto mt-3 max-w-2xl text-pretty text-sm text-slate-600 sm:mx-0 md:text-base">
+          {EN_MESSAGES.recentSearches.pageIntroPrivatelyStored}
+        </p>
       </header>
 
-      {loadingGuest ? (
-        <div className="mt-10 rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center shadow-sm">
-          <p className="text-sm text-slate-600" role="status" aria-live="polite">
-            {EN_MESSAGES.recentSearches.loading}
-          </p>
-        </div>
-      ) : null}
-
-      {!loadingGuest && loadError ? (
+      {loadError ? (
         <p className="mt-4 text-center text-sm text-rose-600 sm:text-left">{EN_MESSAGES.recentSearches.loadError}</p>
       ) : null}
 
-      {!loadingGuest && rows.length > 0 && (
+      {rows.length > 0 && (
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
           <button
             type="button"
@@ -161,15 +102,11 @@ export function RecentSearchesDashboard({
           >
             {EN_MESSAGES.recentSearches.clearAll}
           </button>
-          <p className="text-xs text-slate-500">
-            {!signedIn
-              ? "Private browser-scoped rows only—you can delete them anytime."
-              : "Private—you can delete snapshots anytime."}
-          </p>
+          <p className="text-xs text-slate-500">Private—you can delete snapshots anytime.</p>
         </div>
       )}
 
-      {!loadingGuest && rows.length === 0 ? (
+      {rows.length === 0 ? (
         <div className="mt-10 rounded-2xl border border-dashed border-slate-200 bg-white/80 p-10 text-center shadow-sm">
           <p className="mx-auto max-w-lg text-pretty text-sm leading-relaxed text-slate-600">{EN_MESSAGES.recentSearches.emptyState}</p>
           <p className="mt-5 text-sm">
@@ -178,7 +115,7 @@ export function RecentSearchesDashboard({
             </Link>
           </p>
         </div>
-      ) : !loadingGuest ? (
+      ) : (
         <div className="mt-8 space-y-3">
           <div className="hidden lg:grid lg:grid-cols-[minmax(0,1.35fr)_0.5fr_0.35fr_minmax(0,0.9fr)_minmax(0,0.9fr)_auto] lg:gap-3 lg:rounded-lg lg:bg-slate-100/80 lg:px-4 lg:py-2 lg:text-[11px] lg:font-semibold lg:uppercase lg:tracking-wide lg:text-slate-500">
             <span>{EN_MESSAGES.recentSearches.columns.query}</span>
@@ -252,7 +189,7 @@ export function RecentSearchesDashboard({
             );
           })}
         </div>
-      ) : null}
+      )}
 
       {showClearModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

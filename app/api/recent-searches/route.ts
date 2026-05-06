@@ -1,25 +1,22 @@
-import { cookies } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
-import { RECENT_SEARCH_SESSION_COOKIE } from "@/lib/recent-search/constants";
-import { sanitizeRecentSessionEcho } from "@/lib/recent-search/session-echo";
+import { EN_MESSAGES } from "@/lib/messages.en";
 import { listRecentSearchesForScope } from "@/lib/recent-search/service";
 import { getBillingUserOrNull } from "@/lib/user-store";
 
-/**
- * Authenticated lists use the billing user row. Anonymous scopes use httpOnly cookie, with optional
- * `X-Fraudly-Recent-Echo` (UUID only) aligning with LocalStorage fallback when the cookie is absent.
- */
-export async function GET(request: NextRequest) {
+/** Signed-in users only — not exposed on the public site. */
+export async function GET(_request: NextRequest) {
   try {
     const user = await getBillingUserOrNull();
-    const jar = await cookies();
-    const cookieAnon = jar.get(RECENT_SEARCH_SESSION_COOKIE)?.value?.trim() || null;
-    const headerEcho = sanitizeRecentSessionEcho(request.headers.get("x-fraudly-recent-echo"));
-    const anon = user?.id ? null : cookieAnon || headerEcho;
+    if (!user) {
+      return NextResponse.json(
+        { error: "unauthorized", message: EN_MESSAGES.auth.loginForAccount, items: [] },
+        { status: 401 }
+      );
+    }
 
     const items = await listRecentSearchesForScope({
-      userId: user?.id ?? null,
-      anonymousSessionKey: user?.id ? null : anon
+      userId: user.id,
+      anonymousSessionKey: null
     });
 
     return NextResponse.json({ items });

@@ -22,9 +22,14 @@ export const EN_MESSAGES = {
   },
   check: {
     missingUrl: "Please enter a URL to check.",
+    invalidWebsiteInput:
+      "That doesn’t look like a website we can check. Enter a domain (like example.com), a full https link, or a path like example.com/login.",
     fullAnalysisLocked: "Log in to continue checking websites.",
     upsellPremium: "Create a free account to continue checking websites.",
-    viewPremium: "Continue"
+    viewPremium: "Continue",
+    urlFieldLabel: "Website, domain, or link",
+    urlPlaceholder: "Enter a domain, URL, wallet, username, or suspicious entity",
+    urlHelperExamples: "Examples: google.com · www.paypal.org/login · https://Example.com/path?q=1"
   },
   checkout: {
     invalidResponse: "Unexpected server response.",
@@ -87,8 +92,15 @@ export const EN_MESSAGES = {
     loginToManage: "Log in to save or remove watchlist items.",
     addToWatchlist: "Add to Watchlist",
     watching: "Watching",
+    /** Shorter label for dense rows (e.g. latest checks). */
+    watchShort: "Watch",
+    watchingShort: "Watching",
+    watchShortSignedOut: "Watch · Log in",
+    stateLoading: "Checking…",
     removeFromWatchlist: "Remove from Watchlist",
     signedOutWatchHint: "Watch · Log in",
+    updatingList: "Updating watchlist…",
+    openItem: "Open",
     emptyState:
       "Your watchlist is empty. Save suspicious items to review or monitor them later.",
     loadError: "Could not load your watchlist. Try again shortly.",
@@ -183,6 +195,21 @@ export const EN_MESSAGES = {
     paginationNext: "Next page",
     paginationNextDisabled: "Next",
     paginationPage: "Page"
+  },
+  saveFraudly: {
+    navCtaDesktop: "⭐ Save Fraudly",
+    navCtaMobile: "📲 Add to Home Screen",
+    desktopTitle: "Save Fraudly",
+    desktopBody:
+      "Press Ctrl+D (Windows/Linux) or Cmd+D (Mac) to bookmark Fraudly and access quick fraud checks anytime.",
+    desktopHint: "Keep Fraudly handy for quick fraud checks anytime.",
+    mobileTitle: "Add Fraudly to Home Screen",
+    mobileBodyLead: "Install Fraudly for faster access and quick fraud checks on the go.",
+    iosSteps: "Tap Share → Add to Home Screen.",
+    androidSteps: "Tap Menu (⋮) → Add to Home Screen or Install app.",
+    genericMobileSteps: "Use your browser menu: look for “Add to Home Screen” or “Install app”.",
+    mobileSupport: "Install Fraudly for faster fraud checks and quick access.",
+    closeCta: "Got it"
   }
 } as const;
 

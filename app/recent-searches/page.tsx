@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { RecentSearchesDashboard } from "@/components/RecentSearchesDashboard";
 import { SiteFooter } from "@/components/SiteFooter";
-import { RECENT_SEARCH_SESSION_COOKIE } from "@/lib/recent-search/constants";
 import { listRecentSearchesForScope } from "@/lib/recent-search/service";
 import { getBillingUserOrNull } from "@/lib/user-store";
 
@@ -17,19 +16,20 @@ export const metadata: Metadata = {
 
 export default async function RecentSearchesPage() {
   const user = await getBillingUserOrNull();
-  const jar = await cookies();
-  const cookieAnon = jar.get(RECENT_SEARCH_SESSION_COOKIE)?.value?.trim() || null;
+  if (!user) {
+    redirect(`/sign-in?redirect_url=${encodeURIComponent("/recent-searches")}`);
+  }
 
   const initialItems = await listRecentSearchesForScope({
-    userId: user?.id ?? null,
-    anonymousSessionKey: user?.id ? null : cookieAnon
+    userId: user.id,
+    anonymousSessionKey: null
   });
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
       <Navbar />
       <main className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:pt-10 md:pt-12">
-        <RecentSearchesDashboard initialItems={initialItems} signedIn={Boolean(user)} />
+        <RecentSearchesDashboard initialItems={initialItems} />
       </main>
       <SiteFooter />
     </div>

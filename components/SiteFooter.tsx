@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CookieSettingsLink } from "@/components/CookieSettingsLink";
+import { SaveFraudlyTrigger } from "@/components/save-fraudly/SaveFraudlyTrigger";
 
 export function SiteFooter() {
   return (
@@ -22,6 +23,7 @@ export function SiteFooter() {
           <Link href="/latest-checks" className="font-medium text-slate-700 transition hover:text-slate-900">
             Latest checks
           </Link>
+          <SaveFraudlyTrigger variant="footer" instanceSuffix="-footer" />
           <Link href="/privacy" className="font-medium text-slate-700 transition hover:text-slate-900">
             Privacy
           </Link>

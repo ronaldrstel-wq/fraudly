@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import type { WatchlistApiItem } from "@/lib/watchlist/types";
 
@@ -30,10 +30,13 @@ export function WatchlistDashboard({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [items, setItems] = useState<WatchlistApiItem[]>(initialItems);
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
-  const items = initialItems;
+  useEffect(() => {
+    setItems(initialItems);
+  }, [initialItems]);
 
   const refetchList = useCallback(() => {
     startTransition(() => {
@@ -48,6 +51,8 @@ export function WatchlistDashboard({
 
   async function remove(id: string) {
     setRemoveError(null);
+    const snapshot = items;
+    setItems((prev) => prev.filter((x) => x.id !== id));
     setRemovingId(id);
     try {
       const res = await fetch(`/api/watchlist?id=${encodeURIComponent(id)}`, {
@@ -59,6 +64,7 @@ export function WatchlistDashboard({
       }
       refetchList();
     } catch {
+      setItems(snapshot);
       setRemoveError(EN_MESSAGES.watchlist.removeError);
     } finally {
       setRemovingId(null);
@@ -99,7 +105,7 @@ export function WatchlistDashboard({
 
       {isPending ? (
         <p className="mt-6 text-center text-xs text-slate-500 sm:text-left" role="status" aria-live="polite">
-          Updating…
+          {EN_MESSAGES.watchlist.updatingList}
         </p>
       ) : null}
 
@@ -114,11 +120,12 @@ export function WatchlistDashboard({
         </div>
       ) : (
         <div className="mt-8 space-y-3">
-          <div className="hidden md:grid md:grid-cols-[minmax(0,1.4fr)_0.6fr_1fr_0.7fr_0.5fr] md:gap-3 md:rounded-lg md:bg-slate-100/80 md:px-4 md:py-2 md:text-xs md:font-semibold md:uppercase md:tracking-wide md:text-slate-500">
+          <div className="hidden md:grid md:grid-cols-[minmax(0,1.35fr)_0.55fr_1fr_0.65fr_auto_auto] md:gap-3 md:rounded-lg md:bg-slate-100/80 md:px-4 md:py-2 md:text-xs md:font-semibold md:uppercase md:tracking-wide md:text-slate-500">
             <span>{EN_MESSAGES.watchlist.columns.item}</span>
             <span>{EN_MESSAGES.watchlist.columns.type}</span>
             <span>{EN_MESSAGES.watchlist.columns.status}</span>
             <span>{EN_MESSAGES.watchlist.columns.added}</span>
+            <span className="text-right">{EN_MESSAGES.watchlist.openItem}</span>
             <span className="text-right">{EN_MESSAGES.watchlist.columns.actions}</span>
           </div>
 
@@ -128,16 +135,11 @@ export function WatchlistDashboard({
             return (
               <article
                 key={row.id}
-                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid md:grid-cols-[minmax(0,1.4fr)_0.6fr_1fr_0.7fr_0.5fr] md:items-center md:gap-3 md:rounded-xl md:p-4"
+                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid md:grid-cols-[minmax(0,1.35fr)_0.55fr_1fr_0.65fr_auto_auto] md:items-center md:gap-3 md:rounded-xl md:p-4"
               >
                 <div className="min-w-0 md:pr-2">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 md:hidden">{EN_MESSAGES.watchlist.columns.item}</p>
-                  <Link
-                    href={row.detailPath}
-                    className="mt-0.5 block truncate text-sm font-semibold text-blue-700 underline decoration-blue-600/30 underline-offset-2 hover:decoration-blue-600 md:mt-0"
-                  >
-                    {row.title}
-                  </Link>
+                  <p className="mt-0.5 break-words text-sm font-semibold text-slate-900 md:mt-0">{row.title}</p>
                 </div>
                 <div className="mt-3 md:mt-0">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 md:hidden">{EN_MESSAGES.watchlist.columns.type}</p>
@@ -150,7 +152,8 @@ export function WatchlistDashboard({
                   <p className="mt-0.5 text-sm text-slate-800 md:mt-0">
                     {row.trustScore !== null ? (
                       <>
-                        <span className="font-semibold">{row.trustScore}</span>/100 trust-style score · {formatVerdictSentence(row.verdict)}
+                        <span className="font-semibold tabular-nums">{row.trustScore}</span>/100 trust-style ·{" "}
+                        {formatVerdictSentence(row.verdict)}
                       </>
                     ) : (
                       <span>{formatVerdictSentence(row.verdict)}</span>
@@ -161,7 +164,15 @@ export function WatchlistDashboard({
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 md:hidden">{EN_MESSAGES.watchlist.columns.added}</p>
                   <p className="mt-0.5 text-sm text-slate-600 md:mt-0">{formatAdded(row.createdAt)}</p>
                 </div>
-                <div className="mt-4 flex justify-end border-t border-slate-100 pt-3 md:mt-0 md:border-t-0 md:pt-0">
+                <div className="mt-3 flex justify-end md:mt-0 md:justify-end">
+                  <Link
+                    href={row.detailPath}
+                    className="inline-flex rounded-full border border-blue-200 bg-blue-50/80 px-3 py-1.5 text-xs font-semibold text-blue-800 transition hover:border-blue-300 hover:bg-blue-50"
+                  >
+                    {EN_MESSAGES.watchlist.openItem}
+                  </Link>
+                </div>
+                <div className="mt-3 flex justify-end border-t border-slate-100 pt-3 md:mt-0 md:border-t-0 md:pt-0">
                   <button
                     type="button"
                     className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
@@ -169,7 +180,7 @@ export function WatchlistDashboard({
                     onClick={() => void remove(row.id)}
                     aria-label={`${EN_MESSAGES.watchlist.removeFromWatchlist}: ${row.title}`}
                   >
-                    {busy ? "…" : EN_MESSAGES.watchlist.removeFromWatchlist}
+                    {busy ? EN_MESSAGES.watchlist.stateLoading : EN_MESSAGES.watchlist.removeFromWatchlist}
                   </button>
                 </div>
               </article>
