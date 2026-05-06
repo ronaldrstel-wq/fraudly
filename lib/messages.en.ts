@@ -22,9 +22,14 @@ export const EN_MESSAGES = {
   },
   check: {
     missingUrl: "Please enter a URL to check.",
+    invalidWebsiteInput:
+      "That doesn’t look like a website we can check. Enter a domain (like example.com), a full https link, or a path like example.com/login.",
     fullAnalysisLocked: "Log in to continue checking websites.",
     upsellPremium: "Create a free account to continue checking websites.",
-    viewPremium: "Continue"
+    viewPremium: "Continue",
+    urlFieldLabel: "Website, domain, or link",
+    urlPlaceholder: "Enter a domain, URL, wallet, username, or suspicious entity",
+    urlHelperExamples: "Examples: google.com · www.paypal.org/login · https://Example.com/path?q=1"
   },
   checkout: {
     invalidResponse: "Unexpected server response.",

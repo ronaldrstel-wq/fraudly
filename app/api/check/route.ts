@@ -5,6 +5,7 @@ import { toBillingSnapshot } from "@/lib/billing";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { canRunCheck, getAnonymousFreeCheckCookieName, hasUsedAnonymousFreeCheckCookie } from "@/lib/accessControl";
 import { checkDailyLimiter, getClientIp } from "@/lib/rateLimiter";
+import { parseFlexibleWebsiteInput } from "@/lib/check-input/normalizeWebsiteInput";
 import { upsertLatestPublicCheckFromCompletedScan } from "@/lib/latest-public-checks/persist";
 import { tryRecordRecentSearch } from "@/lib/recent-search/service";
 import { getBillingUserOrNull } from "@/lib/user-store";
@@ -45,16 +46,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "url is required" }, { status: 400 });
     }
 
-    let parsedUrl: URL;
-    try {
-      parsedUrl = new URL(input);
-    } catch {
+    const parsed = parseFlexibleWebsiteInput(input);
+    if (!parsed.ok) {
       return NextResponse.json({ error: "invalid url" }, { status: 400 });
     }
 
-    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
-      return NextResponse.json({ error: "invalid url" }, { status: 400 });
-    }
+    const parsedUrl = parsed.url;
+    const canonicalHref = parsed.canonicalHref;
+    const userTrimmed = parsed.userTrimmed;
 
     const user = await getBillingUserOrNull();
     const hasUsedAnonFreeCheck = hasUsedAnonymousFreeCheckCookie(request.headers.get("cookie"));
@@ -79,14 +78,14 @@ export async function POST(request: Request) {
 
     const billingUser: User | null = user;
 
-    const fullResult = await runWebsiteAnalysis(parsedUrl.href, language);
+    const fullResult = await runWebsiteAnalysis(canonicalHref, language);
 
     if (billingUser?.id) {
       await tryRecordRecentSearch({
         userId: billingUser.id,
         anonymousSessionKey: null,
-        originalUrlInput: input,
-        analyzedHref: parsedUrl.href,
+        originalUrlInput: userTrimmed,
+        analyzedHref: canonicalHref,
         result: fullResult
       });
     }
@@ -94,7 +93,7 @@ export async function POST(request: Request) {
     try {
       await upsertLatestPublicCheckFromCompletedScan({
         parsedUrl,
-        originalInput: input,
+        originalInput: userTrimmed,
         result: fullResult
       });
     } catch (e) {

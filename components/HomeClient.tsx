@@ -17,8 +17,9 @@ import {
   trackRegisteredCheckCompleted,
   trackRegisteredCheckStarted
 } from "@/lib/analytics";
+import { parseFlexibleWebsiteInput } from "@/lib/check-input/normalizeWebsiteInput";
 import { EN_MESSAGES } from "@/lib/messages.en";
-import { GENERIC_CHECK_ERROR, INVALID_URL_MESSAGE } from "@/lib/messages";
+import { GENERIC_CHECK_ERROR } from "@/lib/messages";
 import { isCheckApiResponse, type ScamCheckResult } from "@/types/scam";
 
 const ResultCard = dynamic(() => import("@/components/ResultCard").then((m) => ({ default: m.ResultCard })), {
@@ -32,15 +33,6 @@ const FeatureCards = dynamic(() => import("@/components/FeatureCards").then((m) 
 const PostScanAppPromo = dynamic(() => import("@/components/PostScanAppPromo").then((m) => ({ default: m.PostScanAppPromo })), {
   loading: () => <div className="h-32 w-full animate-pulse rounded-xl bg-slate-100" aria-hidden />
 });
-
-function isValidUrl(value: string) {
-  try {
-    const parsed = new URL(value);
-    return parsed.protocol === "http:" || parsed.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
 
 export function HomeClient({ children }: { children?: ReactNode }) {
   const { isSignedIn } = useAuth();
@@ -76,8 +68,9 @@ export function HomeClient({ children }: { children?: ReactNode }) {
       return;
     }
 
-    if (!isValidUrl(trimmed)) {
-      setError(INVALID_URL_MESSAGE);
+    const parsedInput = parseFlexibleWebsiteInput(trimmed);
+    if (!parsedInput.ok) {
+      setError(EN_MESSAGES.check.invalidWebsiteInput);
       trackCheckFailed("invalid_url_client");
       return;
     }
@@ -98,7 +91,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          url: trimmed,
+          url: parsedInput.canonicalHref,
           detailLevel: "full",
           language: "en"
         })
