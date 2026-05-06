@@ -6,12 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CLEAR_ALL_CONFIRM_BODY } from "@/lib/recent-search/constants";
 import type { RecentSearchPublic } from "@/lib/recent-search/service";
 import { EN_MESSAGES } from "@/lib/messages.en";
-
-function verdictLabel(verdict: string | null): string {
-  if (!verdict) return "—";
-  const v = verdict as keyof typeof EN_MESSAGES.recentSearches.verdictLabels;
-  return EN_MESSAGES.recentSearches.verdictLabels[v] ?? verdict;
-}
+import { trustIconGlyph, trustPresentationFromScore } from "@/lib/trustSystem";
 
 function formatSearched(iso: string): string {
   try {
@@ -153,15 +148,36 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 lg:hidden">
                     {EN_MESSAGES.recentSearches.columns.score}
                   </p>
-                  <p className="mt-0.5 text-sm font-semibold tabular-nums text-slate-800">
-                    {row.trustScoreSnap !== null ? `${row.trustScoreSnap}/100` : "—"}
-                  </p>
+                  {row.trustScoreSnap !== null ? (
+                    <>
+                      <p className={`mt-0.5 text-sm font-semibold tabular-nums ${trustPresentationFromScore(row.trustScoreSnap).toneText}`}>
+                        {row.trustScoreSnap}/100
+                      </p>
+                      <div className="mt-1 h-1.5 w-24 overflow-hidden rounded-full bg-slate-100">
+                        <div
+                          className={`h-full ${trustPresentationFromScore(row.trustScoreSnap).progressBar}`}
+                          style={{ width: `${row.trustScoreSnap}%` }}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <p className="mt-0.5 text-sm font-semibold tabular-nums text-slate-500">—</p>
+                  )}
                 </div>
                 <div className="mt-3 lg:mt-0">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 lg:hidden">
                     {EN_MESSAGES.recentSearches.columns.status}
                   </p>
-                  <p className="mt-0.5 text-sm text-slate-800">{verdictLabel(row.verdictSnap)}</p>
+                  {row.trustScoreSnap !== null ? (
+                    <p
+                      className={`mt-0.5 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${trustPresentationFromScore(row.trustScoreSnap).toneSoftBorder} ${trustPresentationFromScore(row.trustScoreSnap).toneSoftBg} ${trustPresentationFromScore(row.trustScoreSnap).toneText}`}
+                    >
+                      <span aria-hidden>{trustIconGlyph(trustPresentationFromScore(row.trustScoreSnap).icon)}</span>
+                      {trustPresentationFromScore(row.trustScoreSnap).label}
+                    </p>
+                  ) : (
+                    <p className="mt-0.5 text-sm text-slate-500">—</p>
+                  )}
                 </div>
                 <div className="mt-3 lg:mt-0">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 lg:hidden">

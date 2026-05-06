@@ -2,11 +2,13 @@
 
 import type { ScamVerdict } from "@/types/scam";
 import { WatchlistToggle } from "@/components/WatchlistToggle";
+import { trustLevelFromScore, trustScoreFromRisk } from "@/lib/trustSystem";
 
-function verdictFromRiskSnapshot(risk: number): ScamVerdict {
-  if (risk >= 72) return "scam";
-  if (risk >= 38) return "suspicious";
-  return "safe";
+function verdictFromTrustScore(trustScore: number): ScamVerdict {
+  const level = trustLevelFromScore(trustScore);
+  if (level === "trusted") return "safe";
+  if (level === "caution") return "suspicious";
+  return "scam";
 }
 
 type Props = {
@@ -21,8 +23,8 @@ type Props = {
 export function LatestCheckWatchCell({ entityType, normalizedKey, checkedValue, publicResultPath, riskScoreSnapshot }: Props) {
   if (entityType !== "domain" || !normalizedKey.trim()) return null;
 
-  const trustStyle = Math.max(0, Math.min(100, Math.round(100 - riskScoreSnapshot)));
-  const verdict = verdictFromRiskSnapshot(riskScoreSnapshot);
+  const trustStyle = trustScoreFromRisk(riskScoreSnapshot);
+  const verdict = verdictFromTrustScore(trustStyle);
 
   return (
     <WatchlistToggle
