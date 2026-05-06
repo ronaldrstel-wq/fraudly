@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserPlan {
+  free
+  premium
+}
+
+enum SubscriptionStatus {
+  inactive
+  active
+  canceled
+  past_due
+}
+
+enum WatchlistItemType {
+  domain
+  url
+  email
+  phone
+}
+
+model User {
+  id                   String             @id @default(cuid())
+  authProvider         String             @default("legacy")
+  authProviderId       String?            @unique
+  email                String?            @unique
+  plan                 UserPlan           @default(free)
+  credits              Int                @default(0)
+  freeChecksUsed       Int                @default(0)
+  monthlyChecksUsed    Int                @default(0)
+  paidChecksCount      Int                @default(0)
+  subscriptionStatus   SubscriptionStatus @default(inactive)
+  stripeCustomerId     String?            @unique
+  stripeSubscriptionId String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  watchlistItems       WatchlistItem[]
+  recentSearches       RecentSearch[]
+}
+
+/// Private per-user / per-session fraud check history (not publicly exposed).
+model RecentSearch {
+  id                  String   @id @default(cuid())
+  userId              String?
+  user                User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Opaque key for anonymous browsers (httpOnly cookie); never shown in analytics exports as PII tied to Clerk.
+  anonymousSessionKey String?  @db.VarChar(64)
+  originalQuery       String   @db.Text
+  normalizedQuery     String   @db.VarChar(2048)
+  entityType          String   @db.VarChar(32)
+  trustScoreSnap      Int?
+  verdictSnap         String?  @db.VarChar(32)
+  resultPath          String   @db.VarChar(2048)
+  createdAt           DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([anonymousSessionKey, createdAt(sort: Desc)])
+}
+
+model WatchlistItem {
+  id          String            @id @default(cuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemType    WatchlistItemType
+  externalKey String            @db.VarChar(768)
+  title       String            @db.VarChar(512)
+  detailPath  String            @db.VarChar(2048)
+  trustScore  Int?
+  verdict     String?           @db.VarChar(32)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@unique([userId, itemType, externalKey])
+}
+
+model StripeEvent {
+  id        String   @id
+  createdAt DateTime @default(now())
+}
+
+/// Anonymized, user-unlinked summaries for `/latest-checks` discovery only — never populated from `/recent-searches`.
+model LatestPublicCheck {
+  id                 String   @id @default(cuid())
+  normalizedValue    String   @unique @db.VarChar(2048)
+  checkedValue       String   @db.VarChar(4096)
+  entityType         String   @db.VarChar(64)
+  riskScoreSnapshot  Int
+  statusLabel        String   @db.VarChar(128)
+  publicResultPath   String   @db.VarChar(2048)
+  firstSeenAt        DateTime @default(now())
+  lastSeenAt         DateTime @default(now()) @updatedAt
+
+  @@index([lastSeenAt(sort: Desc)])
+}

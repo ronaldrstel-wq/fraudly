@@ -7,7 +7,8 @@ const REQUEST_MS = 7000;
 const WEBSITE_FETCH_MS = 4500;
 const WEBSITE_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
-const SYSTEM_PROMPT = "You are a cybersecurity assistant. Analyze if a URL might be a scam.";
+const SYSTEM_PROMPT =
+  "You are a cybersecurity assistant helping consumers interpret website trust signals. Always respond in English. Do not use Dutch. Prefer phrases like \"risk indicators\", \"trust signals\", and \"mixed evidence\". Do not claim a third-party blacklist or government database match unless the appended intelligence JSON lists a providerEvidence row for that named source with matched=true (or supplemental.safeBrowsing.safeBrowsingStatus is \"flagged\"). Never invent VirusTotal/PhishTank/AbuseIPDB or national-feed hits—the appended JSON reflects what actually ran.";
 
 export type WebsiteSignals = {
   title: string;
@@ -116,7 +117,7 @@ export async function fetchWebsiteSignals(url: string): Promise<WebsiteSignals |
   return payload;
 }
 
-function buildUserPrompt(url: string, signals: WebsiteSignals | null): string {
+function buildUserPrompt(url: string, signals: WebsiteSignals | null, language: "en" | "nl"): string {
   const title = signals?.title || "(missing)";
   const meta = signals?.metaDescription || "(missing)";
   const body = signals?.bodySnippet || "(missing)";
@@ -126,7 +127,11 @@ function buildUserPrompt(url: string, signals: WebsiteSignals | null): string {
 Website text signals:
 - title: ${title}
 - meta: ${meta}
-- body_snippet: ${body}`;
+- body_snippet: ${body}
+
+Language requirement:
+- requested language: ${language}
+- output language: English only`;
 }
 
 export type AiScamReasonsResult = {
@@ -180,7 +185,9 @@ export async function fetchAiScamReasons(
   signals: WebsiteSignals | null,
   reviewSignals: ReviewSignals,
   heuristicReasons: string[],
-  scoringSignalsJson: string
+  scoringSignalsJson: string,
+  trustIntelJson: string,
+  language: "en" | "nl" = "en"
 ): Promise<AiScamReasonsResult | null> {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) return null;
@@ -199,7 +206,7 @@ export async function fetchAiScamReasons(
       { role: "system", content: SYSTEM_PROMPT },
       {
         role: "user",
-        content: `${buildUserPrompt(url, signals)}
+        content: `${buildUserPrompt(url, signals, language)}
 
 Review signals:
 ${reviewSignalsContext}
@@ -213,10 +220,21 @@ ${scoringSignalsJson}
 Analyze the URL using:
 - domain and supply-chain heuristics
 - review signals
+- technical trust intelligence (blacklist checks, SSL/TLS, domain intelligence)
 - website text if available
 - the scoring signals above (explain and align with them; do not contradict the weighted risk picture)
 
 Consider supply-chain risk (dropshipping / long international fulfillment vs local stock) when relevant.
+Do not use dramatic language, certainty claims, or accusations. Keep a calm and factual consumer-friendly tone.
+
+Trust intelligence signals (canonical providerEvidence plus supplemental structured fields):
+${trustIntelJson}
+
+When summarizing intelligence:
+- Cite matched=true rows and name their source strings.
+- If evidence is contradictory, recommend caution without certainty.
+- Reference intelScoreBreakdown when explaining how server weighting leaned toward risk or trust.
+- Mention cache/TTL limits; absence of a hit is not proof of safety.
 
 Return JSON:
 {

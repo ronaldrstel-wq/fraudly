@@ -16,8 +16,8 @@ const steps = [
     text: "Enter the URL of a webshop, brand, or unknown website you want to check."
   },
   {
-    title: "We scan trust signals",
-    text: "Fraudly checks signals like domain patterns, public reviews, website content, shipping clues, and business transparency."
+    title: "We review trust signals",
+    text: "Fraudly checks signals like domain patterns, public reviews, website content, shipping cues, and business transparency."
   },
   {
     title: "AI explains the risk",

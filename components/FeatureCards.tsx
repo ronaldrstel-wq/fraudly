@@ -1,15 +1,15 @@
 const cards = [
   {
-    title: "Advanced AI Analysis",
-    description: "Multiple trust and risk signals scored instantly for every link."
+    title: "Clear trust signals",
+    description: "Each website check brings together technical checks, public feeds, and on-page cues in plain language."
   },
   {
-    title: "Instant Results",
-    description: "Get a clear verdict in seconds with zero setup required."
+    title: "Results in seconds",
+    description: "Get a concise readout quickly—no install and no jargon wall."
   },
   {
-    title: "Your Safety First",
-    description: "Built to help people avoid phishing, fake shops, and scam campaigns."
+    title: "Safety-first wording",
+    description: "Calm explanations of phishing risks, suspicious patterns, and what looks trustworthy—not fear-based hype."
   }
 ];
 

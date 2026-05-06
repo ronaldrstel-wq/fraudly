@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
+import { HomeBelowFold } from "@/components/HomeBelowFold";
+import { HomeFaqJsonLd } from "@/components/HomeFaqJsonLd";
 import { HomeClient } from "@/components/HomeClient";
 import { OG_IMAGE } from "@/lib/seo-metadata";
 import { defaultKeywords, SITE_URL } from "@/lib/seo";
 
-const homeTitle = "Fraudly – Detect Scams, Phishing & Online Fraud";
+const homeTitle = "Free Scam Website Checker & Website Trust Checker | Fraudly";
 const homeDescription =
-  "Use Fraudly to check suspicious messages, emails, websites, and fraud risks. Get fast insights to help identify scams before they cause harm.";
+  "Check if a website is legit with Fraudly’s free website safety checker—scam signals, phishing-style risks, fake webshop patterns, and trust indicators in one place before you click or pay.";
 
 export const metadata: Metadata = {
   title: { absolute: homeTitle },
@@ -30,5 +32,12 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
-  return <HomeClient />;
+  return (
+    <>
+      <HomeFaqJsonLd />
+      <HomeClient>
+        <HomeBelowFold />
+      </HomeClient>
+    </>
+  );
 }
