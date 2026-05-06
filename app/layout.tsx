@@ -1,6 +1,7 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { CookieConsentProvider } from "@/components/CookieConsentProvider";
 import { JsonLd } from "@/components/JsonLd";
 import { InstallPromptProvider } from "@/components/save-fraudly/install-prompt-context";
