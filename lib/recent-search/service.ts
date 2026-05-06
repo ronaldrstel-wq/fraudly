@@ -95,50 +95,66 @@ export async function listRecentSearchesForScope(input: {
 }): Promise<RecentSearchPublic[]> {
   let rows: RecentSearchRow[] = [];
 
-  if (input.userId) {
-    rows = await db.recentSearch.findMany({
-      where: { userId: input.userId },
-      orderBy: { createdAt: "desc" },
-      take: 200
-    });
-  } else if (input.anonymousSessionKey) {
-    rows = await db.recentSearch.findMany({
-      where: { anonymousSessionKey: input.anonymousSessionKey, userId: null },
-      orderBy: { createdAt: "desc" },
-      take: 200
-    });
+  try {
+    if (input.userId) {
+      rows = await db.recentSearch.findMany({
+        where: { userId: input.userId },
+        orderBy: { createdAt: "desc" },
+        take: 200
+      });
+    } else if (input.anonymousSessionKey) {
+      rows = await db.recentSearch.findMany({
+        where: { anonymousSessionKey: input.anonymousSessionKey, userId: null },
+        orderBy: { createdAt: "desc" },
+        take: 200
+      });
+    }
+  } catch (e) {
+    // Fail-safe: recent-searches should never crash the whole page.
+    console.error("[recent-searches] list failed", e);
+    return [];
   }
 
   return rows.map(toPublic);
 }
 
 export async function deleteRecentSearchForScope(rowId: string, scope: { userId: string | null; anonymousSessionKey: string | null }): Promise<boolean> {
-  const row = await db.recentSearch.findUnique({ where: { id: rowId } });
-  if (!row) return false;
+  try {
+    const row = await db.recentSearch.findUnique({ where: { id: rowId } });
+    if (!row) return false;
 
-  if (scope.userId) {
-    if (row.userId !== scope.userId) return false;
-  } else {
-    if (!scope.anonymousSessionKey || row.anonymousSessionKey !== scope.anonymousSessionKey || row.userId != null) {
-      return false;
+    if (scope.userId) {
+      if (row.userId !== scope.userId) return false;
+    } else {
+      if (!scope.anonymousSessionKey || row.anonymousSessionKey !== scope.anonymousSessionKey || row.userId != null) {
+        return false;
+      }
     }
-  }
 
-  await db.recentSearch.delete({ where: { id: rowId } });
-  return true;
+    await db.recentSearch.delete({ where: { id: rowId } });
+    return true;
+  } catch (e) {
+    console.error("[recent-searches] delete failed", e);
+    return false;
+  }
 }
 
 export async function deleteAllRecentSearchesForScope(scope: { userId: string | null; anonymousSessionKey: string | null }): Promise<number> {
-  if (scope.userId) {
-    const res = await db.recentSearch.deleteMany({ where: { userId: scope.userId } });
-    return res.count;
-  }
-  if (!scope.anonymousSessionKey) return 0;
+  try {
+    if (scope.userId) {
+      const res = await db.recentSearch.deleteMany({ where: { userId: scope.userId } });
+      return res.count;
+    }
+    if (!scope.anonymousSessionKey) return 0;
 
-  const res = await db.recentSearch.deleteMany({
-    where: { anonymousSessionKey: scope.anonymousSessionKey, userId: null }
-  });
-  return res.count;
+    const res = await db.recentSearch.deleteMany({
+      where: { anonymousSessionKey: scope.anonymousSessionKey, userId: null }
+    });
+    return res.count;
+  } catch (e) {
+    console.error("[recent-searches] clear failed", e);
+    return 0;
+  }
 }
 
 export function validateClearAllBody(body: unknown): boolean {
