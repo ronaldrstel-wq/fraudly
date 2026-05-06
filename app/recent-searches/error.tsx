@@ -9,7 +9,9 @@ export default function RecentSearchesError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  console.error("[recent-searches error boundary]", { message: error.message, digest: error.digest });
+  if (process.env.NODE_ENV !== "production") {
+    console.error("[recent-searches error boundary]", { message: error.message, digest: error.digest });
+  }
 
   return (
     <div className="mx-auto my-10 w-full max-w-3xl rounded-2xl border border-rose-200 bg-rose-50 p-6 text-rose-800">

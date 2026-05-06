@@ -137,12 +137,14 @@ export function HomeClient({ children }: { children?: ReactNode }) {
           ? rawBody.replace(/\s+/g, " ").slice(0, 220)
           : "";
 
-        console.error("[/api/check] non-ok", {
-          status: response.status,
-          requestId,
-          msgFromApi,
-          bodySnippet
-        });
+        if (process.env.NODE_ENV !== "production") {
+          console.error("[/api/check] non-ok", {
+            status: response.status,
+            requestId,
+            msgFromApi,
+            bodySnippet
+          });
+        }
 
         if (msgFromApi) {
           setError(msgFromApi);
@@ -184,7 +186,9 @@ export function HomeClient({ children }: { children?: ReactNode }) {
     } catch (err) {
       setResult(null);
       const message = err instanceof Error ? err.message : "Unknown error";
-      console.error("[/api/check] fetch failed", { message });
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[/api/check] fetch failed", { message });
+      }
       setError(process.env.NODE_ENV === "production" ? GENERIC_CHECK_ERROR : `Network error: ${message}`);
       trackCheckFailed("network");
     } finally {

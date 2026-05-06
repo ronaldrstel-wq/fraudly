@@ -30,6 +30,12 @@ const ANON_BILLING_SNAPSHOT = {
   subscriptionStatus: "inactive"
 } as const;
 
+function logNonCritical(message: string, error: unknown) {
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(message, error);
+  }
+}
+
 export async function POST(request: Request) {
   try {
     let body: CheckRequest;
@@ -60,7 +66,7 @@ export async function POST(request: Request) {
       user = await getBillingUserOrNull();
     } catch (e) {
       // Auth/user-store hiccups should not block the core check flow.
-      console.warn("[api/check] billing user lookup failed; continuing as anonymous:", e);
+      logNonCritical("[api/check] billing user lookup failed; continuing as anonymous:", e);
       user = null;
     }
     const hasUsedAnonFreeCheck = hasUsedAnonymousFreeCheckCookie(request.headers.get("cookie"));
@@ -84,7 +90,7 @@ export async function POST(request: Request) {
         }
       } catch (e) {
         // Rate limiter errors are non-critical for correctness of a single scan result.
-        console.warn("[api/check] rate limiter failed; allowing request:", e);
+        logNonCritical("[api/check] rate limiter failed; allowing request:", e);
       }
     }
 
@@ -103,7 +109,7 @@ export async function POST(request: Request) {
         });
       } catch (e) {
         // Recent-search persistence should never block the primary website check response.
-        console.warn("[api/check] recent search persistence skipped:", e);
+        logNonCritical("[api/check] recent search persistence skipped:", e);
       }
     }
 
@@ -114,7 +120,7 @@ export async function POST(request: Request) {
         result: fullResult
       });
     } catch (e) {
-      console.warn("[api/check] latest public snapshot skipped:", e);
+      logNonCritical("[api/check] latest public snapshot skipped:", e);
     }
 
     const payload = {
