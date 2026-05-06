@@ -20,25 +20,16 @@ function formatSearched(iso: string): string {
   }
 }
 
-function scoreFillStyle(score: number) {
-  if (score >= 80) {
-    return {
-      barClass: "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.45)]"
-    };
-  }
-  if (score >= 60) {
-    return {
-      barClass: "bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.45)]"
-    };
-  }
-  if (score >= 40) {
-    return {
-      barClass: "bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.45)]"
-    };
-  }
-  return {
-    barClass: "bg-rose-500 shadow-[0_0_10px_rgba(239,68,68,0.45)]"
-  };
+function normalizeScore(score: number): number {
+  return Math.max(0, Math.min(100, Number(score) || 0));
+}
+
+function getScoreColor(score: number): string {
+  const normalized = normalizeScore(score);
+  if (normalized >= 80) return "#22c55e";
+  if (normalized >= 60) return "#facc15";
+  if (normalized >= 40) return "#f97316";
+  return "#ef4444";
 }
 
 function fallbackScoreFromVerdict(verdict: string | null): number {
@@ -157,6 +148,8 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
             const busyRow = pendingId === row.id;
             const displayScore = row.trustScoreSnap ?? fallbackScoreFromVerdict(row.verdictSnap);
             const trust = trustDisplayFromTrustScore(displayScore);
+            const normalizedScore = normalizeScore(trust.trustScore);
+            const fillColor = getScoreColor(normalizedScore);
             return (
               <article
                 key={row.id}
@@ -219,10 +212,15 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
                 <div className="mt-3 lg:col-span-6 lg:mt-2">
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200/85">
                     <div
-                      className={`h-full rounded-full transition-all duration-500 ease-out ${scoreFillStyle(trust.trustScore).barClass}`}
-                      style={{ width: `${trust.trustScore}%` }}
+                      className="h-full rounded-full transition-all duration-500 ease-out"
+                      style={{
+                        width: `${normalizedScore}%`,
+                        backgroundColor: fillColor,
+                        boxShadow: `0 0 8px ${fillColor}66`
+                      }}
                     />
                   </div>
+                  <p className="mt-1 text-[11px] text-slate-500">Score: {normalizedScore} | Color: {fillColor}</p>
                 </div>
               </article>
             );
