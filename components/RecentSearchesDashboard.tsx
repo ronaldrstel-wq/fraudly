@@ -41,6 +41,13 @@ function scoreFillStyle(score: number) {
   };
 }
 
+function fallbackScoreFromVerdict(verdict: string | null): number {
+  if (verdict === "safe") return 85;
+  if (verdict === "suspicious") return 55;
+  if (verdict === "scam") return 25;
+  return 50;
+}
+
 export function RecentSearchesDashboard({ initialItems }: { initialItems: RecentSearchPublic[] }) {
   const router = useRouter();
   const [rows, setRows] = useState<RecentSearchPublic[]>(initialItems);
@@ -148,7 +155,8 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
               EN_MESSAGES.recentSearches.entityLabels[row.entityType as keyof typeof EN_MESSAGES.recentSearches.entityLabels] ??
               row.entityType;
             const busyRow = pendingId === row.id;
-            const trust = row.trustScoreSnap !== null ? trustDisplayFromTrustScore(row.trustScoreSnap) : null;
+            const displayScore = row.trustScoreSnap ?? fallbackScoreFromVerdict(row.verdictSnap);
+            const trust = trustDisplayFromTrustScore(displayScore);
             return (
               <article
                 key={row.id}
@@ -171,30 +179,20 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 lg:hidden">
                     {EN_MESSAGES.recentSearches.columns.score}
                   </p>
-                  {trust ? (
-                    <>
-                      <p className={`mt-0.5 text-sm font-semibold tabular-nums ${trust.toneText}`}>
-                        {trust.trustScore}/100
-                      </p>
-                    </>
-                  ) : (
-                    <p className="mt-0.5 text-sm font-semibold tabular-nums text-slate-500">—</p>
-                  )}
+                  <p className={`mt-0.5 text-sm font-semibold tabular-nums ${trust.toneText}`}>
+                    {trust.trustScore}/100
+                  </p>
                 </div>
                 <div className="mt-3 lg:mt-0">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 lg:hidden">
                     {EN_MESSAGES.recentSearches.columns.status}
                   </p>
-                  {trust ? (
-                    <p
-                      className={`mt-0.5 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${trust.toneSoftBorder} ${trust.toneSoftBg} ${trust.toneText}`}
-                    >
-                      <span aria-hidden>{trustIconGlyph(trust.icon)}</span>
-                      {trust.label}
-                    </p>
-                  ) : (
-                    <p className="mt-0.5 text-sm text-slate-500">—</p>
-                  )}
+                  <p
+                    className={`mt-0.5 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${trust.toneSoftBorder} ${trust.toneSoftBg} ${trust.toneText}`}
+                  >
+                    <span aria-hidden>{trustIconGlyph(trust.icon)}</span>
+                    {trust.label}
+                  </p>
                 </div>
                 <div className="mt-3 lg:mt-0">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 lg:hidden">
@@ -219,15 +217,11 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
                   </button>
                 </div>
                 <div className="mt-3 lg:col-span-6 lg:mt-2">
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200/85">
-                    {trust ? (
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ease-out ${scoreFillStyle(trust.trustScore).barClass}`}
-                        style={{ width: `${trust.trustScore}%` }}
-                      />
-                    ) : (
-                      <div className="h-full w-0 rounded-full transition-all duration-500 ease-out" />
-                    )}
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200/85">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ease-out ${scoreFillStyle(trust.trustScore).barClass}`}
+                      style={{ width: `${trust.trustScore}%` }}
+                    />
                   </div>
                 </div>
               </article>

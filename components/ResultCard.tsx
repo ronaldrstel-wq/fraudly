@@ -1,7 +1,11 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { WatchlistToggle } from "@/components/WatchlistToggle";
 import type { TrustSignal } from "@/lib/checks/types";
 import { trustIconGlyph, trustPresentationFromScore } from "@/lib/trustSystem";
 import type { ScamCheckResult } from "@/types/scam";
+import type { ReputationEnrichment } from "@/lib/outscraper/reputation";
 
 interface ResultCardProps {
   result: ScamCheckResult;
@@ -47,6 +51,66 @@ export function ResultCard({ result }: ResultCardProps) {
 
   const keyRisks = result.trustSignals.filter((s) => s.type === "danger" || s.type === "warning");
   const supportiveSignals = result.trustSignals.filter((s) => s.type === "positive" || s.type === "info");
+  const [reputation, setReputation] = useState<ReputationEnrichment | null>(null);
+  const [repLoading, setRepLoading] = useState(false);
+  const [repError, setRepError] = useState<string | null>(null);
+
+  async function loadReputationSignals(deepScan: boolean) {
+    setRepLoading(true);
+    setRepError(null);
+    try {
+      const response = await fetch("/api/enrichment/reputation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          domain: result.domain,
+          baseRiskScore: result.score,
+          deepScan
+        })
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = (await response.json()) as { enrichment?: ReputationEnrichment };
+      setReputation(payload.enrichment ?? null);
+    } catch (e) {
+      setRepError(e instanceof Error ? e.message : "Unknown error");
+    } finally {
+      setRepLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    let active = true;
+    async function load() {
+      setRepLoading(true);
+      setRepError(null);
+      try {
+        const response = await fetch("/api/enrichment/reputation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            domain: result.domain,
+            baseRiskScore: result.score,
+            deepScan: false
+          })
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = (await response.json()) as { enrichment?: ReputationEnrichment };
+        if (!active) return;
+        setReputation(payload.enrichment ?? null);
+      } catch (e) {
+        if (!active) return;
+        setRepError(e instanceof Error ? e.message : "Unknown error");
+      } finally {
+        if (active) setRepLoading(false);
+      }
+    }
+    void load();
+    return () => {
+      active = false;
+    };
+  }, [result.domain, result.score]);
 
   return (
     <div className="w-full rounded-xl bg-white p-6 shadow-lg shadow-slate-200/60 transition-all duration-300">
@@ -232,6 +296,66 @@ export function ResultCard({ result }: ResultCardProps) {
               <li key={`${i}-${w.slice(0, 40)}`}>{w}</li>
             ))}
           </ul>
+        )}
+      </div>
+
+      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">Reputation Signals</p>
+        {repLoading ? (
+          <p className="mt-2 text-sm text-slate-600">Checking external reputation signals...</p>
+        ) : repError ? (
+          <p className="mt-2 text-sm text-slate-600">
+            No external reputation profile found. This does not automatically mean unsafe.
+          </p>
+        ) : reputation ? (
+          <div className="mt-2 space-y-2 text-sm text-slate-700">
+            <p>
+              Signal status: <span className="font-medium">{reputation.signalStatus}</span>
+            </p>
+            <p>
+              Trustpilot:{" "}
+              <span className="font-medium">
+                {reputation.trustpilotRating != null
+                  ? `${reputation.trustpilotRating.toFixed(1)} (${reputation.trustpilotReviewCount ?? 0} reviews)`
+                  : "n/a"}
+              </span>
+            </p>
+            <p>
+              Google:{" "}
+              <span className="font-medium">
+                {reputation.googleRating != null
+                  ? `${reputation.googleRating.toFixed(1)} (${reputation.googleReviewCount ?? 0} reviews)`
+                  : "n/a"}
+              </span>
+            </p>
+            <p>
+              Last updated: <span className="font-medium">{new Date(reputation.lastUpdated).toLocaleString("en")}</span>
+            </p>
+            <p>
+              Estimated impact:{" "}
+              <span className="font-medium">
+                {reputation.impactOnRisk > 0 ? "+" : ""}
+                {reputation.impactOnRisk} risk points
+              </span>
+            </p>
+            {reputation.sentimentSummary ? (
+              <p className="text-xs text-slate-600">{reputation.sentimentSummary}</p>
+            ) : null}
+            {reputation.message ? (
+              <p className="text-xs text-slate-500">{reputation.message}</p>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => void loadReputationSignals(true)}
+              className="mt-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Run deep scan
+            </button>
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-slate-600">
+            No external reputation profile found. This does not automatically mean unsafe.
+          </p>
         )}
       </div>
 

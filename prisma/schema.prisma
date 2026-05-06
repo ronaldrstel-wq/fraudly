@@ -99,3 +99,20 @@ model LatestPublicCheck {
 
   @@index([lastSeenAt(sort: Desc)])
 }
+
+/// Cached aggregated reputation enrichment for normalized domains (Outscraper-backed).
+model ReputationEnrichmentCache {
+  id                 String   @id @default(cuid())
+  normalizedDomain   String   @unique @db.VarChar(2048)
+  provider           String   @default("outscraper") @db.VarChar(64)
+  status             String   @db.VarChar(32)
+  payload            Json?
+  fetchError         String?  @db.Text
+  estimatedCostUsd   Float?
+  fetchedAt          DateTime @default(now())
+  expiresAt          DateTime
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([expiresAt])
+}
