@@ -81,6 +81,7 @@ const SCORE_CATEGORIES: ScoreSignal["category"][] = [
   "website_quality",
   "rebrand_network",
   "company_identity",
+  "product_marketplace",
   "ai"
 ];
 
@@ -167,6 +168,7 @@ function isScoreResult(value: unknown): value is ScoreResult {
     return false;
   }
   if (!Array.isArray(r.signalSources) || !r.signalSources.every((x) => typeof x === "string")) return false;
+  if (!Array.isArray(r.unavailableChecks) || !r.unavailableChecks.every((x) => typeof x === "string")) return false;
   if (!Array.isArray(r.relatedDomains) || !r.relatedDomains.every((x) => typeof x === "string")) return false;
   if (!r.rebrandNetworkSignals || typeof r.rebrandNetworkSignals !== "object") return false;
   const rn = r.rebrandNetworkSignals as Record<string, unknown>;
@@ -196,6 +198,28 @@ function isScoreResult(value: unknown): value is ScoreResult {
   if (!Array.isArray(ci.mismatches) || !ci.mismatches.every((x) => typeof x === "string")) return false;
   if (!Array.isArray(ci.positiveSignals) || !ci.positiveSignals.every((x) => typeof x === "string")) return false;
   if (!Array.isArray(ci.riskSignals) || !ci.riskSignals.every((x) => typeof x === "string")) return false;
+  if (!r.productMarketplaceSignals || typeof r.productMarketplaceSignals !== "object") return false;
+  const pm = r.productMarketplaceSignals as Record<string, unknown>;
+  if (pm.confidence !== "low" && pm.confidence !== "medium" && pm.confidence !== "high") return false;
+  if (!Array.isArray(pm.matchedMarketplaces) || !pm.matchedMarketplaces.every((x) => typeof x === "string")) return false;
+  if (typeof pm.matchedImageCount !== "number") return false;
+  if (!Array.isArray(pm.matchedProducts)) return false;
+  if (
+    !pm.matchedProducts.every((x) => {
+      if (!x || typeof x !== "object") return false;
+      const m = x as Record<string, unknown>;
+      if (m.imageUrl !== undefined && typeof m.imageUrl !== "string") return false;
+      if (typeof m.marketplace !== "string") return false;
+      if (typeof m.similarityScore !== "number") return false;
+      if (m.marketplaceProductTitle !== undefined && typeof m.marketplaceProductTitle !== "string") return false;
+      if (m.marketplacePrice !== undefined && typeof m.marketplacePrice !== "string") return false;
+      return true;
+    })
+  ) {
+    return false;
+  }
+  if (!Array.isArray(pm.riskSignals) || !pm.riskSignals.every((x) => typeof x === "string")) return false;
+  if (!Array.isArray(pm.warnings) || !pm.warnings.every((x) => typeof x === "string")) return false;
   if (r.outscraperReputation !== undefined) {
     if (!r.outscraperReputation || typeof r.outscraperReputation !== "object") return false;
     const o = r.outscraperReputation as Record<string, unknown>;

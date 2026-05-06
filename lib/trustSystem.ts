@@ -3,7 +3,7 @@ export type ScamVerdict = "safe" | "suspicious" | "scam";
 
 export type TrustPresentation = {
   level: TrustLevel;
-  label: "Trusted" | "Caution" | "High Risk";
+  label: "Trusted" | "Moderate Trust" | "Risky" | "High Risk" | "Dangerous";
   icon: "check" | "alert" | "risk";
   toneText: string;
   toneSoftBg: string;
@@ -38,11 +38,9 @@ export function verdictFromRiskScore(riskScore: number): ScamVerdict {
 
 export function trustPresentationFromScore(score: number): TrustPresentation {
   const trustScore = clampScore(score);
-  const level = trustLevelFromScore(trustScore);
-
-  if (level === "trusted") {
+  if (trustScore >= 80) {
     return {
-      level,
+      level: "trusted",
       label: "Trusted",
       icon: "check",
       toneText: "text-emerald-700",
@@ -51,11 +49,21 @@ export function trustPresentationFromScore(score: number): TrustPresentation {
       progressBar: "bg-emerald-500"
     };
   }
-
-  if (level === "caution") {
+  if (trustScore >= 60) {
     return {
-      level,
-      label: "Caution",
+      level: "caution",
+      label: "Moderate Trust",
+      icon: "alert",
+      toneText: "text-sky-700",
+      toneSoftBg: "bg-sky-50",
+      toneSoftBorder: "border-sky-200",
+      progressBar: "bg-sky-500"
+    };
+  }
+  if (trustScore >= 40) {
+    return {
+      level: "caution",
+      label: "Risky",
       icon: "alert",
       toneText: "text-amber-700",
       toneSoftBg: "bg-amber-50",
@@ -63,10 +71,20 @@ export function trustPresentationFromScore(score: number): TrustPresentation {
       progressBar: "bg-amber-500"
     };
   }
-
+  if (trustScore >= 20) {
+    return {
+      level: "highRisk",
+      label: "High Risk",
+      icon: "risk",
+      toneText: "text-orange-700",
+      toneSoftBg: "bg-orange-50",
+      toneSoftBorder: "border-orange-200",
+      progressBar: "bg-orange-500"
+    };
+  }
   return {
-    level,
-    label: "High Risk",
+    level: "highRisk",
+    label: "Dangerous",
     icon: "risk",
     toneText: "text-rose-700",
     toneSoftBg: "bg-rose-50",

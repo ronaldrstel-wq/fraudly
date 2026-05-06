@@ -13,6 +13,17 @@ interface HeroProps {
   authGate?: ReactNode;
 }
 
+function humanStageLabel(stage: string): string {
+  const s = stage.toLowerCase();
+  if (s.includes("initial security")) return "Website security checked";
+  if (s.includes("website analysis")) return "Checking website policies and identity";
+  if (s.includes("reputation")) return "Analyzing customer reputation";
+  if (s.includes("deep trust")) return "Running deeper trust investigation";
+  if (s.includes("final scoring")) return "Finalizing trust score";
+  if (s.includes("preparing")) return "Preparing scan";
+  return stage;
+}
+
 export function Hero({ url, onUrlChange, onSubmit, loading, disabled, scanProgress, authGate }: HeroProps) {
   return (
     <section id="link-check" className="mx-auto w-full max-w-4xl scroll-mt-20 text-center">
@@ -38,7 +49,7 @@ export function Hero({ url, onUrlChange, onSubmit, loading, disabled, scanProgre
         {authGate ? <div className="mt-2.5 sm:mt-3">{authGate}</div> : null}
         {loading && (
           <p className="mt-2 text-center text-sm text-slate-500" role="status" aria-live="polite">
-            {scanProgress ? `${scanProgress.percentage}% complete — ${scanProgress.currentStage}` : "Checking website..."}
+            {scanProgress ? `${scanProgress.percentage}% complete — ${humanStageLabel(scanProgress.currentStage)}` : "Checking website..."}
           </p>
         )}
         {loading && scanProgress ? (
@@ -49,7 +60,7 @@ export function Hero({ url, onUrlChange, onSubmit, loading, disabled, scanProgre
                 style={{ width: `${scanProgress.percentage}%` }}
               />
             </div>
-            <p className="mt-2 text-xs font-semibold text-slate-700">{scanProgress.currentStage}</p>
+            <p className="mt-2 text-xs font-semibold text-slate-700">{humanStageLabel(scanProgress.currentStage)}</p>
             {scanProgress.completedStages.length > 0 ? (
               <p className="mt-1 text-xs text-slate-600">✓ {scanProgress.completedStages.join(" · ✓ ")}</p>
             ) : null}
@@ -59,7 +70,7 @@ export function Hero({ url, onUrlChange, onSubmit, loading, disabled, scanProgre
             {scanProgress.findings.length > 0 ? (
               <ul className="mt-2 list-disc space-y-0.5 pl-4 text-xs text-amber-800">
                 {scanProgress.findings.slice(-3).map((f, i) => (
-                  <li key={`${i}-${f}`}>{f}</li>
+                  <li key={`${i}-${f}`}>{humanStageLabel(f)}</li>
                 ))}
               </ul>
             ) : null}

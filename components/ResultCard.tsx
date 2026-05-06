@@ -22,6 +22,34 @@ export function getScoreUiModel(scoreResult: ScamCheckResult["scoreResult"] | un
   };
 }
 
+export function simplifyTechnicalText(input: string): string {
+  return input
+    .replace(/Valid TLS certificate detected/gi, "The website uses encrypted HTTPS connections.")
+    .replace(/No OpenPhish feed match/gi, "We found no known phishing reports for this website.")
+    .replace(/Google Safe Browsing not configured/gi, "Some external security checks were unavailable during this scan.")
+    .replace(/No matched Google listing/gi, "There is limited established public reputation data for this website.")
+    .replace(/No data found/gi, "Some scan data was unavailable during this check.")
+    .trim();
+}
+
+export function isTechnicalDetailsCollapsedByDefault(): boolean {
+  return true;
+}
+
+export function buildConsumerSummary(result: ScamCheckResult): {
+  why: string[];
+  recommendation: string;
+} {
+  const reasons = (result.scoreResult?.userExplanation?.mainReasons ?? result.reasons)
+    .map((r) => simplifyTechnicalText(r))
+    .filter(Boolean)
+    .slice(0, 4);
+  const recommendation =
+    result.scoreResult?.userExplanation?.recommendation ??
+    "Use buyer protection and verify company details before making larger purchases.";
+  return { why: reasons, recommendation: simplifyTechnicalText(recommendation) };
+}
+
 function toneForTrustSignal(signal: Pick<TrustSignal, "type">): string {
   switch (signal.type) {
     case "positive":
@@ -41,8 +69,8 @@ function SignalList({ signals, empty }: { signals: TrustSignal[]; empty: string 
     <ul className="mt-3 space-y-2">
       {signals.map((signal, index) => (
         <li key={`${index}-${signal.title}`} className={`rounded-lg border px-3 py-2 text-sm ${toneForTrustSignal(signal)}`}>
-          <p className="font-semibold">{signal.title}</p>
-          <p className="mt-0.5">{signal.description}</p>
+          <p className="font-semibold">{simplifyTechnicalText(signal.title)}</p>
+          <p className="mt-0.5">{simplifyTechnicalText(signal.description)}</p>
           <div className="mt-1 flex flex-wrap gap-x-2 text-xs opacity-80">
             {signal.source ? <span>Source: {signal.source}</span> : null}
             {signal.confidence ? <span>Confidence: {signal.confidence}</span> : null}
@@ -53,24 +81,97 @@ function SignalList({ signals, empty }: { signals: TrustSignal[]; empty: string 
   );
 }
 
+function isUnavailableSignal(signal: TrustSignal): boolean {
+  const text = `${signal.title} ${signal.description}`.toLowerCase();
+  return /unavailable|not configured|timed out|timeout|failed|skipped|no data|not available/.test(text);
+}
+
+export function splitSignalsForDisplay(signals: TrustSignal[]) {
+  const unavailable = signals.filter((s) => isUnavailableSignal(s));
+  const positives = signals.filter((s) => s.type === "positive" && !isUnavailableSignal(s));
+  const concerns = signals.filter((s) => (s.type === "danger" || s.type === "warning") && !isUnavailableSignal(s));
+  const neutral = signals.filter((s) => s.type === "info" && !isUnavailableSignal(s));
+  return { unavailable, positives, concerns, neutral };
+}
+
+export function shouldAutoTriggerDeepScan(result: ScamCheckResult): boolean {
+  const score = result.score;
+  const hasRiskLabel =
+    result.scoreResult?.riskLabels?.some((label) =>
+      [
+        "Possible dropshipping store",
+        "Possible rebrand",
+        "Possible rebrand network",
+        "High complaint volume",
+        "Return policy risk",
+        "Brand location mismatch",
+        "Missing company identity"
+      ].includes(label)
+    ) ?? false;
+  const hasHighRiskSignal = result.trustSignals.some((s) => s.type === "danger");
+  const hasEcomRisk = result.supplyChainSignals.likelyDropshipping || result.supplyChainSignals.likelyChinaShipping;
+  return score >= 35 || hasRiskLabel || hasHighRiskSignal || hasEcomRisk;
+}
+
+function concernsFromRiskLabels(labels: string[], domainAgeDays?: number | null): string[] {
+  const concerns: string[] = [];
+  if (typeof domainAgeDays === "number" && domainAgeDays <= 30) concerns.push("The website appears very new.");
+  const labelMap: Record<string, string> = {
+    "Possible dropshipping store": "Possible dropshipping indicators were detected.",
+    "High complaint volume": "Customer complaint volume appears elevated.",
+    "Refund/shipping complaints": "Refund or shipping complaints were found.",
+    "Missing company identity": "Company identity information is limited.",
+    "Brand location mismatch": "Brand/location claims may not match operational signals.",
+    "Possible rebrand": "Possible rebrand indicators were found.",
+    "Possible rebrand network": "Possible rebrand-network overlap was detected.",
+    "Return policy risk": "Return policy terms may be difficult for customers.",
+    "Supplier product images detected": "Product images appear similar to supplier marketplace listings."
+  };
+  for (const label of labels) {
+    const mapped = labelMap[label];
+    if (mapped) concerns.push(mapped);
+  }
+  return [...new Set(concerns)].slice(0, 6);
+}
+
+function positiveSummarySignals(result: ScamCheckResult, supportiveSignals: TrustSignal[]): string[] {
+  const positives: string[] = [];
+  if (result.ssl.httpsEnabled) positives.push("The website uses encrypted HTTPS connections.");
+  if (result.scoreResult?.companyIdentitySignals?.positiveSignals?.length) positives.push("Some business identity details are consistent.");
+  if ((result.reviewSignals.googleFound && (result.reviewSignals.googleReviewCount ?? 0) > 50) || (result.reviewSignals.trustpilotFound && (result.reviewSignals.trustpilotReviewCount ?? 0) > 50)) {
+    positives.push("Established public review history is available.");
+  }
+  if (typeof result.domainIntelligence.ageDays === "number" && result.domainIntelligence.ageDays > 365) positives.push("The domain has been active for a longer period.");
+  positives.push(...supportiveSignals.map((s) => simplifyTechnicalText(s.description)).slice(0, 2));
+  return [...new Set(positives)].slice(0, 5);
+}
+
 export function ResultCard({ result }: ResultCardProps) {
   const trustScore = Math.round(100 - result.score);
   const style = trustPresentationFromScore(trustScore);
   const { reviewSignals } = result;
   const hasPublicReviewData = reviewSignals.trustpilotFound || reviewSignals.googleFound;
 
-  const keyRisks = result.trustSignals.filter((s) => s.type === "danger" || s.type === "warning");
-  const supportiveSignals = result.trustSignals.filter((s) => s.type === "positive" || s.type === "info");
+  const splitSignals = splitSignalsForDisplay(result.trustSignals);
+  const keyRisks = splitSignals.concerns;
+  const unavailableSignals = splitSignals.unavailable;
+  const supportiveSignals = splitSignals.positives;
+  const neutralSignals = splitSignals.neutral;
   const [reputation, setReputation] = useState<ReputationEnrichment | null>(null);
   const [repLoading, setRepLoading] = useState(false);
   const [repError, setRepError] = useState<string | null>(null);
   const scoreUi = getScoreUiModel(result.scoreResult);
   const scoreConfidence = scoreUi.confidence;
   const riskLabels = scoreUi.riskLabels;
+  const consumerSummary = buildConsumerSummary(result);
+  const keyConcerns = concernsFromRiskLabels(riskLabels, result.domainIntelligence.ageDays ?? null);
   const relatedDomains = Array.isArray(result.scoreResult?.relatedDomains) ? result.scoreResult.relatedDomains : [];
   const rebrandNetwork = result.scoreResult?.rebrandNetworkSignals;
   const companyIdentity = result.scoreResult?.companyIdentitySignals;
   const outscraper = result.scoreResult?.outscraperReputation;
+  const productMarketplace = result.scoreResult?.productMarketplaceSignals;
+  const autoDeepScan = shouldAutoTriggerDeepScan(result);
+  const positiveSignalsSummary = positiveSummarySignals(result, supportiveSignals);
   const usedSources = Array.from(
     new Set(
       [
@@ -122,7 +223,7 @@ export function ResultCard({ result }: ResultCardProps) {
           body: JSON.stringify({
             domain: result.domain,
             baseRiskScore: result.score,
-            deepScan: false
+            deepScan: autoDeepScan
           })
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -143,7 +244,7 @@ export function ResultCard({ result }: ResultCardProps) {
     return () => {
       active = false;
     };
-  }, [result.domain, result.score]);
+  }, [result.domain, result.score, autoDeepScan]);
 
   return (
     <div className="w-full rounded-xl bg-white p-6 shadow-lg shadow-slate-200/60 transition-all duration-300">
@@ -176,19 +277,69 @@ export function ResultCard({ result }: ResultCardProps) {
         <div className={`h-full ${style.progressBar}`} style={{ width: `${trustScore}%` }} />
       </div>
 
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Key risk indicators</p>
-        <p className="mt-1 text-xs text-slate-500">Warnings and higher-severity context from this run.</p>
-        <SignalList
-          signals={keyRisks}
-          empty="No high-priority risk rows were raised by the configured intelligence checks."
-        />
+      <div className={`mt-6 rounded-xl border px-4 py-4 ${style.toneSoftBorder} ${style.toneSoftBg}`}>
+        <p className={`text-sm font-bold ${style.toneText}`}>{style.label}</p>
+        <p className="mt-1 text-sm text-slate-700">
+          Trust score: <span className="font-semibold">{trustScore}%</span> · Confidence: <span className="font-semibold capitalize">{scoreConfidence}</span>
+        </p>
+        <p className="mt-3 text-sm font-semibold text-slate-900">Why this score</p>
+        <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-slate-700">
+          {consumerSummary.why.length > 0 ? (
+            consumerSummary.why.map((item, idx) => <li key={`${idx}-${item.slice(0, 30)}`}>{item}</li>)
+          ) : (
+            <li>We found mixed signals and adjusted risk conservatively.</li>
+          )}
+        </ul>
+        <p className="mt-3 text-sm font-semibold text-slate-900">Recommendation</p>
+        <p className="mt-1 text-sm text-slate-700">{consumerSummary.recommendation}</p>
       </div>
 
       <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Trust signals</p>
-        <p className="mt-1 text-xs text-slate-500">Supportive or informational context (including “no hit” messages).</p>
-        <SignalList signals={supportiveSignals} empty="No supportive or informational trust rows were returned." />
+        <p className="text-sm font-semibold text-slate-900">Key concerns</p>
+        <p className="mt-1 text-xs text-slate-500">Main risk points for normal shoppers.</p>
+        {keyConcerns.length > 0 ? (
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+            {keyConcerns.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        ) : (
+          <div className="mt-2">
+            <SignalList
+              signals={keyRisks}
+              empty="No major customer-facing concerns were detected."
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">Positive signs</p>
+        <p className="mt-1 text-xs text-slate-500">Meaningful signs that support trust.</p>
+        {positiveSignalsSummary.length > 0 ? (
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+            {positiveSignalsSummary.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-2 text-sm text-slate-600">No strong positive trust signals were confirmed.</p>
+        )}
+      </div>
+
+      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">Unavailable or incomplete checks</p>
+        <p className="mt-1 text-xs text-slate-500">These checks were unavailable or incomplete during this run.</p>
+        <SignalList signals={unavailableSignals} empty="No unavailable checks reported." />
+      </div>
+
+      <details className="mt-6 rounded-xl border border-dashed border-slate-200 bg-white px-4 py-3 text-sm">
+        <summary className="cursor-pointer font-semibold text-slate-900">Show technical details</summary>
+        <p className="mt-1 text-xs text-slate-500">Advanced technical transparency for power users.</p>
+
+      <div className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">Additional technical context</p>
+        <SignalList signals={neutralSignals} empty="No extra technical context rows were returned." />
       </div>
 
       <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
@@ -214,6 +365,11 @@ export function ResultCard({ result }: ResultCardProps) {
             <span className="font-medium">{result.domainIntelligence.hasPrivacyProtection ? "yes" : "no / unknown"}</span>
           </li>
         </ul>
+        {typeof result.domainIntelligence.ageDays === "number" && result.domainIntelligence.ageDays <= 7 ? (
+          <p className="mt-2 inline-flex rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-800">
+            Extremely new domain ({result.domainIntelligence.ageDays} days old)
+          </p>
+        ) : null}
         <p className="mt-2 text-xs text-slate-500">Source: {result.domainIntelligence.source}</p>
       </div>
 
@@ -563,7 +719,40 @@ export function ResultCard({ result }: ResultCardProps) {
             )}
           </div>
         ) : null}
+        {productMarketplace ? (
+          <div className="mt-3 space-y-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-xs text-slate-600">
+            <p className="font-semibold text-slate-800">Product marketplace image matching</p>
+            <p>
+              Confidence: <span className="font-medium">{productMarketplace.confidence}</span>
+            </p>
+            <p>
+              Matched images: <span className="font-medium">{productMarketplace.matchedImageCount}</span>
+            </p>
+            {productMarketplace.matchedMarketplaces.length > 0 ? (
+              <p>Matched marketplaces: {productMarketplace.matchedMarketplaces.join(", ")}</p>
+            ) : (
+              <p>No strong marketplace image overlaps in this run.</p>
+            )}
+            {productMarketplace.matchedProducts.length > 0 ? (
+              <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                {productMarketplace.matchedProducts.slice(0, 4).map((row, idx) => (
+                  <li key={`${idx}-${row.marketplace}-${row.similarityScore}`}>
+                    {row.marketplace} match ({Math.round(row.similarityScore * 100)}% similarity)
+                    {row.marketplaceProductTitle ? ` · ${row.marketplaceProductTitle}` : ""}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {productMarketplace.riskSignals.length > 0 ? (
+              <p>Why it mattered: {productMarketplace.riskSignals.slice(0, 2).join(" · ")}</p>
+            ) : null}
+            <p className="text-[11px] text-slate-500">
+              This is contextual sourcing evidence, not automatic proof of fraud.
+            </p>
+          </div>
+        ) : null}
       </div>
+      </details>
     </div>
   );
 }

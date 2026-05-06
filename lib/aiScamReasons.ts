@@ -29,6 +29,13 @@ export type WebsiteSignals = {
   bodySnippet: string;
   /** Combined visible text for downstream heuristics (not sent to client as env). */
   text: string;
+  imageUrls: string[];
+  productSnippets: Array<{
+    title?: string;
+    description?: string;
+    price?: string;
+    imageUrl?: string;
+  }>;
 };
 
 type WebsiteCacheBox = { v: WebsiteSignals | null };
@@ -53,6 +60,69 @@ function extractBodyText(html: string): string {
     .replace(/&nbsp;/gi, " ")
     .replace(/&amp;/gi, "&");
   return cleanWhitespace(plain).slice(0, 2200);
+}
+
+function extractImageUrls(html: string, baseUrl: string): string[] {
+  const urls = new Set<string>();
+  const addUrl = (raw?: string) => {
+    if (!raw) return;
+    const src = raw.trim();
+    if (!src || src.startsWith("data:")) return;
+    try {
+      const u = new URL(src, baseUrl);
+      if (!/^https?:$/.test(u.protocol)) return;
+      urls.add(u.toString());
+    } catch {
+      // ignore malformed image URLs
+    }
+  };
+
+  const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+  for (const m of html.matchAll(imgRegex)) addUrl(m[1]);
+
+  const ogRegex = /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["'][^>]*>/gi;
+  for (const m of html.matchAll(ogRegex)) addUrl(m[1]);
+
+  return [...urls].slice(0, 60);
+}
+
+function extractProductSnippets(html: string, baseUrl: string): WebsiteSignals["productSnippets"] {
+  const snippets: WebsiteSignals["productSnippets"] = [];
+  const jsonLdRegex = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  for (const m of html.matchAll(jsonLdRegex)) {
+    const raw = m[1]?.trim();
+    if (!raw) continue;
+    try {
+      const parsed = JSON.parse(raw) as Record<string, unknown> | Array<Record<string, unknown>>;
+      const rows = Array.isArray(parsed) ? parsed : [parsed];
+      for (const row of rows) {
+        const type = String(row["@type"] ?? "").toLowerCase();
+        if (!type.includes("product")) continue;
+        const title = typeof row.name === "string" ? cleanWhitespace(row.name).slice(0, 160) : undefined;
+        const description = typeof row.description === "string" ? cleanWhitespace(row.description).slice(0, 220) : undefined;
+        const offers = row.offers as Record<string, unknown> | undefined;
+        const price = offers && typeof offers.price === "string" ? offers.price.slice(0, 40) : undefined;
+        let imageUrl: string | undefined;
+        if (typeof row.image === "string") {
+          try {
+            imageUrl = new URL(row.image, baseUrl).toString();
+          } catch {
+            imageUrl = row.image;
+          }
+        } else if (Array.isArray(row.image) && typeof row.image[0] === "string") {
+          try {
+            imageUrl = new URL(row.image[0], baseUrl).toString();
+          } catch {
+            imageUrl = row.image[0];
+          }
+        }
+        snippets.push({ title, description, price, imageUrl });
+      }
+    } catch {
+      // ignore malformed json-ld
+    }
+  }
+  return snippets.slice(0, 20);
 }
 
 function extractPolicyLinks(html: string, baseUrl: string): string[] {
@@ -171,7 +241,9 @@ export async function fetchWebsiteSignals(url: string): Promise<WebsiteSignals |
           payload = null;
         } else {
           const text = [title, metaDescription, bodySnippet, policySnippet].filter(Boolean).join("\n\n");
-          payload = { title, metaDescription, bodySnippet, text };
+          const imageUrls = extractImageUrls(html, base);
+          const productSnippets = extractProductSnippets(html, base);
+          payload = { title, metaDescription, bodySnippet, text, imageUrls, productSnippets };
         }
       }
     }

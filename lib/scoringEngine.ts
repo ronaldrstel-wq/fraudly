@@ -1,5 +1,6 @@
 import type { ReviewSignals } from "@/lib/reviewSignals";
 import type { SupplyChainSignals } from "@/lib/supplyChainSignals";
+import type { ProductMarketplaceSignals } from "@/lib/productMarketplaceSignals";
 import { verdictFromRiskScore } from "@/lib/trustSystem";
 
 export type ScoreConfidence = "low" | "medium" | "high";
@@ -15,6 +16,7 @@ export interface ScoreSignal {
     | "website_quality"
     | "rebrand_network"
     | "company_identity"
+    | "product_marketplace"
     | "ai";
   impact: number;
   confidence: ScoreConfidence;
@@ -51,6 +53,7 @@ export interface ScoreResult {
     positiveSignals: string[];
     riskSignals: string[];
   };
+  productMarketplaceSignals: ProductMarketplaceSignals;
   scoreBreakdown: {
     technicalSafety: {
       score: number;
@@ -103,6 +106,7 @@ export interface ScoreResult {
     label: string;
     explanation: string;
   }>;
+  unavailableChecks: string[];
   outscraperReputation?: {
     source: "Outscraper Google Reviews";
     available: boolean;
@@ -135,6 +139,15 @@ export type AiRiskSignalsInput = {
   level?: "low" | "medium" | "high";
 };
 
+const EMPTY_PRODUCT_MARKETPLACE_SIGNALS: ProductMarketplaceSignals = {
+  confidence: "low",
+  matchedMarketplaces: [],
+  matchedImageCount: 0,
+  matchedProducts: [],
+  riskSignals: [],
+  warnings: []
+};
+
 const CONF_MULT: Record<ScoreConfidence, number> = {
   low: 0.5,
   medium: 0.75,
@@ -151,6 +164,7 @@ const LOCAL_MAX_DOWN = 12;
 const REBRAND_NETWORK_MAX_UP = 24;
 const COMPANY_IDENTITY_MAX_UP = 24;
 const COMPANY_IDENTITY_MAX_DOWN = 10;
+const PRODUCT_MARKETPLACE_MAX_UP = 26;
 const DOMAIN_ONLY_SCORE_CAP = 70;
 
 const SUBSCORE_WEIGHTS = {
@@ -1159,6 +1173,60 @@ function pushCompanyIdentitySignals(
   }
 }
 
+function pushProductMarketplaceSignals(
+  detection: ProductMarketplaceSignals,
+  out: ScoreSignal[],
+  context: {
+    hasDropshippingSignals: boolean;
+    hasRebrandSignals: boolean;
+    hasBadReviews: boolean;
+    hasBrandMismatchSignals: boolean;
+    hasWeakIdentitySignals: boolean;
+  }
+): void {
+  const strongMatches = detection.matchedProducts.filter((m) => m.similarityScore >= 0.85).length;
+  const overlapCount = Object.values(context).filter(Boolean).length;
+
+  if (detection.matchedImageCount <= 0) return;
+  if (detection.matchedImageCount === 1 && strongMatches === 0) {
+    out.push({
+      id: "product-marketplace-weak-match",
+      label: "Weak marketplace image overlap",
+      category: "product_marketplace",
+      impact: 2,
+      confidence: "low",
+      reason: "One weak marketplace-style image overlap was found; treated as contextual only.",
+      source: "Product marketplace image matching"
+    });
+    return;
+  }
+
+  const baseImpact = strongMatches >= 3 || detection.matchedImageCount >= 4 ? 14 : detection.matchedImageCount >= 2 ? 8 : 4;
+  const overlapBoost = Math.min(10, overlapCount * 2);
+  out.push({
+    id: "product-marketplace-overlap",
+    label: "Supplier marketplace product-image overlap",
+    category: "product_marketplace",
+    impact: baseImpact + overlapBoost,
+    confidence: detection.confidence,
+    reason:
+      "Multiple product images appear highly similar to large marketplace/supplier listings; this increases risk mainly when it overlaps with other indicators.",
+    source: "Product marketplace image matching"
+  });
+
+  if (context.hasBrandMismatchSignals && detection.matchedImageCount >= 2) {
+    out.push({
+      id: "product-marketplace-brand-conflict",
+      label: "Brand positioning vs supplier-image conflict",
+      category: "product_marketplace",
+      impact: 8,
+      confidence: detection.confidence === "low" ? "medium" : detection.confidence,
+      reason: "Local/luxury brand positioning conflicts with supplier-marketplace image overlap.",
+      source: "Product marketplace image matching"
+    });
+  }
+}
+
 function pushDomainAgeSignals(age: DomainAgeSignalsInput | undefined, out: ScoreSignal[]): void {
   if (!age) return;
   if (typeof age.ageDays === "number" && age.ageDays >= 0 && age.ageDays < 30) {
@@ -1249,6 +1317,7 @@ export function calculateScamScore(input: {
   addressSignals?: AddressSignalsInput;
   domainAgeSignals?: DomainAgeSignalsInput;
   aiRiskSignals?: AiRiskSignalsInput;
+  productMarketplaceSignals?: ProductMarketplaceSignals | null;
   externalSignals?: ScoreSignal[];
   /** Snippet used only for business-identity heuristics when addressSignals omit fields. */
   websiteText?: string;
@@ -1260,6 +1329,7 @@ export function calculateScamScore(input: {
   const reviewTier = computeReviewTierFlags(input.reviewSignals);
   const rebrandDetection = detectRebrandNetworkSignals(input.websiteText ?? "", domain);
   const companyIdentityDetection = detectCompanyIdentitySignals(input.websiteText ?? "", domain);
+  const productMarketplaceDetection = input.productMarketplaceSignals ?? EMPTY_PRODUCT_MARKETPLACE_SIGNALS;
 
   pushDomainSignals(domain, signals);
   if (input.reviewSignals) pushReviewSignals(input.reviewSignals, signals);
@@ -1292,6 +1362,13 @@ export function calculateScamScore(input: {
     hasRebrandSignals: hasSignalNow("rebrand-network-overlap") || hasSignalNow("ecom-possible-rebrand"),
     hasDropshippingSignals: hasSignalNow("supply-dropshipping") || hasSignalNow("reviews-complaint-dropship"),
     hasRecentDomainSignals: hasSignalNow("domain-age-very-new") || hasSignalNow("intel-domain-very-new")
+  });
+  pushProductMarketplaceSignals(productMarketplaceDetection, signals, {
+    hasDropshippingSignals: hasSignalNow("supply-dropshipping") || hasSignalNow("reviews-complaint-dropship"),
+    hasRebrandSignals: hasSignalNow("rebrand-network-overlap") || hasSignalNow("ecom-possible-rebrand"),
+    hasBadReviews: hasSignalNow("reviews-google-poor") || hasSignalNow("reviews-trustpilot-poor") || hasSignalNow("reviews-outscraper-high-complaints"),
+    hasBrandMismatchSignals: hasSignalNow("ecom-brand-location-mismatch"),
+    hasWeakIdentitySignals: hasSignalNow("company-identity-risk") || hasSignalNow("biz-no-address")
   });
 
   const reviewW = scaleCategoryWeights(signals, "reviews", REVIEW_MAX_UP, REVIEW_MAX_DOWN);
@@ -1327,6 +1404,7 @@ export function calculateScamScore(input: {
   const webW = scaleCategoryWeights(signals, "website_quality", null, null);
   const rebrandW = scaleCategoryWeights(signals, "rebrand_network", REBRAND_NETWORK_MAX_UP, null);
   const companyW = scaleCategoryWeights(signals, "company_identity", COMPANY_IDENTITY_MAX_UP, COMPANY_IDENTITY_MAX_DOWN);
+  const productW = scaleCategoryWeights(signals, "product_marketplace", PRODUCT_MARKETPLACE_MAX_UP, null);
   const aiW = scaleCategoryWeights(signals, "ai", null, null);
 
   const allWeights = new Map<string, number>();
@@ -1339,12 +1417,15 @@ export function calculateScamScore(input: {
     else if (s.category === "website_quality") w = webW.get(s.id) ?? 0;
     else if (s.category === "rebrand_network") w = rebrandW.get(s.id) ?? 0;
     else if (s.category === "company_identity") w = companyW.get(s.id) ?? 0;
+    else if (s.category === "product_marketplace") w = productW.get(s.id) ?? 0;
     else if (s.category === "ai") w = aiW.get(s.id) ?? 0;
     allWeights.set(s.id, w);
   }
 
   const technicalSignals = signals.filter((s) => s.category === "website_quality" || s.id.startsWith("intel-"));
-  const merchantSignals = signals.filter((s) => s.category === "supply_chain" || s.category === "rebrand_network");
+  const merchantSignals = signals.filter(
+    (s) => s.category === "supply_chain" || s.category === "rebrand_network" || s.category === "product_marketplace"
+  );
   const companySignals = signals.filter((s) => s.category === "company_identity" || s.category === "business_identity");
   const policySignals = signals.filter((s) =>
     ["ecom-return-policy-risk", "ecom-refund-friction", "ecom-fulfillment-friction"].includes(s.id)
@@ -1415,6 +1496,8 @@ export function calculateScamScore(input: {
     "ecom-brand-location-mismatch",
     "rebrand-network-overlap",
     "company-identity-risk",
+    "product-marketplace-overlap",
+    "product-marketplace-brand-conflict",
     "reviews-complaint-dropship",
     "reviews-complaint-refund-returns"
   ]);
@@ -1446,6 +1529,12 @@ export function calculateScamScore(input: {
   }
   if (hasSignal("intel-safe-browsing-flagged") || hasSignal("intel-openphish-listed") || hasSignal("intel-urlhaus-listed")) {
     applyCap(20, "Malware/phishing intelligence hit capped the trust score.");
+  }
+  if (
+    hasSignal("product-marketplace-overlap") &&
+    (hasSignal("supply-dropshipping") || hasSignal("reviews-complaint-dropship") || hasSignal("company-identity-risk"))
+  ) {
+    applyCap(58, "Marketplace image overlap combined with dropshipping/identity risk capped the trust score.");
   }
 
   const majorRiskPresent = signals.some((s) => majorRiskSignals.has(s.id) && (allWeights.get(s.id) ?? 0) > 0);
@@ -1503,6 +1592,15 @@ export function calculateScamScore(input: {
   if (companyIdentityDetection.riskSignals.includes("Registration format issue")) riskLabels.push("Registration format issue");
   if (companyIdentityDetection.riskSignals.includes("Return address mismatch")) riskLabels.push("Return address mismatch");
   if (companyIdentityDetection.riskSignals.includes("Free email provider used")) riskLabels.push("Free email provider used");
+  if (hasSignal("product-marketplace-overlap")) riskLabels.push("Possible marketplace reseller");
+  if (productMarketplaceDetection.matchedImageCount > 0) riskLabels.push("Supplier product images detected");
+  if (productMarketplaceDetection.matchedImageCount >= 2) riskLabels.push("Product images found on external marketplaces");
+  if (
+    hasSignal("product-marketplace-overlap") &&
+    (hasSignal("supply-dropshipping") || hasSignal("reviews-complaint-dropship"))
+  ) {
+    riskLabels.push("Possible dropshipping products");
+  }
 
   const highConfCount = signals.filter((s) => (allWeights.get(s.id) ?? 0) !== 0 && s.confidence === "high").length;
   const nonZeroCount = signals.filter((s) => (allWeights.get(s.id) ?? 0) !== 0).length;
@@ -1534,6 +1632,14 @@ export function calculateScamScore(input: {
                     ? "Review velocity/patterns look unusual and may not reflect normal organic feedback."
                     : label === "Technical safety issue"
                       ? "Security intelligence checks found technical risk indicators."
+                      : label === "Possible marketplace reseller"
+                        ? "Product-image overlap with supplier marketplaces suggests possible reseller sourcing."
+                        : label === "Supplier product images detected"
+                          ? "Some product photos look similar to external marketplace supplier listings."
+                          : label === "Product images found on external marketplaces"
+                            ? "Multiple product images appear on large marketplaces; this is contextual evidence, not proof."
+                            : label === "Possible dropshipping products"
+                              ? "Marketplace image overlap and dropshipping signals together increase risk."
                       : "This label indicates a meaningful risk pattern in the current scan."
   }));
 
@@ -1569,6 +1675,18 @@ export function calculateScamScore(input: {
           ? "Use extra caution: verify seller identity, refund policy, and independent reviews before paying."
           : "Avoid sharing payment/personal details until identity and complaint signals are independently verified."
   };
+  const unavailableChecks = Array.from(
+    new Set(
+      [
+        ...(input.reviewSignals?.warnings ?? []),
+        ...(productMarketplaceDetection.warnings ?? []),
+        ...signals
+          .filter((s) => /unavailable|failed|timeout|timed out|not configured|skipped/i.test(`${s.label} ${s.reason}`))
+          .map((s) => s.label),
+        ...(signals.some((s) => s.id === "reviews-google-none") ? ["Google listing lookup inconclusive"] : [])
+      ].filter(Boolean)
+    )
+  );
 
   return {
     baseScore: BASE_SCORE,
@@ -1600,6 +1718,7 @@ export function calculateScamScore(input: {
       positiveSignals: companyIdentityDetection.positiveSignals,
       riskSignals: companyIdentityDetection.riskSignals
     },
+    productMarketplaceSignals: productMarketplaceDetection,
     outscraperReputation: input.reviewSignals?.outscraper
       ? {
           source: "Outscraper Google Reviews",
@@ -1617,6 +1736,7 @@ export function calculateScamScore(input: {
     scoreBreakdown,
     scoreCapsApplied,
     userExplanation,
+    unavailableChecks,
     signals,
     topPositiveSignals: topPositive,
     topNegativeSignals: topNegative

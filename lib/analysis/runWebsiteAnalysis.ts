@@ -8,6 +8,7 @@ import { normalizeDomain } from "@/lib/cache";
 import { runAllChecks } from "@/lib/checks";
 import { buildIntelScoring, buildTrustSignalsFromEvidence } from "@/lib/checks/scoring";
 import { getReviewSignals } from "@/lib/reviewSignals";
+import { analyzeProductMarketplaceSignals } from "@/lib/productMarketplaceSignals";
 import {
   buildDomainHeuristicReasons,
   calculateScamScore,
@@ -95,9 +96,22 @@ export async function runWebsiteAnalysis(
     websiteText,
     externalSignals: externalScoreSignals
   };
+  const shouldRunMarketplaceScan = supplyChainSignals.likelyDropshipping || /shop|product|collection|add to cart/i.test(websiteText);
+  const productMarketplaceSignals = shouldRunMarketplaceScan
+    ? await analyzeProductMarketplaceSignals({
+        domain: normalizedDomain,
+        websiteText,
+        websiteSignals,
+        deepScan: true
+      })
+    : null;
+  if ((productMarketplaceSignals?.matchedImageCount ?? 0) >= 2) {
+    findings.push("Product images found on external marketplaces");
+  }
 
   const scorePre = calculateScamScore({
     ...scoreInputBase,
+    productMarketplaceSignals,
     aiRiskSignals: undefined
   });
   if (scorePre.riskLabels.includes("Brand location mismatch")) findings.push("Brand location mismatch detected");
@@ -176,6 +190,7 @@ export async function runWebsiteAnalysis(
 
   const scoreResult = calculateScamScore({
     ...scoreInputBase,
+    productMarketplaceSignals,
     aiRiskSignals: aiPayload?.risk ? { level: aiPayload.risk } : undefined
   });
 

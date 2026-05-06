@@ -16,13 +16,24 @@ describe("global trust thresholds", () => {
   it("maps 50-79 to Caution", () => {
     expect(trustLevelFromScore(50)).toBe("caution");
     expect(trustLevelFromScore(79)).toBe("caution");
-    expect(trustPresentationFromScore(60).label).toBe("Caution");
+    expect(trustPresentationFromScore(60).label).toBe("Moderate Trust");
+    expect(trustPresentationFromScore(45).label).toBe("Risky");
   });
 
   it("maps 0-49 to High Risk", () => {
     expect(trustLevelFromScore(0)).toBe("highRisk");
     expect(trustLevelFromScore(49)).toBe("highRisk");
     expect(trustPresentationFromScore(20).label).toBe("High Risk");
+    expect(trustPresentationFromScore(10).label).toBe("Dangerous");
+  });
+
+  it("never uses green tones for risky bands", () => {
+    const risky = trustPresentationFromScore(45);
+    const highRisk = trustPresentationFromScore(25);
+    const dangerous = trustPresentationFromScore(10);
+    expect(risky.toneText.includes("emerald")).toBe(false);
+    expect(highRisk.toneText.includes("emerald")).toBe(false);
+    expect(dangerous.toneText.includes("emerald")).toBe(false);
   });
 });
 
