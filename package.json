@@ -12,12 +12,15 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "perf:build": "npx next build",
+    "perf:start": "PERF_BYPASS_AUTH=1 npx next start -p 3010 -H 127.0.0.1",
+    "perf:lighthouse:mobile": "mkdir -p performance-reports && lighthouse http://127.0.0.1:3010 --output=json --output=html --output-path=performance-reports/lighthouse-mobile --chrome-flags='--headless=new --no-sandbox' && node scripts/extract-lighthouse-metrics.mjs performance-reports/lighthouse-mobile.report.json",
+    "perf:lighthouse:desktop": "mkdir -p performance-reports && lighthouse http://127.0.0.1:3010 --preset=desktop --output=json --output=html --output-path=performance-reports/lighthouse-desktop --chrome-flags='--headless=new --no-sandbox' && node scripts/extract-lighthouse-metrics.mjs performance-reports/lighthouse-desktop.report.json"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.3.0",
     "@prisma/client": "^6.19.3",
-    "@vercel/analytics": "^2.0.1",
     "next": "^15.5.15",
     "openai": "^6.35.0",
     "prisma": "^6.19.3",
@@ -32,6 +35,7 @@
     "autoprefixer": "10.4.21",
     "eslint": "9.27.0",
     "eslint-config-next": "15.3.2",
+    "lighthouse": "^13.2.0",
     "next-sitemap": "^4.2.3",
     "postcss": "8.5.3",
     "tailwindcss": "3.4.17",

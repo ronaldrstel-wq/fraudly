@@ -2,8 +2,9 @@
 
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { CookieBanner } from "@/components/CookieBanner";
-import { CookiePreferencesModal } from "@/components/CookiePreferencesModal";
+import type { CookiePreferencesModalProps } from "@/components/CookiePreferencesModal";
 import { loadStoredConsent, saveStoredConsent, type StoredConsent } from "@/lib/consent";
 
 type CookieConsentContextValue = {
@@ -13,6 +14,9 @@ type CookieConsentContextValue = {
 };
 
 const CookieConsentContext = createContext<CookieConsentContextValue | null>(null);
+const CookiePreferencesModal = dynamic<CookiePreferencesModalProps>(
+  () => import("@/components/CookiePreferencesModal").then((m) => m.CookiePreferencesModal)
+);
 
 export function useCookieConsent(): CookieConsentContextValue {
   const ctx = useContext(CookieConsentContext);
@@ -26,6 +30,7 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const [consent, setConsent] = useState<StoredConsent | null>(null);
   const [bannerVisible, setBannerVisible] = useState(false);
+  const [bannerReady, setBannerReady] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
 
   const refreshConsent = useCallback(() => {
@@ -38,6 +43,35 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
     setConsent(stored);
     setBannerVisible(!stored);
   }, []);
+
+  useEffect(() => {
+    if (!mounted || !bannerVisible) {
+      setBannerReady(false);
+      return;
+    }
+
+    let cancelled = false;
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(
+        () => {
+          if (!cancelled) setBannerReady(true);
+        },
+        { timeout: 2000 }
+      );
+      return () => {
+        cancelled = true;
+        window.cancelIdleCallback(idleId);
+      };
+    }
+
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) setBannerReady(true);
+    }, 600);
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, [mounted, bannerVisible]);
 
   useEffect(() => {
     const onChange = () => refreshConsent();
@@ -68,7 +102,7 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
   return (
     <CookieConsentContext.Provider value={value}>
       {children}
-      {mounted && bannerVisible && (
+      {mounted && bannerVisible && bannerReady && (
         <CookieBanner
           onAcceptAll={() => persist(true, true)}
           onRejectAll={() => persist(false, false)}

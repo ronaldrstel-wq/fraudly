@@ -1,10 +1,8 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
 import { CookieConsentProvider } from "@/components/CookieConsentProvider";
 import { JsonLd } from "@/components/JsonLd";
-import { InstallPromptProvider } from "@/components/save-fraudly/install-prompt-context";
 import { PwaServiceWorkerRegister } from "@/components/PwaServiceWorkerRegister";
 import { OG_IMAGE } from "@/lib/seo-metadata";
 import {
@@ -84,11 +82,9 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body className={`${inter.className} min-h-screen antialiased`}>
         <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up">
-          <InstallPromptProvider>
-            <PwaServiceWorkerRegister />
-            <JsonLd />
-            <CookieConsentProvider>{children}</CookieConsentProvider>
-          </InstallPromptProvider>
+          <PwaServiceWorkerRegister />
+          <JsonLd />
+          <CookieConsentProvider>{children}</CookieConsentProvider>
         </ClerkProvider>
       </body>
     </html>

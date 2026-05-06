@@ -298,11 +298,11 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         )}
 
         {!result && (
-          <section className="mt-6 sm:mt-8">
+          <section className="mt-6 [content-visibility:auto] [contain-intrinsic-size:1px_220px] sm:mt-8">
             <FeatureCards />
           </section>
         )}
-        {children}
+        <div className="[content-visibility:auto] [contain-intrinsic-size:1px_2200px]">{children}</div>
       </main>
 
       <SiteFooter />

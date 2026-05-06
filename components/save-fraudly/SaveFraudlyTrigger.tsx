@@ -1,11 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useInstallPromptContext } from "@/components/save-fraudly/install-prompt-context";
 import { useMobileViewport } from "@/hooks/useMobileViewport";
 import { useStandalonePwa } from "@/hooks/useStandalonePwa";
 import { getMobileInstallPlatform } from "@/lib/save-fraudly/platform";
 import { EN_MESSAGES } from "@/lib/messages.en";
+
+type BeforeInstallPromptEventTyped = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+};
 
 type ModalMode = "desktop" | "ios" | "android" | "other";
 
@@ -26,9 +30,24 @@ export function SaveFraudlyTrigger({ variant, instanceSuffix = "", className = "
 
   const isMobile = useMobileViewport();
   const standalone = useStandalonePwa();
-  const { deferredPrompt, clearDeferredPrompt } = useInstallPromptContext();
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEventTyped | null>(null);
 
   const [modal, setModal] = useState<ModalMode | null>(null);
+
+  useEffect(() => {
+    const onBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEventTyped);
+    };
+    const onInstalled = () => setDeferredPrompt(null);
+
+    window.addEventListener("beforeinstallprompt", onBeforeInstall);
+    window.addEventListener("appinstalled", onInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
+  }, []);
 
   useEffect(() => {
     const el = dialogRef.current;
@@ -69,7 +88,7 @@ export function SaveFraudlyTrigger({ variant, instanceSuffix = "", className = "
       } catch {
         // dismissed or blocked
       }
-      clearDeferredPrompt();
+      setDeferredPrompt(null);
       return;
     }
 
@@ -82,7 +101,7 @@ export function SaveFraudlyTrigger({ variant, instanceSuffix = "", className = "
     }
 
     setModal("desktop");
-  }, [standalone, isMobile, deferredPrompt, clearDeferredPrompt]);
+  }, [standalone, isMobile, deferredPrompt]);
 
   if (standalone) {
     return null;

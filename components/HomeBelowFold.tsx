@@ -3,7 +3,7 @@ import { HOME_FAQ_ITEMS } from "@/lib/homeFaq";
 
 export function HomeBelowFold() {
   return (
-    <div className="mx-auto mt-14 max-w-6xl space-y-14 sm:mt-16 md:mt-20">
+    <div className="mx-auto mt-14 max-w-6xl space-y-14 [content-visibility:auto] [contain-intrinsic-size:1px_2400px] sm:mt-16 md:mt-20">
       <section id="trust-safety" aria-labelledby="trust-safety-heading" className="rounded-2xl border border-slate-100 bg-white p-6 shadow-lg shadow-slate-200/60 md:p-8">
         <h2 id="trust-safety-heading" className="text-xl font-bold text-slate-900 md:text-2xl">
           Website safety checker you can use in seconds

@@ -1,6 +1,14 @@
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import { CookieSettingsLink } from "@/components/CookieSettingsLink";
-import { SaveFraudlyTrigger } from "@/components/save-fraudly/SaveFraudlyTrigger";
+
+const SaveFraudlyTrigger = dynamic(
+  () => import("@/components/save-fraudly/SaveFraudlyTrigger").then((m) => m.SaveFraudlyTrigger),
+  { loading: () => <span className="inline-block h-5 w-24 rounded bg-slate-100" aria-hidden /> }
+);
+const CookieSettingsLink = dynamic(
+  () => import("@/components/CookieSettingsLink").then((m) => m.CookieSettingsLink),
+  { loading: () => <span className="inline-block h-5 w-28 rounded bg-slate-100" aria-hidden /> }
+);
 
 export function SiteFooter() {
   return (
