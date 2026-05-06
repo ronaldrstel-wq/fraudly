@@ -97,9 +97,10 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         })
       });
 
+      const rawBody = await response.text();
       let payload: Record<string, unknown> | null = null;
       try {
-        payload = (await response.json()) as Record<string, unknown>;
+        payload = rawBody ? (JSON.parse(rawBody) as Record<string, unknown>) : null;
       } catch {
         payload = null;
       }
@@ -128,14 +129,21 @@ export function HomeClient({ children }: { children?: ReactNode }) {
 
       if (!response.ok) {
         setResult(null);
-        setError(GENERIC_CHECK_ERROR);
+        const msgFromApi = typeof payload?.message === "string" ? payload.message : null;
+        const requestId = typeof payload?.requestId === "string" ? payload.requestId : null;
+        const statusHint = `Request failed (HTTP ${response.status}).`;
+        setError(msgFromApi ? msgFromApi : requestId ? `${statusHint} Reference: ${requestId}` : GENERIC_CHECK_ERROR);
         trackCheckFailed(`http_${response.status}`);
         return;
       }
 
       if (!payload || !isCheckApiResponse(payload)) {
         setResult(null);
-        setError(GENERIC_CHECK_ERROR);
+        setError(
+          process.env.NODE_ENV === "production"
+            ? GENERIC_CHECK_ERROR
+            : `Unexpected API response (HTTP ${response.status}). Body: ${rawBody.slice(0, 180)}`
+        );
         trackCheckFailed("invalid_response_shape");
         return;
       }

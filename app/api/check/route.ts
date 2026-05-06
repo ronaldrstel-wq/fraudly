@@ -119,7 +119,11 @@ export async function POST(request: Request) {
     }
     return response;
   } catch (err) {
-    console.error("[api/check]", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const requestId = globalThis.crypto?.randomUUID?.() ?? `req_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    console.error("[api/check]", { requestId, err });
+    return NextResponse.json(
+      { error: "Internal server error", requestId, message: "We couldn’t complete this check right now. Please try again." },
+      { status: 500 }
+    );
   }
 }
