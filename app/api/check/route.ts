@@ -55,7 +55,14 @@ export async function POST(request: Request) {
     const canonicalHref = parsed.canonicalHref;
     const userTrimmed = parsed.userTrimmed;
 
-    const user = await getBillingUserOrNull();
+    let user: User | null = null;
+    try {
+      user = await getBillingUserOrNull();
+    } catch (e) {
+      // Auth/user-store hiccups should not block the core check flow.
+      console.warn("[api/check] billing user lookup failed; continuing as anonymous:", e);
+      user = null;
+    }
     const hasUsedAnonFreeCheck = hasUsedAnonymousFreeCheckCookie(request.headers.get("cookie"));
 
     if (!user) {
@@ -66,13 +73,18 @@ export async function POST(request: Request) {
         );
       }
 
-      const ip = getClientIp(request);
-      const limitResult = checkDailyLimiter.consume(`anon-free:${ip}`);
-      if (!limitResult.allowed) {
-        return NextResponse.json(
-          { error: "second_check_requires_signup", message: EN_MESSAGES.auth.loginForAnotherCheck },
-          { status: 401 }
-        );
+      try {
+        const ip = getClientIp(request);
+        const limitResult = checkDailyLimiter.consume(`anon-free:${ip}`);
+        if (!limitResult.allowed) {
+          return NextResponse.json(
+            { error: "second_check_requires_signup", message: EN_MESSAGES.auth.loginForAnotherCheck },
+            { status: 401 }
+          );
+        }
+      } catch (e) {
+        // Rate limiter errors are non-critical for correctness of a single scan result.
+        console.warn("[api/check] rate limiter failed; allowing request:", e);
       }
     }
 
