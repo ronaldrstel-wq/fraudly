@@ -131,8 +131,31 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         setResult(null);
         const msgFromApi = typeof payload?.message === "string" ? payload.message : null;
         const requestId = typeof payload?.requestId === "string" ? payload.requestId : null;
-        const statusHint = `Request failed (HTTP ${response.status}).`;
-        setError(msgFromApi ? msgFromApi : requestId ? `${statusHint} Reference: ${requestId}` : GENERIC_CHECK_ERROR);
+
+        // If the backend returns non-JSON (e.g. Next error page), payload will be null.
+        const bodySnippet = rawBody
+          ? rawBody.replace(/\s+/g, " ").slice(0, 220)
+          : "";
+
+        console.error("[/api/check] non-ok", {
+          status: response.status,
+          requestId,
+          msgFromApi,
+          bodySnippet
+        });
+
+        if (msgFromApi) {
+          setError(msgFromApi);
+        } else if (requestId) {
+          setError(`${GENERIC_CHECK_ERROR} Reference: ${requestId}`);
+        } else {
+          setError(
+            process.env.NODE_ENV === "production"
+              ? GENERIC_CHECK_ERROR
+              : `Request failed (HTTP ${response.status}). ${bodySnippet ? `Body: ${bodySnippet}` : ""}`
+          );
+        }
+
         trackCheckFailed(`http_${response.status}`);
         return;
       }
@@ -158,9 +181,11 @@ export function HomeClient({ children }: { children?: ReactNode }) {
       } else {
         trackAnonymousCheckCompleted(payload.result.score);
       }
-    } catch {
+    } catch (err) {
       setResult(null);
-      setError(GENERIC_CHECK_ERROR);
+      const message = err instanceof Error ? err.message : "Unknown error";
+      console.error("[/api/check] fetch failed", { message });
+      setError(process.env.NODE_ENV === "production" ? GENERIC_CHECK_ERROR : `Network error: ${message}`);
       trackCheckFailed("network");
     } finally {
       inFlight.current = false;
