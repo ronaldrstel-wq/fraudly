@@ -28,8 +28,7 @@ export const EN_MESSAGES = {
     upsellPremium: "Create a free account to continue checking websites.",
     viewPremium: "Continue",
     urlFieldLabel: "Website, domain, or link",
-    urlPlaceholder: "Enter a domain, URL, wallet, username, or suspicious entity",
-    urlHelperExamples: "Examples: google.com · www.paypal.org/login · https://Example.com/path?q=1"
+    urlPlaceholder: "https://example.com"
   },
   checkout: {
     invalidResponse: "Unexpected server response.",

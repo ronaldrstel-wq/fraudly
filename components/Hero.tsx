@@ -18,22 +18,24 @@ export function Hero({ url, onUrlChange, onSubmit, loading, disabled, authGate }
         Free website trust &amp; scam signal check
       </div>
 
-      <h1 className="text-balance text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl md:text-5xl lg:text-6xl">
-        Scam website checker:{" "}
-        <span className="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
-          check if a website is legit
-        </span>
-      </h1>
+      <div className="mx-auto w-full max-w-[900px] px-3 sm:px-4">
+        <h1 className="text-center font-extrabold leading-[1.05] tracking-tight text-slate-900 [font-size:clamp(1.625rem,calc(0.75rem+4.2vw),3.5rem)] sm:font-black">
+          <span className="block">Scam website checker:</span>
+          <span className="mt-[0.1em] block bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
+            check if a website is legit
+          </span>
+        </h1>
+      </div>
 
       <p className="mx-auto mt-3 max-w-2xl text-pretty text-base leading-relaxed text-slate-600 sm:mt-4 md:text-lg">
         Check websites for phishing risks, fake stores, suspicious patterns, and trust signals before you click or buy.
       </p>
 
-      <div className="mx-auto mt-5 max-w-3xl sm:mt-6">
+      <div className="mx-auto mt-4 max-w-3xl sm:mt-5">
         <URLInput value={url} onChange={onUrlChange} onSubmit={onSubmit} disabled={disabled} loading={loading} />
-        {authGate ? <div className="mt-3 sm:mt-4">{authGate}</div> : null}
+        {authGate ? <div className="mt-2.5 sm:mt-3">{authGate}</div> : null}
         {loading && (
-          <p className="mt-2 text-center text-sm text-slate-500 sm:mt-3" role="status" aria-live="polite">
+          <p className="mt-2 text-center text-sm text-slate-500" role="status" aria-live="polite">
             Checking website...
           </p>
         )}
