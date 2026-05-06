@@ -42,13 +42,16 @@ function SourceRow({
   name,
   rating,
   reviewCount,
-  signalStatus
+  signalStatus,
+  missingProfileMessage
 }: {
   name: string;
   rating: number | null;
   reviewCount: number | null;
   signalStatus: ReputationEnrichment["signalStatus"];
+  missingProfileMessage: string;
 }) {
+  const hasAny = rating != null || reviewCount != null;
   return (
     <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
       <div className="flex items-center justify-between gap-3">
@@ -57,21 +60,32 @@ function SourceRow({
           {signalStatus}
         </span>
       </div>
-      <div className="mt-1.5 flex items-center gap-2 text-sm text-slate-700">
-        <Stars rating={rating} />
-        <span className="font-medium">{formatRating(rating)}</span>
-      </div>
-      <p className="mt-1 text-xs text-slate-500">{formatReviewCount(reviewCount)}</p>
+      {hasAny ? (
+        <>
+          <div className="mt-1.5 flex items-center gap-2 text-sm text-slate-700">
+            <Stars rating={rating} />
+            <span className="font-medium">{formatRating(rating)}</span>
+          </div>
+          <p className="mt-1 text-xs text-slate-500">{formatReviewCount(reviewCount)}</p>
+        </>
+      ) : (
+        <p className="mt-1.5 text-xs text-slate-500">{missingProfileMessage}</p>
+      )}
     </div>
   );
 }
 
 export function ReviewSummary({ enrichment }: { enrichment: ReputationEnrichment }) {
+  const trustpilotRating = enrichment.trustpilotRating ?? enrichment.trustpilot?.rating ?? null;
+  const trustpilotReviewCount = enrichment.trustpilotReviewCount ?? enrichment.trustpilot?.reviewCount ?? null;
+  const googleRating = enrichment.googleRating ?? enrichment.google?.rating ?? null;
+  const googleReviewCount = enrichment.googleReviewCount ?? enrichment.google?.reviewCount ?? null;
+
   const hasAnyReviews =
-    enrichment.trustpilotRating != null ||
-    enrichment.trustpilotReviewCount != null ||
-    enrichment.googleRating != null ||
-    enrichment.googleReviewCount != null;
+    trustpilotRating != null ||
+    trustpilotReviewCount != null ||
+    googleRating != null ||
+    googleReviewCount != null;
 
   if (!hasAnyReviews) {
     return (
@@ -85,15 +99,17 @@ export function ReviewSummary({ enrichment }: { enrichment: ReputationEnrichment
     <div className="space-y-2.5">
       <SourceRow
         name="Trustpilot"
-        rating={enrichment.trustpilotRating}
-        reviewCount={enrichment.trustpilotReviewCount}
+        rating={trustpilotRating}
+        reviewCount={trustpilotReviewCount}
         signalStatus={enrichment.signalStatus}
+        missingProfileMessage="No Trustpilot profile found"
       />
       <SourceRow
         name="Google Reviews"
-        rating={enrichment.googleRating}
-        reviewCount={enrichment.googleReviewCount}
+        rating={googleRating}
+        reviewCount={googleReviewCount}
         signalStatus={enrichment.signalStatus}
+        missingProfileMessage="No Google profile found"
       />
       <p className="pt-0.5 text-[11px] text-slate-500">External reviews are used as supporting signals only.</p>
     </div>
