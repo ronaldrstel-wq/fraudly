@@ -20,6 +20,27 @@ function formatSearched(iso: string): string {
   }
 }
 
+function scoreFillStyle(score: number) {
+  if (score >= 80) {
+    return {
+      barClass: "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.45)]"
+    };
+  }
+  if (score >= 60) {
+    return {
+      barClass: "bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.45)]"
+    };
+  }
+  if (score >= 40) {
+    return {
+      barClass: "bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.45)]"
+    };
+  }
+  return {
+    barClass: "bg-rose-500 shadow-[0_0_10px_rgba(239,68,68,0.45)]"
+  };
+}
+
 export function RecentSearchesDashboard({ initialItems }: { initialItems: RecentSearchPublic[] }) {
   const router = useRouter();
   const [rows, setRows] = useState<RecentSearchPublic[]>(initialItems);
@@ -155,12 +176,6 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
                       <p className={`mt-0.5 text-sm font-semibold tabular-nums ${trust.toneText}`}>
                         {trust.trustScore}/100
                       </p>
-                      <div className="mt-1 h-1.5 w-24 overflow-hidden rounded-full bg-slate-100">
-                        <div
-                          className={`h-full ${trust.progressBar}`}
-                          style={{ width: `${trust.trustScore}%` }}
-                        />
-                      </div>
                     </>
                   ) : (
                     <p className="mt-0.5 text-sm font-semibold tabular-nums text-slate-500">—</p>
@@ -187,7 +202,7 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
                   </p>
                   <p className="mt-0.5 text-sm text-slate-600">{formatSearched(row.createdAt)}</p>
                 </div>
-                <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-3 lg:mt-0 lg:flex-col lg:justify-self-end lg:border-t-0 lg:pt-0">
+                <div className="mt-4 flex flex-wrap gap-2 pt-3 lg:mt-0 lg:flex-col lg:justify-self-end lg:pt-0">
                   <Link
                     href={row.resultPath}
                     className="inline-flex flex-1 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600 px-4 py-2 text-center text-xs font-semibold text-white shadow-md hover:brightness-110 sm:flex-none lg:min-w-[7.5rem]"
@@ -202,6 +217,18 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
                   >
                     {busyRow ? EN_MESSAGES.recentSearches.clearing : EN_MESSAGES.recentSearches.deleteOne}
                   </button>
+                </div>
+                <div className="mt-3 lg:col-span-6 lg:mt-2">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200/85">
+                    {trust ? (
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ease-out ${scoreFillStyle(trust.trustScore).barClass}`}
+                        style={{ width: `${trust.trustScore}%` }}
+                      />
+                    ) : (
+                      <div className="h-full w-0 rounded-full transition-all duration-500 ease-out" />
+                    )}
+                  </div>
                 </div>
               </article>
             );
