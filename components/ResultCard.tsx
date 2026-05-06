@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { ReviewSummary } from "@/components/ReviewSummary";
-import { WatchlistToggle } from "@/components/WatchlistToggle";
 import type { TrustSignal } from "@/lib/checks/types";
 import { trustIconGlyph, trustPresentationFromScore } from "@/lib/trustSystem";
 import type { ScamCheckResult } from "@/types/scam";
@@ -48,7 +47,6 @@ export function ResultCard({ result }: ResultCardProps) {
   const style = trustPresentationFromScore(trustScore);
   const { reviewSignals } = result;
   const hasPublicReviewData = reviewSignals.trustpilotFound || reviewSignals.googleFound;
-  const detailPath = `/check/${encodeURIComponent(result.domain)}`;
 
   const keyRisks = result.trustSignals.filter((s) => s.type === "danger" || s.type === "warning");
   const supportiveSignals = result.trustSignals.filter((s) => s.type === "positive" || s.type === "info");
@@ -140,15 +138,6 @@ export function ResultCard({ result }: ResultCardProps) {
         </div>
 
         <div className="flex w-full min-w-0 flex-col gap-3 sm:w-auto sm:max-w-md sm:items-end sm:text-right">
-          <WatchlistToggle
-            itemType="domain"
-            rawKey={result.domain}
-            title={result.domain}
-            detailPath={detailPath}
-            trustScore={trustScore}
-            verdict={result.verdict}
-            className="w-full sm:w-auto"
-          />
           <div className="text-sm text-slate-600 sm:text-right">
             <p className="font-medium text-slate-900">Analyzed domain</p>
             <p className="mt-1 break-all">{result.domain}</p>

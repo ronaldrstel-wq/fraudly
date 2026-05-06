@@ -13,10 +13,6 @@ const navLinks = [
   { label: "About", href: "/about" }
 ] as const;
 
-const SaveFraudlyTrigger = dynamic(
-  () => import("@/components/save-fraudly/SaveFraudlyTrigger").then((m) => m.SaveFraudlyTrigger),
-  { loading: () => <span className="h-9 w-[88px] rounded-lg bg-slate-100" aria-hidden /> }
-);
 const NavbarAuthControls = dynamic(
   () => import("@/components/navbar/NavbarAuthControls").then((m) => m.NavbarAuthControls),
   {
@@ -59,7 +55,6 @@ export function Navbar() {
         </div>
 
         <div className="flex min-h-9 shrink-0 flex-wrap items-center justify-end gap-1 sm:gap-2 md:gap-3">
-          <SaveFraudlyTrigger variant="nav" instanceSuffix="-nav" />
           <div className="flex min-h-9 items-center">
             <NavbarAuthControls />
           </div>
