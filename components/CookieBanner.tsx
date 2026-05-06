@@ -16,7 +16,10 @@ export function CookieBanner({ onAcceptAll, onRejectAll, onManagePreferences }: 
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="min-w-0 text-sm text-slate-700">
           <p className="font-semibold text-slate-900">Cookies on fraudly.app</p>
-          <p className="mt-1 leading-relaxed text-slate-600">
+          <p className="mt-1 text-xs leading-relaxed text-slate-600 sm:hidden">
+            We use necessary cookies plus optional analytics/marketing cookies. Use Manage Preferences to choose.
+          </p>
+          <p className="mt-1 hidden leading-relaxed text-slate-600 sm:block">
             We use necessary cookies to run the site. With your permission, we also use optional analytics and marketing
             cookies. You can change your mind anytime via Cookie Settings in the footer.
           </p>

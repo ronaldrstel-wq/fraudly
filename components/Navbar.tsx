@@ -1,9 +1,8 @@
 "use client";
 
-import { SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/nextjs";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { SaveFraudlyTrigger } from "@/components/save-fraudly/SaveFraudlyTrigger";
 import { EN_MESSAGES } from "@/lib/messages.en";
 
 const navLinks = [
@@ -14,9 +13,23 @@ const navLinks = [
   { label: "About", href: "/about" }
 ] as const;
 
-export function Navbar() {
-  const { isSignedIn, isLoaded } = useAuth();
+const SaveFraudlyTrigger = dynamic(
+  () => import("@/components/save-fraudly/SaveFraudlyTrigger").then((m) => m.SaveFraudlyTrigger),
+  { loading: () => <span className="h-9 w-[88px] rounded-lg bg-slate-100" aria-hidden /> }
+);
+const NavbarAuthControls = dynamic(
+  () => import("@/components/navbar/NavbarAuthControls").then((m) => m.NavbarAuthControls),
+  {
+    loading: () => (
+      <div className="flex items-center gap-2" aria-hidden>
+        <span className="h-9 w-[88px] animate-pulse rounded-xl bg-slate-100" />
+        <span className="h-9 w-[98px] animate-pulse rounded-xl bg-slate-100" />
+      </div>
+    )
+  }
+);
 
+export function Navbar() {
   return (
     <nav className="sticky top-0 z-20 border-b border-slate-200/70 bg-white/90 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4">
@@ -28,7 +41,6 @@ export function Navbar() {
             height={40}
             sizes="120px"
             className="h-8 w-auto object-contain md:h-9"
-            priority
           />
         </Link>
 
@@ -46,62 +58,11 @@ export function Navbar() {
           )}
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1 sm:gap-2 md:gap-3">
+        <div className="flex min-h-9 shrink-0 flex-wrap items-center justify-end gap-1 sm:gap-2 md:gap-3">
           <SaveFraudlyTrigger variant="nav" instanceSuffix="-nav" />
-          {isLoaded && isSignedIn ? (
-            <>
-              <Link
-                href="/recent-searches"
-                className="rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 md:hidden"
-              >
-                {EN_MESSAGES.recentSearches.navLabelShort}
-              </Link>
-              <Link
-                href="/recent-searches"
-                className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 md:inline"
-              >
-                {EN_MESSAGES.recentSearches.navLabel}
-              </Link>
-            </>
-          ) : null}
-          {!isLoaded ? (
-            <span className="h-9 w-20 animate-pulse rounded-lg bg-slate-100" aria-hidden />
-          ) : isSignedIn ? (
-            <>
-              <Link
-                href="/watchlist"
-                className="rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 md:hidden"
-              >
-                {EN_MESSAGES.watchlist.navLabelShort}
-              </Link>
-              <Link
-                href="/watchlist"
-                className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 md:inline"
-              >
-                {EN_MESSAGES.watchlist.navLabel}
-              </Link>
-              <UserButton />
-            </>
-          ) : (
-            <>
-              <SignInButton mode="modal">
-                <button
-                  type="button"
-                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 sm:px-4"
-                >
-                  {EN_MESSAGES.auth.loginCta}
-                </button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <button
-                  type="button"
-                  className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition duration-200 hover:brightness-110 sm:px-4"
-                >
-                  {EN_MESSAGES.auth.signUpCta}
-                </button>
-              </SignUpButton>
-            </>
-          )}
+          <div className="flex min-h-9 items-center">
+            <NavbarAuthControls />
+          </div>
         </div>
       </div>
     </nav>
