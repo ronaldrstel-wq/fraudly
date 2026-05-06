@@ -171,7 +171,7 @@ export const EN_MESSAGES = {
     overline: "Public discovery · anonymized summaries",
     pageTitle: "Latest Fraud Checks",
     intro:
-      "Recently checked domains and URLs that cleared our privacy filter—no accounts, IPs, or private search history. Stronger scores mean more risk-style signals in that snapshot. When in doubt, we exclude items from this list.",
+      "Showing the last 10 publicly visible checks that cleared our privacy filter—no accounts, IPs, or private search history. Stronger scores mean more risk-style signals in that snapshot. When in doubt, we exclude items from this list.",
     emptyState: "No public fraud checks yet. Recent public-safe checks will appear here.",
     ctaPrimary: "Run a website check",
     listAria: "Latest public fraud check summaries",

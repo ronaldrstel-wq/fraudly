@@ -6,7 +6,8 @@ import { useCallback, useEffect, useState } from "react";
 import { CLEAR_ALL_CONFIRM_BODY } from "@/lib/recent-search/constants";
 import type { RecentSearchPublic } from "@/lib/recent-search/service";
 import { EN_MESSAGES } from "@/lib/messages.en";
-import { trustIconGlyph, trustPresentationFromScore } from "@/lib/trustSystem";
+import { trustDisplayFromTrustScore } from "@/lib/trustDisplay";
+import { trustIconGlyph } from "@/lib/trustSystem";
 
 function formatSearched(iso: string): string {
   try {
@@ -126,6 +127,7 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
               EN_MESSAGES.recentSearches.entityLabels[row.entityType as keyof typeof EN_MESSAGES.recentSearches.entityLabels] ??
               row.entityType;
             const busyRow = pendingId === row.id;
+            const trust = row.trustScoreSnap !== null ? trustDisplayFromTrustScore(row.trustScoreSnap) : null;
             return (
               <article
                 key={row.id}
@@ -148,15 +150,15 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 lg:hidden">
                     {EN_MESSAGES.recentSearches.columns.score}
                   </p>
-                  {row.trustScoreSnap !== null ? (
+                  {trust ? (
                     <>
-                      <p className={`mt-0.5 text-sm font-semibold tabular-nums ${trustPresentationFromScore(row.trustScoreSnap).toneText}`}>
-                        {row.trustScoreSnap}/100
+                      <p className={`mt-0.5 text-sm font-semibold tabular-nums ${trust.toneText}`}>
+                        {trust.trustScore}/100
                       </p>
                       <div className="mt-1 h-1.5 w-24 overflow-hidden rounded-full bg-slate-100">
                         <div
-                          className={`h-full ${trustPresentationFromScore(row.trustScoreSnap).progressBar}`}
-                          style={{ width: `${row.trustScoreSnap}%` }}
+                          className={`h-full ${trust.progressBar}`}
+                          style={{ width: `${trust.trustScore}%` }}
                         />
                       </div>
                     </>
@@ -168,12 +170,12 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 lg:hidden">
                     {EN_MESSAGES.recentSearches.columns.status}
                   </p>
-                  {row.trustScoreSnap !== null ? (
+                  {trust ? (
                     <p
-                      className={`mt-0.5 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${trustPresentationFromScore(row.trustScoreSnap).toneSoftBorder} ${trustPresentationFromScore(row.trustScoreSnap).toneSoftBg} ${trustPresentationFromScore(row.trustScoreSnap).toneText}`}
+                      className={`mt-0.5 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${trust.toneSoftBorder} ${trust.toneSoftBg} ${trust.toneText}`}
                     >
-                      <span aria-hidden>{trustIconGlyph(trustPresentationFromScore(row.trustScoreSnap).icon)}</span>
-                      {trustPresentationFromScore(row.trustScoreSnap).label}
+                      <span aria-hidden>{trustIconGlyph(trust.icon)}</span>
+                      {trust.label}
                     </p>
                   ) : (
                     <p className="mt-0.5 text-sm text-slate-500">—</p>
