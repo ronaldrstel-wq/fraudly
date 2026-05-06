@@ -44,7 +44,7 @@ export default async function RecentSearchesPage() {
       <main className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:pt-10 md:pt-12">
         {hadLoadError ? (
           <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            We couldn't load your recent searches right now. Please refresh and try again.
+            We couldn&apos;t load your recent searches right now. Please refresh and try again.
           </div>
         ) : null}
         <RecentSearchesDashboard initialItems={initialItems} />

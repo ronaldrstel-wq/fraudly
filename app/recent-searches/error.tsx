@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 export default function RecentSearchesError({
@@ -11,7 +13,7 @@ export default function RecentSearchesError({
 
   return (
     <div className="mx-auto my-10 w-full max-w-3xl rounded-2xl border border-rose-200 bg-rose-50 p-6 text-rose-800">
-      <h2 className="text-lg font-semibold">We couldn't load Recent Searches.</h2>
+      <h2 className="text-lg font-semibold">We couldn&apos;t load Recent Searches.</h2>
       <p className="mt-2 text-sm">
         Please try again. If this keeps happening, go back to the homepage and retry in a minute.
       </p>
