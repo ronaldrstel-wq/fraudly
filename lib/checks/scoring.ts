@@ -144,6 +144,16 @@ export function buildIntelScoring(checks: ExternalChecksResult): {
       confidence: "medium",
       reason: `RDAP-derived domain age ≈ ${checks.domainIntelligence.ageDays} days.`
     });
+  } else if (typeof checks.domainIntelligence.ageDays === "number" && checks.domainIntelligence.ageDays >= 365 * 5) {
+    pushContribution(signals, breakdown, {
+      id: "intel-domain-established",
+      source: checks.domainIntelligence.source,
+      label: "Long-lived domain registration",
+      category: "domain",
+      impact: -6,
+      confidence: "high",
+      reason: `RDAP-derived domain age ≈ ${Math.round(checks.domainIntelligence.ageDays / 365)} years.`
+    });
   }
 
   if (checks.domainIntelligence.suspiciouslyShortRegistration) {
@@ -156,6 +166,34 @@ export function buildIntelScoring(checks: ExternalChecksResult): {
       confidence: "medium",
       reason: "Registration horizon between creation and expiry looks shorter than many established domains."
     });
+  }
+
+  if (checks.domainIntelligence.expirationDate) {
+    const expiry = new Date(checks.domainIntelligence.expirationDate);
+    if (!Number.isNaN(expiry.getTime())) {
+      const daysToExpiry = Math.floor((expiry.getTime() - Date.now()) / 86400000);
+      if (daysToExpiry > 365) {
+        pushContribution(signals, breakdown, {
+          id: "intel-domain-expiry-stable",
+          source: checks.domainIntelligence.source,
+          label: "Registration horizon appears stable",
+          category: "domain",
+          impact: -3,
+          confidence: "medium",
+          reason: `Domain expiration horizon is about ${daysToExpiry} days, suggesting non-immediate churn.`
+        });
+      } else if (daysToExpiry >= 0 && daysToExpiry < 45) {
+        pushContribution(signals, breakdown, {
+          id: "intel-domain-expiry-near",
+          source: checks.domainIntelligence.source,
+          label: "Domain registration near expiry",
+          category: "domain",
+          impact: 8,
+          confidence: "medium",
+          reason: `Domain appears to expire in about ${daysToExpiry} days.`
+        });
+      }
+    }
   }
 
   if (checks.domainIntelligence.hasPrivacyProtection) {
@@ -176,7 +214,7 @@ export function buildIntelScoring(checks: ExternalChecksResult): {
       source: checks.ssl.source,
       label: "Valid TLS certificate observed",
       category: "website_quality",
-      impact: -3,
+      impact: -8,
       confidence: "high",
       reason: "HTTPS handshake succeeded with a certificate trusted by the runtime."
     });
@@ -212,7 +250,7 @@ export function buildIntelScoring(checks: ExternalChecksResult): {
       source: "Composite intelligence",
       label: "No URLhaus/OpenPhish hit and Safe Browsing clean",
       category: "website_quality",
-      impact: -2,
+      impact: -4,
       confidence: "medium",
       reason: "Feeds consulted in this run did not produce active listing hits (subject to TTL and coverage limits)."
     });

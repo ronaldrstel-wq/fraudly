@@ -3,8 +3,12 @@ import type { SupplyChainSignals } from "@/lib/supplyChainSignals";
 import type { ProductMarketplaceSignals } from "@/lib/productMarketplaceSignals";
 import { verdictFromRiskScore } from "@/lib/trustSystem";
 import {
+  AUTHORITY_GUARDRAILS,
+  AUTHORITY_BOOSTS,
   BRAND_RULES,
   DOMAIN_RISKY_KEYWORDS,
+  LAYER_BOUNDS,
+  OFFICIAL_DOMAIN_ALLOWLIST,
   PHISHING_LURE_WORDS,
   SUSPICIOUS_LEXICAL_PATTERNS,
   TRUST_CEILINGS
@@ -371,6 +375,119 @@ function pushAiRiskSignals(level: AiRiskSignalsInput["level"], out: ScoreSignal[
       impact: -8,
       confidence: "medium",
       reason: "Model assessed overall URL risk as low (scoring only; score is computed from all signals)."
+    });
+  }
+}
+
+function isAllowlistedOfficialDomain(domain: string): boolean {
+  const d = domain.toLowerCase();
+  return OFFICIAL_DOMAIN_ALLOWLIST.some((host) => d === host || d.endsWith(`.${host}`));
+}
+
+function authorityRecoveryScale(args: {
+  hasStrongTechnicalPosture: boolean;
+  hasReputationFootprint: boolean;
+  reviewTier: ReviewTierFlags;
+}): number {
+  let scale = 0.7;
+  if (args.hasStrongTechnicalPosture) scale += 0.15;
+  if (args.hasReputationFootprint) scale += 0.1;
+  if (args.reviewTier.strongPublicReview) scale += 0.05;
+  return clamp(scale, 0.7, 1.0);
+}
+
+function pushReputationLayerSignals(args: {
+  reviewSignals?: ReviewSignals;
+  officialAllowlistedDomain: boolean;
+  hasCriticalTechnicalRisk: boolean;
+  out: ScoreSignal[];
+}): void {
+  const { reviewSignals, officialAllowlistedDomain, hasCriticalTechnicalRisk, out } = args;
+  if (!reviewSignals || hasCriticalTechnicalRisk) return;
+
+  let reputationBoost = 0;
+  let presenceCount = 0;
+  if (reviewSignals.googleFound) presenceCount += 1;
+  if (reviewSignals.trustpilotFound) presenceCount += 1;
+  if (reviewSignals.outscraper?.available) presenceCount += 1;
+
+  const highRatingVolume =
+    (reviewSignals.googleRating ?? 0) >= 4.3 && (reviewSignals.googleReviewCount ?? 0) >= 300;
+  const trustpilotStrong =
+    (reviewSignals.trustpilotRating ?? 0) >= 4.2 && (reviewSignals.trustpilotReviewCount ?? 0) >= 300;
+  const outscraperStrong =
+    (reviewSignals.outscraper?.rating ?? 0) >= 4.3 &&
+    (reviewSignals.outscraper?.reviewCount ?? 0) >= 150 &&
+    (reviewSignals.outscraper?.negativeReviewRatio ?? 1) < 0.12 &&
+    !reviewSignals.outscraper?.suspiciousPositivePattern;
+
+  if (highRatingVolume || trustpilotStrong || outscraperStrong) {
+    reputationBoost += 10;
+  }
+  if (presenceCount >= 2) {
+    reputationBoost += 4;
+  }
+  if (officialAllowlistedDomain && presenceCount >= 1) {
+    reputationBoost += 4;
+  }
+
+  if (reputationBoost > 0) {
+    out.push({
+      id: "reputation-public-footprint",
+      label: "Strong public reputation footprint",
+      category: "reviews",
+      impact: -Math.min(reputationBoost, LAYER_BOUNDS.reputationMaxBoost),
+      confidence: presenceCount >= 2 ? "high" : "medium",
+      reason:
+        "Public business/review presence appears broad and consistent across external reputation sources."
+    });
+  }
+}
+
+function pushRegistrationLayerSignals(args: {
+  officialAllowlistedDomain: boolean;
+  hasCriticalTechnicalRisk: boolean;
+  hasSignalNow: (id: string) => boolean;
+  out: ScoreSignal[];
+}): void {
+  const { officialAllowlistedDomain, hasCriticalTechnicalRisk, hasSignalNow, out } = args;
+  if (hasSignalNow("intel-domain-very-new") || hasSignalNow("intel-domain-young")) {
+    out.push({
+      id: "registration-risk-young-domain",
+      label: "Registration risk: young domain",
+      category: "domain",
+      impact: 12,
+      confidence: "high",
+      reason: "Recently registered domains carry elevated fraud and churn risk."
+    });
+  }
+  if (hasSignalNow("intel-short-registration")) {
+    out.push({
+      id: "registration-risk-short-window",
+      label: "Registration risk: short registration horizon",
+      category: "domain",
+      impact: 8,
+      confidence: "medium",
+      reason: "Short registration windows are more common in disposable domains."
+    });
+  }
+
+  if (hasCriticalTechnicalRisk) return;
+  let registrationBoost = 0;
+  if (hasSignalNow("intel-domain-established")) registrationBoost += 8;
+  if (!hasSignalNow("intel-short-registration")) registrationBoost += 3;
+  if (!hasSignalNow("intel-hidden-ownership")) registrationBoost += 2;
+  if (officialAllowlistedDomain) registrationBoost += 3;
+
+  if (registrationBoost > 0) {
+    out.push({
+      id: "registration-stability-positive",
+      label: "Registration stability signal",
+      category: "domain",
+      impact: -Math.min(registrationBoost, LAYER_BOUNDS.registrationMaxBoost),
+      confidence: registrationBoost >= 10 ? "high" : "medium",
+      reason:
+        "Domain registration history appears established and non-disposable based on RDAP-derived indicators."
     });
   }
 }
@@ -1367,6 +1484,7 @@ export function calculateScamScore(input: {
   const rebrandDetection = detectRebrandNetworkSignals(input.websiteText ?? "", domain);
   const companyIdentityDetection = detectCompanyIdentitySignals(input.websiteText ?? "", domain);
   const productMarketplaceDetection = input.productMarketplaceSignals ?? EMPTY_PRODUCT_MARKETPLACE_SIGNALS;
+  const officialAllowlistedDomain = isAllowlistedOfficialDomain(domain);
 
   pushDomainSignals(domain, signals);
   if (input.reviewSignals) pushReviewSignals(input.reviewSignals, signals);
@@ -1386,6 +1504,62 @@ export function calculateScamScore(input: {
     signals.push(...input.externalSignals);
   }
   const hasSignalNow = (id: string) => signals.some((s) => s.id === id);
+  const hasCriticalTechnicalRisk =
+    hasSignalNow("intel-safe-browsing-flagged") ||
+    hasSignalNow("intel-openphish-listed") ||
+    hasSignalNow("intel-urlhaus-listed") ||
+    hasSignalNow("intel-no-tls") ||
+    hasSignalNow("intel-tls-issue");
+  pushReputationLayerSignals({
+    reviewSignals: input.reviewSignals,
+    officialAllowlistedDomain,
+    hasCriticalTechnicalRisk,
+    out: signals
+  });
+  pushRegistrationLayerSignals({
+    officialAllowlistedDomain,
+    hasCriticalTechnicalRisk,
+    hasSignalNow,
+    out: signals
+  });
+  const hasStrongTechnicalPosture =
+    hasSignalNow("intel-valid-ssl") && hasSignalNow("intel-no-feed-hits-composite") && !hasCriticalTechnicalRisk;
+  const hasReputationFootprint = hasSignalNow("reputation-public-footprint");
+  const authorityScale = authorityRecoveryScale({
+    hasStrongTechnicalPosture,
+    hasReputationFootprint,
+    reviewTier
+  });
+  if (officialAllowlistedDomain && !hasCriticalTechnicalRisk) {
+    signals.push({
+      id: "authority-official-allowlist-domain",
+      label: "Official authoritative domain match",
+      category: "website_quality",
+      impact: Math.round(AUTHORITY_BOOSTS.officialAllowlistMatch * authorityScale),
+      confidence: "high",
+      reason: "Domain matches an official authoritative-domain allowlist entry."
+    });
+  }
+  if (officialAllowlistedDomain && hasStrongTechnicalPosture) {
+    signals.push({
+      id: "authority-strong-technical-posture",
+      label: "Strong technical legitimacy posture",
+      category: "website_quality",
+      impact: Math.round(AUTHORITY_BOOSTS.strongTechnicalPosture * authorityScale),
+      confidence: "high",
+      reason: "Allowlisted domain has valid TLS and no active feed intelligence hits in this run."
+    });
+  }
+  if (officialAllowlistedDomain && hasSignalNow("intel-domain-established") && !hasCriticalTechnicalRisk) {
+    signals.push({
+      id: "authority-established-domain-age",
+      label: "Established authoritative domain age",
+      category: "website_quality",
+      impact: Math.round(AUTHORITY_BOOSTS.establishedDomainAge * authorityScale),
+      confidence: "high",
+      reason: "Long-lived registration strengthens legitimacy for this official domain."
+    });
+  }
   pushRebrandNetworkSignals(rebrandDetection, signals, {
     hasBadReviews: hasSignalNow("reviews-google-poor") || hasSignalNow("reviews-trustpilot-poor") || hasSignalNow("reviews-complaint-quality"),
     hasDropshipSignals: hasSignalNow("supply-dropshipping") || hasSignalNow("reviews-complaint-dropship"),
@@ -1445,6 +1619,11 @@ export function calculateScamScore(input: {
   const aiW = scaleCategoryWeights(signals, "ai", null, null);
 
   const allWeights = new Map<string, number>();
+  const reducedMetadataPenaltyIds = new Set([
+    "biz-no-address",
+    "company-identity-minor-risk",
+    "company-identity-risk"
+  ]);
   for (const s of signals) {
     let w = 0;
     if (s.category === "reviews") w = reviewW.get(s.id) ?? 0;
@@ -1456,6 +1635,9 @@ export function calculateScamScore(input: {
     else if (s.category === "company_identity") w = companyW.get(s.id) ?? 0;
     else if (s.category === "product_marketplace") w = productW.get(s.id) ?? 0;
     else if (s.category === "ai") w = aiW.get(s.id) ?? 0;
+    if (officialAllowlistedDomain && !hasCriticalTechnicalRisk && w > 0 && reducedMetadataPenaltyIds.has(s.id)) {
+      w = w * AUTHORITY_GUARDRAILS.metadataPenaltyMultiplier;
+    }
     allWeights.set(s.id, w);
   }
 
@@ -1573,8 +1755,14 @@ export function calculateScamScore(input: {
   if (hasSignal("domain-phishing-lexical-pattern")) {
     applyCap(TRUST_CEILINGS.phishingLexical, "Phishing lexical pattern capped trust score.");
   }
+  if (hasSignal("domain-sales-keywords")) {
+    applyCap(44, "Dense suspicious lexical keywords capped trust score.");
+  }
   if (hasSignal("domain-brand-impersonation-lure") || hasSignal("domain-brand-impersonation")) {
     applyCap(TRUST_CEILINGS.brandImpersonation, "Brand impersonation pattern capped trust score.");
+  }
+  if (hasSignal("registration-risk-young-domain")) {
+    applyCap(44, "Young domain registration risk capped trust score.");
   }
   if (
     hasSignal("product-marketplace-overlap") &&
@@ -1582,7 +1770,6 @@ export function calculateScamScore(input: {
   ) {
     applyCap(58, "Marketplace image overlap combined with dropshipping/identity risk capped the trust score.");
   }
-
   const majorRiskPresent = signals.some((s) => majorRiskSignals.has(s.id) && (allWeights.get(s.id) ?? 0) > 0);
   if (majorRiskPresent) {
     finalScore = Math.max(finalScore, 32);
@@ -1650,7 +1837,17 @@ export function calculateScamScore(input: {
 
   const highConfCount = signals.filter((s) => (allWeights.get(s.id) ?? 0) !== 0 && s.confidence === "high").length;
   const nonZeroCount = signals.filter((s) => (allWeights.get(s.id) ?? 0) !== 0).length;
-  const confidence: ScoreConfidence = highConfCount >= 3 ? "high" : nonZeroCount >= 4 ? "medium" : "low";
+  const confidence: ScoreConfidence =
+    officialAllowlistedDomain &&
+    !hasCriticalTechnicalRisk &&
+    hasSignalNow("authority-official-allowlist-domain") &&
+    hasSignalNow("authority-strong-technical-posture")
+      ? "high"
+      : highConfCount >= 3
+        ? "high"
+        : nonZeroCount >= 4
+          ? "medium"
+          : "low";
   if (confidence === "low") {
     applyCap(TRUST_CEILINGS.lowConfidence, "Low-confidence assessments cannot be marked as trusted.");
   }
@@ -1719,11 +1916,13 @@ export function calculateScamScore(input: {
     cautionNotes,
     recommendation:
       finalTrustScore >= 85
-        ? "Proceed with normal caution, and verify return/refund terms before purchase."
+        ? hasSignalNow("authority-official-allowlist-domain")
+          ? "This website shows strong legitimacy, reputation, and security indicators."
+          : "Proceed with normal caution, and verify return/refund terms before purchase."
         : finalTrustScore >= 65
-          ? "Use extra caution: verify seller identity, refund policy, and independent reviews before paying."
+          ? "Some trust indicators were found, but caution is still recommended."
           : finalTrustScore >= 45
-            ? "Signals are mixed or incomplete. Independently verify identity, ownership, and payment channels before proceeding."
+            ? "Some trust indicators were found, but caution is still recommended."
             : finalTrustScore >= 25
               ? "This domain contains patterns commonly associated with phishing or impersonation scams. Avoid entering passwords or payment information unless independently verified."
           : "Avoid sharing payment/personal details until identity and complaint signals are independently verified."

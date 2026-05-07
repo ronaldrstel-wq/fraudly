@@ -58,9 +58,28 @@ export const BRAND_RULES: Array<{ brand: string; officialDomains: string[] }> = 
   { brand: "adobe", officialDomains: ["adobe.com"] }
 ];
 
+export const OFFICIAL_DOMAIN_ALLOWLIST = Array.from(
+  new Set(BRAND_RULES.flatMap((rule) => rule.officialDomains))
+);
+
 export const TRUST_CEILINGS = {
   failedTls: 40,
   phishingLexical: 35,
   brandImpersonation: 25,
   lowConfidence: 84
+} as const;
+
+export const AUTHORITY_BOOSTS = {
+  officialAllowlistMatch: -24,
+  strongTechnicalPosture: -12,
+  establishedDomainAge: -8
+} as const;
+
+export const AUTHORITY_GUARDRAILS = {
+  metadataPenaltyMultiplier: 0.35
+} as const;
+
+export const LAYER_BOUNDS = {
+  reputationMaxBoost: 18,
+  registrationMaxBoost: 15
 } as const;
