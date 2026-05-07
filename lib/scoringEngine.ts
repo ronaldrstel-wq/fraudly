@@ -7,11 +7,15 @@ import {
   AUTHORITY_BOOSTS,
   BRAND_RULES,
   DOMAIN_RISKY_KEYWORDS,
+  HIGH_RISK_TLDS,
   LAYER_BOUNDS,
   OFFICIAL_DOMAIN_ALLOWLIST,
   PHISHING_LURE_WORDS,
+  SCAM_INTENT_KEYWORDS,
+  SUSPICIOUS_SCAM_PHRASES,
   SUSPICIOUS_LEXICAL_PATTERNS,
-  TRUST_CEILINGS
+  TRUST_CEILINGS,
+  URGENCY_KEYWORDS
 } from "@/lib/scoring/heuristics";
 
 export type ScoreConfidence = "low" | "medium" | "high";
@@ -273,15 +277,75 @@ function computeReviewTierFlags(review?: ReviewSignals): ReviewTierFlags {
 
 function pushDomainSignals(domain: string, out: ScoreSignal[]): void {
   const d = domain.toLowerCase();
+  const root = d.split(".")[0] ?? d;
+  const tld = d.split(".").pop() ?? "";
   const matched = DOMAIN_RISKY_KEYWORDS.filter((w) => d.includes(w));
+  const scamIntentMatches = SCAM_INTENT_KEYWORDS.filter((w) => d.includes(w));
+  const urgencyMatches = URGENCY_KEYWORDS.filter((w) => d.includes(w));
+  const hyphenCount = (d.match(/-/g) ?? []).length;
+  const hasRiskyTld = HIGH_RISK_TLDS.includes(tld as (typeof HIGH_RISK_TLDS)[number]);
+  const genericKeywordOnlyContext =
+    scamIntentMatches.length === 1 && urgencyMatches.length === 0 && !hasRiskyTld && hyphenCount === 0;
+
+  if (hasRiskyTld) {
+    out.push({
+      id: "domain-high-risk-tld",
+      label: "High-risk TLD",
+      category: "domain",
+      impact: 16,
+      confidence: "high",
+      reason: `Domain uses .${tld}, a TLD frequently seen in throwaway scam/phishing domains.`
+    });
+  }
+
   if (matched.length > 0) {
     out.push({
-      id: "domain-sales-keywords",
-      label: "Suspicious lexical keywords in domain",
+      id: matched.length >= 2 ? "domain-sales-keywords" : "domain-generic-lure-keyword",
+      label: matched.length >= 2 ? "Suspicious lexical keywords in domain" : "Single lure-related keyword",
       category: "domain",
-      impact: matched.length >= 2 ? 22 : 15,
-      confidence: matched.length >= 2 ? "high" : "medium",
+      impact: matched.length >= 3 ? 22 : matched.length >= 2 ? 14 : 3,
+      confidence: matched.length >= 2 ? "high" : "low",
       reason: `Domain contains lexical phishing/bait keywords: ${matched.join(", ")}.`
+    });
+  }
+  if (scamIntentMatches.length > 0) {
+    out.push({
+      id: "domain-scam-intent-keywords",
+      label: "Scam-intent lexical keywords",
+      category: "domain",
+      impact: scamIntentMatches.length >= 3 ? 24 : scamIntentMatches.length >= 2 ? 14 : 4,
+      confidence: scamIntentMatches.length >= 2 ? "high" : "low",
+      reason: `Domain contains scam-intent wording: ${scamIntentMatches.join(", ")}.`
+    });
+  }
+  if (urgencyMatches.length > 0) {
+    out.push({
+      id: "domain-urgency-wording",
+      label: "Urgency pressure wording in domain",
+      category: "domain",
+      impact: 14,
+      confidence: "high",
+      reason: `Domain includes urgency language (${urgencyMatches.join(", ")}), common in scam pressure tactics.`
+    });
+  }
+  if (hyphenCount >= 2) {
+    out.push({
+      id: "domain-hyphen-heavy",
+      label: "Hyphen-heavy domain composition",
+      category: "domain",
+      impact: hyphenCount >= 3 ? 12 : 8,
+      confidence: "medium",
+      reason: "Multiple hyphens increase deceptive readability patterns common in disposable scam domains."
+    });
+  }
+  if (SUSPICIOUS_SCAM_PHRASES.some((re) => re.test(d))) {
+    out.push({
+      id: "domain-suspicious-scam-phrase",
+      label: "Suspicious scam-like phrase pattern",
+      category: "domain",
+      impact: 20,
+      confidence: "high",
+      reason: "Domain includes a known scam-like phrase structure (claim/refund/verify/security/wallet-recovery style)."
     });
   }
   if (SUSPICIOUS_LEXICAL_PATTERNS.some((re) => re.test(d))) {
@@ -293,6 +357,69 @@ function pushDomainSignals(domain: string, out: ScoreSignal[]): void {
       confidence: "high",
       reason:
         "Domain structure and wording match common phishing/credential-harvest naming patterns."
+    });
+  }
+  if (hasRiskyTld && (urgencyMatches.length > 0 || scamIntentMatches.length > 0)) {
+    out.push({
+      id: "domain-compound-risky-tld-lure",
+      label: "Compound scam risk: risky TLD + lure language",
+      category: "domain",
+      impact: 22,
+      confidence: "high",
+      reason: "Risky TLD combined with urgency/claim/refund lure wording strongly matches scam-domain composition."
+    });
+  }
+  const compoundPairs: Array<[string, string]> = [
+    ["claim", "refund"],
+    ["claim", "fast"],
+    ["refund", "urgent"],
+    ["verify", "account"],
+    ["secure", "login"],
+    ["wallet", "recovery"],
+    ["wallet", "airdrop"]
+  ];
+  const compoundPairHits = compoundPairs.filter(([a, b]) => d.includes(a) && d.includes(b)).length;
+  if (compoundPairHits > 0) {
+    out.push({
+      id: "domain-compound-lure-pairs",
+      label: "Compound lure-word pair patterns",
+      category: "domain",
+      impact: Math.min(18, 8 + (compoundPairHits - 1) * 5),
+      confidence: "high",
+      reason: "Multiple lure-word pair combinations were detected, increasing phishing/scam intent risk."
+    });
+  }
+  if (
+    urgencyMatches.length > 0 &&
+    ["payment", "payout", "wallet", "account", "refund", "claim"].some((w) => d.includes(w))
+  ) {
+    out.push({
+      id: "domain-urgency-financial-compound",
+      label: "Urgency + financial-action wording",
+      category: "domain",
+      impact: 14,
+      confidence: "high",
+      reason: "Urgency wording appears together with financial/account-action wording."
+    });
+  }
+  if (genericKeywordOnlyContext && root.length <= 10) {
+    out.push({
+      id: "domain-generic-keyword-alone",
+      label: "Single generic keyword appears brand-like",
+      category: "domain",
+      impact: -4,
+      confidence: "low",
+      reason: "A single generic token on a short, non-hyphenated domain can be legitimate without stronger scam context."
+    });
+  }
+  if (scamIntentMatches.length >= 2) {
+    out.push({
+      id: "domain-multi-lure-amplification",
+      label: "Multiple lure terms in one domain",
+      category: "domain",
+      impact: 18,
+      confidence: "high",
+      reason: "Multiple scam lure terms in a single domain materially increase phishing/scam likelihood."
     });
   }
 
@@ -473,6 +600,14 @@ function pushRegistrationLayerSignals(args: {
   }
 
   if (hasCriticalTechnicalRisk) return;
+  if (
+    hasSignalNow("domain-phishing-lexical-pattern") ||
+    hasSignalNow("domain-compound-risky-tld-lure") ||
+    hasSignalNow("domain-scam-intent-keywords") ||
+    hasSignalNow("domain-suspicious-scam-phrase")
+  ) {
+    return;
+  }
   let registrationBoost = 0;
   if (hasSignalNow("intel-domain-established")) registrationBoost += 8;
   if (!hasSignalNow("intel-short-registration")) registrationBoost += 3;
@@ -1755,8 +1890,20 @@ export function calculateScamScore(input: {
   if (hasSignal("domain-phishing-lexical-pattern")) {
     applyCap(TRUST_CEILINGS.phishingLexical, "Phishing lexical pattern capped trust score.");
   }
+  if (hasSignal("domain-suspicious-scam-phrase")) {
+    applyCap(28, "Scam-like lexical phrase pattern capped trust score.");
+  }
   if (hasSignal("domain-sales-keywords")) {
     applyCap(44, "Dense suspicious lexical keywords capped trust score.");
+  }
+  if (hasSignal("domain-compound-risky-tld-lure")) {
+    applyCap(25, "Risky TLD plus scam-intent lexical compound capped trust score.");
+  }
+  if (hasSignal("domain-high-risk-tld") && hasSignal("domain-scam-intent-keywords") && hasSignal("domain-urgency-wording")) {
+    applyCap(24, "Risky TLD with urgency and scam-intent wording capped trust score to dangerous band.");
+  }
+  if (hasSignal("domain-compound-risky-tld-lure") && hasSignal("domain-multi-lure-amplification")) {
+    applyCap(20, "Risky TLD with multiple lure terms capped trust score to dangerous band.");
   }
   if (hasSignal("domain-brand-impersonation-lure") || hasSignal("domain-brand-impersonation")) {
     applyCap(TRUST_CEILINGS.brandImpersonation, "Brand impersonation pattern capped trust score.");

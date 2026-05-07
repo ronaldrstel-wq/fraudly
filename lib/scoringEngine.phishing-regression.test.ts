@@ -120,6 +120,54 @@ describe("phishing lexical and impersonation regression", () => {
     }
   });
 
+  it("classifies obvious scam-intent lexical domains as dangerous even with neutral technical positives", () => {
+    const dangerousDomains = [
+      "claim-your-refund-fast.biz",
+      "verify-account-now.top",
+      "urgent-wallet-recovery.click",
+      "claim-bonus-airdrop.xyz"
+    ];
+    for (const domain of dangerousDomains) {
+      const result = calculateScamScore({
+        domain,
+        heuristicReasons: [],
+        externalSignals: withStrongTechnicalSignals()
+      });
+      const trust = trustScoreFromRisk(result.finalScore);
+      expect(trust).toBeLessThanOrEqual(24);
+      expect(result.verdict).toBe("scam");
+    }
+  });
+
+  it("does not auto-classify single generic-keyword domains as dangerous", () => {
+    const genericDomains = ["claim.com", "refund.com", "secure.com", "wallet.com", "login.com"];
+    for (const domain of genericDomains) {
+      const result = calculateScamScore({
+        domain,
+        heuristicReasons: [],
+        externalSignals: withStrongTechnicalSignals()
+      });
+      const trust = trustScoreFromRisk(result.finalScore);
+      expect(trust).toBeGreaterThanOrEqual(65);
+      expect(result.verdict).toBe("safe");
+    }
+  });
+
+  it("keeps medium-risk phishing-style domains in suspicious range", () => {
+    const suspicious = ["verify-wallet-airdrop.net", "secure-login-paypal-example.com"];
+    for (const domain of suspicious) {
+      const result = calculateScamScore({
+        domain,
+        heuristicReasons: [],
+        externalSignals: withStrongTechnicalSignals()
+      });
+      const trust = trustScoreFromRisk(result.finalScore);
+      expect(trust).toBeGreaterThanOrEqual(25);
+      expect(trust).toBeLessThanOrEqual(44);
+      expect(result.verdict).toBe("suspicious");
+    }
+  });
+
   it("keeps known legitimate brand domains in safe range", () => {
     const safeDomains = [
       "paypal.com",

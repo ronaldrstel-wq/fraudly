@@ -36,6 +36,35 @@ export const SUSPICIOUS_LEXICAL_PATTERNS = [
   /account[-.]?check/i
 ] as const;
 
+export const SCAM_INTENT_KEYWORDS = [
+  "refund",
+  "claim",
+  "urgent",
+  "immediately",
+  "now",
+  "reward",
+  "bonus",
+  "payout",
+  "recovery",
+  "verify",
+  "account",
+  "wallet",
+  "sync"
+] as const;
+
+export const URGENCY_KEYWORDS = ["urgent", "now", "immediately", "fast", "instant", "asap", "final"] as const;
+
+export const HIGH_RISK_TLDS = ["biz", "top", "xyz", "click", "work", "gq", "tk"] as const;
+
+export const SUSPICIOUS_SCAM_PHRASES = [
+  /claim[-.]?your[-.]?refund/i,
+  /verify[-.]?account[-.]?now/i,
+  /secure[-.]?login/i,
+  /wallet[-.]?recovery/i,
+  /claim[-.]?bonus[-.]?airdrop/i,
+  /paypal[-.]?security[-.]?check/i
+] as const;
+
 export const BRAND_RULES: Array<{ brand: string; officialDomains: string[] }> = [
   { brand: "paypal", officialDomains: ["paypal.com"] },
   { brand: "microsoft", officialDomains: ["microsoft.com"] },
