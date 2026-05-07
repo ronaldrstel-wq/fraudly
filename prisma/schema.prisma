@@ -50,10 +50,14 @@ model RecentSearch {
   trustScoreSnap      Int?
   verdictSnap         String?  @db.VarChar(32)
   resultPath          String   @db.VarChar(2048)
+  hiddenFromUserAt    DateTime?
+  hiddenFromUserBy    String?  @db.VarChar(32)
+  publicVisible       Boolean  @default(true)
   createdAt           DateTime @default(now())
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([anonymousSessionKey, createdAt(sort: Desc)])
+  @@index([publicVisible, createdAt(sort: Desc)])
 }
 
 model StripeEvent {
