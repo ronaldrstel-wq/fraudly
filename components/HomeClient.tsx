@@ -1,17 +1,21 @@
 "use client";
 
+import { SignInButton, SignUpButton, useAuth } from "@clerk/nextjs";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Hero } from "@/components/Hero";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
+import { hasUsedAnonymousFreeCheck, markAnonymousFreeCheckUsed } from "@/lib/accessControl";
 import {
   trackAnonymousCheckCompleted,
   trackAnonymousCheckStarted,
   trackCheckFailed,
-  trackEvent
+  trackEvent,
+  trackRegisteredCheckCompleted,
+  trackRegisteredCheckStarted
 } from "@/lib/analytics";
 import { parseFlexibleWebsiteInput } from "@/lib/check-input/normalizeWebsiteInput";
 import { EN_MESSAGES } from "@/lib/messages.en";
@@ -31,15 +35,21 @@ const PostScanAppPromo = dynamic(() => import("@/components/PostScanAppPromo").t
 });
 
 export function HomeClient({ children }: { children?: ReactNode }) {
+  const { isSignedIn } = useAuth();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScamCheckResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [scanProgress, setScanProgress] = useState<ScanProgressState | null>(null);
+  const [hasUsedFreeCheck, setHasUsedFreeCheck] = useState(false);
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
   const inFlight = useRef(false);
 
   const disabled = useMemo(() => url.trim().length === 0 || loading, [url, loading]);
+
+  useEffect(() => {
+    setHasUsedFreeCheck(hasUsedAnonymousFreeCheck());
+  }, []);
 
   async function runCheck() {
     if (inFlight.current) return;
@@ -48,6 +58,14 @@ export function HomeClient({ children }: { children?: ReactNode }) {
 
     if (!trimmed) {
       setError(EN_MESSAGES.check.missingUrl);
+      return;
+    }
+
+    if (!isSignedIn && hasUsedFreeCheck) {
+      setShowSignupPrompt(true);
+      setError(null);
+      trackEvent("second_check_attempted", { url: trimmed });
+      trackEvent("signup_prompt_shown", { source: "checker" });
       return;
     }
 
@@ -64,7 +82,11 @@ export function HomeClient({ children }: { children?: ReactNode }) {
     setShowSignupPrompt(false);
 
     try {
-      trackAnonymousCheckStarted();
+      if (isSignedIn) {
+        trackRegisteredCheckStarted();
+      } else {
+        trackAnonymousCheckStarted();
+      }
       const response = await fetch("/api/check", {
         method: "POST",
         credentials: "same-origin",
@@ -175,7 +197,15 @@ export function HomeClient({ children }: { children?: ReactNode }) {
       }
 
       setResult(payload.result as ScamCheckResult);
-      trackAnonymousCheckCompleted(payload.result.score);
+      if (!isSignedIn) {
+        setHasUsedFreeCheck(true);
+        markAnonymousFreeCheckUsed();
+      }
+      if (isSignedIn) {
+        trackRegisteredCheckCompleted(payload.result.score);
+      } else {
+        trackAnonymousCheckCompleted(payload.result.score);
+      }
     } catch (err) {
       setResult(null);
       const message = err instanceof Error ? err.message : "Unknown error";
@@ -195,26 +225,44 @@ export function HomeClient({ children }: { children?: ReactNode }) {
     runCheck();
   }
 
+  const signInModalButton = (
+    <SignInButton mode="modal">
+      <button
+        type="button"
+        className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+      >
+        {EN_MESSAGES.auth.loginCta}
+      </button>
+    </SignInButton>
+  );
+  const signUpModalButton = (
+    <SignUpButton mode="modal">
+      <button
+        type="button"
+        className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+        onClick={() => trackEvent("signup_started", { source: "signup_prompt" })}
+      >
+        {EN_MESSAGES.freemium.createFreeAccount}
+      </button>
+    </SignUpButton>
+  );
+
   const signupPrompt =
-    showSignupPrompt ? (
+    showSignupPrompt && !isSignedIn ? (
       <div className="mx-auto mt-8 w-full max-w-[860px] rounded-[18px] border border-sky-100 bg-white p-[18px] shadow-md shadow-slate-200/40 md:p-6">
         <h3 className="text-lg font-bold tracking-tight text-slate-900 md:text-xl">{EN_MESSAGES.freemium.promptTitle}</h3>
         <p className="mt-2 text-sm leading-relaxed text-slate-600">{EN_MESSAGES.freemium.promptBody}</p>
         <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-          <Link
-            href="/sign-up"
-            className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-4 py-2 text-center text-sm font-semibold text-white hover:opacity-90"
-            onClick={() => trackEvent("signup_started", { source: "signup_prompt" })}
-          >
-            {EN_MESSAGES.freemium.createFreeAccount}
-          </Link>
-          <Link
-            href="/sign-in"
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-center text-sm font-semibold text-slate-900 hover:bg-slate-50"
-            onClick={() => trackEvent("login_started", { source: "signup_prompt" })}
-          >
-            {EN_MESSAGES.auth.loginCta}
-          </Link>
+          {signUpModalButton}
+          <SignInButton mode="modal">
+            <button
+              type="button"
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
+              onClick={() => trackEvent("login_started", { source: "signup_prompt" })}
+            >
+              {EN_MESSAGES.auth.loginCta}
+            </button>
+          </SignInButton>
         </div>
       </div>
     ) : null;
@@ -237,14 +285,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
           <div className="mx-auto mt-6 max-w-3xl rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
             {error}
             {error.includes("Log in") ? (
-              <div className="mt-3 flex justify-center">
-                <Link
-                  href="/sign-in"
-                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                >
-                  {EN_MESSAGES.auth.loginCta}
-                </Link>
-              </div>
+              <div className="mt-3 flex justify-center">{signInModalButton}</div>
             ) : null}
           </div>
         )}
@@ -273,9 +314,11 @@ export function HomeClient({ children }: { children?: ReactNode }) {
             <div className="result-in mx-auto mt-6 max-w-3xl">
               <PostScanAppPromo />
             </div>
-            <div className="result-in mx-auto mt-6 max-w-3xl rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-              {EN_MESSAGES.freemium.afterResultBanner}
-            </div>
+            {!isSignedIn && (
+              <div className="result-in mx-auto mt-6 max-w-3xl rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                {EN_MESSAGES.freemium.afterResultBanner}
+              </div>
+            )}
           </>
         )}
 
