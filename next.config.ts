@@ -5,6 +5,9 @@ const withBundleAnalyzer = require("@next/bundle-analyzer")({
 });
 
 const nextConfig: NextConfig = {
+  experimental: {
+    optimizeCss: true
+  },
   async redirects() {
     return [{ source: "/domain/:domain", destination: "/check/:domain", permanent: true }];
   },

@@ -31,16 +31,16 @@ export function Hero({ url, onUrlChange, onSubmit, loading, disabled, scanProgre
         Free website trust &amp; scam signal check
       </div>
 
-      <div className="mx-auto w-full max-w-[900px] px-3 sm:px-4">
-        <h1 className="text-center font-extrabold leading-[1.08] tracking-tight text-slate-900 [font-size:clamp(1.625rem,calc(0.8rem+4vw),3.5rem)] sm:font-black">
+      <div className="mx-auto w-full max-w-4xl px-4">
+        <h1 className="text-center text-3xl font-extrabold leading-tight tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
           <span className="block">Scam website checker:</span>
-          <span className="mt-[0.06em] block overflow-visible pb-[0.05em] leading-[1.1] font-extrabold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent sm:font-black">
+          <span className="block bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
             check if a website is legit
           </span>
         </h1>
       </div>
 
-      <p className="mx-auto mt-2.5 max-w-2xl text-pretty text-base leading-relaxed text-slate-600 sm:mt-3.5 md:text-lg">
+      <p className="mx-auto mt-3 max-w-2xl text-pretty text-base leading-relaxed text-slate-600 md:text-lg">
         Check websites for phishing risks, fake stores, suspicious patterns, and trust signals before you click or buy.
       </p>
 
@@ -83,14 +83,14 @@ export function Hero({ url, onUrlChange, onSubmit, loading, disabled, scanProgre
         records, SSL checks, and public phishing intelligence—where those sources are available for your link.
       </p>
 
-      <div className="mx-auto mt-2.5 flex max-w-3xl flex-wrap items-center justify-center gap-2 sm:mt-3.5 sm:gap-2.5">
-        <span className="rounded-full border border-slate-100 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm sm:text-sm">
+      <div className="mx-auto mt-3 flex max-w-3xl flex-wrap items-center justify-center gap-2 sm:mt-3.5">
+        <span className="rounded-full border border-slate-100 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm">
           Domain age analysis
         </span>
-        <span className="rounded-full border border-slate-100 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm sm:text-sm">
+        <span className="rounded-full border border-slate-100 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm">
           Phishing database checks
         </span>
-        <span className="rounded-full border border-slate-100 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm sm:text-sm">
+        <span className="rounded-full border border-slate-100 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm">
           SSL &amp; trust signals
         </span>
       </div>
