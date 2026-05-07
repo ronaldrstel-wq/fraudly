@@ -20,7 +20,7 @@ import {
 import { parseFlexibleWebsiteInput } from "@/lib/check-input/normalizeWebsiteInput";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { GENERIC_CHECK_ERROR } from "@/lib/messages";
-import { isCheckApiResponse, type ScamCheckResult } from "@/types/scam";
+import { isCheckApiResponse, type ScamCheckResult, type ScanProgressState } from "@/types/scam";
 
 const ResultCard = dynamic(() => import("@/components/ResultCard").then((m) => ({ default: m.ResultCard })), {
   loading: () => <div className="min-h-[280px] w-full animate-pulse rounded-xl bg-slate-100" aria-hidden />
@@ -40,6 +40,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScamCheckResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [scanProgress, setScanProgress] = useState<ScanProgressState | null>(null);
   const [hasUsedFreeCheck, setHasUsedFreeCheck] = useState(false);
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
   const inFlight = useRef(false);
@@ -93,19 +94,43 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         body: JSON.stringify({
           url: parsedInput.canonicalHref,
           detailLevel: "full",
-          language: "en"
+          language: "en",
+          streamProgress: true
         })
       });
 
-      const rawBody = await response.text();
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let text = "";
       let payload: Record<string, unknown> | null = null;
-      try {
-        payload = rawBody ? (JSON.parse(rawBody) as Record<string, unknown>) : null;
-      } catch {
-        payload = null;
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          text += decoder.decode(value, { stream: true });
+          const lines = text.split("\n");
+          text = lines.pop() ?? "";
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            let parsedLine: unknown;
+            try {
+              parsedLine = JSON.parse(line) as Record<string, unknown>;
+            } catch {
+              continue;
+            }
+            const event = parsedLine as { type?: string; progress?: ScanProgressState; payload?: Record<string, unknown> };
+            if (event.type === "progress" && event.progress) {
+              setScanProgress(event.progress);
+            } else if (event.type === "result" && event.payload) {
+              payload = event.payload;
+            } else if (event.type === "error" && event.payload) {
+              payload = event.payload;
+            }
+          }
+        }
       }
 
-      if (response.status === 401) {
+      if (!response.ok && response.status === 401) {
         setResult(null);
         const msg =
           typeof payload?.message === "string"
@@ -118,7 +143,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         return;
       }
 
-      if (response.status === 402) {
+      if (!response.ok && response.status === 402) {
         setResult(null);
         setShowSignupPrompt(true);
         setError(EN_MESSAGES.auth.loginForAnotherCheck);
@@ -133,9 +158,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         const requestId = typeof payload?.requestId === "string" ? payload.requestId : null;
 
         // If the backend returns non-JSON (e.g. Next error page), payload will be null.
-        const bodySnippet = rawBody
-          ? rawBody.replace(/\s+/g, " ").slice(0, 220)
-          : "";
+        const bodySnippet = "";
 
         if (process.env.NODE_ENV !== "production") {
           console.error("[/api/check] non-ok", {
@@ -167,7 +190,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         setError(
           process.env.NODE_ENV === "production"
             ? GENERIC_CHECK_ERROR
-            : `Unexpected API response (HTTP ${response.status}). Body: ${rawBody.slice(0, 180)}`
+            : `Unexpected API response (HTTP ${response.status}).`
         );
         trackCheckFailed("invalid_response_shape");
         return;
@@ -194,6 +217,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
     } finally {
       inFlight.current = false;
       setLoading(false);
+      setScanProgress((prev) => (prev && prev.percentage < 100 ? { ...prev, percentage: 100, currentStage: "Completed", activeStages: [] } : prev));
     }
   }
 
@@ -254,6 +278,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
           onSubmit={handleCheck}
           loading={loading}
           disabled={disabled}
+          scanProgress={scanProgress}
         />
 
         {error && (

@@ -8,6 +8,7 @@ import { normalizeDomain } from "@/lib/cache";
 import { runAllChecks } from "@/lib/checks";
 import { buildIntelScoring, buildTrustSignalsFromEvidence } from "@/lib/checks/scoring";
 import { getReviewSignals } from "@/lib/reviewSignals";
+import { analyzeProductMarketplaceSignals } from "@/lib/productMarketplaceSignals";
 import {
   buildDomainHeuristicReasons,
   calculateScamScore,
@@ -15,19 +16,75 @@ import {
 } from "@/lib/scoringEngine";
 import { getSupplyChainSignals } from "@/lib/supplyChainSignals";
 import type { ScamCheckResult } from "@/types/scam";
+import type { ScanProgressState } from "@/types/scam";
 
 /**
  * Runs the full website trust analysis (external intel, scoring, optional AI).
  * Used by `/api/check` and public `/check/[domain]` pages (cached); no auth handling here.
  */
-export async function runWebsiteAnalysis(inputUrl: string, language: "en" | "nl" = "en"): Promise<ScamCheckResult> {
+export async function runWebsiteAnalysis(
+  inputUrl: string,
+  language: "en" | "nl" = "en",
+  onProgress?: (state: ScanProgressState) => void
+): Promise<ScamCheckResult> {
+  const findings: string[] = [];
+  const emit = (state: Omit<ScanProgressState, "findings">) => {
+    onProgress?.({
+      ...state,
+      findings: [...findings]
+    });
+  };
+
+  emit({
+    percentage: 0,
+    currentStage: "Preparing scan",
+    completedStages: [],
+    activeStages: ["Initial security scan"],
+    confidence: "low",
+    assessmentLabel: "Initial assessment"
+  });
+
   const normalizedDomain = normalizeDomain(inputUrl);
   const heuristicReasons = buildDomainHeuristicReasons(normalizedDomain);
-  const reviewSignals = await getReviewSignals(normalizedDomain);
+  const externalChecks = await runAllChecks(inputUrl);
+  if (externalChecks.safeBrowsing.safeBrowsingStatus === "flagged" || externalChecks.openPhish.listed || externalChecks.urlHaus.listed) {
+    findings.push("Technical safety issue detected");
+  }
+  emit({
+    percentage: 20,
+    currentStage: "Initial security scan complete",
+    completedStages: ["Initial security scan"],
+    activeStages: ["Website analysis"],
+    confidence: "low",
+    assessmentLabel: "Initial assessment"
+  });
+
   const websiteSignals = await fetchWebsiteSignals(inputUrl);
   const websiteText = websiteSignals?.text ?? "";
   const supplyChainSignals = await getSupplyChainSignals(normalizedDomain, websiteText);
-  const externalChecks = await runAllChecks(inputUrl);
+  if (supplyChainSignals.likelyDropshipping) findings.push("Possible dropshipping indicators found");
+  emit({
+    percentage: 40,
+    currentStage: "Website analysis complete",
+    completedStages: ["Initial security scan", "Website analysis"],
+    activeStages: ["Reputation analysis"],
+    confidence: "medium",
+    assessmentLabel: "Refining reputation analysis"
+  });
+
+  const reviewSignals = await getReviewSignals(normalizedDomain);
+  if (reviewSignals.suspiciousReviewSignals.some((s) => /complaint|refund|shipping|dropship/i.test(s))) {
+    findings.push("High complaint volume detected");
+  }
+  emit({
+    percentage: 70,
+    currentStage: "Reputation analysis complete",
+    completedStages: ["Initial security scan", "Website analysis", "Reputation analysis"],
+    activeStages: ["Deep trust investigation"],
+    confidence: reviewSignals.outscraper?.available ? "high" : "medium",
+    assessmentLabel: "Refining reputation analysis"
+  });
+
   const { scoreSignals: externalScoreSignals, breakdown: intelScoreBreakdown } = buildIntelScoring(externalChecks);
   const trustSignals = buildTrustSignalsFromEvidence(externalChecks.providerEvidence);
 
@@ -39,10 +96,34 @@ export async function runWebsiteAnalysis(inputUrl: string, language: "en" | "nl"
     websiteText,
     externalSignals: externalScoreSignals
   };
+  const shouldRunMarketplaceScan = supplyChainSignals.likelyDropshipping || /shop|product|collection|add to cart/i.test(websiteText);
+  const productMarketplaceSignals = shouldRunMarketplaceScan
+    ? await analyzeProductMarketplaceSignals({
+        domain: normalizedDomain,
+        websiteText,
+        websiteSignals,
+        deepScan: true
+      })
+    : null;
+  if ((productMarketplaceSignals?.matchedImageCount ?? 0) >= 2) {
+    findings.push("Product images found on external marketplaces");
+  }
 
   const scorePre = calculateScamScore({
     ...scoreInputBase,
+    productMarketplaceSignals,
     aiRiskSignals: undefined
+  });
+  if (scorePre.riskLabels.includes("Brand location mismatch")) findings.push("Brand location mismatch detected");
+  if (scorePre.riskLabels.includes("Return policy risk")) findings.push("Return policy risk found");
+  emit({
+    percentage: 90,
+    currentStage: "Deep trust investigation complete",
+    completedStages: ["Initial security scan", "Website analysis", "Reputation analysis", "Deep trust investigation"],
+    activeStages: ["Final scoring and explanation"],
+    confidence: scorePre.confidence,
+    provisionalRiskScore: scorePre.finalScore,
+    assessmentLabel: "Final confidence calculated"
   });
   const scoringSignalsJson = formatScoreSignalsForPrompt(scorePre.signals);
   const heuristicBase = [...heuristicReasons, ...supplyChainSignals.reasons];
@@ -73,6 +154,11 @@ export async function runWebsiteAnalysis(inputUrl: string, language: "en" | "nl"
     reviewSignals.trustpilotFound || reviewSignals.googleFound
       ? "Public review data was included in this analysis."
       : "No public review data found yet.";
+  if (reviewSignals.outscraper?.available) {
+    reviewSummary = "Public review data was included in this analysis (including Outscraper Google Reviews signals).";
+  } else if (reviewSignals.outscraper && !reviewSignals.outscraper.available) {
+    reviewSummary = "Public review data was limited; Outscraper Google Reviews was unavailable in this run.";
+  }
   let aiUsed = false;
   let aiPayload: AiScamReasonsResult | null = null;
 
@@ -104,6 +190,7 @@ export async function runWebsiteAnalysis(inputUrl: string, language: "en" | "nl"
 
   const scoreResult = calculateScamScore({
     ...scoreInputBase,
+    productMarketplaceSignals,
     aiRiskSignals: aiPayload?.risk ? { level: aiPayload.risk } : undefined
   });
 
@@ -113,6 +200,22 @@ export async function runWebsiteAnalysis(inputUrl: string, language: "en" | "nl"
   ];
   const heuristicForMerge = [...heuristicBase, ...scoreLinesFinal];
   const mergedReasons = mergeReasonsWithHeuristics(aiPayload, heuristicForMerge);
+
+  emit({
+    percentage: 100,
+    currentStage: "Final scoring complete",
+    completedStages: [
+      "Initial security scan",
+      "Website analysis",
+      "Reputation analysis",
+      "Deep trust investigation",
+      "Final scoring and explanation"
+    ],
+    activeStages: [],
+    confidence: scoreResult.confidence,
+    provisionalRiskScore: scoreResult.finalScore,
+    assessmentLabel: "Final confidence calculated"
+  });
 
   return {
     score: scoreResult.finalScore,

@@ -65,6 +65,7 @@ export async function tryRecordRecentSearch(input: {
   const dup = await db.recentSearch.findFirst({
     where: {
       normalizedQuery,
+      hiddenFromUserAt: null,
       createdAt: { gte: dedupeCutoff },
       ...(input.userId
         ? { userId: input.userId, anonymousSessionKey: null }
@@ -98,13 +99,17 @@ export async function listRecentSearchesForScope(input: {
   try {
     if (input.userId) {
       rows = await db.recentSearch.findMany({
-        where: { userId: input.userId },
+        where: { userId: input.userId, hiddenFromUserAt: null },
         orderBy: { createdAt: "desc" },
         take: 200
       });
     } else if (input.anonymousSessionKey) {
       rows = await db.recentSearch.findMany({
-        where: { anonymousSessionKey: input.anonymousSessionKey, userId: null },
+        where: {
+          anonymousSessionKey: input.anonymousSessionKey,
+          userId: null,
+          hiddenFromUserAt: null
+        },
         orderBy: { createdAt: "desc" },
         take: 200
       });
@@ -118,7 +123,10 @@ export async function listRecentSearchesForScope(input: {
   return rows.map(toPublic);
 }
 
-export async function deleteRecentSearchForScope(rowId: string, scope: { userId: string | null; anonymousSessionKey: string | null }): Promise<boolean> {
+export async function deleteRecentSearchForScope(
+  rowId: string,
+  scope: { userId: string | null; anonymousSessionKey: string | null }
+): Promise<boolean> {
   try {
     const row = await db.recentSearch.findUnique({ where: { id: rowId } });
     if (!row) return false;
@@ -131,7 +139,13 @@ export async function deleteRecentSearchForScope(rowId: string, scope: { userId:
       }
     }
 
-    await db.recentSearch.delete({ where: { id: rowId } });
+    await db.recentSearch.update({
+      where: { id: rowId },
+      data: {
+        hiddenFromUserAt: new Date(),
+        hiddenFromUserBy: scope.userId ? "user_clear" : "anon_clear"
+      }
+    });
     return true;
   } catch (e) {
     console.error("[recent-searches] delete failed", e);
@@ -142,13 +156,21 @@ export async function deleteRecentSearchForScope(rowId: string, scope: { userId:
 export async function deleteAllRecentSearchesForScope(scope: { userId: string | null; anonymousSessionKey: string | null }): Promise<number> {
   try {
     if (scope.userId) {
-      const res = await db.recentSearch.deleteMany({ where: { userId: scope.userId } });
+      const res = await db.recentSearch.updateMany({
+        where: { userId: scope.userId, hiddenFromUserAt: null },
+        data: { hiddenFromUserAt: new Date(), hiddenFromUserBy: "user_clear" }
+      });
       return res.count;
     }
     if (!scope.anonymousSessionKey) return 0;
 
-    const res = await db.recentSearch.deleteMany({
-      where: { anonymousSessionKey: scope.anonymousSessionKey, userId: null }
+    const res = await db.recentSearch.updateMany({
+      where: {
+        anonymousSessionKey: scope.anonymousSessionKey,
+        userId: null,
+        hiddenFromUserAt: null
+      },
+      data: { hiddenFromUserAt: new Date(), hiddenFromUserBy: "anon_clear" }
     });
     return res.count;
   } catch (e) {

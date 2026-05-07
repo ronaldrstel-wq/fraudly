@@ -1,0 +1,21 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/scam-alerts",
+      "schedule": "0 */3 * * *"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.fraudly.app"
+        }
+      ],
+      "destination": "https://fraudly.app/:path*",
+      "permanent": true
+    }
+  ]
+}

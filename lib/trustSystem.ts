@@ -3,7 +3,7 @@ export type ScamVerdict = "safe" | "suspicious" | "scam";
 
 export type TrustPresentation = {
   level: TrustLevel;
-  label: "Trusted" | "Caution" | "High Risk";
+  label: "Trusted" | "Likely Safe" | "Mixed / Unknown" | "Suspicious" | "Dangerous";
   icon: "check" | "alert" | "risk";
   toneText: string;
   toneSoftBg: string;
@@ -20,15 +20,14 @@ export function trustScoreFromRisk(riskScore: number): number {
 }
 
 export function trustLevelFromScore(trustScore: number): TrustLevel {
-  if (trustScore >= 80) return "trusted";
-  if (trustScore >= 50) return "caution";
+  if (trustScore >= 85) return "trusted";
+  if (trustScore >= 45) return "caution";
   return "highRisk";
 }
 
 export function verdictFromTrustScore(trustScore: number): ScamVerdict {
-  const level = trustLevelFromScore(trustScore);
-  if (level === "trusted") return "safe";
-  if (level === "caution") return "suspicious";
+  if (trustScore >= 65) return "safe";
+  if (trustScore >= 25) return "suspicious";
   return "scam";
 }
 
@@ -38,11 +37,9 @@ export function verdictFromRiskScore(riskScore: number): ScamVerdict {
 
 export function trustPresentationFromScore(score: number): TrustPresentation {
   const trustScore = clampScore(score);
-  const level = trustLevelFromScore(trustScore);
-
-  if (level === "trusted") {
+  if (trustScore >= 85) {
     return {
-      level,
+      level: "trusted",
       label: "Trusted",
       icon: "check",
       toneText: "text-emerald-700",
@@ -51,11 +48,21 @@ export function trustPresentationFromScore(score: number): TrustPresentation {
       progressBar: "bg-emerald-500"
     };
   }
-
-  if (level === "caution") {
+  if (trustScore >= 65) {
     return {
-      level,
-      label: "Caution",
+      level: "caution",
+      label: "Likely Safe",
+      icon: "alert",
+      toneText: "text-sky-700",
+      toneSoftBg: "bg-sky-50",
+      toneSoftBorder: "border-sky-200",
+      progressBar: "bg-sky-500"
+    };
+  }
+  if (trustScore >= 45) {
+    return {
+      level: "caution",
+      label: "Mixed / Unknown",
       icon: "alert",
       toneText: "text-amber-700",
       toneSoftBg: "bg-amber-50",
@@ -63,10 +70,20 @@ export function trustPresentationFromScore(score: number): TrustPresentation {
       progressBar: "bg-amber-500"
     };
   }
-
+  if (trustScore >= 25) {
+    return {
+      level: "highRisk",
+      label: "Suspicious",
+      icon: "risk",
+      toneText: "text-orange-700",
+      toneSoftBg: "bg-orange-50",
+      toneSoftBorder: "border-orange-200",
+      progressBar: "bg-orange-500"
+    };
+  }
   return {
-    level,
-    label: "High Risk",
+    level: "highRisk",
+    label: "Dangerous",
     icon: "risk",
     toneText: "text-rose-700",
     toneSoftBg: "bg-rose-50",

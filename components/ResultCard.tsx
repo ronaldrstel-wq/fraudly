@@ -3,39 +3,119 @@
 import { useEffect, useState } from "react";
 import { ReviewSummary } from "@/components/ReviewSummary";
 import type { TrustSignal } from "@/lib/checks/types";
-import { trustIconGlyph, trustPresentationFromScore } from "@/lib/trustSystem";
-import type { ScamCheckResult } from "@/types/scam";
 import type { ReputationEnrichment } from "@/lib/outscraper/reputation";
+import { trustDisplayFromRiskScore } from "@/lib/trustDisplay";
+import { trustIconGlyph } from "@/lib/trustSystem";
+import type { ScamCheckResult } from "@/types/scam";
 
 interface ResultCardProps {
   result: ScamCheckResult;
 }
 
-function toneForTrustSignal(signal: Pick<TrustSignal, "type">): string {
-  switch (signal.type) {
-    case "positive":
-      return "border-emerald-200 bg-emerald-50 text-emerald-900";
-    case "info":
-      return "border-slate-200 bg-slate-50 text-slate-800";
-    case "warning":
-      return "border-amber-200 bg-amber-50 text-amber-900";
-    case "danger":
-      return "border-rose-200 bg-rose-50 text-rose-900";
+export function getScoreUiModel(scoreResult: ScamCheckResult["scoreResult"] | undefined) {
+  return {
+    confidence: scoreResult?.confidence ?? "low",
+    riskLabels: Array.isArray(scoreResult?.riskLabels) ? scoreResult.riskLabels : [],
+    riskLabelDetails: Array.isArray(scoreResult?.riskLabelDetails) ? scoreResult.riskLabelDetails : [],
+    scoreBreakdown: scoreResult?.scoreBreakdown,
+    scoreCapsApplied: Array.isArray(scoreResult?.scoreCapsApplied) ? scoreResult.scoreCapsApplied : [],
+    userExplanation: scoreResult?.userExplanation
+  };
+}
+
+export function simplifyTechnicalText(input: string): string {
+  return input
+    .replace(/Valid TLS certificate detected/gi, "The website uses encrypted HTTPS connections.")
+    .replace(/No OpenPhish feed match/gi, "We found no known phishing reports for this website.")
+    .replace(/Google Safe Browsing not configured/gi, "Some external security checks were unavailable during this scan.")
+    .replace(/No matched Google listing/gi, "We could not confirm an established public review history.")
+    .trim();
+}
+
+export function isTechnicalDetailsCollapsedByDefault(): boolean {
+  return true;
+}
+
+function isUnavailableSignal(signal: TrustSignal): boolean {
+  const text = `${signal.title} ${signal.description}`.toLowerCase();
+  return /unavailable|not configured|timed out|timeout|failed|skipped|no data|not available/.test(text);
+}
+
+export function splitSignalsForDisplay(signals: TrustSignal[]) {
+  const unavailable = signals.filter((s) => isUnavailableSignal(s));
+  const positives = signals.filter((s) => s.type === "positive" && !isUnavailableSignal(s));
+  const concerns = signals.filter((s) => (s.type === "danger" || s.type === "warning") && !isUnavailableSignal(s));
+  const neutral = signals.filter((s) => s.type === "info" && !isUnavailableSignal(s));
+  return { unavailable, positives, concerns, neutral };
+}
+
+export function buildConsumerSummary(result: ScamCheckResult): { why: string[]; recommendation: string } {
+  const why = (result.scoreResult?.userExplanation?.mainReasons ?? result.reasons)
+    .map((x) => simplifyTechnicalText(x))
+    .filter(Boolean)
+    .slice(0, 5);
+  const recommendation =
+    result.scoreResult?.userExplanation?.recommendation ??
+    "Use buyer protection and avoid large purchases until the store builds a stronger reputation.";
+  return { why, recommendation: simplifyTechnicalText(recommendation) };
+}
+
+export function shouldAutoTriggerDeepScan(result: ScamCheckResult): boolean {
+  const hasRiskLabel =
+    result.scoreResult?.riskLabels?.some((label) =>
+      [
+        "Possible dropshipping store",
+        "Possible rebrand",
+        "Possible rebrand network",
+        "High complaint volume",
+        "Return policy risk",
+        "Brand location mismatch",
+        "Missing company identity"
+      ].includes(label)
+    ) ?? false;
+  return result.score >= 35 || hasRiskLabel || result.supplyChainSignals.likelyDropshipping || result.supplyChainSignals.likelyChinaShipping;
+}
+
+function concernsFromRiskLabels(labels: string[], domainAgeDays?: number | null): string[] {
+  const out: string[] = [];
+  if (typeof domainAgeDays === "number" && domainAgeDays <= 30) out.push(`This website was registered only ${domainAgeDays} days ago.`);
+  const labelMap: Record<string, string> = {
+    "Possible dropshipping store": "Possible dropshipping patterns were detected.",
+    "High complaint volume": "A high volume of customer complaints was found.",
+    "Refund/shipping complaints": "Customers report refund or delivery problems.",
+    "Missing company identity": "Company identity details appear incomplete.",
+    "Inconsistent legal entity": "Company identity details appear inconsistent.",
+    "Brand location mismatch": "Brand location claims may not match operating signals.",
+    "Possible rebrand network": "Possible rebrand-network signals were detected.",
+    "Return policy risk": "Return/refund policy terms may be difficult for customers.",
+    "Supplier product images detected": "Product images appear similar to supplier marketplaces."
+  };
+  for (const label of labels) {
+    if (labelMap[label]) out.push(labelMap[label]);
   }
+  return [...new Set(out)].slice(0, 6);
+}
+
+function positiveSummarySignals(result: ScamCheckResult, supportiveSignals: TrustSignal[]): string[] {
+  const out: string[] = [];
+  if (result.ssl.httpsEnabled) out.push("HTTPS connection is active.");
+  if ((result.reviewSignals.googleReviewCount ?? 0) >= 100 || (result.reviewSignals.trustpilotReviewCount ?? 0) >= 100) {
+    out.push("Established review history is available.");
+  }
+  if ((result.domainIntelligence.ageDays ?? 0) > 365) out.push("The domain has a longer operating history.");
+  if (result.scoreResult?.companyIdentitySignals?.positiveSignals?.length) out.push("Some company identity fields are consistent.");
+  out.push(...supportiveSignals.map((s) => simplifyTechnicalText(s.description)).slice(0, 2));
+  return [...new Set(out)].slice(0, 5);
 }
 
 function SignalList({ signals, empty }: { signals: TrustSignal[]; empty: string }) {
   if (signals.length === 0) return <p className="mt-2 text-sm text-slate-600">{empty}</p>;
   return (
-    <ul className="mt-3 space-y-2">
+    <ul className="mt-2 space-y-2">
       {signals.map((signal, index) => (
-        <li key={`${index}-${signal.title}`} className={`rounded-lg border px-3 py-2 text-sm ${toneForTrustSignal(signal)}`}>
-          <p className="font-semibold">{signal.title}</p>
-          <p className="mt-0.5">{signal.description}</p>
-          <div className="mt-1 flex flex-wrap gap-x-2 text-xs opacity-80">
-            {signal.source ? <span>Source: {signal.source}</span> : null}
-            {signal.confidence ? <span>Confidence: {signal.confidence}</span> : null}
-          </div>
+        <li key={`${index}-${signal.title}`} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">
+          <p className="font-semibold">{simplifyTechnicalText(signal.title)}</p>
+          <p className="mt-0.5">{simplifyTechnicalText(signal.description)}</p>
         </li>
       ))}
     </ul>
@@ -43,70 +123,33 @@ function SignalList({ signals, empty }: { signals: TrustSignal[]; empty: string 
 }
 
 export function ResultCard({ result }: ResultCardProps) {
-  const trustScore = Math.round(100 - result.score);
-  const style = trustPresentationFromScore(trustScore);
-  const { reviewSignals } = result;
-  const hasPublicReviewData = reviewSignals.trustpilotFound || reviewSignals.googleFound;
-
-  const keyRisks = result.trustSignals.filter((s) => s.type === "danger" || s.type === "warning");
-  const supportiveSignals = result.trustSignals.filter((s) => s.type === "positive" || s.type === "info");
+  const trust = trustDisplayFromRiskScore(result.score);
+  const trustScore = trust.trustScore;
+  const scoreUi = getScoreUiModel(result.scoreResult);
+  const split = splitSignalsForDisplay(result.trustSignals);
+  const consumer = buildConsumerSummary(result);
+  const keyConcerns = concernsFromRiskLabels(scoreUi.riskLabels, result.domainIntelligence.ageDays ?? null);
+  const positives = positiveSummarySignals(result, split.positives);
+  const autoDeepScan = shouldAutoTriggerDeepScan(result);
   const [reputation, setReputation] = useState<ReputationEnrichment | null>(null);
   const [repLoading, setRepLoading] = useState(false);
-  const [repError, setRepError] = useState<string | null>(null);
-
-  async function loadReputationSignals(deepScan: boolean) {
-    setRepLoading(true);
-    setRepError(null);
-    try {
-      const response = await fetch("/api/enrichment/reputation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify({
-          domain: result.domain,
-          baseRiskScore: result.score,
-          deepScan
-        })
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const payload = (await response.json()) as { enrichment?: ReputationEnrichment };
-      if (process.env.NODE_ENV !== "production") {
-        console.info("[ResultCard] enrichment payload", payload);
-      }
-      setReputation(payload.enrichment ?? null);
-    } catch (e) {
-      setRepError(e instanceof Error ? e.message : "Unknown error");
-    } finally {
-      setRepLoading(false);
-    }
-  }
 
   useEffect(() => {
     let active = true;
     async function load() {
       setRepLoading(true);
-      setRepError(null);
       try {
         const response = await fetch("/api/enrichment/reputation", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "same-origin",
-          body: JSON.stringify({
-            domain: result.domain,
-            baseRiskScore: result.score,
-            deepScan: false
-          })
+          body: JSON.stringify({ domain: result.domain, baseRiskScore: result.score, deepScan: autoDeepScan })
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const payload = (await response.json()) as { enrichment?: ReputationEnrichment };
-        if (process.env.NODE_ENV !== "production") {
-          console.info("[ResultCard] enrichment payload", payload);
-        }
-        if (!active) return;
-        setReputation(payload.enrichment ?? null);
-      } catch (e) {
-        if (!active) return;
-        setRepError(e instanceof Error ? e.message : "Unknown error");
+        if (active) setReputation(payload.enrichment ?? null);
+      } catch {
+        if (active) setReputation(null);
       } finally {
         if (active) setRepLoading(false);
       }
@@ -115,281 +158,108 @@ export function ResultCard({ result }: ResultCardProps) {
     return () => {
       active = false;
     };
-  }, [result.domain, result.score]);
+  }, [result.domain, result.score, autoDeepScan]);
 
   return (
-    <div className="w-full rounded-xl bg-white p-6 shadow-lg shadow-slate-200/60 transition-all duration-300">
-      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
-        <div className="flex min-w-0 items-center gap-4" aria-label={`Trust score ${trustScore} percent, ${style.label}`}>
-          <div
-            className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-8 border-white text-2xl font-bold shadow-sm ${style.toneSoftBg} ${style.toneText}`}
-          >
-            {trustScore}%
+    <article className="w-full rounded-xl bg-white p-4 shadow-lg shadow-slate-200/60 sm:p-6">
+      <section className={`rounded-xl border px-4 py-4 ${trust.toneSoftBorder} ${trust.toneSoftBg}`}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className={`flex h-20 w-20 items-center justify-center rounded-full border-4 border-white text-xl font-bold ${trust.toneText}`}>
+              {trustScore}%
+            </div>
+            <div>
+              <p className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-semibold ${trust.toneSoftBorder} ${trust.toneSoftBg} ${trust.toneText}`}>
+                <span aria-hidden>{trustIconGlyph(trust.icon)}</span>
+                {trust.label}
+              </p>
+              <p className="mt-1 text-sm text-slate-700">Trust score: <span className="font-semibold">{trustScore}%</span></p>
+              <p className="text-sm text-slate-700">Confidence: <span className="font-semibold capitalize">{scoreUi.confidence}</span></p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p
-              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-semibold ${style.toneSoftBorder} ${style.toneSoftBg} ${style.toneText}`}
-            >
-              <span aria-hidden>{trustIconGlyph(style.icon)}</span>
-              {style.label}
-            </p>
-            <p className="mt-1 text-sm text-slate-500">Trust score (automated)</p>
-          </div>
-        </div>
-
-        <div className="flex w-full min-w-0 flex-col gap-3 sm:w-auto sm:max-w-md sm:items-end sm:text-right">
-          <div className="text-sm text-slate-600 sm:text-right">
+          <div className="text-sm text-slate-700 sm:text-right">
             <p className="font-medium text-slate-900">Analyzed domain</p>
             <p className="mt-1 break-all">{result.domain}</p>
           </div>
         </div>
-      </div>
-      <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-        <div className={`h-full ${style.progressBar}`} style={{ width: `${trustScore}%` }} />
-      </div>
-
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Key risk indicators</p>
-        <p className="mt-1 text-xs text-slate-500">Warnings and higher-severity context from this run.</p>
-        <SignalList
-          signals={keyRisks}
-          empty="No high-priority risk rows were raised by the configured intelligence checks."
-        />
-      </div>
-
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Trust signals</p>
-        <p className="mt-1 text-xs text-slate-500">Supportive or informational context (including “no hit” messages).</p>
-        <SignalList signals={supportiveSignals} empty="No supportive or informational trust rows were returned." />
-      </div>
-
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Domain information</p>
-        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-700">
-          <li>
-            Registration date: <span className="font-medium">{result.domainIntelligence.registrationDate ?? "unknown"}</span>
-          </li>
-          <li>
-            Domain age (days): <span className="font-medium">{result.domainIntelligence.ageDays ?? "unknown"}</span>
-          </li>
-          <li>
-            Registrar: <span className="font-medium">{result.domainIntelligence.registrar ?? "unknown"}</span>
-          </li>
-          <li>
-            Country: <span className="font-medium">{result.domainIntelligence.country ?? "unknown"}</span>
-          </li>
-          <li>
-            Expiration date: <span className="font-medium">{result.domainIntelligence.expirationDate ?? "unknown"}</span>
-          </li>
-          <li>
-            Privacy / redacted ownership hints:{" "}
-            <span className="font-medium">{result.domainIntelligence.hasPrivacyProtection ? "yes" : "no / unknown"}</span>
-          </li>
-        </ul>
-        <p className="mt-2 text-xs text-slate-500">Source: {result.domainIntelligence.source}</p>
-      </div>
-
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Security checks</p>
-        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-700">
-          <li>
-            HTTPS/TLS reachable:{" "}
-            <span className="font-medium">{result.ssl.httpsEnabled ? "yes" : "no"}</span>
-          </li>
-          <li>
-            Certificate trusted in probe:{" "}
-            <span className="font-medium">{result.ssl.validCertificate ? "yes" : "no"}</span>
-          </li>
-          <li>
-            Possibly self-signed / untrusted:{" "}
-            <span className="font-medium">{result.ssl.selfSigned ? "possible" : "no / unknown"}</span>
-          </li>
-          <li>
-            Issuer: <span className="font-medium">{result.ssl.certificateIssuer ?? "unknown"}</span>
-          </li>
-          <li>
-            Expiry: <span className="font-medium">{result.ssl.certificateExpiry ?? "unknown"}</span>
-          </li>
-        </ul>
-        <p className="mt-2 text-xs text-slate-500">Source: {result.ssl.source}</p>
-      </div>
-
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Intelligence sources</p>
-        <p className="mt-1 text-xs text-slate-500">
-          Normalized provider output. “Matched” means the provider reported a hit or pattern in this run.
+        <p className="mt-3 text-sm text-slate-700">
+          {trust.label === "Trusted"
+            ? "Fraudly found mostly supportive signs in this snapshot."
+            : `Fraudly flagged this website because ${(keyConcerns.slice(0, 3).join(" ").toLowerCase() || "multiple caution signals were detected")}.`}
         </p>
-        {result.providerEvidence.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-600">No modular provider rows were recorded.</p>
-        ) : (
-          <ul className="mt-3 max-h-80 space-y-2 overflow-y-auto text-sm">
-            {result.providerEvidence.map((row, index) => (
-              <li key={`${row.source}-${index}-${row.title}`} className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2">
-                <div className="flex flex-wrap items-baseline gap-2">
-                  <span className="font-semibold text-slate-900">{row.title}</span>
-                  <span className="text-xs uppercase tracking-wide text-slate-500">{row.category}</span>
-                  {row.matched ? (
-                    <span className="rounded bg-amber-100 px-1.5 text-xs font-medium text-amber-900">matched</span>
-                  ) : (
-                    <span className="rounded bg-slate-200 px-1.5 text-xs font-medium text-slate-700">no match</span>
-                  )}
-                </div>
-                <p className="mt-1 text-xs text-slate-700">{row.description}</p>
-                <p className="mt-1 text-[11px] text-slate-500">
-                  Source: {row.source} · severity: {row.severity} · confidence: {row.confidence}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      </section>
 
-      <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Review signals</p>
-        {hasPublicReviewData ? (
-          <div className="mt-2 space-y-2 text-sm text-slate-700">
-            {reviewSignals.googleFound && (
-              <div>
-                <p className="font-medium text-slate-900">Google</p>
-                <p>
-                  Rating:{" "}
-                  <span className="font-medium">{reviewSignals.googleRating?.toFixed(1) ?? "n/a"}</span>
-                </p>
-                <p>
-                  Review count: <span className="font-medium">{reviewSignals.googleReviewCount ?? "n/a"}</span>
-                </p>
-              </div>
-            )}
-            {reviewSignals.trustpilotFound && (
-              <div>
-                <p className="font-medium text-slate-900">Trustpilot</p>
-                <p>
-                  Rating:{" "}
-                  <span className="font-medium">{reviewSignals.trustpilotRating?.toFixed(1) ?? "n/a"}</span>
-                </p>
-                <p>
-                  Review count: <span className="font-medium">{reviewSignals.trustpilotReviewCount ?? "n/a"}</span>
-                </p>
-              </div>
-            )}
-          </div>
-        ) : (
-          <p className="mt-2 text-sm text-slate-600">No public review data found yet.</p>
-        )}
-
+      <section className="mt-5 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">Why this score?</p>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
-          {reviewSignals.suspiciousReviewSignals.map((signal, index) => (
-            <li key={`${index}-${signal.slice(0, 40)}`}>{signal}</li>
+          {(consumer.why.length > 0 ? consumer.why : keyConcerns).slice(0, 5).map((item, idx) => (
+            <li key={`${idx}-${item.slice(0, 32)}`}>{item}</li>
           ))}
         </ul>
-        <p className="mt-2 text-xs text-slate-500">{result.reviewSummary}</p>
-        {reviewSignals.sources.length > 0 && (
-          <p className="mt-2 text-xs text-slate-500">Sources: {reviewSignals.sources.join(", ")}</p>
-        )}
-        {reviewSignals.warnings.length > 0 && (
-          <ul className="mt-1 list-disc space-y-1 pl-5 text-xs text-amber-800">
-            {reviewSignals.warnings.map((w, i) => (
-              <li key={`${i}-${w.slice(0, 40)}`}>{w}</li>
+      </section>
+
+      <section className="mt-5 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">Recommendation</p>
+        <p className="mt-2 text-sm text-slate-700">{consumer.recommendation}</p>
+      </section>
+
+      <section className="mt-5 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">Key concerns</p>
+        {keyConcerns.length > 0 ? (
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+            {keyConcerns.map((item) => (
+              <li key={item}>{item}</li>
             ))}
           </ul>
-        )}
-      </div>
-
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Review Summary</p>
-        {repLoading ? (
-          <p className="mt-2 text-sm text-slate-600">Checking external review signals...</p>
-        ) : repError ? (
-          <p className="mt-2 text-sm text-slate-600">
-            No external reputation profile found. This does not automatically mean unsafe.
-          </p>
-        ) : reputation ? (
-          <div className="mt-2 space-y-2 text-sm text-slate-700">
-            <ReviewSummary enrichment={reputation} />
-            <p>
-              Last updated: <span className="font-medium">{new Date(reputation.lastUpdated).toLocaleString("en")}</span>
-            </p>
-            <p>
-              Estimated impact:{" "}
-              <span className="font-medium">
-                {reputation.impactOnRisk > 0 ? "+" : ""}
-                {reputation.impactOnRisk} risk points
-              </span>
-            </p>
-            {reputation.sentimentSummary ? <p className="text-xs text-slate-600">{reputation.sentimentSummary}</p> : null}
-            {reputation.message ? <p className="text-xs text-slate-500">{reputation.message}</p> : null}
-            <button
-              type="button"
-              onClick={() => void loadReputationSignals(true)}
-              className="mt-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              Run deep scan
-            </button>
-          </div>
         ) : (
-          <p className="mt-2 text-sm text-slate-600">
-            No external reputation profile found. This does not automatically mean unsafe.
-          </p>
+          <SignalList signals={split.concerns} empty="No major customer-facing concerns were detected." />
         )}
-      </div>
+      </section>
 
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Supply chain</p>
-        <p className="mt-2 text-xs text-slate-600">
-          Dropshipping: {result.supplyChainSignals.likelyDropshipping ? "likely" : "unlikely"} · China-linked
-          fulfillment: {result.supplyChainSignals.likelyChinaShipping ? "likely" : "unlikely"} · Local
-          stock/production: {result.supplyChainSignals.likelyLocalProduction ? "likely" : "unlikely"} · Confidence:{" "}
-          {result.supplyChainSignals.confidence} · Score nudge: {result.supplyChainSignals.scoreAdjustment > 0 ? "+" : ""}
-          {result.supplyChainSignals.scoreAdjustment}
-        </p>
+      <section className="mt-5 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">Positive signs</p>
+        {positives.length > 0 ? (
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+            {positives.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-2 text-sm text-slate-600">No strong positive trust signals were confirmed.</p>
+        )}
+      </section>
+
+      <section className="mt-5 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">Checks we could not complete</p>
+        <SignalList signals={split.unavailable} empty="All configured checks completed successfully." />
+      </section>
+
+      <details className="mt-5 rounded-xl border border-dashed border-slate-200 bg-white px-4 py-3">
+        <summary className="cursor-pointer text-sm font-semibold text-slate-900">Show technical details</summary>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-700">
-          {result.supplyChainSignals.reasons.map((r, i) => (
-            <li key={`${i}-${r.slice(0, 48)}`}>{r}</li>
-          ))}
+          <li>Domain age (days): {result.domainIntelligence.ageDays ?? "unknown"}</li>
+          <li>Registration date: {result.domainIntelligence.registrationDate ?? "unknown"}</li>
+          <li>Registrar: {result.domainIntelligence.registrar ?? "unknown"}</li>
+          <li>TLS issuer: {result.ssl.certificateIssuer ?? "unknown"}</li>
+          <li>TLS expiry: {result.ssl.certificateExpiry ?? "unknown"}</li>
+          <li>HTTPS enabled: {result.ssl.httpsEnabled ? "yes" : "no"}</li>
+          <li>AI used: {result.aiUsed ? "yes" : "no"}</li>
         </ul>
-      </div>
-
-      <details className="mt-6 rounded-xl border border-dashed border-slate-200 bg-white px-4 py-3 text-sm">
-        <summary className="cursor-pointer font-semibold text-slate-900">Score evidence (debug)</summary>
-        <p className="mt-2 text-xs text-slate-500">
-          Signed contributions toward the server risk score (positive numbers increase risk, negative numbers reduce it).
-        </p>
-        {result.intelScoreBreakdown.length === 0 ? (
-          <p className="mt-2 text-xs text-slate-600">No weighted intel contributions in this run.</p>
-        ) : (
-          <ul className="mt-2 space-y-1 text-xs text-slate-700">
-            {result.intelScoreBreakdown.map((row) => (
-              <li key={row.id}>
-                <span className="font-medium">{row.label}</span> ({row.impact >= 0 ? "+" : ""}
-                {row.impact}) — {row.rationale}
-                {row.source ? <span className="text-slate-500"> · {row.source}</span> : null}
-              </li>
-            ))}
-          </ul>
-        )}
       </details>
 
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">AI summary & key factors</p>
-        <p className="mt-1 text-xs text-slate-500">
-          Blended automated notes (heuristics, intel-weighted scoring context, and optional AI). This is not legal or
-          financial advice.
-        </p>
-        <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-700">
-          {result.reasons.map((reason, index) => (
-            <li key={`${index}-${reason.slice(0, 48)}`}>{reason}</li>
-          ))}
-        </ul>
-        <p className="mt-3 text-xs text-slate-500">AI model used in this run: {result.aiUsed ? "yes" : "no"}</p>
-      </div>
+      <details className="mt-3 rounded-xl border border-dashed border-slate-200 bg-white px-4 py-3">
+        <summary className="cursor-pointer text-sm font-semibold text-slate-900">Show source data</summary>
+        <p className="mt-2 text-xs text-slate-600">Provider rows: {result.providerEvidence.length}</p>
+        <SignalList signals={split.neutral} empty="No neutral technical source notes." />
+      </details>
 
-      <div className={`mt-6 rounded-xl border px-4 py-3 text-sm ${style.toneSoftBorder} ${style.toneSoftBg} ${style.toneText}`}>
-        {style.level === "trusted"
-          ? "Signals are mostly supportive for this snapshot, but still use normal checkout caution."
-          : style.level === "caution"
-            ? "Some warnings were found. Verify payment safety and seller legitimacy before buying."
-            : "Multiple risk indicators were detected. Avoid sharing personal or payment details until independently verified."}
-      </div>
-    </div>
+      <details className="mt-3 rounded-xl border border-dashed border-slate-200 bg-white px-4 py-3">
+        <summary className="cursor-pointer text-sm font-semibold text-slate-900">Show scoring/debug details</summary>
+        <p className="mt-2 text-xs text-slate-600">Risk labels: {scoreUi.riskLabels.length > 0 ? scoreUi.riskLabels.join(" · ") : "none"}</p>
+        <p className="mt-1 text-xs text-slate-600">Score evidence rows: {result.intelScoreBreakdown.length}</p>
+        <p className="mt-1 text-xs text-slate-600">Reputation enrichment: {repLoading ? "loading" : reputation ? "available" : "unavailable"}</p>
+        {reputation ? <ReviewSummary enrichment={reputation} /> : null}
+      </details>
+    </article>
   );
 }

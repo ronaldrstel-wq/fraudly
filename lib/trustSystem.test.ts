@@ -7,22 +7,43 @@ import {
 import { trustDisplayFromRiskScore, trustDisplayFromTrustScore } from "@/lib/trustDisplay";
 
 describe("global trust thresholds", () => {
-  it("maps 80-100 to Trusted", () => {
-    expect(trustLevelFromScore(80)).toBe("trusted");
+  it("maps 85-100 to Trusted", () => {
+    expect(trustLevelFromScore(85)).toBe("trusted");
     expect(trustLevelFromScore(95)).toBe("trusted");
     expect(trustPresentationFromScore(100).label).toBe("Trusted");
   });
 
-  it("maps 50-79 to Caution", () => {
-    expect(trustLevelFromScore(50)).toBe("caution");
-    expect(trustLevelFromScore(79)).toBe("caution");
-    expect(trustPresentationFromScore(60).label).toBe("Caution");
+  it("maps 45-84 to Caution", () => {
+    expect(trustLevelFromScore(45)).toBe("caution");
+    expect(trustLevelFromScore(84)).toBe("caution");
+    expect(trustPresentationFromScore(70).label).toBe("Likely Safe");
+    expect(trustPresentationFromScore(55).label).toBe("Mixed / Unknown");
   });
 
-  it("maps 0-49 to High Risk", () => {
+  it("maps 0-44 to High Risk", () => {
     expect(trustLevelFromScore(0)).toBe("highRisk");
-    expect(trustLevelFromScore(49)).toBe("highRisk");
-    expect(trustPresentationFromScore(20).label).toBe("High Risk");
+    expect(trustLevelFromScore(44)).toBe("highRisk");
+    expect(trustPresentationFromScore(35).label).toBe("Suspicious");
+    expect(trustPresentationFromScore(10).label).toBe("Dangerous");
+  });
+
+  it("never uses green tones for risky bands", () => {
+    const risky = trustPresentationFromScore(45);
+    const highRisk = trustPresentationFromScore(25);
+    const dangerous = trustPresentationFromScore(10);
+    expect(risky.toneText.includes("emerald")).toBe(false);
+    expect(highRisk.toneText.includes("emerald")).toBe(false);
+    expect(dangerous.toneText.includes("emerald")).toBe(false);
+  });
+});
+
+describe("display band consistency", () => {
+  it("maps representative scores to expected labels", () => {
+    expect(trustPresentationFromScore(88).label).toBe("Trusted");
+    expect(trustPresentationFromScore(68).label).toBe("Likely Safe");
+    expect(trustPresentationFromScore(50).label).toBe("Mixed / Unknown");
+    expect(trustPresentationFromScore(40).label).toBe("Suspicious");
+    expect(trustPresentationFromScore(20).label).toBe("Dangerous");
   });
 });
 

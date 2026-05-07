@@ -19,6 +19,12 @@ enum SubscriptionStatus {
   past_due
 }
 
+enum ScamAlertStatus {
+  draft
+  published
+  archived
+}
+
 model User {
   id                   String             @id @default(cuid())
   authProvider         String             @default("legacy")
@@ -50,10 +56,14 @@ model RecentSearch {
   trustScoreSnap      Int?
   verdictSnap         String?  @db.VarChar(32)
   resultPath          String   @db.VarChar(2048)
+  hiddenFromUserAt    DateTime?
+  hiddenFromUserBy    String?  @db.VarChar(32)
+  publicVisible       Boolean  @default(true)
   createdAt           DateTime @default(now())
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([anonymousSessionKey, createdAt(sort: Desc)])
+  @@index([publicVisible, createdAt(sort: Desc)])
 }
 
 model StripeEvent {
@@ -91,4 +101,48 @@ model ReputationEnrichmentCache {
   updatedAt          DateTime @updatedAt
 
   @@index([expiresAt])
+}
+
+model ScamSignal {
+  id               String   @id @default(cuid())
+  source           String   @db.VarChar(64)
+  sourceRef        String?  @db.VarChar(512)
+  url              String?  @db.VarChar(4096)
+  domain           String?  @db.VarChar(2048)
+  normalizedDomain String?  @db.VarChar(2048)
+  scamType         String?  @db.VarChar(128)
+  affectedBrand    String?  @db.VarChar(128)
+  riskLevel        String   @db.VarChar(16)
+  confidence       Float
+  firstSeenAt      DateTime?
+  lastSeenAt       DateTime?
+  evidenceJson     Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([source, lastSeenAt(sort: Desc)])
+  @@index([normalizedDomain, lastSeenAt(sort: Desc)])
+  @@index([scamType, lastSeenAt(sort: Desc)])
+  @@unique([source, sourceRef])
+}
+
+model ScamAlert {
+  id                 String          @id @default(cuid())
+  slug               String          @unique @db.VarChar(256)
+  title              String          @db.VarChar(256)
+  scamType           String          @db.VarChar(128)
+  affectedBrand      String?         @db.VarChar(128)
+  riskLevel          String          @db.VarChar(16)
+  summary            String          @db.Text
+  safetyTips         String[]        @db.Text
+  evidenceCount      Int             @default(0)
+  exampleDomainsJson Json?
+  sourceSummaryJson  Json?
+  status             ScamAlertStatus @default(draft)
+  generatedAt        DateTime        @default(now())
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@index([status, generatedAt(sort: Desc)])
+  @@index([scamType, generatedAt(sort: Desc)])
 }
