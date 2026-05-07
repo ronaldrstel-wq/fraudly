@@ -1,3 +1,4 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { CookieConsentProvider } from "@/components/CookieConsentProvider";
@@ -80,9 +81,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className={`${inter.className} min-h-screen antialiased`}>
-        <PwaServiceWorkerRegister />
-        <JsonLd />
-        <CookieConsentProvider>{children}</CookieConsentProvider>
+        <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up">
+          <PwaServiceWorkerRegister />
+          <JsonLd />
+          <CookieConsentProvider>{children}</CookieConsentProvider>
+        </ClerkProvider>
       </body>
     </html>
   );
