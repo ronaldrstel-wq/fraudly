@@ -186,7 +186,7 @@ export function buildIntelScoring(checks: ExternalChecksResult): {
       source: checks.ssl.source,
       label: "No reliable HTTPS endpoint",
       category: "website_quality",
-      impact: 22,
+      impact: 40,
       confidence: "high",
       reason: "Port 443 probe did not complete a TLS session."
     });
@@ -196,7 +196,7 @@ export function buildIntelScoring(checks: ExternalChecksResult): {
       source: checks.ssl.source,
       label: "TLS certificate validation issue",
       category: "website_quality",
-      impact: 12,
+      impact: 26,
       confidence: "medium",
       reason: checks.ssl.selfSigned ? "Likely untrusted / self-signed material." : "Certificate failed validation against trust anchors."
     });

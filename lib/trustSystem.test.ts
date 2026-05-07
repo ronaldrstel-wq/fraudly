@@ -7,23 +7,23 @@ import {
 import { trustDisplayFromRiskScore, trustDisplayFromTrustScore } from "@/lib/trustDisplay";
 
 describe("global trust thresholds", () => {
-  it("maps 80-100 to Trusted", () => {
-    expect(trustLevelFromScore(80)).toBe("trusted");
+  it("maps 85-100 to Trusted", () => {
+    expect(trustLevelFromScore(85)).toBe("trusted");
     expect(trustLevelFromScore(95)).toBe("trusted");
     expect(trustPresentationFromScore(100).label).toBe("Trusted");
   });
 
-  it("maps 50-79 to Caution", () => {
-    expect(trustLevelFromScore(50)).toBe("caution");
-    expect(trustLevelFromScore(79)).toBe("caution");
-    expect(trustPresentationFromScore(60).label).toBe("Moderate Trust");
-    expect(trustPresentationFromScore(45).label).toBe("Risky");
+  it("maps 45-84 to Caution", () => {
+    expect(trustLevelFromScore(45)).toBe("caution");
+    expect(trustLevelFromScore(84)).toBe("caution");
+    expect(trustPresentationFromScore(70).label).toBe("Likely Safe");
+    expect(trustPresentationFromScore(55).label).toBe("Mixed / Unknown");
   });
 
-  it("maps 0-49 to High Risk", () => {
+  it("maps 0-44 to High Risk", () => {
     expect(trustLevelFromScore(0)).toBe("highRisk");
-    expect(trustLevelFromScore(49)).toBe("highRisk");
-    expect(trustPresentationFromScore(20).label).toBe("High Risk");
+    expect(trustLevelFromScore(44)).toBe("highRisk");
+    expect(trustPresentationFromScore(35).label).toBe("Suspicious");
     expect(trustPresentationFromScore(10).label).toBe("Dangerous");
   });
 

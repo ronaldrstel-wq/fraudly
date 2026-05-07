@@ -2,6 +2,13 @@ import type { ReviewSignals } from "@/lib/reviewSignals";
 import type { SupplyChainSignals } from "@/lib/supplyChainSignals";
 import type { ProductMarketplaceSignals } from "@/lib/productMarketplaceSignals";
 import { verdictFromRiskScore } from "@/lib/trustSystem";
+import {
+  BRAND_RULES,
+  DOMAIN_RISKY_KEYWORDS,
+  PHISHING_LURE_WORDS,
+  SUSPICIOUS_LEXICAL_PATTERNS,
+  TRUST_CEILINGS
+} from "@/lib/scoring/heuristics";
 
 export type ScoreConfidence = "low" | "medium" | "high";
 
@@ -262,18 +269,47 @@ function computeReviewTierFlags(review?: ReviewSignals): ReviewTierFlags {
 
 function pushDomainSignals(domain: string, out: ScoreSignal[]): void {
   const d = domain.toLowerCase();
-  const risky = ["cheap", "free", "deal"];
-  const matched = risky.filter((w) => d.includes(w));
+  const matched = DOMAIN_RISKY_KEYWORDS.filter((w) => d.includes(w));
   if (matched.length > 0) {
     out.push({
       id: "domain-sales-keywords",
-      label: "Suspicious sales keywords in domain",
+      label: "Suspicious lexical keywords in domain",
       category: "domain",
-      impact: 15,
-      confidence: "medium",
-      reason: `Domain contains bait-style keywords: ${matched.join(", ")}.`
+      impact: matched.length >= 2 ? 22 : 15,
+      confidence: matched.length >= 2 ? "high" : "medium",
+      reason: `Domain contains lexical phishing/bait keywords: ${matched.join(", ")}.`
     });
   }
+  if (SUSPICIOUS_LEXICAL_PATTERNS.some((re) => re.test(d))) {
+    out.push({
+      id: "domain-phishing-lexical-pattern",
+      label: "Phishing-style lexical pattern",
+      category: "domain",
+      impact: 36,
+      confidence: "high",
+      reason:
+        "Domain structure and wording match common phishing/credential-harvest naming patterns."
+    });
+  }
+
+  for (const rule of BRAND_RULES) {
+    if (!d.includes(rule.brand)) continue;
+    const isOfficial = rule.officialDomains.some((host) => d === host || d.endsWith(`.${host}`));
+    if (isOfficial) continue;
+    const hasLure = PHISHING_LURE_WORDS.some((w) => d.includes(w));
+    out.push({
+      id: hasLure ? "domain-brand-impersonation-lure" : "domain-brand-impersonation",
+      label: hasLure ? "Brand impersonation with auth/security lure terms" : "Possible brand impersonation",
+      category: "domain",
+      impact: hasLure ? 42 : 28,
+      confidence: "high",
+      reason: hasLure
+        ? `Domain includes brand term "${rule.brand}" plus deceptive auth/security wording on a non-official domain.`
+        : `Domain includes brand term "${rule.brand}" on a non-official domain.`
+    });
+    break;
+  }
+
   if (d.length > 20) {
     out.push({
       id: "domain-long",
@@ -1284,11 +1320,10 @@ function clamp(v: number, min: number, max: number): number {
 }
 
 function labelForTrustScore(score: number): string {
-  if (score >= 85) return "Highly Trusted";
-  if (score >= 70) return "Established";
-  if (score >= 55) return "Mixed";
-  if (score >= 40) return "Risky";
-  if (score >= 20) return "High Risk";
+  if (score >= 85) return "Trusted";
+  if (score >= 65) return "Likely Safe";
+  if (score >= 45) return "Mixed / Unknown";
+  if (score >= 25) return "Suspicious";
   return "Dangerous";
 }
 
@@ -1532,6 +1567,15 @@ export function calculateScamScore(input: {
   if (hasSignal("intel-safe-browsing-flagged") || hasSignal("intel-openphish-listed") || hasSignal("intel-urlhaus-listed")) {
     applyCap(20, "Malware/phishing intelligence hit capped the trust score.");
   }
+  if (hasSignal("intel-no-tls") || hasSignal("intel-tls-issue")) {
+    applyCap(TRUST_CEILINGS.failedTls, "Failed or invalid TLS capped trust to avoid false-safe outcomes.");
+  }
+  if (hasSignal("domain-phishing-lexical-pattern")) {
+    applyCap(TRUST_CEILINGS.phishingLexical, "Phishing lexical pattern capped trust score.");
+  }
+  if (hasSignal("domain-brand-impersonation-lure") || hasSignal("domain-brand-impersonation")) {
+    applyCap(TRUST_CEILINGS.brandImpersonation, "Brand impersonation pattern capped trust score.");
+  }
   if (
     hasSignal("product-marketplace-overlap") &&
     (hasSignal("supply-dropshipping") || hasSignal("reviews-complaint-dropship") || hasSignal("company-identity-risk"))
@@ -1607,6 +1651,9 @@ export function calculateScamScore(input: {
   const highConfCount = signals.filter((s) => (allWeights.get(s.id) ?? 0) !== 0 && s.confidence === "high").length;
   const nonZeroCount = signals.filter((s) => (allWeights.get(s.id) ?? 0) !== 0).length;
   const confidence: ScoreConfidence = highConfCount >= 3 ? "high" : nonZeroCount >= 4 ? "medium" : "low";
+  if (confidence === "low") {
+    applyCap(TRUST_CEILINGS.lowConfidence, "Low-confidence assessments cannot be marked as trusted.");
+  }
   const signalSources = Array.from(
     new Set(
       signals
@@ -1671,10 +1718,14 @@ export function calculateScamScore(input: {
     positiveNotes,
     cautionNotes,
     recommendation:
-      finalTrustScore >= 75
+      finalTrustScore >= 85
         ? "Proceed with normal caution, and verify return/refund terms before purchase."
-        : finalTrustScore >= 50
+        : finalTrustScore >= 65
           ? "Use extra caution: verify seller identity, refund policy, and independent reviews before paying."
+          : finalTrustScore >= 45
+            ? "Signals are mixed or incomplete. Independently verify identity, ownership, and payment channels before proceeding."
+            : finalTrustScore >= 25
+              ? "This domain contains patterns commonly associated with phishing or impersonation scams. Avoid entering passwords or payment information unless independently verified."
           : "Avoid sharing payment/personal details until identity and complaint signals are independently verified."
   };
   const unavailableChecks = Array.from(
