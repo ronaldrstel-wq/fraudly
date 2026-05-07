@@ -108,6 +108,28 @@ export async function POST(request: Request) {
               const fullResult = await runWebsiteAnalysis(canonicalHref, language, (progress: ScanProgressState) => {
                 push({ type: "progress", progress });
               });
+              if (billingUser?.id) {
+                try {
+                  await tryRecordRecentSearch({
+                    userId: billingUser.id,
+                    anonymousSessionKey: null,
+                    originalUrlInput: userTrimmed,
+                    analyzedHref: canonicalHref,
+                    result: fullResult
+                  });
+                } catch (e) {
+                  logNonCritical("[api/check] (stream) recent search persistence skipped:", e);
+                }
+              }
+              try {
+                await upsertLatestPublicCheckFromCompletedScan({
+                  parsedUrl,
+                  originalInput: userTrimmed,
+                  result: fullResult
+                });
+              } catch (e) {
+                logNonCritical("[api/check] (stream) latest public snapshot skipped:", e);
+              }
               push({
                 type: "result",
                 payload: {

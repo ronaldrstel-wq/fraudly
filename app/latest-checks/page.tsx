@@ -5,14 +5,14 @@ import { LatestChecksJsonLd } from "@/components/seo/LatestChecksJsonLd";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { formatPublicCheckRelativeTime } from "@/lib/latest-public-checks/relative-time";
-import { db } from "@/lib/db";
+import { listLatestPublicChecksPage } from "@/lib/latest-public-checks/service";
 import { OG_IMAGE } from "@/lib/seo-metadata";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { SITE_URL } from "@/lib/seo";
 import { trustDisplayFromRiskScore } from "@/lib/trustDisplay";
 import { trustIconGlyph } from "@/lib/trustSystem";
 
-export const revalidate = 120;
+export const revalidate = 0;
 
 const PAGE_SIZE = 10;
 
@@ -66,10 +66,10 @@ function entityBadge(type: string): string {
 
 async function fetchLatestPublicChecks(skip: number, take: number) {
   try {
-    return await db.latestPublicCheck.findMany({
-      orderBy: { lastSeenAt: "desc" },
+    return await listLatestPublicChecksPage({
       skip,
-      take
+      take,
+      debugLabel: "latest-checks-page"
     });
   } catch (err) {
     if (
