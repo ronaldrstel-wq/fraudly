@@ -5,7 +5,7 @@ import { LatestChecksJsonLd } from "@/components/seo/LatestChecksJsonLd";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { formatPublicCheckRelativeTime } from "@/lib/latest-public-checks/relative-time";
-import { listLatestPublicChecksPage } from "@/lib/latest-public-checks/service";
+import { getPublicLatestScans } from "@/lib/public-feed/service";
 import { OG_IMAGE } from "@/lib/seo-metadata";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { SITE_URL } from "@/lib/seo";
@@ -66,7 +66,7 @@ function entityBadge(type: string): string {
 
 async function fetchLatestPublicChecks(skip: number, take: number) {
   try {
-    return await listLatestPublicChecksPage({
+    return await getPublicLatestScans({
       skip,
       take,
       debugLabel: "latest-checks-page"

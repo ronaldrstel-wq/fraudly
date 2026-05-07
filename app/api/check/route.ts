@@ -23,6 +23,7 @@ interface CheckRequest {
 const isProd = process.env.NODE_ENV === "production";
 
 const ANON_FREE_CHECK_COOKIE = getAnonymousFreeCheckCookieName();
+const ANON_RECENT_SEARCH_SESSION_COOKIE = "fraudly_anon_recent_search_session";
 const ANON_BILLING_SNAPSHOT = {
   plan: "free",
   freeChecksUsed: 1,
@@ -36,6 +37,19 @@ function logNonCritical(message: string, error: unknown) {
   if (process.env.NODE_ENV !== "production") {
     console.warn(message, error);
   }
+}
+
+function readCookieValue(cookieHeader: string | null, name: string): string | null {
+  if (!cookieHeader) return null;
+  const key = `${name}=`;
+  for (const raw of cookieHeader.split(";")) {
+    const item = raw.trim();
+    if (item.startsWith(key)) {
+      const v = item.slice(key.length).trim();
+      return v ? decodeURIComponent(v) : null;
+    }
+  }
+  return null;
 }
 
 export async function POST(request: Request) {
@@ -72,6 +86,12 @@ export async function POST(request: Request) {
       user = null;
     }
     const hasUsedAnonFreeCheck = hasUsedAnonymousFreeCheckCookie(request.headers.get("cookie"));
+    const existingAnonRecentSearchSessionKey = readCookieValue(
+      request.headers.get("cookie"),
+      ANON_RECENT_SEARCH_SESSION_COOKIE
+    );
+    const anonymousRecentSearchSessionKey =
+      user ? null : existingAnonRecentSearchSessionKey ?? `anon_${globalThis.crypto?.randomUUID?.() ?? Date.now()}`;
 
     if (!user) {
       if (!canRunCheck(user, { hasUsedAnonymousFreeCheck: hasUsedAnonFreeCheck })) {
@@ -108,18 +128,16 @@ export async function POST(request: Request) {
               const fullResult = await runWebsiteAnalysis(canonicalHref, language, (progress: ScanProgressState) => {
                 push({ type: "progress", progress });
               });
-              if (billingUser?.id) {
-                try {
-                  await tryRecordRecentSearch({
-                    userId: billingUser.id,
-                    anonymousSessionKey: null,
-                    originalUrlInput: userTrimmed,
-                    analyzedHref: canonicalHref,
-                    result: fullResult
-                  });
-                } catch (e) {
-                  logNonCritical("[api/check] (stream) recent search persistence skipped:", e);
-                }
+              try {
+                await tryRecordRecentSearch({
+                  userId: billingUser?.id ?? null,
+                  anonymousSessionKey: billingUser?.id ? null : anonymousRecentSearchSessionKey,
+                  originalUrlInput: userTrimmed,
+                  analyzedHref: canonicalHref,
+                  result: fullResult
+                });
+              } catch (e) {
+                logNonCritical("[api/check] (stream) recent search persistence skipped:", e);
               }
               try {
                 await upsertLatestPublicCheckFromCompletedScan({
@@ -165,19 +183,17 @@ export async function POST(request: Request) {
 
     const fullResult = await runWebsiteAnalysis(canonicalHref, language);
 
-    if (billingUser?.id) {
-      try {
-        await tryRecordRecentSearch({
-          userId: billingUser.id,
-          anonymousSessionKey: null,
-          originalUrlInput: userTrimmed,
-          analyzedHref: canonicalHref,
-          result: fullResult
-        });
-      } catch (e) {
-        // Recent-search persistence should never block the primary website check response.
-        logNonCritical("[api/check] recent search persistence skipped:", e);
-      }
+    try {
+      await tryRecordRecentSearch({
+        userId: billingUser?.id ?? null,
+        anonymousSessionKey: billingUser?.id ? null : anonymousRecentSearchSessionKey,
+        originalUrlInput: userTrimmed,
+        analyzedHref: canonicalHref,
+        result: fullResult
+      });
+    } catch (e) {
+      // Recent-search persistence should never block the primary website check response.
+      logNonCritical("[api/check] recent search persistence skipped:", e);
     }
 
     try {
@@ -206,6 +222,15 @@ export async function POST(request: Request) {
         path: "/",
         maxAge: 60 * 60 * 24 * 30
       });
+      if (anonymousRecentSearchSessionKey) {
+        response.cookies.set(ANON_RECENT_SEARCH_SESSION_COOKIE, encodeURIComponent(anonymousRecentSearchSessionKey), {
+          httpOnly: true,
+          sameSite: "lax",
+          secure: isProd,
+          path: "/",
+          maxAge: 60 * 60 * 24 * 365
+        });
+      }
     }
     return response;
   } catch (err) {
