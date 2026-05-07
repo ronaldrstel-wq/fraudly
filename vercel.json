@@ -1,4 +1,10 @@
 {
+  "crons": [
+    {
+      "path": "/api/cron/scam-alerts",
+      "schedule": "0 */3 * * *"
+    }
+  ],
   "redirects": [
     {
       "source": "/:path*",
