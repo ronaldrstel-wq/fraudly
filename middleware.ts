@@ -1,5 +1,5 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * Clerk session for auth() / currentUser() in route handlers.
@@ -9,6 +9,17 @@ import { NextResponse } from "next/server";
 const authMiddleware = clerkMiddleware();
 
 export default function middleware(...args: Parameters<typeof authMiddleware>) {
+  const request = args[0] as NextRequest;
+  const host = request.nextUrl.hostname.toLowerCase();
+
+  // Keep one canonical host in production to avoid first-request redirect chains.
+  if (host === "www.fraudly.app") {
+    const target = new URL(request.url);
+    target.hostname = "fraudly.app";
+    target.protocol = "https:";
+    return NextResponse.redirect(target, 308);
+  }
+
   if (process.env.PERF_BYPASS_AUTH === "1") {
     return NextResponse.next();
   }

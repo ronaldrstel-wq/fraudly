@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "perf:build": "npx next build",
+    "perf:analyze": "ANALYZE=true npx next build",
     "perf:start": "PERF_BYPASS_AUTH=1 npx next start -p 3010 -H 127.0.0.1",
     "perf:lighthouse:mobile": "mkdir -p performance-reports && lighthouse http://127.0.0.1:3010 --output=json --output=html --output-path=performance-reports/lighthouse-mobile --chrome-flags='--headless=new --no-sandbox' && node scripts/extract-lighthouse-metrics.mjs performance-reports/lighthouse-mobile.report.json",
     "perf:lighthouse:desktop": "mkdir -p performance-reports && lighthouse http://127.0.0.1:3010 --preset=desktop --output=json --output=html --output-path=performance-reports/lighthouse-desktop --chrome-flags='--headless=new --no-sandbox' && node scripts/extract-lighthouse-metrics.mjs performance-reports/lighthouse-desktop.report.json"
@@ -29,6 +30,7 @@
     "stripe": "^22.1.0"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.2.5",
     "@types/node": "22.15.21",
     "@types/react": "19.1.5",
     "@types/react-dom": "19.1.5",
@@ -41,5 +43,19 @@
     "tailwindcss": "3.4.17",
     "typescript": "5.8.3",
     "vitest": "^3.1.4"
+  },
+  "browserslist": {
+    "production": [
+      "Chrome >= 107",
+      "Edge >= 107",
+      "Firefox >= 104",
+      "Safari >= 16"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 edge version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }

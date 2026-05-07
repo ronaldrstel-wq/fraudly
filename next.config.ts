@@ -1,5 +1,9 @@
 import type { NextConfig } from "next";
 
+const withBundleAnalyzer = require("@next/bundle-analyzer")({
+  enabled: process.env.ANALYZE === "true"
+});
+
 const nextConfig: NextConfig = {
   async redirects() {
     return [{ source: "/domain/:domain", destination: "/check/:domain", permanent: true }];
@@ -18,4 +22,4 @@ const nextConfig: NextConfig = {
   }
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);
