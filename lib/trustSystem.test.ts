@@ -37,6 +37,16 @@ describe("global trust thresholds", () => {
   });
 });
 
+describe("display band consistency", () => {
+  it("maps representative scores to expected labels", () => {
+    expect(trustPresentationFromScore(88).label).toBe("Trusted");
+    expect(trustPresentationFromScore(68).label).toBe("Likely Safe");
+    expect(trustPresentationFromScore(50).label).toBe("Mixed / Unknown");
+    expect(trustPresentationFromScore(40).label).toBe("Suspicious");
+    expect(trustPresentationFromScore(20).label).toBe("Dangerous");
+  });
+});
+
 describe("risk to trust conversion", () => {
   it("converts trust = 100 - risk (clamped)", () => {
     expect(trustScoreFromRisk(0)).toBe(100);

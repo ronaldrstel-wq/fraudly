@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { ReviewSummary } from "@/components/ReviewSummary";
 import type { TrustSignal } from "@/lib/checks/types";
 import type { ReputationEnrichment } from "@/lib/outscraper/reputation";
-import { trustIconGlyph, trustPresentationFromScore } from "@/lib/trustSystem";
+import { trustDisplayFromRiskScore } from "@/lib/trustDisplay";
+import { trustIconGlyph } from "@/lib/trustSystem";
 import type { ScamCheckResult } from "@/types/scam";
 
 interface ResultCardProps {
@@ -122,8 +123,8 @@ function SignalList({ signals, empty }: { signals: TrustSignal[]; empty: string 
 }
 
 export function ResultCard({ result }: ResultCardProps) {
-  const trustScore = Math.round(100 - result.score);
-  const style = trustPresentationFromScore(trustScore);
+  const trust = trustDisplayFromRiskScore(result.score);
+  const trustScore = trust.trustScore;
   const scoreUi = getScoreUiModel(result.scoreResult);
   const split = splitSignalsForDisplay(result.trustSignals);
   const consumer = buildConsumerSummary(result);
@@ -161,16 +162,16 @@ export function ResultCard({ result }: ResultCardProps) {
 
   return (
     <article className="w-full rounded-xl bg-white p-4 shadow-lg shadow-slate-200/60 sm:p-6">
-      <section className={`rounded-xl border px-4 py-4 ${style.toneSoftBorder} ${style.toneSoftBg}`}>
+      <section className={`rounded-xl border px-4 py-4 ${trust.toneSoftBorder} ${trust.toneSoftBg}`}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className={`flex h-20 w-20 items-center justify-center rounded-full border-4 border-white text-xl font-bold ${style.toneText}`}>
+            <div className={`flex h-20 w-20 items-center justify-center rounded-full border-4 border-white text-xl font-bold ${trust.toneText}`}>
               {trustScore}%
             </div>
             <div>
-              <p className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-semibold ${style.toneSoftBorder} ${style.toneSoftBg} ${style.toneText}`}>
-                <span aria-hidden>{trustIconGlyph(style.icon)}</span>
-                {style.label}
+              <p className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-semibold ${trust.toneSoftBorder} ${trust.toneSoftBg} ${trust.toneText}`}>
+                <span aria-hidden>{trustIconGlyph(trust.icon)}</span>
+                {trust.label}
               </p>
               <p className="mt-1 text-sm text-slate-700">Trust score: <span className="font-semibold">{trustScore}%</span></p>
               <p className="text-sm text-slate-700">Confidence: <span className="font-semibold capitalize">{scoreUi.confidence}</span></p>
@@ -182,7 +183,7 @@ export function ResultCard({ result }: ResultCardProps) {
           </div>
         </div>
         <p className="mt-3 text-sm text-slate-700">
-          {style.label === "Trusted"
+          {trust.label === "Trusted"
             ? "Fraudly found mostly supportive signs in this snapshot."
             : `Fraudly flagged this website because ${(keyConcerns.slice(0, 3).join(" ").toLowerCase() || "multiple caution signals were detected")}.`}
         </p>
