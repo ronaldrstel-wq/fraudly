@@ -1,6 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { EN_MESSAGES } from "@/lib/messages.en";
@@ -12,18 +11,6 @@ const navLinks = [
   { label: "Learn", href: "/learn" },
   { label: "About", href: "/about" }
 ] as const;
-
-const NavbarAuthControls = dynamic(
-  () => import("@/components/navbar/NavbarAuthControls").then((m) => m.NavbarAuthControls),
-  {
-    loading: () => (
-      <div className="flex items-center gap-2" aria-hidden>
-        <span className="h-9 w-[88px] animate-pulse rounded-xl bg-slate-100" />
-        <span className="h-9 w-[98px] animate-pulse rounded-xl bg-slate-100" />
-      </div>
-    )
-  }
-);
 
 export function Navbar() {
   return (
@@ -55,9 +42,18 @@ export function Navbar() {
         </div>
 
         <div className="flex min-h-9 shrink-0 flex-wrap items-center justify-end gap-1 sm:gap-2 md:gap-3">
-          <div className="flex min-h-9 items-center">
-            <NavbarAuthControls />
-          </div>
+          <Link
+            href="/sign-in"
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 sm:px-4"
+          >
+            {EN_MESSAGES.auth.loginCta}
+          </Link>
+          <Link
+            href="/sign-up"
+            className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:brightness-110 sm:px-4"
+          >
+            {EN_MESSAGES.auth.signUpCta}
+          </Link>
         </div>
       </div>
     </nav>
