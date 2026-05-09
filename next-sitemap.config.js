@@ -48,7 +48,8 @@ module.exports = {
   additionalPaths: async () => {
     return [
       { loc: "/check/example.com", changefreq: "daily", priority: 0.8 },
-      { loc: "/latest-checks", changefreq: "daily", priority: 0.8 }
+      { loc: "/latest-checks", changefreq: "daily", priority: 0.8 },
+      { loc: "/scam-alerts", changefreq: "daily", priority: 0.8 }
     ];
   }
 };

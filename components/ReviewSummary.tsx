@@ -105,11 +105,11 @@ export function ReviewSummary({ enrichment }: { enrichment: ReputationEnrichment
         missingProfileMessage="No Trustpilot profile found"
       />
       <SourceRow
-        name="Google Reviews"
+        name="Indexed review snippets"
         rating={googleRating}
         reviewCount={googleReviewCount}
         signalStatus={enrichment.signalStatus}
-        missingProfileMessage="No Google profile found"
+        missingProfileMessage="No indexed review snippet found"
       />
       <p className="pt-0.5 text-[11px] text-slate-500">External reviews are used as supporting signals only.</p>
     </div>

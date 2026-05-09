@@ -27,8 +27,7 @@ export async function POST(request: Request) {
   console.info("[enrichment/reputation] route called", {
     deepScan,
     hasDomain: Boolean(domain),
-    enableOutscraper: process.env.ENABLE_OUTSCRAPER_ENRICHMENT === "true",
-    hasOutscraperKey: Boolean(process.env.OUTSCRAPER_API_KEY?.trim())
+    publicIntelEnabled: process.env.ENABLE_PUBLIC_INTEL_ENRICHMENT !== "false"
   });
 
   if (!domain) {
@@ -36,7 +35,7 @@ export async function POST(request: Request) {
   }
 
   const ip = getClientIp(request);
-  const limit = enrichmentLimiter.consume(`outscraper:${ip}`);
+  const limit = enrichmentLimiter.consume(`public-intel:${ip}`);
   if (!limit.allowed) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }

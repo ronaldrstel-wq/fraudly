@@ -7,6 +7,7 @@ import { EN_MESSAGES } from "@/lib/messages.en";
 
 const navLinks = [
   { label: EN_MESSAGES.latestChecks.navLabel, href: "/latest-checks" },
+  { label: "Scam alerts", href: "/scam-alerts" },
   { label: "How it works", href: "/how-it-works" },
   { label: "Features", href: "/features" },
   { label: "Learn", href: "/learn" },

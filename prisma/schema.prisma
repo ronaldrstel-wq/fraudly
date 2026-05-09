@@ -19,6 +19,12 @@ enum SubscriptionStatus {
   past_due
 }
 
+enum ScamAlertStatus {
+  draft
+  published
+  archived
+}
+
 model User {
   id                   String             @id @default(cuid())
   authProvider         String             @default("legacy")
@@ -91,4 +97,57 @@ model ReputationEnrichmentCache {
   updatedAt          DateTime @updatedAt
 
   @@index([expiresAt])
+}
+
+model ScamAlert {
+  id                String          @id @default(cuid())
+  title             String          @db.VarChar(256)
+  slug              String          @unique @db.VarChar(256)
+  summary           String          @db.Text
+  scamType          String          @db.VarChar(64)
+  affectedBrand     String?         @db.VarChar(256)
+  domain            String?         @db.VarChar(512)
+  url               String?         @db.VarChar(2048)
+  sourceName        String          @db.VarChar(128)
+  sourceUrl         String?         @db.VarChar(2048)
+  confidence        Int             @default(50)
+  riskLevel         String          @default("medium") @db.VarChar(32)
+  status            ScamAlertStatus @default(draft)
+  safetyTips        String[]        @default([])
+  sourceSummaryJson Json?
+  exampleDomainsJson Json?
+  evidenceCount     Int             @default(0)
+  whyRisky          String?         @db.Text
+  firstSeenAt       DateTime        @default(now())
+  lastSeenAt        DateTime        @default(now())
+  generatedAt       DateTime        @default(now())
+  publishedAt       DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  signals           ScamSignal[]
+
+  @@index([status, publishedAt(sort: Desc)])
+  @@index([scamType, status])
+  @@index([domain])
+}
+
+model ScamSignal {
+  id          String    @id @default(cuid())
+  alertId     String
+  alert       ScamAlert @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  sourceName  String    @db.VarChar(128)
+  sourceUrl   String?   @db.VarChar(2048)
+  signalType  String    @db.VarChar(64)
+  content     String    @db.Text
+  domain      String?   @db.VarChar(512)
+  url         String?   @db.VarChar(2048)
+  confidence  Int       @default(50)
+  firstSeenAt DateTime  @default(now())
+  lastSeenAt  DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([signalType, sourceName])
+  @@index([domain])
+  @@index([url])
 }

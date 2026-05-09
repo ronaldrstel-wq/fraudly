@@ -296,16 +296,40 @@ export function ResultCard({ result }: ResultCardProps) {
       </div>
 
       <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Review Summary</p>
+        <p className="text-sm font-semibold text-slate-900">Public reputation signals</p>
         {repLoading ? (
-          <p className="mt-2 text-sm text-slate-600">Checking external review signals...</p>
+          <p className="mt-2 text-sm text-slate-600">Checking public-source signals...</p>
         ) : repError ? (
           <p className="mt-2 text-sm text-slate-600">
-            No external reputation profile found. This does not automatically mean unsafe.
+            Public-source enrichment is currently unavailable. Base scan signals are still shown.
           </p>
         ) : reputation ? (
           <div className="mt-2 space-y-2 text-sm text-slate-700">
             <ReviewSummary enrichment={reputation} />
+            {reputation.publicSignals ? (
+              <ul className="list-disc space-y-1 pl-5 text-xs text-slate-700">
+                <li>
+                  Reddit warnings: <span className="font-medium">{reputation.publicSignals.redditWarnings}</span>
+                </li>
+                <li>
+                  Domain age (days): <span className="font-medium">{reputation.publicSignals.domainAgeDays ?? "unknown"}</span>
+                </li>
+                <li>
+                  SSL status: <span className="font-medium">{reputation.publicSignals.sslStatus}</span>
+                </li>
+                <li>
+                  DNS/mail configuration:{" "}
+                  <span className="font-medium">
+                    {reputation.publicSignals.mailSecurity
+                      ? `MX:${reputation.publicSignals.mailSecurity.mxConfigured ? "yes" : "no"}, SPF:${reputation.publicSignals.mailSecurity.spf ? "yes" : "no"}, DMARC:${reputation.publicSignals.mailSecurity.dmarc ? "yes" : "no"}`
+                      : "unavailable"}
+                  </span>
+                </li>
+                <li>
+                  Confidence: <span className="font-medium">{reputation.publicSignals.confidence}</span>
+                </li>
+              </ul>
+            ) : null}
             <p>
               Last updated: <span className="font-medium">{new Date(reputation.lastUpdated).toLocaleString("en")}</span>
             </p>
@@ -318,6 +342,13 @@ export function ResultCard({ result }: ResultCardProps) {
             </p>
             {reputation.sentimentSummary ? <p className="text-xs text-slate-600">{reputation.sentimentSummary}</p> : null}
             {reputation.message ? <p className="text-xs text-slate-500">{reputation.message}</p> : null}
+            {reputation.publicSignals?.warnings?.length ? (
+              <ul className="list-disc space-y-1 pl-5 text-xs text-amber-800">
+                {reputation.publicSignals.warnings.map((warning, i) => (
+                  <li key={`${i}-${warning.slice(0, 24)}`}>{warning}</li>
+                ))}
+              </ul>
+            ) : null}
             <button
               type="button"
               onClick={() => void loadReputationSignals(true)}
@@ -328,7 +359,7 @@ export function ResultCard({ result }: ResultCardProps) {
           </div>
         ) : (
           <p className="mt-2 text-sm text-slate-600">
-            No external reputation profile found. This does not automatically mean unsafe.
+            No public reputation profile found. This does not automatically mean unsafe.
           </p>
         )}
       </div>
