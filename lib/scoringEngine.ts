@@ -1,8 +1,19 @@
+import type { DomainPatternAnalysis } from "@/lib/domainPatternHeuristics";
+import { analyzeDomainPatterns } from "@/lib/domainPatternHeuristics";
 import type { ReviewSignals } from "@/lib/reviewSignals";
+import type { ScoringIdentityContext } from "@/lib/scoringIdentityContext";
+import { computeTrustAnchors } from "@/lib/scoringIdentityContext";
 import type { SupplyChainSignals } from "@/lib/supplyChainSignals";
 import { verdictFromRiskScore } from "@/lib/trustSystem";
 
 export type ScoreConfidence = "low" | "medium" | "high";
+
+export type ScoreEvidenceTier =
+  | "confirmed_malicious"
+  | "positive_trust"
+  | "neutral_observation"
+  | "risk_indicator"
+  | "missing_data";
 
 export interface ScoreSignal {
   id: string;
@@ -17,6 +28,8 @@ export interface ScoreSignal {
   impact: number;
   confidence: ScoreConfidence;
   reason: string;
+  /** Guides UI grouping; omission falls back to simple impact heuristics. */
+  evidenceTier?: ScoreEvidenceTier;
 }
 
 export interface ScoreResult {
@@ -26,6 +39,10 @@ export interface ScoreResult {
   signals: ScoreSignal[];
   topPositiveSignals: ScoreSignal[];
   topNegativeSignals: ScoreSignal[];
+  /** Max trust (0–100) after guardrail caps; same semantics as UI trust score cap. */
+  trustScoreCap?: number;
+  /** When set, “Trusted” was blocked because no anchored identity/reputation evidence was available. */
+  trustedBlockedReason?: "no_trust_anchor";
 }
 
 export type AddressSignalsInput = {
@@ -71,13 +88,32 @@ export function formatScoreSignalsForPrompt(signals: ScoreSignal[]): string {
       category: s.category,
       impact: s.impact,
       confidence: s.confidence,
-      reason: s.reason
+      reason: s.reason,
+      evidenceTier: s.evidenceTier
     }))
   );
 }
 
 function verdictFromScore(score: number): ScoreResult["verdict"] {
   return verdictFromRiskScore(score);
+}
+
+const MISSING_SCORE_IDS = new Set([
+  "missing-rdap-registration",
+  "missing-registration-date",
+  "missing-registration-age-estimate",
+  "missing-registrar",
+  "unknown-ownership-anchor",
+  "indexing-or-robots-limited",
+  "reputation-footprint-thin"
+]);
+
+export function inferScoreEvidenceTier(signal: Pick<ScoreSignal, "id" | "impact" | "evidenceTier">): ScoreEvidenceTier {
+  if (signal.evidenceTier) return signal.evidenceTier;
+  if (MISSING_SCORE_IDS.has(signal.id)) return "missing_data";
+  if (signal.impact > 0) return "risk_indicator";
+  if (signal.impact < 0) return "positive_trust";
+  return "neutral_observation";
 }
 
 /** Same narrative lines as legacy domain heuristics (for AI / UI copy). */
@@ -179,12 +215,25 @@ function pushDomainSignals(domain: string, out: ScoreSignal[]): void {
   }
 }
 
-/** Trust nudges for “clean” domains; omitted when strong public reviews already imply baseline trust. */
-function pushDomainTrustSignals(domain: string, out: ScoreSignal[], tier: ReviewTierFlags): void {
+function shouldSkipStructuralTrustNudges(tier: ReviewTierFlags, ctx: ScoringIdentityContext | undefined): boolean {
+  if (tier.strongPublicReview || tier.elitePositive) return true;
+  if (!ctx) return false;
+  if (ctx.limitedPublicReputation && ctx.ownershipUnverifiable) return true;
+  if (ctx.limitedPublicReputation && ctx.domainPatterns.hasStrongLexicalSuspicion) return true;
+  return false;
+}
+
+/** Trust nudges for clean domains — suppressed when reputation/identity hooks are absent and ownership is flaky. */
+function pushDomainTrustSignals(
+  domain: string,
+  out: ScoreSignal[],
+  tier: ReviewTierFlags,
+  ctx: ScoringIdentityContext | undefined
+): void {
   const d = domain.toLowerCase();
   const risky = ["cheap", "free", "deal"];
   const matched = risky.filter((w) => d.includes(w));
-  const skipBaitAndLength = tier.strongPublicReview;
+  const skipBaitAndLength = shouldSkipStructuralTrustNudges(tier, ctx);
 
   if (matched.length === 0 && !skipBaitAndLength) {
     out.push({
@@ -193,6 +242,7 @@ function pushDomainTrustSignals(domain: string, out: ScoreSignal[], tier: Review
       category: "domain",
       impact: -5,
       confidence: "medium",
+      evidenceTier: "neutral_observation",
       reason: "The domain does not contain common bait-style sales keywords."
     });
   }
@@ -203,9 +253,255 @@ function pushDomainTrustSignals(domain: string, out: ScoreSignal[], tier: Review
       category: "domain",
       impact: -5,
       confidence: "low",
+      evidenceTier: "neutral_observation",
       reason: "Hostname length looks typical rather than excessively long."
     });
   }
+}
+
+function pushDomainPatternSignals(patterns: DomainPatternAnalysis, out: ScoreSignal[]): void {
+  if (patterns.officialRegistrableExempt) return;
+
+  const ps = patterns.publicSuffix;
+  const tier = patterns.tldRiskTier;
+  if (tier === "soft") {
+    out.push({
+      id: "domain-soft-commodity-tld",
+      label: "Startup-style TLD pattern",
+      category: "domain",
+      impact: 4,
+      confidence: "low",
+      evidenceTier: "risk_indicator",
+      reason: `The apex uses a trendy TLD (.${ps}) seen in many harmless projects; Fraudly applies only a small nudge unless other spoofing cues appear.`
+    });
+  } else if (tier === "hard") {
+    out.push({
+      id: "domain-hard-commodity-tld",
+      label: "High-disposable TLD pattern",
+      category: "domain",
+      impact: 10,
+      confidence: "medium",
+      evidenceTier: "risk_indicator",
+      reason: `The apex sits on a commoditized TLD (.${ps}) that is over-represented in throwaway hosts; still not proof of abuse by itself.`
+    });
+  }
+
+  const { fakeAuthoritySubstringInApex: fake } = patterns;
+  const gib = patterns.combinedGibberishApex;
+  const dec = patterns.deceptiveSubdomainPattern;
+
+  if (fake && (tier === "hard" || gib || dec)) {
+    const apexLabel = patterns.apexLabels[0] ?? "";
+    const governmentShim = /gov|government|overheid|ministerie/i.test(apexLabel) && tier !== "none";
+    const title = governmentShim ? "Government-like wording on a non-government domain" : "Authority / urgency wording in a suspicious hostname";
+    out.push({
+      id: "domain-fake-authority-strong",
+      label: title,
+      category: "domain",
+      impact: 22,
+      confidence: "high",
+      evidenceTier: "risk_indicator",
+      reason:
+        "Authority, tax, or civic-looking language appears on an apex that Fraudly does not treat as a documented government namespace."
+    });
+  } else if (fake && tier === "soft") {
+    out.push({
+      id: "domain-authority-token-with-soft-tld",
+      label: "Authority-themed wording plus startup-style TLD",
+      category: "domain",
+      impact: 11,
+      confidence: "medium",
+      evidenceTier: "risk_indicator",
+      reason:
+        "Combined authority vocabulary and a fashionable TLD warrants extra scrutiny but is not automatic proof of phishing."
+    });
+  } else if (fake) {
+    out.push({
+      id: "domain-authority-token-context",
+      label: "Authority-themed wording inside registrable host",
+      category: "domain",
+      impact: 7,
+      confidence: "low",
+      evidenceTier: "risk_indicator",
+      reason: "Neutral-to-suspicious wording cue without the stronger disposable-TLD or gibberish corroboration."
+    });
+  }
+
+  if (dec) {
+    out.push({
+      id: "domain-deceptive-prefix",
+      label: "Suspicious subdomain + apex combination",
+      category: "domain",
+      impact: 14,
+      confidence: "medium",
+      evidenceTier: "risk_indicator",
+      reason: "A very short subdomain sits ahead of a disparate random-looking apex."
+    });
+  }
+
+  if (gib && tier === "hard") {
+    out.push({
+      id: "domain-multi-signal-gibberish",
+      label: "Machine-like domain label (multiple signals agree)",
+      category: "domain",
+      impact: 16,
+      confidence: "medium",
+      evidenceTier: "risk_indicator",
+      reason:
+        "Several independent structure checks (entropy, vowel balance, consonant runs) align on a disposable TLD apex."
+    });
+  } else if (gib && tier === "soft") {
+    out.push({
+      id: "domain-multi-signal-gibberish-soft",
+      label: "Unusually random-looking apex on a trendy TLD",
+      category: "domain",
+      impact: 9,
+      confidence: "medium",
+      evidenceTier: "risk_indicator",
+      reason: "Multiple lexical checks agree this label is unusually random for a benign brand, but the suffix itself is commonly legitimate."
+    });
+  }
+}
+
+function pushUnknownIdentitySignals(ctx: ScoringIdentityContext | undefined, out: ScoreSignal[]): void {
+  if (!ctx) return;
+
+  /** Official namespaces get minimal stewardship penalties (identity is corroborated by policy lists). */
+  if (ctx.domainPatterns.officialRegistrableExempt) return;
+
+  if (ctx.rdapFailed) {
+    out.push({
+      id: "missing-rdap-registration",
+      label: "Domain registration data unavailable",
+      category: "domain",
+      impact: 8,
+      confidence: "medium",
+      evidenceTier: "missing_data",
+      reason:
+        "RDAP lifecycle data could not be read in this run — this lowers confidence more than it proves abuse."
+    });
+  } else {
+    if (ctx.registrationDateUnknown) {
+      out.push({
+        id: "missing-registration-date",
+        label: "Domain registration date unknown",
+        category: "domain",
+        impact: 3,
+        confidence: "low",
+        evidenceTier: "missing_data",
+        reason: "Registration timestamps were not parsed cleanly; Fraudly loses calibration precision."
+      });
+    }
+    if (ctx.domainAgeUnknown) {
+      out.push({
+        id: "missing-registration-age-estimate",
+        label: "Domain age unknown",
+        category: "domain",
+        impact: 4,
+        confidence: "low",
+        evidenceTier: "missing_data",
+        reason: "Age-based heuristics are blind without creation events — treat as weaker evidence only."
+      });
+    }
+    if (ctx.registrarUnknown) {
+      out.push({
+        id: "missing-registrar",
+        label: "Registrar unstated in parsed RDAP",
+        category: "domain",
+        impact: 2,
+        confidence: "low",
+        evidenceTier: "missing_data",
+        reason: "Missing registrar narration slightly lowers certainty about stewardship."
+      });
+    }
+  }
+
+  if (ctx.ownershipUnverifiable) {
+    out.push({
+      id: "unknown-ownership-anchor",
+      label: "Domain ownership could not be verified",
+      category: "domain",
+      impact: 6,
+      confidence: "medium",
+      evidenceTier: "missing_data",
+      reason: "WHOIS/RDAP did not expose corroboratable registrant signals in this crawl — HTTPS alone cannot verify identity."
+    });
+  }
+
+  /** Robots/disallow friction and sparse review footprints are surfaced via confidence tooling, not strong risk boosts. */
+
+  void ctx.robotsLikelyBlocked;
+  void ctx.limitedPublicReputation;
+}
+
+function trustCapReliefEligible(
+  ctx: ScoringIdentityContext,
+  anchors: ReturnType<typeof computeTrustAnchors>
+): boolean {
+  if (ctx.domainPatterns.officialRegistrableExempt) return true;
+  if (anchors.hasStrongReputation || anchors.hasAnchoredReputation) return true;
+  if (!ctx.rdapFailed && typeof ctx.ageDaysKnown === "number" && ctx.ageDaysKnown >= 730) return true;
+  return false;
+}
+
+function computeTrustScoreCap(args: {
+  ctx: ScoringIdentityContext;
+  lexicalStrong: boolean;
+  anchors: ReturnType<typeof computeTrustAnchors>;
+}): number {
+  let maxTrust = 100;
+  const c = args.ctx;
+  const p = c.domainPatterns;
+  const relief = trustCapReliefEligible(c, args.anchors);
+
+  if (c.rdapFailed || c.domainAgeUnknown) {
+    maxTrust = Math.min(maxTrust, relief ? 84 : 76);
+  }
+  if (c.rdapFailed && args.lexicalStrong) {
+    maxTrust = Math.min(maxTrust, relief ? 58 : 44);
+  }
+  if (c.ownershipUnverifiable) {
+    maxTrust = Math.min(maxTrust, relief ? 42 : 34);
+  }
+  if (p.tldRiskTier !== "none" && p.fakeAuthoritySubstringInApex && c.limitedPublicReputation) {
+    const tight = p.tldRiskTier === "hard" || args.lexicalStrong;
+    maxTrust = Math.min(maxTrust, tight ? (relief ? 38 : 30) : relief ? 52 : 44);
+  }
+
+  if (relief) {
+    maxTrust = Math.min(100, Math.max(maxTrust, anchorsAdjustFloor(args.anchors, c)));
+  }
+  return maxTrust;
+}
+
+function anchorsAdjustFloor(
+  anchors: ReturnType<typeof computeTrustAnchors>,
+  ctx: ScoringIdentityContext
+): number {
+  if (ctx.domainPatterns.officialRegistrableExempt) return 88;
+  if (anchors.hasStrongReputation) return 82;
+  if (anchors.hasAnchoredReputation) return 76;
+  if (!ctx.rdapFailed && typeof ctx.ageDaysKnown === "number" && ctx.ageDaysKnown >= 730) return 72;
+  return 72;
+}
+
+function eligibleForTrustedLabel(args: {
+  ctx: ScoringIdentityContext | undefined;
+  lexicalStrong: boolean;
+  anchors: ReturnType<typeof computeTrustAnchors>;
+}): boolean {
+  if (args.anchors.hasStrongReputation || args.anchors.hasAnchoredReputation) return true;
+  if (args.ctx?.domainPatterns.officialRegistrableExempt && !args.lexicalStrong) return true;
+  if (
+    args.ctx &&
+    !args.ctx.rdapFailed &&
+    typeof args.ctx.ageDaysKnown === "number" &&
+    args.ctx.ageDaysKnown >= 365 &&
+    !args.lexicalStrong
+  ) {
+    return true;
+  }
+  return false;
 }
 
 function pushAiRiskSignals(level: AiRiskSignalsInput["level"], out: ScoreSignal[], tier: ReviewTierFlags): void {
@@ -215,9 +511,10 @@ function pushAiRiskSignals(level: AiRiskSignalsInput["level"], out: ScoreSignal[
       id: "ai-risk-low",
       label: "AI assessment: low risk",
       category: "ai",
-      impact: -8,
+      impact: -4,
       confidence: "medium",
-      reason: "Model assessed overall URL risk as low (scoring only; score is computed from all signals)."
+      reason:
+        "AI summary suggested low narrative risk — this adjustment is capped so deterministic intel always dominates scoring."
     });
   }
 }
@@ -411,6 +708,7 @@ function pushBusinessIdentitySignals(addr: AddressSignalsInput | undefined, webs
       category: "business_identity",
       impact: -10,
       confidence: "high",
+      evidenceTier: "positive_trust",
       reason: "A Dutch KvK-style identifier appears in the captured page text."
     });
   }
@@ -421,6 +719,7 @@ function pushBusinessIdentitySignals(addr: AddressSignalsInput | undefined, webs
       category: "business_identity",
       impact: -8,
       confidence: "high",
+      evidenceTier: "positive_trust",
       reason: "A VAT-style tax identifier appears in the captured page text."
     });
   }
@@ -431,6 +730,7 @@ function pushBusinessIdentitySignals(addr: AddressSignalsInput | undefined, webs
       category: "business_identity",
       impact: 15,
       confidence: "medium",
+      evidenceTier: "risk_indicator",
       reason: "Enough text was captured but no obvious physical business or return address was found."
     });
   }
@@ -499,14 +799,19 @@ export function calculateScamScore(input: {
   externalSignals?: ScoreSignal[];
   /** Snippet used only for business-identity heuristics when addressSignals omit fields. */
   websiteText?: string;
+  /** When omitted, guardrails stay permissive so offline/unit checks stay deterministic. */
+  scoringContext?: ScoringIdentityContext;
 }): ScoreResult {
   void input.heuristicReasons;
 
   const signals: ScoreSignal[] = [];
   const domain = input.domain.toLowerCase();
   const reviewTier = computeReviewTierFlags(input.reviewSignals);
+  const patterns: DomainPatternAnalysis =
+    input.scoringContext?.domainPatterns ?? analyzeDomainPatterns(domain);
 
   pushDomainSignals(domain, signals);
+  pushDomainPatternSignals(patterns, signals);
   if (input.reviewSignals) pushReviewSignals(input.reviewSignals, signals);
   if (input.supplyChainSignals) {
     const allowSupplyRisk = input.supplyChainSignals.scoreAdjustment > 0;
@@ -517,7 +822,8 @@ export function calculateScamScore(input: {
   const addr: AddressSignalsInput = { ...inferredAddr, ...input.addressSignals };
   pushBusinessIdentitySignals(addr, input.websiteText ?? "", signals);
   pushDomainAgeSignals(input.domainAgeSignals, signals);
-  pushDomainTrustSignals(domain, signals, reviewTier);
+  pushUnknownIdentitySignals(input.scoringContext, signals);
+  pushDomainTrustSignals(domain, signals, reviewTier, input.scoringContext);
   pushAiRiskSignals(input.aiRiskSignals?.level, signals, reviewTier);
   if (input.externalSignals?.length) {
     signals.push(...input.externalSignals);
@@ -585,7 +891,45 @@ export function calculateScamScore(input: {
     total = Math.min(DOMAIN_ONLY_SCORE_CAP, total);
   }
 
-  const finalScore = Math.max(0, Math.min(100, Math.round(total)));
+  let finalScore = Math.max(0, Math.min(100, Math.round(total)));
+
+  let trustScoreCap: number | undefined;
+  let trustedBlockedReason: ScoreResult["trustedBlockedReason"];
+
+  if (input.scoringContext) {
+    const lexicalStrong = patterns.hasStrongLexicalSuspicion;
+    const anchors = computeTrustAnchors(input.scoringContext.ageDaysKnown, input.reviewSignals);
+    trustScoreCap = computeTrustScoreCap({ ctx: input.scoringContext, lexicalStrong, anchors });
+
+    let trustScore = Math.max(0, Math.min(100, Math.round(100 - finalScore)));
+    if (trustScore > trustScoreCap) {
+      trustScore = trustScoreCap;
+      finalScore = Math.max(0, Math.min(100, Math.round(100 - trustScore)));
+    }
+    if (
+      trustScore >= 80 &&
+      !eligibleForTrustedLabel({
+        ctx: input.scoringContext,
+        lexicalStrong,
+        anchors
+      })
+    ) {
+      trustedBlockedReason = "no_trust_anchor";
+      trustScore = Math.min(trustScore, 79);
+      finalScore = Math.max(0, Math.min(100, Math.round(100 - trustScore)));
+    }
+
+    /** Hard rule: brittle identity + spoofing-shaped host cannot advertise “trusted”. */
+    if (
+      input.scoringContext.ownershipUnverifiable &&
+      lexicalStrong &&
+      trustScore >= 70
+    ) {
+      trustScore = Math.min(trustScore, 49);
+      finalScore = Math.max(0, Math.min(100, Math.round(100 - trustScore)));
+    }
+  }
+
   const verdict = verdictFromScore(finalScore);
 
   const ranked = [...signals].sort(
@@ -606,6 +950,8 @@ export function calculateScamScore(input: {
     verdict,
     signals,
     topPositiveSignals: topPositive,
-    topNegativeSignals: topNegative
+    topNegativeSignals: topNegative,
+    trustScoreCap: input.scoringContext ? trustScoreCap : undefined,
+    trustedBlockedReason
   };
 }

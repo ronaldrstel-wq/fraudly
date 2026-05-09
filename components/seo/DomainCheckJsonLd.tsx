@@ -7,10 +7,13 @@ function trustScoreFromResult(result: ScamCheckResult): number {
 
 export function DomainCheckJsonLd({ domain, pathname, result }: { domain: string; pathname: string; result: ScamCheckResult }) {
   const url = `${SITE_URL}${pathname}`;
-  const trust = trustScoreFromResult(result);
+  const trust = result.omitTrustScoreGauge ? null : trustScoreFromResult(result);
   const sslLabel = result.ssl.httpsEnabled ? (result.ssl.validCertificate ? "HTTPS with valid certificate" : "HTTPS with certificate issues") : "HTTPS unavailable";
 
-  const description = `Fraudly checked ${domain} for scam signals and website trust indicators. Trust-style score about ${trust}/100. SSL: ${sslLabel}. This is informational—not a guarantee of safety.`;
+  const description =
+    trust == null
+      ? `Fraudly checked ${domain}. Trust-style score withheld because the apex is treated as inactive or invalid in this crawl. SSL: ${sslLabel}. Informational—not a guarantee of safety.`
+      : `Fraudly checked ${domain} for scam signals and website trust indicators. Trust-style score about ${trust}/100. SSL: ${sslLabel}. This is informational—not a guarantee of safety.`;
 
   const graph = [
     {
@@ -34,7 +37,10 @@ export function DomainCheckJsonLd({ domain, pathname, result }: { domain: string
       mainEntity: {
         "@type": "Thing",
         name: `Trust and risk signals for ${domain}`,
-        description: `Risk score (higher means more concern): ${result.score}/100. Summary: ${result.reviewSummary}`
+        description:
+          trust == null
+            ? `Special outcome: hostname not graded as Active website (${result.siteStatus}). Summary: ${result.reviewSummary}`
+            : `Risk score (higher means more concern): ${result.score}/100. Summary: ${result.reviewSummary}`
       }
     }
   ];

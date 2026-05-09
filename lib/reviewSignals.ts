@@ -1,5 +1,6 @@
 import "server-only";
 import { normalizeDomain } from "@/lib/cache";
+import { EN_MESSAGES } from "@/lib/messages.en";
 import { publicIntelConfig } from "@/lib/public-intel/config";
 import { collectIndexedReviewSnippets } from "@/lib/public-intel/reviews";
 import { collectTrustpilot } from "@/lib/public-intel/trustpilot";
@@ -76,7 +77,7 @@ export async function getReviewSignals(domain: string): Promise<ReviewSignals> {
     if (combinedRating <= 2.8 && combinedCount >= 10) suspiciousReviewSignals.push("Public reviews indicate a low trust profile.");
     if (combinedRating >= 4.3 && combinedCount >= 100) suspiciousReviewSignals.push("Public reviews suggest a generally established profile.");
   } else {
-    suspiciousReviewSignals.push("No public review profile found.");
+    suspiciousReviewSignals.push(EN_MESSAGES.reviewEvidence.noPublicReviewProfile);
   }
 
   return {

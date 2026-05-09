@@ -85,10 +85,10 @@ export async function runPoliceNlProvider(domain: string): Promise<ProviderRun<P
           wrapEvidence(
             SOURCE,
             "government",
-            "positive",
+            "info",
             false,
-            "No domain string match in cached Police pages",
-            "No direct domain string overlap was detected in lightly cached excerpts of the referenced politie.nl pages.",
+            "No Police page string match",
+            "No direct domain string overlap was detected in lightly cached excerpts of the referenced politie.nl pages. Missing a hit is not proof a shop is trustworthy.",
             "low"
           )
         ];

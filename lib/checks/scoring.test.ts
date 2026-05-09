@@ -9,6 +9,8 @@ function baseChecks(): ExternalChecksResult {
     domainIntelligence: {
       source: "RDAP",
       warnings: [],
+      registrationDate: "2010-01-01T00:00:00.000Z",
+      registrar: "Example Registrar LLC",
       ageDays: 400,
       hasPrivacyProtection: false,
       suspiciouslyShortRegistration: false
@@ -35,10 +37,18 @@ function baseChecks(): ExternalChecksResult {
 }
 
 describe("buildIntelScoring", () => {
-  it("adds HTTPS trust adjustment when TLS validates", () => {
-    const { breakdown, scoreSignals } = buildIntelScoring(baseChecks());
-    expect(scoreSignals.some((s) => s.id === "intel-valid-ssl")).toBe(true);
-    expect(breakdown.find((b) => b.id === "intel-valid-ssl")?.impact).toBeLessThan(0);
+  it("does not treat valid TLS as a trust boost in weighted scoring", () => {
+    const { scoreSignals, breakdown } = buildIntelScoring(baseChecks());
+    expect(scoreSignals.some((s) => s.id === "intel-valid-ssl" || s.id === "intel-https-observed")).toBe(false);
+    expect(breakdown.some((b) => b.label.toLowerCase().includes("tls") && b.impact < 0)).toBe(false);
+    expect(scoreSignals.some((s) => s.id === "intel-tls-issue" || s.id === "intel-no-tls")).toBe(false);
+  });
+
+  it("does not add composite clean-feed trust bonus", () => {
+    const clean = baseChecks();
+    clean.safeBrowsing = { safeBrowsingStatus: "safe", safeBrowsingThreats: [], source: "Google", warnings: [] };
+    const { scoreSignals } = buildIntelScoring(clean);
+    expect(scoreSignals.some((s) => s.id === "intel-no-feed-hits-composite")).toBe(false);
   });
 
   it("does not add composite 'no hits' bonus when Safe Browsing is unknown", () => {

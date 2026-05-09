@@ -117,10 +117,10 @@ export async function runTlsProvider(domain: string): Promise<ProviderRun<SslChe
       wrapEvidence(
         SOURCE,
         "ssl",
-        "positive",
+        "info",
         false,
-        "Valid TLS certificate detected",
-        `HTTPS responded with a certificate considered valid by this runtime. Issuer: ${ssl.certificateIssuer ?? "unknown"}. Expiry: ${ssl.certificateExpiry ?? "unknown"}.`,
+        "HTTPS is available",
+        `HTTPS is available. This protects the connection, but does not verify that the site is legitimate. Issuer: ${ssl.certificateIssuer ?? "unknown"}. Expiry: ${ssl.certificateExpiry ?? "unknown"}.`,
         "high",
         { issuer: ssl.certificateIssuer, expiry: ssl.certificateExpiry, selfSigned: ssl.selfSigned }
       )

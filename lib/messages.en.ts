@@ -20,6 +20,10 @@ export const EN_MESSAGES = {
     loginForCheckout: "Log in to continue.",
     loginForAccount: "Log in to view your account."
   },
+  reviewEvidence: {
+    noPublicReviewProfile:
+      "No public review profile was found. This limits confidence but does not prove the site is unsafe."
+  },
   check: {
     missingUrl: "Please enter a URL to check.",
     invalidWebsiteInput:
@@ -59,6 +63,51 @@ export const EN_MESSAGES = {
     working: "Working...",
     useCreditPremium: "Use credit / Premium",
     noCredits: "No credits available"
+  },
+  /** Full result — invalid / unregistered hostname banner (DNS + RDAP alignment). */
+  domainInfrastructure: {
+    domainStatusHeading: "Domain status",
+    riskLevelHeading: "Risk level",
+    reasonHeading: "Reason",
+    notRegisteredLabel: "Not registered",
+    highRiskInvalidLabel: "High Risk / Invalid",
+    invalidHostExplanation:
+      "This domain does not appear to exist or cannot be verified through DNS/RDAP systems. Scam and phishing campaigns often use disposable or malformed domains."
+  },
+  specialOutcomes: {
+    nonexistent: {
+      headline: "Domain does not exist",
+      subline:
+        "No active registered domain could be verified via public DNS/RDAP in this crawl. Phantom hosts should not be read as trustworthy.",
+      reasonLine:
+        "Fraudly did not run consumer-style trust grading because independent infrastructure checks did not corroborate a live registrable apex.",
+      reviewSummary: "This hostname did not corroborate as a registered/resolvable apex in Fraudly's snapshot.",
+      confidenceRationale: "We have high certainty that actionable website trust evidence is missing—not that the hostname is benign."
+    },
+    inactive: {
+      headline: "Inactive or unreachable website",
+      explain:
+        "The domain appears to exist, but no active website could be reached in this crawl. This is common for parked names or dormant projects; it does not prove a scam.",
+      crawlNote:
+        "Fraudly only sees public fetch/TLS probes here—thin pages, redirects, or bot-blocking can look similar to downtime."
+    }
+  },
+  siteOutcome: {
+    statusHeading: "Site status",
+    confidenceHeading: "Rating confidence",
+    confidenceHighLabel: "High — multiple independent stewardship or reputation checks aligned.",
+    confidenceMediumLabel: "Medium — some checks succeeded, others were inconclusive.",
+    confidenceLowLabel: "Low — limited observable evidence; Fraudly avoids strong conclusions.",
+    trusted: "Trusted",
+    unverified: "Unverified",
+    caution: "Caution",
+    highRisk: "High risk",
+    confirmedMalicious: "Confirmed malicious signal",
+    nonexistent: "Nonexistent domain",
+    inactive: "Inactive / unreachable web",
+    suppressedTrustMeter: "Trust score withheld — this hostname is not treated as an active website.",
+    suppressedTrustExplanation:
+      "Because no registered/resolvable apex was verified for consumer trust grading, Fraudly hides the Trusted/Caution gauges for this hostname."
   },
   basicResult: {
     heading: "Basic result",

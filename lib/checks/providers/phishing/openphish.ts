@@ -73,10 +73,10 @@ export async function runOpenPhishProvider(url: string, domain: string): Promise
           wrapEvidence(
             SOURCE,
             "phishing",
-            "positive",
+            "info",
             false,
-            "No OpenPhish feed match",
-            "No overlapping entry was found in the fetched OpenPhish feed for this check window.",
+            "No OpenPhish match found in this snapshot",
+            "No overlapping entry was found in the fetched OpenPhish feed for this check window. This does not prove the site is safe.",
             "medium"
           )
         ];

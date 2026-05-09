@@ -1,9 +1,12 @@
 import type { IntelScoreBreakdownEntry } from "@/lib/checks/scoring";
 import type { ProviderEvidenceResult } from "@/lib/checks/providers/types";
 import type { ReviewSignals } from "@/lib/reviewSignals";
-import type { ScoreResult, ScoreSignal } from "@/lib/scoringEngine";
+import type { ScoreEvidenceTier, ScoreResult, ScoreSignal } from "@/lib/scoringEngine";
 import type { SupplyChainSignals } from "@/lib/supplyChainSignals";
 import type { DomainIntelligence, SafeBrowsingCheck, SslCheck, TrustSignal } from "@/lib/checks/types";
+import type { PendingPageBehaviorSignals } from "@/types/behavioral-signals";
+import type { DomainInfrastructure } from "@/types/domain-infrastructure";
+import type { ConfidenceLevel, SiteStatus } from "@/types/site-outcome";
 
 export type { ScoreResult, ScoreSignal };
 
@@ -36,6 +39,17 @@ export interface ScamCheckResult {
   aiUsed: boolean;
   supplyChainSignals: SupplyChainSignals;
   scoreResult: ScoreResult;
+  /** DNS + RDAP-backed signal for hosts that likely do not exist or cannot be corroborated. */
+  domainInfrastructure: DomainInfrastructure;
+  /** Deterministic UX status — distinct from verdict string mapping. */
+  siteStatus: SiteStatus;
+  /** Evidence completeness (“how certain are we”). */
+  confidenceLevel: ConfidenceLevel;
+  confidenceRationale: string;
+  /** When true, hide the radial trust gauge (nonexistent / invalid apex policy). */
+  omitTrustScoreGauge: boolean;
+  /** Reserved structure for deterministic page-behaviour phishing checks (all optional booleans today). */
+  behavioralSignalsPending: PendingPageBehaviorSignals;
 }
 
 export interface BasicCheckResult {
@@ -61,6 +75,18 @@ export interface CheckApiResponse {
 }
 
 const VERDICTS: ScamVerdict[] = ["safe", "suspicious", "scam"];
+
+const SITE_STATUSES: SiteStatus[] = [
+  "trusted",
+  "unverified",
+  "caution",
+  "high_risk",
+  "confirmed_malicious",
+  "nonexistent",
+  "inactive"
+];
+
+const CONFIDENCE_LEVELS: ConfidenceLevel[] = ["high", "medium", "low"];
 
 const SCORE_CATEGORIES: ScoreSignal["category"][] = [
   "domain",
@@ -108,6 +134,14 @@ function isProviderEvidenceResult(value: unknown): value is ProviderEvidenceResu
   return true;
 }
 
+const EVIDENCE_TIERS: ScoreEvidenceTier[] = [
+  "confirmed_malicious",
+  "positive_trust",
+  "neutral_observation",
+  "risk_indicator",
+  "missing_data"
+];
+
 function isIntelScoreBreakdownEntry(value: unknown): value is IntelScoreBreakdownEntry {
   if (!value || typeof value !== "object") return false;
   const e = value as Record<string, unknown>;
@@ -118,6 +152,7 @@ function isIntelScoreBreakdownEntry(value: unknown): value is IntelScoreBreakdow
   if (typeof e.category !== "string" || !SCORE_CATEGORIES.includes(e.category as ScoreSignal["category"])) return false;
   if (e.confidence !== "low" && e.confidence !== "medium" && e.confidence !== "high") return false;
   if (typeof e.rationale !== "string") return false;
+  if (e.evidenceTier !== undefined && !EVIDENCE_TIERS.includes(e.evidenceTier as ScoreEvidenceTier)) return false;
   return true;
 }
 
@@ -130,6 +165,23 @@ function isScoreSignal(value: unknown): value is ScoreSignal {
   if (typeof s.impact !== "number" || Number.isNaN(s.impact)) return false;
   if (s.confidence !== "low" && s.confidence !== "medium" && s.confidence !== "high") return false;
   if (typeof s.reason !== "string") return false;
+  if (s.evidenceTier !== undefined && !EVIDENCE_TIERS.includes(s.evidenceTier as ScoreEvidenceTier)) return false;
+  return true;
+}
+
+function isPendingBehaviorSignals(value: unknown): value is PendingPageBehaviorSignals {
+  if (!value || typeof value !== "object") return false;
+  const b = value as Record<string, unknown>;
+  const ok = Object.values(b).every((v) => v === undefined || typeof v === "boolean");
+  return ok;
+}
+
+function isDomainInfrastructure(value: unknown): value is DomainInfrastructure {
+  if (!value || typeof value !== "object") return false;
+  const d = value as Record<string, unknown>;
+  if (typeof d.dnsResolvable !== "boolean") return false;
+  if (typeof d.rdapIndicatesNotFound !== "boolean") return false;
+  if (typeof d.treatAsNonExistentHost !== "boolean") return false;
   return true;
 }
 
@@ -142,6 +194,8 @@ function isScoreResult(value: unknown): value is ScoreResult {
   if (!Array.isArray(r.signals) || !r.signals.every(isScoreSignal)) return false;
   if (!Array.isArray(r.topPositiveSignals) || !r.topPositiveSignals.every(isScoreSignal)) return false;
   if (!Array.isArray(r.topNegativeSignals) || !r.topNegativeSignals.every(isScoreSignal)) return false;
+  if (r.trustScoreCap !== undefined && (typeof r.trustScoreCap !== "number" || Number.isNaN(r.trustScoreCap))) return false;
+  if (r.trustedBlockedReason !== undefined && r.trustedBlockedReason !== "no_trust_anchor") return false;
   return true;
 }
 
@@ -204,6 +258,14 @@ export function isScamCheckResult(value: unknown): value is ScamCheckResult {
   }
 
   if (!o.scoreResult || !isScoreResult(o.scoreResult)) return false;
+  if (!o.domainInfrastructure || !isDomainInfrastructure(o.domainInfrastructure)) return false;
+  if (typeof o.siteStatus !== "string" || !SITE_STATUSES.includes(o.siteStatus as SiteStatus)) return false;
+  if (typeof o.confidenceLevel !== "string" || !CONFIDENCE_LEVELS.includes(o.confidenceLevel as ConfidenceLevel)) {
+    return false;
+  }
+  if (typeof o.confidenceRationale !== "string") return false;
+  if (typeof o.omitTrustScoreGauge !== "boolean") return false;
+  if (!o.behavioralSignalsPending || !isPendingBehaviorSignals(o.behavioralSignalsPending)) return false;
 
   return true;
 }

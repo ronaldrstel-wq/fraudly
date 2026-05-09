@@ -9,6 +9,7 @@ import { Navbar } from "@/components/Navbar";
 import { ResultCard } from "@/components/ResultCard";
 import { SiteFooter } from "@/components/SiteFooter";
 import { DomainCheckJsonLd } from "@/components/seo/DomainCheckJsonLd";
+import { EN_MESSAGES } from "@/lib/messages.en";
 
 export const revalidate = 3600;
 
@@ -16,8 +17,12 @@ type PageProps = {
   params: Promise<{ domain: string }>;
 };
 
-function safeDescription(domain: string, trustScore: number, summary: string): string {
-  const base = `See whether ${domain} shows scam indicators, phishing risks, suspicious patterns, or trust signals—with Fraudly’s website trust check. Trust-style score around ${trustScore}/100.`;
+function safeDescription(domain: string, trustScore: number | null, summary: string): string {
+  const trustPhrase =
+    trustScore == null
+      ? `Fraudly could not grade ${domain} as an active verified website—the trust gauge is withheld.`
+      : `Trust-style score around ${trustScore}/100.`;
+  const base = `See whether ${domain} shows scam indicators, phishing risks, suspicious patterns, or trust signals—with Fraudly’s website trust check. ${trustPhrase}`;
   const combined = `${base} ${summary}`;
   return combined.length > 158 ? `${combined.slice(0, 155)}…` : combined;
 }
@@ -34,7 +39,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   try {
     const result = await getCachedWebsiteAnalysis(domain);
-    const trustScore = Math.round(100 - result.score);
+    const trustScore = result.omitTrustScoreGauge ? null : Math.round(100 - result.score);
     const title = `Is ${domain} Safe? Website Trust Analysis`;
     const description = safeDescription(domain, trustScore, result.reviewSummary);
 
@@ -48,7 +53,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         locale: "en_US",
         url: canonical,
         title: `${title} | Fraudly`,
-        description: `Fraudly checked ${domain} for scam signals and website trust indicators. Trust-style score about ${trustScore}/100.`,
+        description:
+          trustScore == null
+            ? `Fraudly checked ${domain} for scam signals. Trust-style score withheld — ${EN_MESSAGES.specialOutcomes.nonexistent.headline.toLowerCase()}.`
+            : `Fraudly checked ${domain} for scam signals and website trust indicators. Trust-style score about ${trustScore}/100.`,
         images: [OG_IMAGE]
       },
       twitter: {
@@ -82,10 +90,10 @@ export default async function DomainCheckPage({ params }: PageProps) {
     notFound();
   }
 
-  const trustScore = Math.round(100 - result.score);
+  const trustScore = result.omitTrustScoreGauge ? null : Math.round(100 - result.score);
   const sslShort = result.ssl.httpsEnabled
     ? result.ssl.validCertificate
-      ? "Valid HTTPS"
+      ? "HTTPS available — encrypts transit, does not prove legitimacy"
       : "HTTPS with certificate issues"
     : "No HTTPS";
 
@@ -135,7 +143,9 @@ export default async function DomainCheckPage({ params }: PageProps) {
         <dl className="mt-8 grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Trust-style score</dt>
-            <dd className="mt-1 text-2xl font-bold text-slate-900">{trustScore} / 100</dd>
+            <dd className="mt-1 text-2xl font-bold text-slate-900">
+              {trustScore == null ? EN_MESSAGES.siteOutcome.suppressedTrustMeter : `${trustScore} / 100`}
+            </dd>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Domain age (days)</dt>

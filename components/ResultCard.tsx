@@ -2,9 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { ReviewSummary } from "@/components/ReviewSummary";
+import { inferIntelEvidenceTier, type IntelScoreBreakdownEntry } from "@/lib/checks/scoring";
 import type { TrustSignal } from "@/lib/checks/types";
+import { inferScoreEvidenceTier, type ScoreEvidenceTier, type ScoreSignal } from "@/lib/scoringEngine";
 import { trustIconGlyph, trustPresentationFromScore } from "@/lib/trustSystem";
+import { EN_MESSAGES } from "@/lib/messages.en";
 import type { ScamCheckResult } from "@/types/scam";
+import type { ConfidenceLevel, SiteStatus } from "@/types/site-outcome";
 import type { ReputationEnrichment } from "@/lib/outscraper/reputation";
 
 interface ResultCardProps {
@@ -42,14 +46,148 @@ function SignalList({ signals, empty }: { signals: TrustSignal[]; empty: string 
   );
 }
 
+const TIER_ORDER: ScoreEvidenceTier[] = [
+  "confirmed_malicious",
+  "positive_trust",
+  "neutral_observation",
+  "risk_indicator",
+  "missing_data"
+];
+
+function labelForEvidenceTier(tier: ScoreEvidenceTier): string {
+  switch (tier) {
+    case "confirmed_malicious":
+      return "Confirmed malicious evidence";
+    case "positive_trust":
+      return "Positive trust evidence";
+    case "neutral_observation":
+      return "Neutral technical observations";
+    case "risk_indicator":
+      return "Risk indicators";
+    case "missing_data":
+      return "Missing / unknown data";
+  }
+}
+
+function tierScoreSignals(rows: ScoreSignal[]): Record<ScoreEvidenceTier, ScoreSignal[]> {
+  const base: Record<ScoreEvidenceTier, ScoreSignal[]> = {
+    confirmed_malicious: [],
+    positive_trust: [],
+    neutral_observation: [],
+    risk_indicator: [],
+    missing_data: []
+  };
+  for (const row of rows) {
+    base[inferScoreEvidenceTier(row)].push(row);
+  }
+  return base;
+}
+
+function tierIntel(rows: IntelScoreBreakdownEntry[]): Record<ScoreEvidenceTier, IntelScoreBreakdownEntry[]> {
+  const base: Record<ScoreEvidenceTier, IntelScoreBreakdownEntry[]> = {
+    confirmed_malicious: [],
+    positive_trust: [],
+    neutral_observation: [],
+    risk_indicator: [],
+    missing_data: []
+  };
+  for (const row of rows) {
+    base[inferIntelEvidenceTier(row)].push(row);
+  }
+  return base;
+}
+
+function labelForConfidence(level: ConfidenceLevel): string {
+  switch (level) {
+    case "high":
+      return EN_MESSAGES.siteOutcome.confidenceHighLabel;
+    case "medium":
+      return EN_MESSAGES.siteOutcome.confidenceMediumLabel;
+    case "low":
+      return EN_MESSAGES.siteOutcome.confidenceLowLabel;
+  }
+}
+
+function siteStatusLabel(status: SiteStatus): string {
+  switch (status) {
+    case "trusted":
+      return EN_MESSAGES.siteOutcome.trusted;
+    case "unverified":
+      return EN_MESSAGES.siteOutcome.unverified;
+    case "caution":
+      return EN_MESSAGES.siteOutcome.caution;
+    case "high_risk":
+      return EN_MESSAGES.siteOutcome.highRisk;
+    case "confirmed_malicious":
+      return EN_MESSAGES.siteOutcome.confirmedMalicious;
+    case "nonexistent":
+      return EN_MESSAGES.siteOutcome.nonexistent;
+    case "inactive":
+      return EN_MESSAGES.siteOutcome.inactive;
+  }
+}
+
+/** Tier‑1 phishing/malware list matches surfaced as structured provider rows (not guesses). */
+function isConfirmedIntelTrustSignal(signal: TrustSignal): boolean {
+  if (signal.type !== "danger" && signal.type !== "warning") return false;
+  const blob = `${signal.title}\n${signal.description}\n${signal.source ?? ""}`.toLowerCase();
+  return /safe browsing|openphish|urlhaus|politie|\bpolice\b/.test(blob);
+}
+
+function footerFromSiteStatus(status: SiteStatus): { card: string; body: string } {
+  switch (status) {
+    case "trusted":
+      return {
+        card: "border-emerald-200 bg-emerald-50 text-emerald-950",
+        body: "Anchors look supportive for this snapshot—still verify payments and identities through normal diligence."
+      };
+    case "unverified":
+      return {
+        card: "border-slate-200 bg-slate-50 text-slate-900",
+        body: "Fraudly could not corroborate a strong public stewardship story. Low visibility is not proof of fraud—take extra verification steps."
+      };
+    case "caution":
+      return {
+        card: "border-amber-200 bg-amber-50 text-amber-950",
+        body: "Some warnings were found. Verify payment safety and seller legitimacy before buying."
+      };
+    case "high_risk":
+      return {
+        card: "border-rose-200 bg-rose-50 text-rose-950",
+        body: "Multiple risk indicators were detected. Avoid sharing personal or payment details until independently verified."
+      };
+    case "confirmed_malicious":
+      return {
+        card: "border-rose-300 bg-rose-100 text-rose-950",
+        body: "At least one authoritative feed or police‑aligned reference lists this host. Treat it as malicious until an independent official source contradicts that."
+      };
+    case "nonexistent":
+      return {
+        card: "border-rose-200 bg-rose-50 text-rose-950",
+        body: "This hostname is being treated as invalid or unverifiable—not as a safe or trusted website."
+      };
+    case "inactive":
+      return {
+        card: "border-slate-200 bg-slate-50 text-slate-900",
+        body: "The domain may exist, but no usable public website was observed here. That is common for parked names; it is not, by itself, proof of a scam."
+      };
+  }
+}
+
 export function ResultCard({ result }: ResultCardProps) {
+  const suppressedGauge = result.omitTrustScoreGauge;
   const trustScore = Math.round(100 - result.score);
-  const style = trustPresentationFromScore(trustScore);
+  const style = trustPresentationFromScore(suppressedGauge ? 0 : trustScore);
   const { reviewSignals } = result;
   const hasPublicReviewData = reviewSignals.trustpilotFound || reviewSignals.googleFound;
+  const scoreTierBuckets = tierScoreSignals(result.scoreResult.signals);
+  const intelTierBuckets = tierIntel(result.intelScoreBreakdown);
 
   const keyRisks = result.trustSignals.filter((s) => s.type === "danger" || s.type === "warning");
+  const confirmedMaliciousSignals = keyRisks.filter(isConfirmedIntelTrustSignal);
+  const otherRiskSignals = keyRisks.filter((s) => !isConfirmedIntelTrustSignal(s));
   const supportiveSignals = result.trustSignals.filter((s) => s.type === "positive" || s.type === "info");
+  const footer = footerFromSiteStatus(result.siteStatus);
   const [reputation, setReputation] = useState<ReputationEnrichment | null>(null);
   const [repLoading, setRepLoading] = useState(false);
   const [repError, setRepError] = useState<string | null>(null);
@@ -120,22 +258,35 @@ export function ResultCard({ result }: ResultCardProps) {
   return (
     <div className="w-full rounded-xl bg-white p-6 shadow-lg shadow-slate-200/60 transition-all duration-300">
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
-        <div className="flex min-w-0 items-center gap-4" aria-label={`Trust score ${trustScore} percent, ${style.label}`}>
+        {suppressedGauge ? (
+          <div className="min-w-0 flex-1 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-950">
+            <p className="text-base font-semibold text-amber-950">{EN_MESSAGES.specialOutcomes.nonexistent.headline}</p>
+            <p className="mt-2 leading-relaxed">{EN_MESSAGES.specialOutcomes.nonexistent.subline}</p>
+            <p className="mt-2 text-xs text-amber-900/90">{EN_MESSAGES.siteOutcome.suppressedTrustExplanation}</p>
+          </div>
+        ) : (
           <div
-            className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-8 border-white text-2xl font-bold shadow-sm ${style.toneSoftBg} ${style.toneText}`}
+            className="flex min-w-0 items-center gap-4"
+            aria-label={`Trust score ${trustScore} percent, ${style.label}`}
           >
-            {trustScore}%
-          </div>
-          <div className="min-w-0">
-            <p
-              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-semibold ${style.toneSoftBorder} ${style.toneSoftBg} ${style.toneText}`}
+            <div
+              className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-8 border-white text-2xl font-bold shadow-sm ${style.toneSoftBg} ${style.toneText}`}
             >
-              <span aria-hidden>{trustIconGlyph(style.icon)}</span>
-              {style.label}
-            </p>
-            <p className="mt-1 text-sm text-slate-500">Trust score (automated)</p>
+              {trustScore}%
+            </div>
+            <div className="min-w-0">
+              <p
+                className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-semibold ${style.toneSoftBorder} ${style.toneSoftBg} ${style.toneText}`}
+              >
+                <span aria-hidden>{trustIconGlyph(style.icon)}</span>
+                {style.label}
+              </p>
+              <p className="mt-1 text-sm text-slate-500">
+                Trust projection (risk inverted) — distinct from rating confidence below.
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="flex w-full min-w-0 flex-col gap-3 sm:w-auto sm:max-w-md sm:items-end sm:text-right">
           <div className="text-sm text-slate-600 sm:text-right">
@@ -144,22 +295,80 @@ export function ResultCard({ result }: ResultCardProps) {
           </div>
         </div>
       </div>
-      <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-        <div className={`h-full ${style.progressBar}`} style={{ width: `${trustScore}%` }} />
+      {suppressedGauge ? null : (
+        <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+          <div className={`h-full ${style.progressBar}`} style={{ width: `${trustScore}%` }} />
+        </div>
+      )}
+
+      <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{EN_MESSAGES.siteOutcome.statusHeading}</p>
+        <p className="mt-1 text-lg font-semibold text-slate-900">{siteStatusLabel(result.siteStatus)}</p>
+        <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-500">{EN_MESSAGES.siteOutcome.confidenceHeading}</p>
+        <p className="mt-1 font-medium capitalize text-slate-900">{result.confidenceLevel}</p>
+        <p className="mt-1 text-xs leading-relaxed text-slate-600">{labelForConfidence(result.confidenceLevel)}</p>
+        <p className="mt-2 text-xs text-slate-600">{result.confidenceRationale}</p>
       </div>
 
+      {result.siteStatus === "inactive" ? (
+        <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-800">
+          <p className="font-semibold text-slate-900">{EN_MESSAGES.specialOutcomes.inactive.headline}</p>
+          <p className="mt-2 leading-relaxed">{EN_MESSAGES.specialOutcomes.inactive.explain}</p>
+          <p className="mt-2 text-xs text-slate-600">{EN_MESSAGES.specialOutcomes.inactive.crawlNote}</p>
+        </div>
+      ) : null}
+
+      {result.domainInfrastructure.treatAsNonExistentHost ? (
+        <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-950">
+          <dl className="space-y-3">
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-rose-800/90">
+                {EN_MESSAGES.domainInfrastructure.domainStatusHeading}
+              </dt>
+              <dd className="mt-1 text-base font-semibold">{EN_MESSAGES.domainInfrastructure.notRegisteredLabel}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-rose-800/90">
+                {EN_MESSAGES.domainInfrastructure.riskLevelHeading}
+              </dt>
+              <dd className="mt-1 text-base font-semibold">{EN_MESSAGES.domainInfrastructure.highRiskInvalidLabel}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-rose-800/90">
+                {EN_MESSAGES.domainInfrastructure.reasonHeading}
+              </dt>
+              <dd className="mt-1 leading-relaxed text-rose-950/95">
+                {EN_MESSAGES.domainInfrastructure.invalidHostExplanation}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      ) : null}
+
       <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Key risk indicators</p>
-        <p className="mt-1 text-xs text-slate-500">Warnings and higher-severity context from this run.</p>
+        <p className="text-sm font-semibold text-slate-900">Confirmed malicious intelligence</p>
+        <p className="mt-1 text-xs text-slate-500">Structured matches from phishing/malware lists or police-aligned references only.</p>
         <SignalList
-          signals={keyRisks}
-          empty="No high-priority risk rows were raised by the configured intelligence checks."
+          signals={confirmedMaliciousSignals}
+          empty="No Safe Browsing, OpenPhish, URLhaus, or police-aligned list matches were returned in this crawl."
         />
       </div>
 
       <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Trust signals</p>
-        <p className="mt-1 text-xs text-slate-500">Supportive or informational context (including “no hit” messages).</p>
+        <p className="text-sm font-semibold text-slate-900">Other risk indicators</p>
+        <p className="mt-1 text-xs text-slate-500">Higher-severity heuristics and technical warnings that still require independent verification.</p>
+        <SignalList
+          signals={otherRiskSignals}
+          empty="No additional prioritized risk rows were raised beyond curated list matches."
+        />
+      </div>
+
+      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">Trust anchors & neutral observations</p>
+        <p className="mt-1 text-xs text-slate-500">
+          Supportive facts and neutral technical notes. Absences (for example missing reviews or “no feed hit”) limit confidence—they are
+          not proof a site is safe.
+        </p>
         <SignalList signals={supportiveSignals} empty="No supportive or informational trust rows were returned." />
       </div>
 
@@ -383,20 +592,72 @@ export function ResultCard({ result }: ResultCardProps) {
       <details className="mt-6 rounded-xl border border-dashed border-slate-200 bg-white px-4 py-3 text-sm">
         <summary className="cursor-pointer font-semibold text-slate-900">Score evidence (debug)</summary>
         <p className="mt-2 text-xs text-slate-500">
-          Signed contributions toward the server risk score (positive numbers increase risk, negative numbers reduce it).
+          Composite model uses raw impacts × confidence weights on the server. Positive numbers push the risk score up;
+          negative numbers pull it down. Neutral rows are explanatory only — they must not be read as endorsement.
         </p>
+        {typeof result.scoreResult.trustScoreCap === "number" ? (
+          <p className="mt-2 text-xs text-slate-600">
+            Applied trust-score cap after identity guardrails: {result.scoreResult.trustScoreCap}/100 displayed trust.
+          </p>
+        ) : null}
+        {result.scoreResult.trustedBlockedReason === "no_trust_anchor" ? (
+          <p className="mt-2 text-xs text-amber-800">
+            “Trusted” was withheld because reputation or RDAP lifecycle evidence did not independently anchor identity for
+            this snapshot.
+          </p>
+        ) : null}
+
+        <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-600">
+          Combined scoring signals (reviews, domain literacy, Tier‑1 intel, supply chain…)
+        </p>
+        {result.scoreResult.signals.length === 0 ? (
+          <p className="mt-2 text-xs text-slate-600">No modeled signals captured.</p>
+        ) : (
+          <div className="mt-2 space-y-3">
+            {TIER_ORDER.map((tier) => {
+              const grouped = scoreTierBuckets[tier];
+              if (grouped.length === 0) return null;
+              return (
+                <div key={`score-${tier}`}>
+                  <p className="text-xs font-semibold text-slate-800">{labelForEvidenceTier(tier)}</p>
+                  <ul className="mt-1 space-y-1 text-xs text-slate-700">
+                    {grouped.map((row) => (
+                      <li key={row.id}>
+                        <span className="font-medium">{row.label}</span> ({row.impact >= 0 ? "+" : ""}
+                        {row.impact} raw · {row.confidence} confidence) — {row.reason}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-slate-600">Tier‑1 intelligence weighting only</p>
         {result.intelScoreBreakdown.length === 0 ? (
           <p className="mt-2 text-xs text-slate-600">No weighted intel contributions in this run.</p>
         ) : (
-          <ul className="mt-2 space-y-1 text-xs text-slate-700">
-            {result.intelScoreBreakdown.map((row) => (
-              <li key={row.id}>
-                <span className="font-medium">{row.label}</span> ({row.impact >= 0 ? "+" : ""}
-                {row.impact}) — {row.rationale}
-                {row.source ? <span className="text-slate-500"> · {row.source}</span> : null}
-              </li>
-            ))}
-          </ul>
+          <div className="mt-2 space-y-3">
+            {TIER_ORDER.map((tier) => {
+              const grouped = intelTierBuckets[tier];
+              if (grouped.length === 0) return null;
+              return (
+                <div key={`intel-${tier}`}>
+                  <p className="text-xs font-semibold text-slate-800">{labelForEvidenceTier(tier)}</p>
+                  <ul className="mt-1 space-y-1 text-xs text-slate-700">
+                    {grouped.map((row) => (
+                      <li key={row.id}>
+                        <span className="font-medium">{row.label}</span> ({row.impact >= 0 ? "+" : ""}
+                        {row.impact} raw · {row.confidence} confidence) — {row.rationale}
+                        {row.source ? <span className="text-slate-500"> · {row.source}</span> : null}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
         )}
       </details>
 
@@ -414,13 +675,7 @@ export function ResultCard({ result }: ResultCardProps) {
         <p className="mt-3 text-xs text-slate-500">AI model used in this run: {result.aiUsed ? "yes" : "no"}</p>
       </div>
 
-      <div className={`mt-6 rounded-xl border px-4 py-3 text-sm ${style.toneSoftBorder} ${style.toneSoftBg} ${style.toneText}`}>
-        {style.level === "trusted"
-          ? "Signals are mostly supportive for this snapshot, but still use normal checkout caution."
-          : style.level === "caution"
-            ? "Some warnings were found. Verify payment safety and seller legitimacy before buying."
-            : "Multiple risk indicators were detected. Avoid sharing personal or payment details until independently verified."}
-      </div>
+      <div className={`mt-6 rounded-xl border px-4 py-3 text-sm ${footer.card}`}>{footer.body}</div>
     </div>
   );
 }
