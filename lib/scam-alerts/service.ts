@@ -14,6 +14,7 @@ export type PublicScamAlertListItem = {
   sourceName: string;
   sourceUrl: string | null;
   confidence: number;
+  evidenceCount: number;
   status: ScamAlertStatus;
   publishedAt: Date | null;
   firstSeenAt: Date;
@@ -117,7 +118,7 @@ function riskLevelForConfidence(confidence: number): string {
 }
 
 export async function listPublishedScamAlerts(params?: { scamType?: string; take?: number }): Promise<PublicScamAlertListItem[]> {
-  const take = Math.max(1, Math.min(200, params?.take ?? 50));
+  const take = Math.max(1, Math.min(500, params?.take ?? 50));
   try {
     return await db.scamAlert.findMany({
       where: {
@@ -129,6 +130,58 @@ export async function listPublishedScamAlerts(params?: { scamType?: string; take
     });
   } catch (err) {
     if (isDbUnavailable(err)) return [];
+    throw err;
+  }
+}
+
+export type ScamAlertsIndexStats = {
+  total: number;
+  /** Count with confidence ≥ 75 (aligns with “high” tier and above in the public list). */
+  elevatedConfidenceCount: number;
+  /** Published or first activity timestamp today (UTC day). */
+  newTodayCount: number;
+  topScamType: string | null;
+};
+
+function utcStartOfDay(d: Date): Date {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0));
+}
+
+export async function getScamAlertsIndexStats(now: Date = new Date()): Promise<ScamAlertsIndexStats> {
+  const start = utcStartOfDay(now);
+  const published = { status: ScamAlertStatus.published };
+  try {
+    const [total, elevatedConfidenceCount, newTodayCount, typeGroups] = await Promise.all([
+      db.scamAlert.count({ where: published }),
+      db.scamAlert.count({
+        where: { ...published, confidence: { gte: 75 } }
+      }),
+      db.scamAlert.count({
+        where: {
+          ...published,
+          OR: [{ publishedAt: { gte: start } }, { publishedAt: null, lastSeenAt: { gte: start } }]
+        }
+      }),
+      db.scamAlert.groupBy({
+        by: ["scamType"],
+        where: published,
+        _count: { _all: true }
+      })
+    ]);
+    const topScamType =
+      typeGroups.length === 0
+        ? null
+        : [...typeGroups].sort((a, b) => b._count._all - a._count._all)[0]!.scamType;
+    return {
+      total,
+      elevatedConfidenceCount,
+      newTodayCount,
+      topScamType
+    };
+  } catch (err) {
+    if (isDbUnavailable(err)) {
+      return { total: 0, elevatedConfidenceCount: 0, newTodayCount: 0, topScamType: null };
+    }
     throw err;
   }
 }

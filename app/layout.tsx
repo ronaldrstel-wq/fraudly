@@ -2,6 +2,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { CookieConsentProvider } from "@/components/CookieConsentProvider";
+import { logClerkProductionMisconfigWarnings } from "@/lib/clerkConfig";
 import { JsonLd } from "@/components/JsonLd";
 import { PwaServiceWorkerRegister } from "@/components/PwaServiceWorkerRegister";
 import { OG_IMAGE } from "@/lib/seo-metadata";
@@ -73,15 +74,19 @@ export const metadata: Metadata = {
   }
 };
 
+logClerkProductionMisconfigWarnings();
+
 export default function RootLayout({
   children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim() ?? "";
+
   return (
     <html lang="en" className={inter.variable}>
       <body className={`${inter.className} min-h-screen antialiased`}>
-        <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up">
+        <ClerkProvider publishableKey={clerkPublishableKey} signInUrl="/sign-in" signUpUrl="/sign-up">
           <PwaServiceWorkerRegister />
           <JsonLd />
           <CookieConsentProvider>{children}</CookieConsentProvider>
