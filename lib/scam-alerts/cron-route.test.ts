@@ -5,6 +5,7 @@ const runScamAlertsIngestion = vi.fn(async () => ({
   created: 3,
   updated: 2,
   published: 1,
+  statusCounts: { draft: 1, published: 1, archived: 0 },
   failedSources: []
 }));
 
@@ -53,6 +54,21 @@ describe("cron scam alerts route", () => {
       })
     );
     expect(response.status).toBe(200);
+  });
+
+  it("accepts vercel cron GET with bearer secret", async () => {
+    const { GET } = await import("@/app/api/cron/scam-alerts/route");
+    const response = await GET(
+      new Request("http://localhost/api/cron/scam-alerts", {
+        method: "GET",
+        headers: {
+          authorization: "Bearer test-cron-secret",
+          "x-vercel-cron": "1"
+        }
+      })
+    );
+    expect(response.status).toBe(200);
+    expect(runScamAlertsIngestion).toHaveBeenCalledTimes(1);
   });
 
   afterAll(() => {

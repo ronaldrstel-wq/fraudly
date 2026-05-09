@@ -86,7 +86,7 @@ export default async function ScamAlertsPage({ searchParams }: PageProps) {
 
         {alerts.length === 0 ? (
           <section className="mt-10 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
-            <h2 className="text-xl font-semibold text-slate-900">No alerts yet</h2>
+            <h2 className="text-xl font-semibold text-slate-900">No published scam alerts yet.</h2>
             <p className="mt-2 text-sm text-slate-600">
               There are currently no published alerts for this filter. Check back soon as public feeds update daily.
             </p>

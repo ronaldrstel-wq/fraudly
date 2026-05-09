@@ -59,6 +59,7 @@ export type ScamAlertCronSummary = {
   created: number;
   updated: number;
   published: number;
+  statusCounts: { draft: number; published: number; archived: number };
   failedSources: Array<{ source: string; error: string }>;
 };
 
@@ -168,7 +169,8 @@ async function ingestSingleAlert(input: IngestScamAlertInput): Promise<"created"
   const now = new Date();
   const confidence = clampConfidence(input.confidence);
   const domain = normalizeDomain(input.domain);
-  const publishedByDefault = confidence >= 75;
+  const forcePublishForTesting = process.env.SCAM_ALERTS_FORCE_PUBLISH === "true";
+  const publishedByDefault = forcePublishForTesting || confidence >= 75;
   const summary = input.summary.trim().slice(0, 4000);
   const title = input.title.trim().slice(0, 256);
   const sourceName = input.sourceName.trim().slice(0, 128);
@@ -228,7 +230,7 @@ async function ingestSingleAlert(input: IngestScamAlertInput): Promise<"created"
     return publishedByDefault ? "published" : "created";
   }
 
-  const shouldPublish = existing.status !== ScamAlertStatus.published && confidence >= 75;
+  const shouldPublish = existing.status !== ScamAlertStatus.published && (forcePublishForTesting || confidence >= 75);
   const exampleDomainsNext = domain
     ? Array.from(
         new Set([...(Array.isArray(existing.exampleDomainsJson) ? (existing.exampleDomainsJson as string[]) : []), domain])
@@ -344,11 +346,13 @@ export async function runScamAlertsIngestion(): Promise<ScamAlertCronSummary> {
     created: 0,
     updated: 0,
     published: 0,
+    statusCounts: { draft: 0, published: 0, archived: 0 },
     failedSources: []
   };
 
   const feedResults = await Promise.allSettled([fetchOpenPhishFeed(), fetchUrlHausFeed()]);
   const allItems: IngestScamAlertInput[] = [];
+  const fetchedBySource: Record<string, number> = { OpenPhish: 0, URLhaus: 0 };
   for (let i = 0; i < feedResults.length; i += 1) {
     const source = i === 0 ? "OpenPhish" : "URLhaus";
     const row = feedResults[i];
@@ -360,6 +364,7 @@ export async function runScamAlertsIngestion(): Promise<ScamAlertCronSummary> {
       });
       continue;
     }
+    fetchedBySource[source] = row.value.length;
     allItems.push(...row.value);
   }
 
@@ -371,6 +376,11 @@ export async function runScamAlertsIngestion(): Promise<ScamAlertCronSummary> {
 
   const uniqueItems = [...deduped.values()];
   summary.scanned = uniqueItems.length;
+  console.info("[scam-alerts][cron] fetched feed rows", {
+    fetchedBySource,
+    totalFetched: allItems.length,
+    deduped: uniqueItems.length
+  });
   for (const item of uniqueItems) {
     try {
       const state = await ingestSingleAlert(item);
@@ -384,5 +394,22 @@ export async function runScamAlertsIngestion(): Promise<ScamAlertCronSummary> {
       });
     }
   }
+  try {
+    const grouped = await db.scamAlert.groupBy({
+      by: ["status"],
+      _count: { _all: true }
+    });
+    for (const row of grouped) {
+      if (row.status === ScamAlertStatus.draft) summary.statusCounts.draft = row._count._all;
+      if (row.status === ScamAlertStatus.published) summary.statusCounts.published = row._count._all;
+      if (row.status === ScamAlertStatus.archived) summary.statusCounts.archived = row._count._all;
+    }
+  } catch (err) {
+    summary.failedSources.push({
+      source: "status-counts",
+      error: err instanceof Error ? err.message : "failed"
+    });
+  }
+  console.info("[scam-alerts][cron] ingestion summary", summary);
   return summary;
 }
