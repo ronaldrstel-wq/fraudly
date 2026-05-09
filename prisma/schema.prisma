@@ -122,11 +122,15 @@ model ScamAlert {
   lastSeenAt        DateTime        @default(now())
   generatedAt       DateTime        @default(now())
   publishedAt       DateTime?
+  archivedAt        DateTime?
+  /// Public listing hides rows past this instant (aligned with first publish + 90d visibility).
+  expiresAt         DateTime?
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   signals           ScamSignal[]
 
   @@index([status, publishedAt(sort: Desc)])
+  @@index([status, archivedAt(sort: Desc)])
   @@index([scamType, status])
   @@index([domain])
 }

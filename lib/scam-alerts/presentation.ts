@@ -1,4 +1,6 @@
-import type { PublicScamAlertListItem } from "@/lib/scam-alerts/service";
+import type { PublicScamAlertListItem, ScamAlertsPublicFilter } from "@/lib/scam-alerts/service";
+
+export type ListFilterKey = ScamAlertsPublicFilter;
 
 export type AlertSeverity = "critical" | "high" | "suspicious" | "monitoring";
 
@@ -9,8 +11,6 @@ export type AlertSeverityPresentation = {
   accessibleDescription: string;
   badgeClass: string;
 };
-
-export type ListFilterKey = "all" | "critical" | "high" | "phishing" | "malware" | "new-today";
 
 const MS_HOUR = 60 * 60 * 1000;
 const MS_DAY = 24 * MS_HOUR;
@@ -116,6 +116,11 @@ export function whyThisMattersLine(alert: Pick<PublicScamAlertListItem, "scamTyp
   return `Fraudly matched this entry to public threat data from ${alert.sourceName}. Treat unexpected links with caution until you verify the sender.`;
 }
 
+/** e.g. "9 May 2026" for alert cards. */
+export function formatPublishedDateLongEn(date: Date): string {
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+}
+
 export function formatRelativeTimeEn(date: Date, now: Date = new Date()): { label: string; title: string } {
   const title = date.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
   const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
@@ -153,8 +158,8 @@ export function alertMatchesListFilter(
   if (filter === "all") return true;
   const sev = deriveAlertSeverity(alert, now).severity;
   const t = alert.scamType.toLowerCase();
-  if (filter === "critical") return sev === "critical";
-  if (filter === "high") return sev === "high";
+  /** Aligns with DB filter `confidence >= 75` for the index. */
+  if (filter === "high") return alert.confidence >= 75 || sev === "critical" || sev === "high";
   if (filter === "phishing") return t.includes("phish");
   if (filter === "malware") return t.includes("malware") || t.includes("trojan") || t.includes("virus");
   if (filter === "new-today") return isNewToday(alert, now);
@@ -173,16 +178,29 @@ export function filterPublishedAlerts(
   });
 }
 
+const LEGACY_FILTER_MAP: Record<string, ListFilterKey> = {
+  critical: "high"
+};
+
 export function parseListFilterKey(raw: string | undefined): ListFilterKey {
-  const allowed: ListFilterKey[] = ["all", "critical", "high", "phishing", "malware", "new-today"];
+  const allowed: ListFilterKey[] = ["all", "high", "phishing", "malware", "new-today"];
   const v = typeof raw === "string" ? raw.trim().toLowerCase() : "";
+  if (LEGACY_FILTER_MAP[v]) return LEGACY_FILTER_MAP[v];
   return (allowed.includes(v as ListFilterKey) ? v : "all") as ListFilterKey;
 }
 
-export function buildScamAlertsQuery(base: { filter?: ListFilterKey; type?: string }): string {
+export function parseScamAlertsPageParam(raw: string | string[] | undefined): number {
+  const s = Array.isArray(raw) ? raw[0] : raw;
+  const n = Number.parseInt(String(s ?? "1"), 10);
+  if (!Number.isFinite(n) || n < 1) return 1;
+  return Math.min(n, 10_000);
+}
+
+export function buildScamAlertsQuery(base: { filter?: ListFilterKey; type?: string; page?: number }): string {
   const p = new URLSearchParams();
   if (base.filter && base.filter !== "all") p.set("filter", base.filter);
   if (base.type?.trim()) p.set("type", base.type.trim());
+  if (base.page !== undefined && base.page > 1) p.set("page", String(base.page));
   const s = p.toString();
   return s ? `?${s}` : "";
 }

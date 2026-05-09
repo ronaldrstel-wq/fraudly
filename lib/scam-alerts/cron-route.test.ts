@@ -1,10 +1,15 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const runScamAlertsIngestion = vi.fn(async () => ({
+  fetched: 12,
+  deduped: 10,
   scanned: 10,
   created: 3,
   updated: 2,
   published: 1,
+  archived: 0,
+  deletedArchived: 0,
+  skippedDueToCap: 0,
   statusCounts: { draft: 1, published: 1, archived: 0 },
   failedSources: []
 }));

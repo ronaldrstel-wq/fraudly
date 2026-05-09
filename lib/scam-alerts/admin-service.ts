@@ -1,5 +1,12 @@
-import { ScamAlertStatus } from "@prisma/client";
+import { Prisma, ScamAlertStatus } from "@prisma/client";
 import { db } from "@/lib/db";
+
+const MS_DAY = 86_400_000;
+const SCAM_ALERT_PUBLIC_VISIBILITY_DAYS = 90;
+
+function expiresAtFromPublished(publishedAt: Date): Date {
+  return new Date(publishedAt.getTime() + SCAM_ALERT_PUBLIC_VISIBILITY_DAYS * MS_DAY);
+}
 
 export type AdminScamAlertRow = {
   id: string;
@@ -28,9 +35,30 @@ export async function listScamAlertsForAdmin(status: "all" | ScamAlertStatus, ta
 }
 
 export async function updateScamAlertStatus(id: string, status: ScamAlertStatus): Promise<AdminScamAlertRow> {
+  const now = new Date();
+  const row = await db.scamAlert.findUnique({ where: { id } });
+  if (!row) {
+    throw new Error("ScamAlert not found");
+  }
+
+  const data: Prisma.ScamAlertUpdateInput = {
+    status,
+    updatedAt: now
+  };
+
+  if (status === ScamAlertStatus.published) {
+    const publishedAt = row.publishedAt ?? now;
+    data.publishedAt = publishedAt;
+    data.expiresAt = row.expiresAt ?? expiresAtFromPublished(publishedAt);
+  }
+
+  if (status === ScamAlertStatus.archived) {
+    data.archivedAt = now;
+  }
+
   return db.scamAlert.update({
     where: { id },
-    data: { status, updatedAt: new Date() }
+    data
   });
 }
 

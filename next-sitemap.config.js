@@ -49,6 +49,7 @@ module.exports = {
     return [
       { loc: "/check/example.com", changefreq: "daily", priority: 0.8 },
       { loc: "/latest-checks", changefreq: "daily", priority: 0.8 },
+      // Index only: paginated `/scam-alerts?page=N` URLs are intentionally omitted as low unique value for crawlers.
       { loc: "/scam-alerts", changefreq: "daily", priority: 0.8 }
     ];
   }

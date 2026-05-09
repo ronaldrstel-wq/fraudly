@@ -4,6 +4,7 @@ import {
   clusterDomainKey,
   consumerAlertTitle,
   deriveAlertSeverity,
+  formatPublishedDateLongEn,
   formatRelativeTimeEn,
   whyThisMattersLine
 } from "@/lib/scam-alerts/presentation";
@@ -19,8 +20,10 @@ export function ScamAlertCard({ alert, now, showRelatedHint }: ScamAlertCardProp
   const severity = deriveAlertSeverity(alert, now);
   const title = consumerAlertTitle(alert);
   const why = whyThisMattersLine(alert);
-  const published = alert.publishedAt ?? alert.lastSeenAt;
-  const relative = formatRelativeTimeEn(published, now);
+  const publishedAt = alert.publishedAt;
+  const publishedLong = publishedAt ? formatPublishedDateLongEn(publishedAt) : null;
+  const publishedRelative = publishedAt ? formatRelativeTimeEn(publishedAt, now) : null;
+  const lastSeenRelative = formatRelativeTimeEn(alert.lastSeenAt, now);
   const domainKey = clusterDomainKey(alert.domain);
 
   return (
@@ -65,10 +68,26 @@ export function ScamAlertCard({ alert, now, showRelatedHint }: ScamAlertCardProp
         <span>
           Source: <span className="font-medium text-slate-700">{alert.sourceName}</span>
         </span>
+        {publishedAt && publishedLong ? (
+          <span>
+            Published:{" "}
+            <time dateTime={publishedAt.toISOString()} title={publishedRelative?.title}>
+              {publishedLong}
+            </time>
+            {publishedRelative ? (
+              <span className="text-slate-500" title={publishedRelative.title}>
+                {" "}
+                · {publishedRelative.label}
+              </span>
+            ) : null}
+          </span>
+        ) : (
+          <span className="text-slate-500">Published: —</span>
+        )}
         <span>
           Updated{" "}
-          <time dateTime={published.toISOString()} title={relative.title}>
-            {relative.label}
+          <time dateTime={alert.lastSeenAt.toISOString()} title={lastSeenRelative.title}>
+            {lastSeenRelative.label}
           </time>
         </span>
       </p>
@@ -105,9 +124,15 @@ export function ScamAlertCard({ alert, now, showRelatedHint }: ScamAlertCardProp
             </div>
           </div>
           <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-2">
-            <dt className="shrink-0 font-semibold text-slate-800">Published</dt>
-            <dd title={published.toLocaleString("en-GB", { dateStyle: "full", timeStyle: "short" })}>
-              {alert.publishedAt ? alert.publishedAt.toLocaleString("en-GB") : "—"}
+            <dt className="shrink-0 font-semibold text-slate-800">Published (exact)</dt>
+            <dd>
+              {alert.publishedAt ? (
+                <time dateTime={alert.publishedAt.toISOString()} title={alert.publishedAt.toISOString()}>
+                  {alert.publishedAt.toLocaleString("en-GB", { dateStyle: "full", timeStyle: "medium" })}
+                </time>
+              ) : (
+                "—"
+              )}
             </dd>
           </div>
           <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-2">

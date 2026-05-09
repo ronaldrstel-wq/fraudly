@@ -7,7 +7,9 @@ import {
   computeSeverityScore,
   consumerAlertTitle,
   filterPublishedAlerts,
+  formatPublishedDateLongEn,
   parseListFilterKey,
+  parseScamAlertsPageParam,
   severityFromScore,
   whyThisMattersLine
 } from "@/lib/scam-alerts/presentation";
@@ -60,14 +62,14 @@ describe("consumerAlertTitle", () => {
 describe("filters", () => {
   it("parses filter query", () => {
     expect(parseListFilterKey(undefined)).toBe("all");
-    expect(parseListFilterKey("critical")).toBe("critical");
+    expect(parseListFilterKey("high")).toBe("high");
+    expect(parseListFilterKey("critical")).toBe("high");
     expect(parseListFilterKey("nope")).toBe("all");
   });
 
-  it("matches critical by derived severity", () => {
-    const a = baseAlert({ confidence: 95, evidenceCount: 0 });
-    expect(alertMatchesListFilter(a, "critical", fixedNow)).toBe(true);
-    expect(alertMatchesListFilter(a, "high", fixedNow)).toBe(false);
+  it("matches high filter using confidence alignment", () => {
+    expect(alertMatchesListFilter(baseAlert({ confidence: 76 }), "high", fixedNow)).toBe(true);
+    expect(alertMatchesListFilter(baseAlert({ confidence: 50 }), "high", fixedNow)).toBe(false);
   });
 
   it("matches new-today on UTC boundary", () => {
@@ -86,17 +88,34 @@ describe("filters", () => {
   });
 });
 
+describe("parseScamAlertsPageParam", () => {
+  it("defaults and clamps", () => {
+    expect(parseScamAlertsPageParam(undefined)).toBe(1);
+    expect(parseScamAlertsPageParam("2")).toBe(2);
+    expect(parseScamAlertsPageParam("-3")).toBe(1);
+  });
+});
+
 describe("buildScamAlertsQuery", () => {
   it("builds query string", () => {
     expect(buildScamAlertsQuery({})).toBe("");
-    expect(buildScamAlertsQuery({ filter: "critical" })).toBe("?filter=critical");
+    expect(buildScamAlertsQuery({ filter: "high" })).toBe("?filter=high");
     expect(buildScamAlertsQuery({ filter: "high", type: "phishing" })).toBe("?filter=high&type=phishing");
+    expect(buildScamAlertsQuery({ page: 2 })).toBe("?page=2");
+    expect(buildScamAlertsQuery({ filter: "malware", page: 3 })).toBe("?filter=malware&page=3");
   });
 });
 
 describe("clusterDomainKey", () => {
   it("normalizes hostname", () => {
     expect(clusterDomainKey("WWW.EXAMPLE.COM")).toBe("example.com");
+  });
+});
+
+describe("formatPublishedDateLongEn", () => {
+  it("formats UK long date", () => {
+    const d = new Date("2026-05-09T14:00:00.000Z");
+    expect(formatPublishedDateLongEn(d)).toBe("9 May 2026");
   });
 });
 

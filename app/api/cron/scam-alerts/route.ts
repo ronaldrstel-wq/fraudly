@@ -119,10 +119,15 @@ async function runCron(request: Request) {
     const summary = await runScamAlertsIngestion();
     console.info("[scam-alerts][cron-route] completed", {
       authBypass: auth.bypass === true,
+      fetched: summary.fetched,
+      deduped: summary.deduped,
       scanned: summary.scanned,
       created: summary.created,
       updated: summary.updated,
       published: summary.published,
+      archived: summary.archived,
+      deletedArchived: summary.deletedArchived,
+      skippedDueToCap: summary.skippedDueToCap,
       statusCounts: summary.statusCounts,
       failedSources: summary.failedSources
     });
@@ -136,10 +141,15 @@ async function runCron(request: Request) {
     return NextResponse.json(
       {
         ok: false,
+        fetched: 0,
+        deduped: 0,
         scanned: 0,
         created: 0,
         updated: 0,
         published: 0,
+        archived: 0,
+        deletedArchived: 0,
+        skippedDueToCap: 0,
         failedSources: [{ source: "ingestion", error: message }]
       },
       { status: 500 }

@@ -2,51 +2,70 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ScamAlertCard } from "@/components/scam-alerts/ScamAlertCard";
 import { ScamAlertsFilterBar } from "@/components/scam-alerts/ScamAlertsFilterBar";
+import { ScamAlertsPagination } from "@/components/scam-alerts/ScamAlertsPagination";
 import { ScamAlertsSummaryStrip } from "@/components/scam-alerts/ScamAlertsSummaryStrip";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
-import { clusterDomainKey, filterPublishedAlerts, parseListFilterKey } from "@/lib/scam-alerts/presentation";
+import { clusterDomainKey, parseListFilterKey, parseScamAlertsPageParam } from "@/lib/scam-alerts/presentation";
 import { SITE_URL } from "@/lib/seo";
-import { getScamAlertsIndexStats, listPublishedScamAlerts, listPublishedScamTypes } from "@/lib/scam-alerts/service";
+import {
+  getPublishedScamAlertsPageResult,
+  getScamAlertsIndexStats,
+  listPublishedScamTypes,
+  SCAM_ALERTS_PAGE_SIZE
+} from "@/lib/scam-alerts/service";
 
 export const revalidate = 300;
 
+const PAGE_DESCRIPTION =
+  "Consumer-friendly scam and phishing alerts from public threat feeds—what changed, why it matters, and how to stay safe.";
+
 type PageProps = {
-  searchParams: Promise<{ type?: string; filter?: string }>;
+  searchParams: Promise<{ type?: string; filter?: string; page?: string }>;
 };
 
-export const metadata: Metadata = {
-  title: "Threat alerts | Fraudly",
-  description:
-    "Consumer-friendly scam and phishing alerts from public threat feeds—what changed, why it matters, and how to stay safe.",
-  alternates: { canonical: `${SITE_URL}/scam-alerts` },
-  robots: { index: true, follow: true },
-  openGraph: {
-    title: "Threat alerts | Fraudly",
-    description:
-      "Scam, phishing, and malware-style alerts summarized from public intelligence—easy to scan, with technical details when you need them.",
-    url: `${SITE_URL}/scam-alerts`,
-    type: "website"
-  }
-};
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+  const params = await searchParams;
+  const page = parseScamAlertsPageParam(params.page);
+  const canonical = page <= 1 ? `${SITE_URL}/scam-alerts` : `${SITE_URL}/scam-alerts?page=${page}`;
+  const title = page > 1 ? `Threat alerts · Page ${page} | Fraudly` : "Threat alerts | Fraudly";
+
+  return {
+    title,
+    description: PAGE_DESCRIPTION,
+    alternates: { canonical },
+    robots: { index: true, follow: true },
+    openGraph: {
+      title,
+      description: PAGE_DESCRIPTION,
+      url: canonical,
+      type: "website"
+    }
+  };
+}
 
 export default async function ScamAlertsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const now = new Date();
   const selectedType = typeof params.type === "string" ? params.type : "";
   const filter = parseListFilterKey(params.filter);
+  const requestedPage = parseScamAlertsPageParam(params.page);
 
-  const [types, allAlerts, stats] = await Promise.all([
-    listPublishedScamTypes(),
-    listPublishedScamAlerts({ take: 400 }),
+  const [types, pageResult, stats] = await Promise.all([
+    listPublishedScamTypes(now),
+    getPublishedScamAlertsPageResult({
+      filter,
+      exactScamType: selectedType || undefined,
+      page: requestedPage,
+      pageSize: SCAM_ALERTS_PAGE_SIZE,
+      now
+    }),
     getScamAlertsIndexStats(now)
   ]);
 
-  const filtered = filterPublishedAlerts(allAlerts, {
-    type: selectedType || undefined,
-    filter,
-    now
-  });
+  const { alerts, total, page, pageSize, maxPage } = pageResult;
+  const rangeStart = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const rangeEnd = total === 0 ? 0 : rangeStart + alerts.length - 1;
 
   let prevDomainKey: string | null = null;
 
@@ -66,13 +85,13 @@ export default async function ScamAlertsPage({ searchParams }: PageProps) {
           </p>
         </header>
 
-        <ScamAlertsSummaryStrip stats={stats} visibleCount={filtered.length} loadedCount={allAlerts.length} />
+        <ScamAlertsSummaryStrip stats={stats} filteredTotal={total} rangeStart={rangeStart} rangeEnd={rangeEnd} />
 
         <div className="mt-6">
           <ScamAlertsFilterBar activeFilter={filter} selectedType={selectedType} types={types} />
         </div>
 
-        {filtered.length === 0 ? (
+        {alerts.length === 0 ? (
           <section className="mt-10 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
             <h2 className="text-xl font-semibold text-slate-900">
               {stats.total === 0 ? "No published scam alerts yet." : "No alerts match this filter."}
@@ -80,7 +99,7 @@ export default async function ScamAlertsPage({ searchParams }: PageProps) {
             <p className="mt-2 mx-auto max-w-lg text-sm text-slate-600">
               {stats.total === 0
                 ? "Fraudly publishes alerts when public threat feeds contain high-confidence indicators. Check back soon as feeds update."
-                : "Try clearing filters or picking a different severity or type. Totals above still reflect everything published."}
+                : "Try clearing filters or picking a different option. Totals above still reflect everything published."}
             </p>
             <Link
               href="/#link-check"
@@ -90,15 +109,18 @@ export default async function ScamAlertsPage({ searchParams }: PageProps) {
             </Link>
           </section>
         ) : (
-          <section className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Published alerts">
-            {filtered.map((alert) => {
-              const key = clusterDomainKey(alert.domain);
-              const showRelated = Boolean(key && prevDomainKey === key);
-              if (key) prevDomainKey = key;
-              else prevDomainKey = null;
-              return <ScamAlertCard key={alert.id} alert={alert} now={now} showRelatedHint={showRelated} />;
-            })}
-          </section>
+          <>
+            <section className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Published alerts">
+              {alerts.map((alert) => {
+                const key = clusterDomainKey(alert.domain);
+                const showRelated = Boolean(key && prevDomainKey === key);
+                if (key) prevDomainKey = key;
+                else prevDomainKey = null;
+                return <ScamAlertCard key={alert.id} alert={alert} now={now} showRelatedHint={showRelated} />;
+              })}
+            </section>
+            <ScamAlertsPagination filter={filter} selectedType={selectedType} page={page} maxPage={maxPage} />
+          </>
         )}
       </main>
       <SiteFooter />
