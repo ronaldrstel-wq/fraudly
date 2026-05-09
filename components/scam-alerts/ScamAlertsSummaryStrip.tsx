@@ -41,7 +41,7 @@ export function ScamAlertsSummaryStrip({ stats, filteredTotal, rangeStart, range
       </div>
       <p className="mt-3 border-t border-slate-100 pt-3 text-sm text-slate-700">
         Showing <span className="font-semibold text-slate-900">{rangeLabel}</span>
-        <span className="text-slate-500"> · Sorted by severity signals, then newest publication</span>
+        <span className="text-slate-500"> · Sorted by newest publication, then confidence</span>
       </p>
     </section>
   );

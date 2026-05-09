@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Hero } from "@/components/Hero";
+import { OptionalEvidenceScanSection, type OptionalEvidenceScanValues } from "@/components/OptionalEvidenceScanSection";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { hasUsedAnonymousFreeCheck, markAnonymousFreeCheckUsed } from "@/lib/accessControl";
@@ -20,6 +21,7 @@ import {
 import { parseFlexibleWebsiteInput } from "@/lib/check-input/normalizeWebsiteInput";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { GENERIC_CHECK_ERROR } from "@/lib/messages";
+import type { WebsiteAnalysisClientEvidence } from "@/lib/evidence/types";
 import { isCheckApiResponse, type ScamCheckResult } from "@/types/scam";
 
 const SIMULATED_PROGRESS_MAX = 89;
@@ -66,6 +68,12 @@ export function HomeClient({ children }: { children?: ReactNode }) {
   const inFlight = useRef(false);
   const mountedRef = useRef(true);
   const progressSimRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [optionalEvidence, setOptionalEvidence] = useState<OptionalEvidenceScanValues>({
+    file: null,
+    previewUrl: null,
+    adText: "",
+    sourcePlatform: ""
+  });
 
   const clearProgressSimulation = () => {
     if (progressSimRef.current) {
@@ -90,6 +98,14 @@ export function HomeClient({ children }: { children?: ReactNode }) {
       }
     };
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (optionalEvidence.previewUrl) {
+        URL.revokeObjectURL(optionalEvidence.previewUrl);
+      }
+    };
+  }, [optionalEvidence.previewUrl]);
 
   useEffect(() => {
     if (!loading || scanFailed) return;
@@ -152,6 +168,46 @@ export function HomeClient({ children }: { children?: ReactNode }) {
       } else {
         trackAnonymousCheckStarted();
       }
+
+      let imageAnalysis: WebsiteAnalysisClientEvidence["imageAnalysis"];
+      if (optionalEvidence.file && optionalEvidence.file.size > 0) {
+        try {
+          const fd = new FormData();
+          fd.append("file", optionalEvidence.file);
+          const imgRes = await fetch("/api/evidence/analyze-image", {
+            method: "POST",
+            body: fd,
+            credentials: "same-origin"
+          });
+          const imgJson = (await imgRes.json().catch(() => null)) as Record<string, unknown> | null;
+          if (imgRes.ok && imgJson && imgJson.ok === true && typeof imgJson.imageHash === "string") {
+            imageAnalysis = {
+              imageHash: String(imgJson.imageHash).toLowerCase(),
+              detectedText: typeof imgJson.detectedText === "string" ? imgJson.detectedText : null,
+              extractedSignals:
+                typeof imgJson.extractedSignals === "object" && imgJson.extractedSignals !== null
+                  ? (imgJson.extractedSignals as Record<string, unknown>)
+                  : null,
+              summary: typeof imgJson.summary === "string" ? imgJson.summary : null,
+              riskDelta: typeof imgJson.riskDelta === "number" ? imgJson.riskDelta : undefined,
+              fallbackMessage: typeof imgJson.fallbackMessage === "string" ? imgJson.fallbackMessage : null,
+              aiUsed: imgJson.aiUsed === true
+            };
+          }
+        } catch {
+          // URL scan continues without image analysis
+        }
+      }
+
+      const evidencePayload: WebsiteAnalysisClientEvidence | undefined =
+        imageAnalysis || optionalEvidence.adText.trim() || optionalEvidence.sourcePlatform.trim()
+          ? {
+              adText: optionalEvidence.adText.trim() || undefined,
+              sourcePlatform: optionalEvidence.sourcePlatform.trim() || undefined,
+              imageAnalysis: imageAnalysis ?? undefined
+            }
+          : undefined;
+
       const response = await fetch("/api/check", {
         method: "POST",
         credentials: "same-origin",
@@ -159,7 +215,8 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         body: JSON.stringify({
           url: parsedInput.canonicalHref,
           detailLevel: "full",
-          language: "en"
+          language: "en",
+          ...(evidencePayload ? { evidence: evidencePayload } : {})
         })
       });
 
@@ -359,6 +416,13 @@ export function HomeClient({ children }: { children?: ReactNode }) {
           scanProgress={scanProgress}
           scanStatus={scanStatus}
           scanFailed={scanFailed}
+          extraBelowInput={
+            <OptionalEvidenceScanSection
+              values={optionalEvidence}
+              onChange={setOptionalEvidence}
+              disabled={loading}
+            />
+          }
         />
 
         {error && (

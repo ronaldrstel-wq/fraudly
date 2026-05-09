@@ -175,3 +175,24 @@ model ScanRateLimitEvent {
   @@index([userId, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
 }
+
+/// Optional trust-analysis attachments for a URL check (no FK until a first-class Scan model exists).
+model ScanEvidence {
+  id               String   @id @default(cuid())
+  scanId           String?  @db.VarChar(64)
+  url              String?  @db.VarChar(2048)
+  /// `screenshot` | `social_ad` | `webshop_signals`
+  evidenceType     String   @db.VarChar(32)
+  imageUrl         String?  @db.VarChar(2048)
+  imageHash        String?  @db.VarChar(128)
+  sourcePlatform   String?  @db.VarChar(64)
+  adText           String?  @db.Text
+  detectedText     String?  @db.Text
+  extractedSignals Json?
+  riskDelta        Int      @default(0)
+  summary          String?  @db.Text
+  createdAt        DateTime @default(now())
+
+  @@index([url, createdAt(sort: Desc)])
+  @@index([evidenceType, createdAt(sort: Desc)])
+}

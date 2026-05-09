@@ -1,19 +1,26 @@
 import Link from "next/link";
 import type { ListFilterKey } from "@/lib/scam-alerts/presentation";
 import { buildScamAlertsQuery } from "@/lib/scam-alerts/presentation";
+import type { ScamAlertsTimeWindow } from "@/lib/scam-alerts/service";
 
 type Props = {
   filter: ListFilterKey;
+  time: ScamAlertsTimeWindow;
   selectedType: string;
   page: number;
   maxPage: number;
 };
 
-function href(page: number, filter: ListFilterKey, type: string) {
-  return `/scam-alerts${buildScamAlertsQuery({ filter: filter === "all" ? undefined : filter, type: type || undefined, page })}`;
+function href(page: number, filter: ListFilterKey, type: string, time: ScamAlertsTimeWindow) {
+  return `/scam-alerts${buildScamAlertsQuery({
+    time,
+    filter: filter === "all" ? undefined : filter,
+    type: type || undefined,
+    page
+  })}`;
 }
 
-export function ScamAlertsPagination({ filter, selectedType, page, maxPage }: Props) {
+export function ScamAlertsPagination({ filter, time, selectedType, page, maxPage }: Props) {
   if (maxPage <= 1) return null;
 
   const prevPage = page > 1 ? page - 1 : null;
@@ -25,7 +32,7 @@ export function ScamAlertsPagination({ filter, selectedType, page, maxPage }: Pr
         {prevPage ? (
           <Link
             rel="prev"
-            href={href(prevPage, filter, selectedType)}
+            href={href(prevPage, filter, selectedType, time)}
             scroll={false}
             className="inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50"
           >
@@ -45,7 +52,7 @@ export function ScamAlertsPagination({ filter, selectedType, page, maxPage }: Pr
         {nextPage ? (
           <Link
             rel="next"
-            href={href(nextPage, filter, selectedType)}
+            href={href(nextPage, filter, selectedType, time)}
             scroll={false}
             className="inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50"
           >

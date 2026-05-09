@@ -1,37 +1,46 @@
 import Link from "next/link";
 import type { ListFilterKey } from "@/lib/scam-alerts/presentation";
 import { buildScamAlertsQuery } from "@/lib/scam-alerts/presentation";
+import type { ScamAlertsTimeWindow } from "@/lib/scam-alerts/service";
+import { ScamAlertsTimeWindowTabs } from "@/components/scam-alerts/ScamAlertsTimeWindowTabs";
 
 const primaryFilters: Array<{ key: ListFilterKey; label: string; sub?: string }> = [
-  { key: "all", label: "All alerts" },
+  { key: "all", label: "All severities" },
   { key: "high", label: "High risk only", sub: "Confidence-based" },
   { key: "malware", label: "Malware" },
-  { key: "phishing", label: "Phishing" },
-  { key: "new-today", label: "New today", sub: "UTC day" }
+  { key: "phishing", label: "Phishing" }
 ];
 
 type Props = {
   activeFilter: ListFilterKey;
+  activeTime: ScamAlertsTimeWindow;
   selectedType: string;
   types: string[];
 };
 
-function hrefFor(filter: ListFilterKey, type: string) {
-  return `/scam-alerts${buildScamAlertsQuery({ filter: filter === "all" ? undefined : filter, type: type || undefined, page: 1 })}`;
+function hrefFor(filter: ListFilterKey, type: string, time: ScamAlertsTimeWindow) {
+  return `/scam-alerts${buildScamAlertsQuery({
+    time,
+    filter: filter === "all" ? undefined : filter,
+    type: type || undefined,
+    page: 1
+  })}`;
 }
 
-export function ScamAlertsFilterBar({ activeFilter, selectedType, types }: Props) {
+export function ScamAlertsFilterBar({ activeFilter, activeTime, selectedType, types }: Props) {
   return (
     <div className="space-y-4">
+      <ScamAlertsTimeWindowTabs active={activeTime} filter={activeFilter} selectedType={selectedType} />
+
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Filter alerts</p>
-        <nav aria-label="Primary alert filters" className="mt-2 flex flex-wrap gap-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Severity &amp; type</p>
+        <nav aria-label="Alert severity filters" className="mt-2 flex flex-wrap gap-2">
           {primaryFilters.map(({ key, label, sub }) => {
             const active = activeFilter === key;
             return (
               <Link
                 key={key}
-                href={hrefFor(key, selectedType)}
+                href={hrefFor(key, selectedType, activeTime)}
                 scroll={false}
                 title={sub}
                 className={`flex min-h-[2.75rem] flex-col justify-center rounded-xl border px-3.5 py-2 text-left text-sm font-semibold transition sm:min-w-[8.5rem] ${
@@ -52,7 +61,7 @@ export function ScamAlertsFilterBar({ activeFilter, selectedType, types }: Props
         <nav aria-label="Browse by exact alert type" className="flex flex-wrap items-center gap-2 text-xs">
           <span className="font-medium text-slate-500">Exact type:</span>
           <Link
-            href={hrefFor(activeFilter, "")}
+            href={hrefFor(activeFilter, "", activeTime)}
             scroll={false}
             className={`rounded-full border px-2.5 py-1 ${!selectedType ? "border-blue-300 bg-blue-50 text-blue-800" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"}`}
           >
@@ -63,7 +72,7 @@ export function ScamAlertsFilterBar({ activeFilter, selectedType, types }: Props
             return (
               <Link
                 key={type}
-                href={hrefFor(activeFilter, type)}
+                href={hrefFor(activeFilter, type, activeTime)}
                 scroll={false}
                 className={`max-w-[200px] truncate rounded-full border px-2.5 py-1 ${
                   active ? "border-blue-300 bg-blue-50 text-blue-800" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"

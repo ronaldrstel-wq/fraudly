@@ -16,6 +16,8 @@ export type WebsiteSignals = {
   bodySnippet: string;
   /** Combined visible text for downstream heuristics (not sent to client as env). */
   text: string;
+  /** Truncated HTML for offline heuristics (e.g. fake-shop); never exposed to the browser from `/api/check`. */
+  htmlSnippet?: string;
 };
 
 type WebsiteCacheBox = { v: WebsiteSignals | null };
@@ -100,7 +102,8 @@ export async function fetchWebsiteSignals(url: string): Promise<WebsiteSignals |
           payload = null;
         } else {
           const text = [title, metaDescription, bodySnippet].filter(Boolean).join("\n\n");
-          payload = { title, metaDescription, bodySnippet, text };
+          const htmlSnippet = html.length > 80_000 ? `${html.slice(0, 80_000)}\n<!-- truncated -->` : html;
+          payload = { title, metaDescription, bodySnippet, text, htmlSnippet };
         }
       }
     }

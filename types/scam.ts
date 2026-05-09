@@ -7,6 +7,7 @@ import type { DomainIntelligence, SafeBrowsingCheck, SslCheck, TrustSignal } fro
 import type { PendingPageBehaviorSignals } from "@/types/behavioral-signals";
 import type { DomainInfrastructure } from "@/types/domain-infrastructure";
 import type { ConfidenceLevel, SiteStatus } from "@/types/site-outcome";
+import type { TrustEvidenceBundle } from "@/lib/evidence/types";
 
 export type { ScoreResult, ScoreSignal };
 
@@ -53,6 +54,8 @@ export interface ScamCheckResult {
   omitTrustScoreGauge?: boolean;
   /** Reserved structure for deterministic page-behaviour phishing checks (all optional booleans today). */
   behavioralSignalsPending: PendingPageBehaviorSignals;
+  /** Optional screenshot / ad / webshop heuristics layered on top of the URL scan. */
+  trustEvidence?: TrustEvidenceBundle;
 }
 
 export interface BasicCheckResult {
@@ -169,6 +172,13 @@ function isScoreSignal(value: unknown): value is ScoreSignal {
   if (s.confidence !== "low" && s.confidence !== "medium" && s.confidence !== "high") return false;
   if (typeof s.reason !== "string") return false;
   if (s.evidenceTier !== undefined && !EVIDENCE_TIERS.includes(s.evidenceTier as ScoreEvidenceTier)) return false;
+  return true;
+}
+
+function isTrustEvidenceBundle(value: unknown): value is TrustEvidenceBundle {
+  if (!value || typeof value !== "object") return false;
+  const o = value as Record<string, unknown>;
+  if (typeof o.appliedRiskDelta !== "number" || Number.isNaN(o.appliedRiskDelta)) return false;
   return true;
 }
 
@@ -307,6 +317,10 @@ export function isScamCheckResult(value: unknown): value is ScamCheckResult {
     return false;
   }
   if (!o.behavioralSignalsPending || !isPendingBehaviorSignals(o.behavioralSignalsPending)) return false;
+
+  if (o.trustEvidence !== undefined && o.trustEvidence !== null && !isTrustEvidenceBundle(o.trustEvidence)) {
+    return false;
+  }
 
   return true;
 }

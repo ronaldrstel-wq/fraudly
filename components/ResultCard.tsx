@@ -12,6 +12,7 @@ import {
 } from "@/lib/reviewSourceNormalization";
 import { publicTrustGaugeDisplay, shouldShowTrustGauge } from "@/lib/trustGaugeDisplay";
 import { trustIconGlyph, trustPresentationFromScore } from "@/lib/trustSystem";
+import { EvidenceSignalsCard } from "@/components/EvidenceSignalsCard";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import type { ScamCheckResult } from "@/types/scam";
 import type { ConfidenceLevel, SiteStatus } from "@/types/site-outcome";
@@ -335,6 +336,21 @@ export function ResultCard({ result }: ResultCardProps) {
         <p className="mt-1 text-xs leading-relaxed text-slate-600">{labelForConfidence(result.confidenceLevel)}</p>
         <p className="mt-2 text-xs text-slate-600">{result.confidenceRationale}</p>
       </div>
+
+      {result.trustEvidence ? (
+        <div className="mt-6 space-y-4">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Optional evidence analysis</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              You added optional context (screenshot, ad text, or source). We combined it with the website scan—this
+              does not replace technical checks.
+            </p>
+          </div>
+          {result.trustEvidence.screenshotAd ? <EvidenceSignalsCard section={result.trustEvidence.screenshotAd} /> : null}
+          {result.trustEvidence.webshop ? <EvidenceSignalsCard section={result.trustEvidence.webshop} /> : null}
+          {result.trustEvidence.socialAd ? <EvidenceSignalsCard section={result.trustEvidence.socialAd} /> : null}
+        </div>
+      ) : null}
 
       {result.siteStatus === "inactive" ? (
         <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-800">

@@ -20,6 +20,9 @@ import {
 import { collectMaliciousSignals, deriveSiteStatus, isProbablyInactiveWebsite } from "@/lib/siteOutcome";
 import { getSupplyChainSignals } from "@/lib/supplyChainSignals";
 import { EN_MESSAGES } from "@/lib/messages.en";
+import { composeTrustEvidenceBundle } from "@/lib/evidence/composeTrustEvidence";
+import { hasMeaningfulClientEvidence, type WebsiteAnalysisClientEvidence } from "@/lib/evidence/types";
+import { verdictFromRiskScore } from "@/lib/trustSystem";
 import type { ScamCheckResult } from "@/types/scam";
 import type { PendingPageBehaviorSignals } from "@/types/behavioral-signals";
 
@@ -29,7 +32,11 @@ const EMPTY_BEHAVIOR: PendingPageBehaviorSignals = {};
  * Runs the full website trust analysis (external intel, scoring, optional AI).
  * Used by `/api/check` and public `/check/[domain]` pages (cached); no auth handling here.
  */
-export async function runWebsiteAnalysis(inputUrl: string, language: "en" | "nl" = "en"): Promise<ScamCheckResult> {
+export async function runWebsiteAnalysis(
+  inputUrl: string,
+  language: "en" | "nl" = "en",
+  options?: { evidence?: WebsiteAnalysisClientEvidence | null }
+): Promise<ScamCheckResult> {
   const normalizedDomain = normalizeDomain(inputUrl);
   const heuristicReasons = buildDomainHeuristicReasons(normalizedDomain);
   const [reviewSignals, websiteSignals, externalChecks, dnsProbe] = await Promise.all([
@@ -144,6 +151,27 @@ export async function runWebsiteAnalysis(inputUrl: string, language: "en" | "nl"
     aiRiskSignals: aiPayload?.risk ? { level: aiPayload.risk } : undefined
   });
 
+  let trustEvidence: ScamCheckResult["trustEvidence"] | undefined;
+  let adjustedRisk = scoreResult.finalScore;
+  const clientEvidence = options?.evidence;
+  if (clientEvidence && hasMeaningfulClientEvidence(clientEvidence)) {
+    const bundle = composeTrustEvidenceBundle({
+      canonicalUrl: inputUrl,
+      normalizedDomain,
+      websiteText,
+      htmlSnippet: websiteSignals?.htmlSnippet,
+      domainIntelligence: externalChecks.domainIntelligence,
+      evidence: clientEvidence
+    });
+    if (bundle) {
+      trustEvidence = bundle;
+      adjustedRisk = Math.round(Math.min(100, Math.max(0, scoreResult.finalScore + bundle.appliedRiskDelta)));
+    }
+  }
+
+  const adjustedVerdict = verdictFromRiskScore(adjustedRisk);
+  const adjustedScoreResult = { ...scoreResult, finalScore: adjustedRisk, verdict: adjustedVerdict };
+
   const scoreLinesFinal = [
     ...scoreResult.topPositiveSignals.map((s) => `Scoring (risk↑): ${s.reason}`),
     ...scoreResult.topNegativeSignals.map((s) => `Scoring (trust↑): ${s.reason}`)
@@ -167,7 +195,7 @@ export async function runWebsiteAnalysis(inputUrl: string, language: "en" | "nl"
   });
 
   const siteStatus = deriveSiteStatus({
-    scoreRisk: scoreResult.finalScore,
+    scoreRisk: adjustedRisk,
     malicious,
     treatAsNonexistent: false,
     inactiveWebsite,
@@ -176,8 +204,8 @@ export async function runWebsiteAnalysis(inputUrl: string, language: "en" | "nl"
   });
 
   return {
-    score: scoreResult.finalScore,
-    verdict: scoreResult.verdict,
+    score: adjustedRisk,
+    verdict: adjustedVerdict,
     domain: normalizedDomain,
     reasons: mergedReasons,
     trustSignals,
@@ -193,11 +221,12 @@ export async function runWebsiteAnalysis(inputUrl: string, language: "en" | "nl"
     reviewSummary,
     aiUsed,
     supplyChainSignals,
-    scoreResult,
+    scoreResult: adjustedScoreResult,
     domainInfrastructure,
     siteStatus,
     confidenceLevel,
     confidenceRationale,
-    behavioralSignalsPending: EMPTY_BEHAVIOR
+    behavioralSignalsPending: EMPTY_BEHAVIOR,
+    ...(trustEvidence ? { trustEvidence } : {})
   };
 }

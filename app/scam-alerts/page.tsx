@@ -6,7 +6,14 @@ import { ScamAlertsPagination } from "@/components/scam-alerts/ScamAlertsPaginat
 import { ScamAlertsSummaryStrip } from "@/components/scam-alerts/ScamAlertsSummaryStrip";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
-import { clusterDomainKey, parseListFilterKey, parseScamAlertsPageParam } from "@/lib/scam-alerts/presentation";
+import {
+  buildScamAlertsQuery,
+  clusterDomainKey,
+  type ListFilterKey,
+  parseListFilterKey,
+  parseScamAlertsPageParam,
+  parseScamAlertsTimeWindow
+} from "@/lib/scam-alerts/presentation";
 import { SITE_URL } from "@/lib/seo";
 import {
   getPublishedScamAlertsPageResult,
@@ -21,13 +28,39 @@ const PAGE_DESCRIPTION =
   "Consumer-friendly scam and phishing alerts from public threat feeds—what changed, why it matters, and how to stay safe.";
 
 type PageProps = {
-  searchParams: Promise<{ type?: string; filter?: string; page?: string }>;
+  searchParams: Promise<{ type?: string; filter?: string; page?: string; time?: string }>;
 };
+
+function scamAlertsCanonicalPath(options: {
+  page: number;
+  time?: string;
+  filter?: string;
+  type?: string;
+}): string {
+  let filter = parseListFilterKey(options.filter);
+  let timeWindow = parseScamAlertsTimeWindow(options.time);
+  if (filter === "new-today") {
+    filter = "all";
+    timeWindow = "today";
+  }
+  const q = buildScamAlertsQuery({
+    time: timeWindow === "today" ? undefined : timeWindow,
+    filter: filter === "all" ? undefined : filter,
+    type: options.type?.trim() || undefined,
+    page: options.page > 1 ? options.page : undefined
+  });
+  return `${SITE_URL}/scam-alerts${q}`;
+}
 
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
   const params = await searchParams;
   const page = parseScamAlertsPageParam(params.page);
-  const canonical = page <= 1 ? `${SITE_URL}/scam-alerts` : `${SITE_URL}/scam-alerts?page=${page}`;
+  const canonical = scamAlertsCanonicalPath({
+    page,
+    time: typeof params.time === "string" ? params.time : undefined,
+    filter: typeof params.filter === "string" ? params.filter : undefined,
+    type: typeof params.type === "string" ? params.type : undefined
+  });
   const title = page > 1 ? `Threat alerts · Page ${page} | Fraudly` : "Threat alerts | Fraudly";
 
   return {
@@ -48,7 +81,12 @@ export default async function ScamAlertsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const now = new Date();
   const selectedType = typeof params.type === "string" ? params.type : "";
-  const filter = parseListFilterKey(params.filter);
+  let filter: ListFilterKey = parseListFilterKey(params.filter);
+  let timeWindow = parseScamAlertsTimeWindow(typeof params.time === "string" ? params.time : undefined);
+  if (filter === "new-today") {
+    filter = "all";
+    timeWindow = "today";
+  }
   const requestedPage = parseScamAlertsPageParam(params.page);
 
   const [types, pageResult, stats] = await Promise.all([
@@ -58,7 +96,8 @@ export default async function ScamAlertsPage({ searchParams }: PageProps) {
       exactScamType: selectedType || undefined,
       page: requestedPage,
       pageSize: SCAM_ALERTS_PAGE_SIZE,
-      now
+      now,
+      timeWindow
     }),
     getScamAlertsIndexStats(now)
   ]);
@@ -88,7 +127,7 @@ export default async function ScamAlertsPage({ searchParams }: PageProps) {
         <ScamAlertsSummaryStrip stats={stats} filteredTotal={total} rangeStart={rangeStart} rangeEnd={rangeEnd} />
 
         <div className="mt-6">
-          <ScamAlertsFilterBar activeFilter={filter} selectedType={selectedType} types={types} />
+          <ScamAlertsFilterBar activeFilter={filter} activeTime={timeWindow} selectedType={selectedType} types={types} />
         </div>
 
         {alerts.length === 0 ? (
@@ -99,8 +138,20 @@ export default async function ScamAlertsPage({ searchParams }: PageProps) {
             <p className="mt-2 mx-auto max-w-lg text-sm text-slate-600">
               {stats.total === 0
                 ? "Fraudly publishes alerts when public threat feeds contain high-confidence indicators. Check back soon as feeds update."
-                : "Try clearing filters or picking a different option. Totals above still reflect everything published."}
+                : timeWindow === "today"
+                  ? "Nothing was published yet today (UTC). Try Last 24h, Last 7 days, or All alerts—or widen severity filters."
+                  : "Try a different time range or severity filter. Totals above still reflect all published alerts."}
             </p>
+            {stats.total > 0 && timeWindow === "today" ? (
+              <p className="mt-3 text-center text-sm">
+                <Link
+                  href={`/scam-alerts${buildScamAlertsQuery({ time: "7d", filter: filter === "all" ? undefined : filter, type: selectedType || undefined })}`}
+                  className="font-semibold text-blue-700 underline-offset-2 hover:underline"
+                >
+                  View last 7 days
+                </Link>
+              </p>
+            ) : null}
             <Link
               href="/#link-check"
               className="mt-6 inline-flex rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-5 py-3 text-sm font-semibold text-white shadow-md hover:brightness-110"
@@ -110,7 +161,7 @@ export default async function ScamAlertsPage({ searchParams }: PageProps) {
           </section>
         ) : (
           <>
-            <section className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Published alerts">
+            <section className="mt-8 grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Published alerts">
               {alerts.map((alert) => {
                 const key = clusterDomainKey(alert.domain);
                 const showRelated = Boolean(key && prevDomainKey === key);
@@ -119,7 +170,7 @@ export default async function ScamAlertsPage({ searchParams }: PageProps) {
                 return <ScamAlertCard key={alert.id} alert={alert} now={now} showRelatedHint={showRelated} />;
               })}
             </section>
-            <ScamAlertsPagination filter={filter} selectedType={selectedType} page={page} maxPage={maxPage} />
+            <ScamAlertsPagination filter={filter} time={timeWindow} selectedType={selectedType} page={page} maxPage={maxPage} />
           </>
         )}
       </main>

@@ -11,6 +11,8 @@ import { parseFlexibleWebsiteInput } from "@/lib/check-input/normalizeWebsiteInp
 import { upsertLatestPublicCheckFromCompletedScan } from "@/lib/latest-public-checks/persist";
 import { tryRecordRecentSearch } from "@/lib/recent-search/service";
 import { getBillingUserOrNull } from "@/lib/user-store";
+import { persistScanEvidenceRows } from "@/lib/evidence/persistScanEvidence";
+import type { WebsiteAnalysisClientEvidence } from "@/lib/evidence/types";
 
 export const runtime = "nodejs";
 
@@ -19,6 +21,44 @@ interface CheckRequest {
   /** `"basic"` runs the same pipeline today but is classified for quota; `"full"` counts as a deep scan. */
   detailLevel?: "basic" | "full";
   language?: "en" | "nl";
+  /** Optional screenshot / ad context (never raw image bytes). */
+  evidence?: unknown;
+}
+
+function sanitizeClientEvidence(raw: unknown): WebsiteAnalysisClientEvidence | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const o = raw as Record<string, unknown>;
+  const out: WebsiteAnalysisClientEvidence = {};
+
+  if (typeof o.adText === "string") {
+    const t = o.adText.trim();
+    if (t) out.adText = t.slice(0, 8000);
+  }
+  if (typeof o.sourcePlatform === "string") {
+    const p = o.sourcePlatform.trim().toLowerCase();
+    if (p) out.sourcePlatform = p.slice(0, 64);
+  }
+
+  if (o.imageAnalysis && typeof o.imageAnalysis === "object") {
+    const im = o.imageAnalysis as Record<string, unknown>;
+    if (typeof im.imageHash === "string" && /^[a-f0-9]{64}$/i.test(im.imageHash.trim())) {
+      out.imageAnalysis = {
+        imageHash: im.imageHash.trim().toLowerCase(),
+        detectedText: typeof im.detectedText === "string" ? im.detectedText.trim().slice(0, 2000) : null,
+        extractedSignals:
+          typeof im.extractedSignals === "object" && im.extractedSignals !== null && !Array.isArray(im.extractedSignals)
+            ? (im.extractedSignals as Record<string, unknown>)
+            : null,
+        summary: typeof im.summary === "string" ? im.summary.trim().slice(0, 2000) : null,
+        riskDelta: typeof im.riskDelta === "number" && Number.isFinite(im.riskDelta) ? Math.round(im.riskDelta) : undefined,
+        fallbackMessage: typeof im.fallbackMessage === "string" ? im.fallbackMessage.trim().slice(0, 500) : null,
+        aiUsed: im.aiUsed === true
+      };
+    }
+  }
+
+  if (!out.adText && !out.sourcePlatform && !out.imageAnalysis) return undefined;
+  return out;
 }
 
 const isProd = process.env.NODE_ENV === "production";
@@ -135,7 +175,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const fullResult = await runWebsiteAnalysis(canonicalHref, language);
+    const sanitizedEvidence = sanitizeClientEvidence(body.evidence);
+    const fullResult = sanitizedEvidence
+      ? await runWebsiteAnalysis(canonicalHref, language, { evidence: sanitizedEvidence })
+      : await runWebsiteAnalysis(canonicalHref, language);
+
+    if (sanitizedEvidence && fullResult.trustEvidence) {
+      void persistScanEvidenceRows({
+        url: canonicalHref,
+        evidence: sanitizedEvidence,
+        bundle: fullResult.trustEvidence
+      });
+    }
 
     if (billingUser?.id) {
       try {

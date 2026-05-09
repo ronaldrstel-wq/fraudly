@@ -1,6 +1,7 @@
-import type { PublicScamAlertListItem, ScamAlertsPublicFilter } from "@/lib/scam-alerts/service";
+import type { PublicScamAlertListItem, ScamAlertsPublicFilter, ScamAlertsTimeWindow } from "@/lib/scam-alerts/service";
 
 export type ListFilterKey = ScamAlertsPublicFilter;
+export type { ScamAlertsTimeWindow };
 
 export type AlertSeverity = "critical" | "high" | "suspicious" | "monitoring";
 
@@ -51,7 +52,8 @@ export function deriveAlertSeverity(
       label: "Critical",
       badge: "Critical",
       accessibleDescription: "Critical severity: very high confidence or strong corroborating signals.",
-      badgeClass: "border-rose-300 bg-rose-50 text-rose-900 ring-1 ring-rose-200"
+      badgeClass:
+        "border-rose-300 bg-rose-50 text-rose-900 ring-1 ring-rose-200 px-1.5 py-0.5 text-[10px] leading-tight sm:px-2 sm:py-0.5 sm:text-xs"
     },
     high: {
       label: "High risk",
@@ -189,6 +191,15 @@ export function parseListFilterKey(raw: string | undefined): ListFilterKey {
   return (allowed.includes(v as ListFilterKey) ? v : "all") as ListFilterKey;
 }
 
+export function parseScamAlertsTimeWindow(raw: string | undefined): ScamAlertsTimeWindow {
+  const v = typeof raw === "string" ? raw.trim().toLowerCase() : "";
+  if (v === "24h" || v === "last-24h" || v === "last24h") return "24h";
+  if (v === "7d" || v === "week" || v === "last-7-days") return "7d";
+  if (v === "all") return "all";
+  if (v === "today" || v === "") return "today";
+  return "today";
+}
+
 export function parseScamAlertsPageParam(raw: string | string[] | undefined): number {
   const s = Array.isArray(raw) ? raw[0] : raw;
   const n = Number.parseInt(String(s ?? "1"), 10);
@@ -196,8 +207,14 @@ export function parseScamAlertsPageParam(raw: string | string[] | undefined): nu
   return Math.min(n, 10_000);
 }
 
-export function buildScamAlertsQuery(base: { filter?: ListFilterKey; type?: string; page?: number }): string {
+export function buildScamAlertsQuery(base: {
+  filter?: ListFilterKey;
+  type?: string;
+  page?: number;
+  time?: ScamAlertsTimeWindow;
+}): string {
   const p = new URLSearchParams();
+  if (base.time && base.time !== "today") p.set("time", base.time);
   if (base.filter && base.filter !== "all") p.set("filter", base.filter);
   if (base.type?.trim()) p.set("type", base.type.trim());
   if (base.page !== undefined && base.page > 1) p.set("page", String(base.page));

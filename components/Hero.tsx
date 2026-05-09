@@ -14,6 +14,8 @@ interface HeroProps {
   scanFailed?: boolean;
   /** Shown when the user must sign in before running a check (e.g. Clerk gate). */
   authGate?: ReactNode;
+  /** Optional controls below the URL field (e.g. screenshot / ad context). */
+  extraBelowInput?: ReactNode;
 }
 
 export function Hero({
@@ -25,7 +27,8 @@ export function Hero({
   scanProgress,
   scanStatus,
   scanFailed = false,
-  authGate
+  authGate,
+  extraBelowInput
 }: HeroProps) {
   return (
     <section id="link-check" className="mx-auto w-full max-w-4xl scroll-mt-20 text-center">
@@ -48,6 +51,7 @@ export function Hero({
 
       <div className="mx-auto mt-3.5 max-w-3xl sm:mt-4">
         <URLInput value={url} onChange={onUrlChange} onSubmit={onSubmit} disabled={disabled} loading={loading} />
+        {extraBelowInput ? <div className="mt-4 text-left">{extraBelowInput}</div> : null}
         {authGate ? <div className="mt-2.5 sm:mt-3">{authGate}</div> : null}
         {loading ? (
           <WebsiteScanProgress progress={scanProgress} status={scanStatus} failed={scanFailed} />

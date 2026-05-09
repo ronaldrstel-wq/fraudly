@@ -1,9 +1,13 @@
 import { createHash } from "node:crypto";
 import { Prisma, ScamAlertStatus } from "@prisma/client";
 import { db } from "@/lib/db";
+import { applyScamAlertFeedQuality } from "@/lib/scam-alerts/feedQuality";
 
 /** Public index filters (query param `filter`). */
 export type ScamAlertsPublicFilter = "all" | "high" | "malware" | "phishing" | "new-today";
+
+/** Time window for `/scam-alerts` (query param `time`). Default: today (UTC). */
+export type ScamAlertsTimeWindow = "today" | "24h" | "7d" | "all";
 
 export const SCAM_ALERTS_PAGE_SIZE = 24;
 
@@ -195,6 +199,24 @@ function utcStartOfDay(d: Date): Date {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0));
 }
 
+/** Extra `publishedAt` lower bound for feed time tabs (merged with public active where). */
+export function buildPublishedScamTimeWindowWhere(
+  window: ScamAlertsTimeWindow,
+  now: Date
+): Prisma.ScamAlertWhereInput | null {
+  if (window === "all") return null;
+  if (window === "today") {
+    return { publishedAt: { gte: utcStartOfDay(now) } };
+  }
+  if (window === "24h") {
+    return { publishedAt: { gte: new Date(now.getTime() - MS_DAY) } };
+  }
+  if (window === "7d") {
+    return { publishedAt: { gte: new Date(now.getTime() - 7 * MS_DAY) } };
+  }
+  return null;
+}
+
 /**
  * Prisma `where` for published alerts on the public index (filter + optional exact `scamType` chip).
  * “High risk” ≈ confidence ≥ 75 (aligns with elevated summary and UI high/critical tiers).
@@ -244,13 +266,15 @@ export function buildPublishedScamAlertsWhere(
   return publishedRoot;
 }
 
-/** Severity-first proxy: confidence + evidence, then newest publication activity. */
+/** Public feed: newest publication first, then confidence for ties. */
 const scamAlertsListOrderBy: Prisma.ScamAlertOrderByWithRelationInput[] = [
-  { confidence: "desc" },
-  { evidenceCount: "desc" },
   { publishedAt: "desc" },
-  { lastSeenAt: "desc" }
+  { lastSeenAt: "desc" },
+  { confidence: "desc" },
+  { evidenceCount: "desc" }
 ];
+
+const SCAM_ALERTS_FEED_RAW_CAP = 4000;
 
 export type PublishedScamAlertsPageResult = {
   alerts: PublicScamAlertListItem[];
@@ -266,23 +290,28 @@ export async function getPublishedScamAlertsPageResult(params: {
   page: number;
   pageSize?: number;
   now?: Date;
+  timeWindow?: ScamAlertsTimeWindow;
 }): Promise<PublishedScamAlertsPageResult> {
   const now = params.now ?? new Date();
   const pageSize = Math.max(1, Math.min(48, params.pageSize ?? SCAM_ALERTS_PAGE_SIZE));
-  const where = buildPublishedScamAlertsWhere(params.filter, params.exactScamType, now);
+  const timeWindow = params.timeWindow ?? "today";
+  const baseWhere = buildPublishedScamAlertsWhere(params.filter, params.exactScamType, now);
+  const tw = buildPublishedScamTimeWindowWhere(timeWindow, now);
+  const where: Prisma.ScamAlertWhereInput = tw ? { AND: [baseWhere, tw] } : baseWhere;
 
   try {
-    const total = await db.scamAlert.count({ where });
+    const raw = await db.scamAlert.findMany({
+      where,
+      orderBy: scamAlertsListOrderBy,
+      take: SCAM_ALERTS_FEED_RAW_CAP
+    });
+
+    const deduped = applyScamAlertFeedQuality(raw);
+    const total = deduped.length;
     const maxPage = Math.max(1, Math.ceil(total / pageSize));
     const page = Math.min(Math.max(1, params.page), maxPage);
     const skip = (page - 1) * pageSize;
-
-    const alerts = await db.scamAlert.findMany({
-      where,
-      orderBy: scamAlertsListOrderBy,
-      skip,
-      take: pageSize
-    });
+    const alerts = deduped.slice(skip, skip + pageSize);
 
     return { alerts, total, page, pageSize, maxPage };
   } catch (err) {

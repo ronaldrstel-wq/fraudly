@@ -27,7 +27,7 @@ export function ScamAlertCard({ alert, now, showRelatedHint }: ScamAlertCardProp
   const domainKey = clusterDomainKey(alert.domain);
 
   return (
-    <article className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4">
+    <article className="flex min-h-[26rem] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-[box-shadow,border-color] duration-200 hover:border-slate-300 hover:shadow-md sm:min-h-[28rem] sm:p-5">
       {showRelatedHint && domainKey ? (
         <p className="mb-2 text-xs font-medium text-slate-500" role="note">
           Related alert · same domain
@@ -36,76 +36,94 @@ export function ScamAlertCard({ alert, now, showRelatedHint }: ScamAlertCardProp
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           <span
-            className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-xs font-semibold ${severity.badgeClass}`}
+            className={`inline-flex max-w-full shrink-0 items-center rounded-full border px-2 py-0.5 text-xs font-semibold ${severity.badgeClass}`}
             title={severity.accessibleDescription}
             aria-label={severity.accessibleDescription}
           >
             <span className="sr-only">Severity: </span>
-            {severity.badge}
+            <span className="truncate">{severity.badge}</span>
           </span>
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-700">
+          <span className="max-w-full truncate rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-600">
             {alert.scamType}
           </span>
         </div>
       </div>
 
-      <h2 className="mt-2 text-base font-semibold leading-snug text-slate-900 sm:text-lg">{title}</h2>
+      <h2 className="mt-2.5 line-clamp-3 text-lg font-semibold leading-snug tracking-tight text-slate-900 sm:text-xl">
+        {title}
+      </h2>
 
       {domainKey ? (
-        <p className="mt-1.5 font-mono text-xs text-slate-600">
+        <p className="mt-2 min-w-0 max-w-full font-mono text-xs leading-snug text-slate-600">
           <span className="sr-only">Domain: </span>
-          <span className="inline-block max-w-full truncate rounded-md bg-slate-100 px-2 py-0.5 text-slate-800 ring-1 ring-slate-200/80">
+          <span
+            className="block max-w-full rounded-md bg-slate-100 px-2 py-1 font-mono text-xs leading-snug break-all text-slate-800 ring-1 ring-slate-200/80 line-clamp-2 sm:line-clamp-1 sm:truncate sm:break-normal"
+            title={domainKey}
+          >
             {domainKey}
           </span>
         </p>
       ) : null}
 
-      <p className="mt-2 text-sm leading-relaxed text-slate-700">{why}</p>
+      <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-600 sm:line-clamp-4">{why}</p>
 
-      <p className="mt-1.5 line-clamp-2 text-xs text-slate-600">{alert.summary}</p>
+      <p className="mt-2 line-clamp-5 text-xs leading-relaxed text-slate-500 sm:line-clamp-4">{alert.summary}</p>
 
-      <p className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-slate-500">
-        <span>
-          Source: <span className="font-medium text-slate-700">{alert.sourceName}</span>
-        </span>
+      <div className="mt-3 space-y-1.5 border-t border-slate-100 pt-3 text-xs text-slate-500">
+        <p className="break-words">
+          <span className="font-medium text-slate-500">Source</span>{" "}
+          <span className="font-semibold text-slate-800">{alert.sourceName}</span>
+        </p>
         {publishedAt && publishedLong ? (
-          <span>
-            Published:{" "}
-            <time dateTime={publishedAt.toISOString()} title={publishedRelative?.title}>
+          <p className="break-words">
+            <span className="font-medium text-slate-500">Published</span>{" "}
+            <time className="font-semibold text-slate-800" dateTime={publishedAt.toISOString()} title={publishedRelative?.title}>
               {publishedLong}
             </time>
             {publishedRelative ? (
-              <span className="text-slate-500" title={publishedRelative.title}>
+              <span className="font-normal text-slate-500" title={publishedRelative.title}>
                 {" "}
                 · {publishedRelative.label}
               </span>
             ) : null}
-          </span>
+          </p>
         ) : (
-          <span className="text-slate-500">Published: —</span>
+          <p className="text-slate-500">
+            <span className="font-medium">Published</span> —
+          </p>
         )}
-        <span>
-          Updated{" "}
+        <p className="break-words text-slate-500">
+          <span className="font-medium text-slate-500">Updated</span>{" "}
           <time dateTime={alert.lastSeenAt.toISOString()} title={lastSeenRelative.title}>
             {lastSeenRelative.label}
           </time>
-        </span>
-      </p>
+        </p>
+      </div>
 
-      <details className="mt-2.5 rounded-lg border border-slate-200 bg-slate-50/90 text-left text-sm text-slate-800 open:bg-slate-50">
-        <summary className="cursor-pointer select-none px-3 py-2 font-medium text-slate-800 outline-none hover:bg-slate-100/80">
+      <details className="mt-3 min-w-0 flex-shrink-0 rounded-lg border border-slate-200 bg-slate-50/90 text-left text-sm text-slate-800 open:bg-slate-50">
+        <summary className="cursor-pointer select-none px-3 py-2.5 text-sm font-medium text-slate-800 outline-none hover:bg-slate-100/80">
           Technical details
         </summary>
-        <dl className="space-y-2 border-t border-slate-200 px-3 py-2.5 text-xs text-slate-700">
-          <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-2">
+        <dl className="max-w-full space-y-2 overflow-x-hidden border-t border-slate-200 px-3 py-3 text-xs text-slate-700">
+          <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:gap-2">
             <dt className="shrink-0 font-semibold text-slate-800">Domain</dt>
-            <dd className="min-w-0 break-all font-mono">{alert.domain ?? "—"}</dd>
+            <dd className="min-w-0 whitespace-pre-wrap break-all font-mono">{alert.domain ?? "—"}</dd>
           </div>
-          <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-2">
+          {alert.url ? (
+            <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:gap-2">
+              <dt className="shrink-0 font-semibold text-slate-800">URL</dt>
+              <dd className="min-w-0 whitespace-pre-wrap break-all font-mono">
+                <a href={alert.url} className="text-blue-700 underline-offset-2 hover:underline" target="_blank" rel="noreferrer">
+                  {alert.url}
+                </a>
+              </dd>
+            </div>
+          ) : null}
+          <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:gap-2">
             <dt className="shrink-0 font-semibold text-slate-800">Source</dt>
             <dd className="min-w-0 break-words">
               {alert.sourceUrl ? (
-                <a href={alert.sourceUrl} className="text-blue-700 underline-offset-2 hover:underline" target="_blank" rel="noreferrer">
+                <a href={alert.sourceUrl} className="break-all text-blue-700 underline-offset-2 hover:underline" target="_blank" rel="noreferrer">
                   {alert.sourceName}
                 </a>
               ) : (
@@ -123,9 +141,9 @@ export function ScamAlertCard({ alert, now, showRelatedHint }: ScamAlertCardProp
               <dd>{alert.evidenceCount}</dd>
             </div>
           </div>
-          <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-2">
+          <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:gap-2">
             <dt className="shrink-0 font-semibold text-slate-800">Published (exact)</dt>
-            <dd>
+            <dd className="min-w-0 whitespace-pre-wrap break-all">
               {alert.publishedAt ? (
                 <time dateTime={alert.publishedAt.toISOString()} title={alert.publishedAt.toISOString()}>
                   {alert.publishedAt.toLocaleString("en-GB", { dateStyle: "full", timeStyle: "medium" })}
@@ -135,23 +153,25 @@ export function ScamAlertCard({ alert, now, showRelatedHint }: ScamAlertCardProp
               )}
             </dd>
           </div>
-          <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-2">
+          <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:gap-2">
             <dt className="shrink-0 font-semibold text-slate-800">Raw type</dt>
-            <dd className="break-words">{alert.scamType}</dd>
+            <dd className="min-w-0 break-all">{alert.scamType}</dd>
           </div>
-          <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-2">
+          <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:gap-2">
             <dt className="shrink-0 font-semibold text-slate-800">Original title</dt>
-            <dd className="break-words text-slate-600">{alert.title}</dd>
+            <dd className="min-w-0 whitespace-pre-wrap break-words text-slate-600">{alert.title}</dd>
           </div>
         </dl>
       </details>
 
-      <Link
-        href={`/scam-alerts/${alert.slug}`}
-        className="mt-2.5 inline-flex text-sm font-semibold text-blue-700 hover:text-blue-900"
-      >
-        Read full alert →
-      </Link>
+      <div className="mt-auto border-t border-transparent pt-4">
+        <Link
+          href={`/scam-alerts/${alert.slug}`}
+          className="inline-flex text-sm font-semibold text-blue-700 transition-colors hover:text-blue-900"
+        >
+          Read full alert →
+        </Link>
+      </div>
     </article>
   );
 }
