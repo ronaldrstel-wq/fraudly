@@ -198,7 +198,6 @@ export async function runWebsiteAnalysis(inputUrl: string, language: "en" | "nl"
     siteStatus,
     confidenceLevel,
     confidenceRationale,
-    omitTrustScoreGauge: false,
     behavioralSignalsPending: EMPTY_BEHAVIOR
   };
 }

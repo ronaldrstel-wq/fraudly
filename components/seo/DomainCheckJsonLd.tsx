@@ -1,17 +1,14 @@
 import { SITE_URL } from "@/lib/seo";
+import { publicTrustGaugeDisplay } from "@/lib/trustGaugeDisplay";
 import type { ScamCheckResult } from "@/types/scam";
-
-function trustScoreFromResult(result: ScamCheckResult): number {
-  return Math.round(100 - result.score);
-}
 
 export function DomainCheckJsonLd({ domain, pathname, result }: { domain: string; pathname: string; result: ScamCheckResult }) {
   const url = `${SITE_URL}${pathname}`;
-  const trust = result.omitTrustScoreGauge ? null : trustScoreFromResult(result);
+  const trust = publicTrustGaugeDisplay(result);
   const sslLabel = result.ssl.httpsEnabled ? (result.ssl.validCertificate ? "HTTPS with valid certificate" : "HTTPS with certificate issues") : "HTTPS unavailable";
 
   const description =
-    trust == null
+    trust === null
       ? `Fraudly checked ${domain}. Trust-style score withheld because the apex is treated as inactive or invalid in this crawl. SSL: ${sslLabel}. Informational—not a guarantee of safety.`
       : `Fraudly checked ${domain} for scam signals and website trust indicators. Trust-style score about ${trust}/100. SSL: ${sslLabel}. This is informational—not a guarantee of safety.`;
 
@@ -38,7 +35,7 @@ export function DomainCheckJsonLd({ domain, pathname, result }: { domain: string
         "@type": "Thing",
         name: `Trust and risk signals for ${domain}`,
         description:
-          trust == null
+          trust === null
             ? `Special outcome: hostname not graded as Active website (${result.siteStatus}). Summary: ${result.reviewSummary}`
             : `Risk score (higher means more concern): ${result.score}/100. Summary: ${result.reviewSummary}`
       }

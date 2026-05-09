@@ -30,9 +30,12 @@ export function buildScoringIdentityContext(
   const ownershipUnverifiable =
     rdapFailed || (registrationDateUnknown && domainAgeUnknown) || (rdapFailed && registrarUnknown && registrationDateUnknown);
 
-  const robotsLikelyBlocked = reviewSignals.warnings.some((w) =>
-    /blocked by robots|robots policy|robots\.txt/i.test(w)
-  );
+  /**
+   * True only when bookkeeping explicitly tags `website_behavior` on the reviewed domain.
+   * Third-party directories blocking Fraudly’s collectors do **not** set this bucket.
+   */
+  const robotsLikelyBlocked =
+    Array.isArray(reviewSignals.reviewFetchDebug) && reviewSignals.reviewFetchDebug.some((r) => r.bucket === "website_behavior");
 
   const limitedPublicReputation = !reviewSignals.googleFound && !reviewSignals.trustpilotFound;
 

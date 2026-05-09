@@ -22,7 +22,12 @@ export const EN_MESSAGES = {
   },
   reviewEvidence: {
     noPublicReviewProfile:
-      "No public review profile was found. This limits confidence but does not prove the site is unsafe."
+      "No public review profile was found. This limits confidence but does not prove the site is unsafe.",
+    /** When third-party collectors fail (robots/HTTP/offline): never blame the merchant in UI copy. */
+    reviewDataUnavailable: "Public review data unavailable for this check.",
+    reviewInformationUnverified: "Review information could not be verified.",
+    /** Public-intel bundle had scraping/crawler friction — concise, non-alarming. */
+    reviewSnapshotIncomplete: "Some optional public-review snapshots were incomplete in this crawl; overall confidence may be lower."
   },
   check: {
     missingUrl: "Please enter a URL to check.",

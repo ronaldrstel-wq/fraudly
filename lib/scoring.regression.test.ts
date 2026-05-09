@@ -38,6 +38,8 @@ function emptyReviews(extra?: Partial<ReviewSignals>): ReviewSignals {
     suspiciousReviewSignals: [],
     sources: [],
     warnings: [],
+    publicReviewAvailabilityNotes: [],
+    reviewFetchDebug: [],
     ...extra
   };
 }

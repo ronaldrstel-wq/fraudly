@@ -46,8 +46,11 @@ export interface ScamCheckResult {
   /** Evidence completeness (“how certain are we”). */
   confidenceLevel: ConfidenceLevel;
   confidenceRationale: string;
-  /** When true, hide the radial trust gauge (nonexistent / invalid apex policy). */
-  omitTrustScoreGauge: boolean;
+  /**
+   * When explicitly `true`, hide the radial trust gauge (invalid / nonexistent apex).
+   * Omit or `false` for normal graded checks and legacy snapshots.
+   */
+  omitTrustScoreGauge?: boolean;
   /** Reserved structure for deterministic page-behaviour phishing checks (all optional booleans today). */
   behavioralSignalsPending: PendingPageBehaviorSignals;
 }
@@ -176,6 +179,30 @@ function isPendingBehaviorSignals(value: unknown): value is PendingPageBehaviorS
   return ok;
 }
 
+const REVIEW_FETCH_DEBUG_BUCKETS = [
+  "provider_error",
+  "source_unavailable",
+  "review_signal",
+  "website_behavior"
+] as const;
+
+const REVIEW_FETCH_DEBUG_SOURCES = ["trustpilot_public", "google_indexed_snippets"] as const;
+
+function isReviewFetchDebugEntry(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  const r = value as Record<string, unknown>;
+  if (typeof r.source !== "string" || !REVIEW_FETCH_DEBUG_SOURCES.includes(r.source as (typeof REVIEW_FETCH_DEBUG_SOURCES)[number])) {
+    return false;
+  }
+  if (
+    typeof r.bucket !== "string" ||
+    !REVIEW_FETCH_DEBUG_BUCKETS.includes(r.bucket as (typeof REVIEW_FETCH_DEBUG_BUCKETS)[number])
+  ) {
+    return false;
+  }
+  return true;
+}
+
 function isDomainInfrastructure(value: unknown): value is DomainInfrastructure {
   if (!value || typeof value !== "object") return false;
   const d = value as Record<string, unknown>;
@@ -237,6 +264,14 @@ export function isScamCheckResult(value: unknown): value is ScamCheckResult {
   if (!review.sources.every((s) => typeof s === "string")) return false;
   if (!Array.isArray(review.warnings)) return false;
   if (!review.warnings.every((w) => typeof w === "string")) return false;
+  if (review.publicReviewAvailabilityNotes !== undefined) {
+    if (!Array.isArray(review.publicReviewAvailabilityNotes)) return false;
+    if (!review.publicReviewAvailabilityNotes.every((n) => typeof n === "string")) return false;
+  }
+  if (review.reviewFetchDebug !== undefined) {
+    if (!Array.isArray(review.reviewFetchDebug)) return false;
+    if (!review.reviewFetchDebug.every(isReviewFetchDebugEntry)) return false;
+  }
 
   if (!o.supplyChainSignals || typeof o.supplyChainSignals !== "object") return false;
   const sc = o.supplyChainSignals as Record<string, unknown>;
@@ -264,7 +299,13 @@ export function isScamCheckResult(value: unknown): value is ScamCheckResult {
     return false;
   }
   if (typeof o.confidenceRationale !== "string") return false;
-  if (typeof o.omitTrustScoreGauge !== "boolean") return false;
+  if (
+    o.omitTrustScoreGauge !== undefined &&
+    o.omitTrustScoreGauge !== null &&
+    typeof o.omitTrustScoreGauge !== "boolean"
+  ) {
+    return false;
+  }
   if (!o.behavioralSignalsPending || !isPendingBehaviorSignals(o.behavioralSignalsPending)) return false;
 
   return true;

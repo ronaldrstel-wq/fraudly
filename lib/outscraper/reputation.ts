@@ -1,6 +1,7 @@
 import { normalizeDomain } from "@/lib/cache";
 import { publicIntelConfig } from "@/lib/public-intel/config";
 import { getPublicIntelEnrichment } from "@/lib/public-intel";
+import { sanitizePublicIntelWarningsForUi } from "@/lib/reviewSourceNormalization";
 
 export type ReputationSignalStatus = "Positive" | "Mixed" | "Weak" | "Missing";
 
@@ -121,7 +122,7 @@ function toDisabledResponse(domain: string, baseRiskScore: number, message: stri
       sslStatus: "unavailable",
       mailSecurity: null,
       confidence: "low",
-      warnings: [message],
+      warnings: sanitizePublicIntelWarningsForUi([message]),
       sourceStatus
     },
     message
@@ -179,7 +180,7 @@ export async function getReputationEnrichment(input: {
         sslStatus: intel.signals.sslStatus,
         mailSecurity: intel.signals.mailSecurity,
         confidence: intel.signals.confidence,
-        warnings: intel.signals.warnings,
+        warnings: sanitizePublicIntelWarningsForUi(intel.signals.warnings),
         sourceStatus: intel.signals.sourceStatus
       }
     };

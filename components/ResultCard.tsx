@@ -1,10 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ReviewSummary } from "@/components/ReviewSummary";
 import { inferIntelEvidenceTier, type IntelScoreBreakdownEntry } from "@/lib/checks/scoring";
 import type { TrustSignal } from "@/lib/checks/types";
 import { inferScoreEvidenceTier, type ScoreEvidenceTier, type ScoreSignal } from "@/lib/scoringEngine";
+import {
+  neutralLabelForReviewDebugEntry,
+  reviewWarningsSafeForUi,
+  sanitizePublicIntelWarningsForUi
+} from "@/lib/reviewSourceNormalization";
+import { publicTrustGaugeDisplay, shouldShowTrustGauge } from "@/lib/trustGaugeDisplay";
 import { trustIconGlyph, trustPresentationFromScore } from "@/lib/trustSystem";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import type { ScamCheckResult } from "@/types/scam";
@@ -175,9 +181,10 @@ function footerFromSiteStatus(status: SiteStatus): { card: string; body: string 
 }
 
 export function ResultCard({ result }: ResultCardProps) {
-  const suppressedGauge = result.omitTrustScoreGauge;
-  const trustScore = Math.round(100 - result.score);
-  const style = trustPresentationFromScore(suppressedGauge ? 0 : trustScore);
+  const trustScore = publicTrustGaugeDisplay(result);
+  const showGauge = shouldShowTrustGauge(result) && typeof trustScore === "number";
+  const showNonexistentHeadline = result.omitTrustScoreGauge === true;
+  const style = trustPresentationFromScore(trustScore ?? 0);
   const { reviewSignals } = result;
   const hasPublicReviewData = reviewSignals.trustpilotFound || reviewSignals.googleFound;
   const scoreTierBuckets = tierScoreSignals(result.scoreResult.signals);
@@ -191,6 +198,20 @@ export function ResultCard({ result }: ResultCardProps) {
   const [reputation, setReputation] = useState<ReputationEnrichment | null>(null);
   const [repLoading, setRepLoading] = useState(false);
   const [repError, setRepError] = useState<string | null>(null);
+
+  const reviewAvailabilityRollup = useMemo(() => {
+    const bundled = [...(reviewSignals.publicReviewAvailabilityNotes ?? [])];
+    const legacySafe = reviewWarningsSafeForUi(reviewSignals.warnings);
+    const merged = [...bundled, ...legacySafe];
+    return [...new Set(merged)];
+  }, [reviewSignals.publicReviewAvailabilityNotes, reviewSignals.warnings]);
+
+  const sanitizedEnrichmentWarnings = useMemo(() => {
+    const raw = reputation?.publicSignals?.warnings;
+    return raw?.length ? sanitizePublicIntelWarningsForUi(raw) : [];
+  }, [reputation]);
+
+  const reviewFetchAudit = reviewSignals.reviewFetchDebug ?? [];
 
   async function loadReputationSignals(deepScan: boolean) {
     setRepLoading(true);
@@ -258,13 +279,7 @@ export function ResultCard({ result }: ResultCardProps) {
   return (
     <div className="w-full rounded-xl bg-white p-6 shadow-lg shadow-slate-200/60 transition-all duration-300">
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
-        {suppressedGauge ? (
-          <div className="min-w-0 flex-1 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-950">
-            <p className="text-base font-semibold text-amber-950">{EN_MESSAGES.specialOutcomes.nonexistent.headline}</p>
-            <p className="mt-2 leading-relaxed">{EN_MESSAGES.specialOutcomes.nonexistent.subline}</p>
-            <p className="mt-2 text-xs text-amber-900/90">{EN_MESSAGES.siteOutcome.suppressedTrustExplanation}</p>
-          </div>
-        ) : (
+        {showGauge && typeof trustScore === "number" ? (
           <div
             className="flex min-w-0 items-center gap-4"
             aria-label={`Trust score ${trustScore} percent, ${style.label}`}
@@ -286,6 +301,17 @@ export function ResultCard({ result }: ResultCardProps) {
               </p>
             </div>
           </div>
+        ) : showNonexistentHeadline ? (
+          <div className="min-w-0 flex-1 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-950">
+            <p className="text-base font-semibold text-amber-950">{EN_MESSAGES.specialOutcomes.nonexistent.headline}</p>
+            <p className="mt-2 leading-relaxed">{EN_MESSAGES.specialOutcomes.nonexistent.subline}</p>
+            <p className="mt-2 text-xs text-amber-900/90">{EN_MESSAGES.siteOutcome.suppressedTrustExplanation}</p>
+          </div>
+        ) : (
+          <div className="min-w-0 flex-1 text-sm text-slate-600">
+            <p className="font-medium text-slate-800">Trust-style score unavailable</p>
+            <p className="mt-1 text-xs text-slate-500">This snapshot did not produce a numeric trust projection.</p>
+          </div>
         )}
 
         <div className="flex w-full min-w-0 flex-col gap-3 sm:w-auto sm:max-w-md sm:items-end sm:text-right">
@@ -295,11 +321,11 @@ export function ResultCard({ result }: ResultCardProps) {
           </div>
         </div>
       </div>
-      {suppressedGauge ? null : (
+      {showGauge && typeof trustScore === "number" ? (
         <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-100">
           <div className={`h-full ${style.progressBar}`} style={{ width: `${trustScore}%` }} />
         </div>
-      )}
+      ) : null}
 
       <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{EN_MESSAGES.siteOutcome.statusHeading}</p>
@@ -453,59 +479,11 @@ export function ResultCard({ result }: ResultCardProps) {
         )}
       </div>
 
-      <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Review signals</p>
-        {hasPublicReviewData ? (
-          <div className="mt-2 space-y-2 text-sm text-slate-700">
-            {reviewSignals.googleFound && (
-              <div>
-                <p className="font-medium text-slate-900">Google</p>
-                <p>
-                  Rating:{" "}
-                  <span className="font-medium">{reviewSignals.googleRating?.toFixed(1) ?? "n/a"}</span>
-                </p>
-                <p>
-                  Review count: <span className="font-medium">{reviewSignals.googleReviewCount ?? "n/a"}</span>
-                </p>
-              </div>
-            )}
-            {reviewSignals.trustpilotFound && (
-              <div>
-                <p className="font-medium text-slate-900">Trustpilot</p>
-                <p>
-                  Rating:{" "}
-                  <span className="font-medium">{reviewSignals.trustpilotRating?.toFixed(1) ?? "n/a"}</span>
-                </p>
-                <p>
-                  Review count: <span className="font-medium">{reviewSignals.trustpilotReviewCount ?? "n/a"}</span>
-                </p>
-              </div>
-            )}
-          </div>
-        ) : (
-          <p className="mt-2 text-sm text-slate-600">No public review data found yet.</p>
-        )}
-
-        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
-          {reviewSignals.suspiciousReviewSignals.map((signal, index) => (
-            <li key={`${index}-${signal.slice(0, 40)}`}>{signal}</li>
-          ))}
-        </ul>
-        <p className="mt-2 text-xs text-slate-500">{result.reviewSummary}</p>
-        {reviewSignals.sources.length > 0 && (
-          <p className="mt-2 text-xs text-slate-500">Sources: {reviewSignals.sources.join(", ")}</p>
-        )}
-        {reviewSignals.warnings.length > 0 && (
-          <ul className="mt-1 list-disc space-y-1 pl-5 text-xs text-amber-800">
-            {reviewSignals.warnings.map((w, i) => (
-              <li key={`${i}-${w.slice(0, 40)}`}>{w}</li>
-            ))}
-          </ul>
-        )}
-      </div>
-
       <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
         <p className="text-sm font-semibold text-slate-900">Public reputation signals</p>
+        <p className="mt-1 text-xs text-slate-500">
+          Cached / Outscraper-backed enrichment when it runs—broader than the quick baseline probes below.
+        </p>
         {repLoading ? (
           <p className="mt-2 text-sm text-slate-600">Checking public-source signals...</p>
         ) : repError ? (
@@ -551,9 +529,9 @@ export function ResultCard({ result }: ResultCardProps) {
             </p>
             {reputation.sentimentSummary ? <p className="text-xs text-slate-600">{reputation.sentimentSummary}</p> : null}
             {reputation.message ? <p className="text-xs text-slate-500">{reputation.message}</p> : null}
-            {reputation.publicSignals?.warnings?.length ? (
-              <ul className="list-disc space-y-1 pl-5 text-xs text-amber-800">
-                {reputation.publicSignals.warnings.map((warning, i) => (
+            {sanitizedEnrichmentWarnings.length > 0 ? (
+              <ul className="list-disc space-y-1 pl-5 text-xs text-slate-600">
+                {sanitizedEnrichmentWarnings.map((warning, i) => (
                   <li key={`${i}-${warning.slice(0, 24)}`}>{warning}</li>
                 ))}
               </ul>
@@ -571,6 +549,67 @@ export function ResultCard({ result }: ResultCardProps) {
             No public reputation profile found. This does not automatically mean unsafe.
           </p>
         )}
+      </div>
+
+      <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">Baseline review signals (main scan)</p>
+        <p className="mt-1 text-xs text-slate-500">
+          Lightweight directory probes for the numeric model. Crawler or feed hiccups here describe Fraudly’s snapshot—not the merchant’s honesty.
+        </p>
+        {hasPublicReviewData ? (
+          <div className="mt-2 space-y-2 text-sm text-slate-700">
+            {reviewSignals.googleFound && (
+              <div>
+                <p className="font-medium text-slate-900">Indexed review snippets probe</p>
+                <p>
+                  Rating estimate:{" "}
+                  <span className="font-medium">{reviewSignals.googleRating?.toFixed(1) ?? "n/a"}</span>
+                </p>
+                <p>
+                  Review count estimate: <span className="font-medium">{reviewSignals.googleReviewCount ?? "n/a"}</span>
+                </p>
+              </div>
+            )}
+            {reviewSignals.trustpilotFound && (
+              <div>
+                <p className="font-medium text-slate-900">Trust snapshot probe</p>
+                <p>
+                  Rating:{" "}
+                  <span className="font-medium">{reviewSignals.trustpilotRating?.toFixed(1) ?? "n/a"}</span>
+                </p>
+                <p>
+                  Review count: <span className="font-medium">{reviewSignals.trustpilotReviewCount ?? "n/a"}</span>
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-slate-600">{EN_MESSAGES.reviewEvidence.reviewDataUnavailable}</p>
+        )}
+
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+          {reviewSignals.suspiciousReviewSignals.map((signal, index) => (
+            <li key={`${index}-${signal.slice(0, 40)}`}>{signal}</li>
+          ))}
+        </ul>
+        <p className="mt-2 text-xs text-slate-500">{result.reviewSummary}</p>
+        {reviewAvailabilityRollup.length > 0 ? (
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-600">
+            {reviewAvailabilityRollup.map((line, i) => (
+              <li key={`${i}-${line.slice(0, 48)}`}>{line}</li>
+            ))}
+          </ul>
+        ) : null}
+        {reviewFetchAudit.length > 0 ? (
+          <details className="mt-3 rounded-lg border border-dashed border-slate-200 bg-white px-3 py-2 text-xs text-slate-700">
+            <summary className="cursor-pointer font-medium text-slate-800">Source availability (neutral)</summary>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-slate-600">
+              {reviewFetchAudit.map((entry, idx) => (
+                <li key={`${idx}-${entry.source}-${entry.bucket}`}>{neutralLabelForReviewDebugEntry(entry)}</li>
+              ))}
+            </ul>
+          </details>
+        ) : null}
       </div>
 
       <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
@@ -658,6 +697,26 @@ export function ResultCard({ result }: ResultCardProps) {
               );
             })}
           </div>
+        )}
+
+        <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-slate-600">Baseline review probes (debug)</p>
+        <p className="mt-1 text-xs text-slate-500">
+          Buckets distinguish provider errors, source outages, review-derived signals, and (rare) website crawler transparency—never merged with fraud intel.
+        </p>
+        {reviewFetchAudit.length === 0 ? (
+          <p className="mt-2 text-xs text-slate-600">No bookkeeping rows for the quick review collectors.</p>
+        ) : (
+          <ul className="mt-2 space-y-1 text-xs text-slate-700">
+            {reviewFetchAudit.map((entry, idx) => (
+              <li key={`dbg-${idx}-${entry.source}-${entry.bucket}`}>
+                <span className="font-mono text-[10px] uppercase text-slate-500">
+                  {entry.source} · {entry.bucket}
+                </span>
+                {": "}
+                {neutralLabelForReviewDebugEntry(entry)}
+              </li>
+            ))}
+          </ul>
         )}
       </details>
 

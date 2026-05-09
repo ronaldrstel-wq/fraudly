@@ -1,4 +1,5 @@
 import type { ExternalChecksResult } from "@/lib/checks/types";
+import { EN_MESSAGES } from "@/lib/messages.en";
 import type { ReviewSignals } from "@/lib/reviewSignals";
 import type { ScoringIdentityContext } from "@/lib/scoringIdentityContext";
 import type { ConfidenceLevel } from "@/types/site-outcome";
@@ -40,6 +41,13 @@ export function computeRatingConfidence(args: {
   } else if (reviewSignalsThin(args.reviewSignals)) {
     scorePts -= 1;
     notes.push("No public review profile surfaced in this crawl — this limits certainty.");
+  }
+
+  const reviewDebug = args.reviewSignals.reviewFetchDebug ?? [];
+  const thirdPartyFriction = reviewDebug.some((r) => r.bucket === "provider_error" || r.bucket === "source_unavailable");
+  if (thirdPartyFriction && !reviewSignalsAnchored(args.reviewSignals)) {
+    scorePts -= 1;
+    notes.push(EN_MESSAGES.reviewEvidence.reviewSnapshotIncomplete);
   }
 
   if (args.checks.ssl.httpsEnabled && args.checks.ssl.validCertificate) {
