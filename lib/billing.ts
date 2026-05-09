@@ -24,6 +24,11 @@ export function isPremiumActive(user: Pick<User, "plan" | "subscriptionStatus">)
   return user.plan === "premium" && user.subscriptionStatus === "active";
 }
 
+/** Premium subscription or purchased credits — used for elevated daily / deep-scan caps. */
+export function hasPaidScanEntitlement(user: Pick<User, "plan" | "subscriptionStatus" | "credits">): boolean {
+  return isPremiumActive(user) || user.credits > 0;
+}
+
 export function canRunBasicCheck(user: Pick<User, "freeChecksUsed" | "plan" | "subscriptionStatus" | "credits">): boolean {
   return user.freeChecksUsed < FREE_CHECK_LIMIT || isPremiumActive(user) || user.credits > 0;
 }

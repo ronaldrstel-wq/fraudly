@@ -1,7 +1,9 @@
 import type { User } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { runWebsiteAnalysis } from "@/lib/analysis/runWebsiteAnalysis";
-import { toBillingSnapshot } from "@/lib/billing";
+import { buildPrivacySafeRequestFingerprints, getRateLimitHashPepper } from "@/lib/abuseHash";
+import { hasPaidScanEntitlement, toBillingSnapshot } from "@/lib/billing";
+import { reserveScanQuotaOrReject } from "@/lib/checkRateLimits";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { canRunCheck, getAnonymousFreeCheckCookieName, hasUsedAnonymousFreeCheckCookie } from "@/lib/accessControl";
 import { checkDailyLimiter, getClientIp } from "@/lib/rateLimiter";
@@ -14,6 +16,7 @@ export const runtime = "nodejs";
 
 interface CheckRequest {
   url?: string;
+  /** `"basic"` runs the same pipeline today but is classified for quota; `"full"` counts as a deep scan. */
   detailLevel?: "basic" | "full";
   language?: "en" | "nl";
 }
@@ -47,6 +50,7 @@ export async function POST(request: Request) {
 
     const input = typeof body?.url === "string" ? body.url.trim() : "";
     const language = body?.language === "nl" ? "nl" : "en";
+    const scanKind = body?.detailLevel === "basic" ? ("basic" as const) : ("deep" as const);
 
     if (!input) {
       return NextResponse.json({ error: "url is required" }, { status: 400 });
@@ -60,19 +64,20 @@ export async function POST(request: Request) {
     const parsedUrl = parsed.url;
     const canonicalHref = parsed.canonicalHref;
     const userTrimmed = parsed.userTrimmed;
+    const domainKey = parsedUrl.hostname.slice(0, 512);
 
-    let user: User | null = null;
+    let billingUser: User | null = null;
     try {
-      user = await getBillingUserOrNull();
+      billingUser = await getBillingUserOrNull();
     } catch (e) {
       // Auth/user-store hiccups should not block the core check flow.
       logNonCritical("[api/check] billing user lookup failed; continuing as anonymous:", e);
-      user = null;
+      billingUser = null;
     }
     const hasUsedAnonFreeCheck = hasUsedAnonymousFreeCheckCookie(request.headers.get("cookie"));
 
-    if (!user) {
-      if (!canRunCheck(user, { hasUsedAnonymousFreeCheck: hasUsedAnonFreeCheck })) {
+    if (!billingUser) {
+      if (!canRunCheck(billingUser, { hasUsedAnonymousFreeCheck: hasUsedAnonFreeCheck })) {
         return NextResponse.json(
           { error: "second_check_requires_signup", message: EN_MESSAGES.auth.loginForAnotherCheck },
           { status: 401 }
@@ -94,7 +99,41 @@ export async function POST(request: Request) {
       }
     }
 
-    const billingUser: User | null = user;
+    let pepper: string;
+    try {
+      pepper = getRateLimitHashPepper();
+    } catch (err) {
+      console.error("[api/check] RATE_LIMIT_HASH_SECRET missing or too short", err);
+      return NextResponse.json(
+        {
+          error: "rate_limit_misconfigured",
+          message: "This service is temporarily unavailable. Please try again later."
+        },
+        { status: 503 }
+      );
+    }
+
+    const clientIpRaw = getClientIp(request);
+    const { ipHash, userAgentHash, abuseKey } = buildPrivacySafeRequestFingerprints(pepper, request, clientIpRaw);
+    const paid = billingUser ? hasPaidScanEntitlement(billingUser) : false;
+
+    const quota = await reserveScanQuotaOrReject({
+      userId: billingUser?.id ?? null,
+      domain: domainKey,
+      scanType: scanKind,
+      ipHash,
+      userAgentHash,
+      abuseKey,
+      authenticated: Boolean(billingUser?.id),
+      paid
+    });
+
+    if (!quota.ok) {
+      return NextResponse.json(
+        { error: "rate_limited", reason: quota.reason, message: quota.message },
+        { status: 429 }
+      );
+    }
 
     const fullResult = await runWebsiteAnalysis(canonicalHref, language);
 

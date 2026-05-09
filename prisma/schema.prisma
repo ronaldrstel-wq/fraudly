@@ -151,3 +151,23 @@ model ScamSignal {
   @@index([domain])
   @@index([url])
 }
+
+/// Audit + counting source for Postgres-backed `/api/check` rate limits (no raw IP or UA stored).
+model ScanRateLimitEvent {
+  id            String   @id @default(cuid())
+  userId        String?
+  ipHash        String   @db.VarChar(128)
+  userAgentHash String   @db.VarChar(128)
+  abuseKey      String   @db.VarChar(128)
+  domain        String   @db.VarChar(512)
+  /// `"basic"` or `"deep"` (full pipeline / detailLevel full).
+  scanType      String   @db.VarChar(16)
+  createdAt     DateTime @default(now())
+  blocked       Boolean  @default(false)
+  reason        String?  @db.VarChar(256)
+
+  @@index([ipHash, createdAt(sort: Desc)])
+  @@index([abuseKey, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+}

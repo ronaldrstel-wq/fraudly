@@ -203,6 +203,17 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         return;
       }
 
+      if (response.status === 429) {
+        setResult(null);
+        const msg =
+          typeof payload?.message === "string" ? payload.message : EN_MESSAGES.rateLimit.generic;
+        setError(msg);
+        failStrip(msg);
+        const reason = typeof payload?.reason === "string" ? payload.reason : "unknown";
+        trackCheckFailed(`rate_${reason}`);
+        return;
+      }
+
       if (!response.ok) {
         setResult(null);
         const msgFromApi = typeof payload?.message === "string" ? payload.message : null;

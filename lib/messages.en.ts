@@ -53,6 +53,17 @@ export const EN_MESSAGES = {
     stoppedLimit: "Check limit reached — upgrade or sign in.",
     stoppedInvalidResponse: "Unexpected response — check stopped."
   },
+  rateLimit: {
+    generic: "Too many checks right now. Please wait a bit and try again.",
+    tooManyFromNetwork:
+      "Too many checks are coming from this network in a short window. Please wait a few minutes and try again.",
+    tooManyChecksShortWindow: "You’re checking websites a little too quickly. Please wait up to ten minutes and try again.",
+    freeDailyExceeded:
+      "You’ve reached today’s free check limit. Please try again tomorrow or upgrade for more checks.",
+    paidDailyExceeded: "You’ve reached today’s plan check limit. Please try again tomorrow or contact support if you need more capacity.",
+    deepDailyExceededFree:
+      "You’ve reached today’s limit for full (deep) scans on a free account. Try again tomorrow or use a paid check for more deep analyses today."
+  },
   checkout: {
     invalidResponse: "Unexpected server response.",
     checkoutFailed: "Checkout failed.",
