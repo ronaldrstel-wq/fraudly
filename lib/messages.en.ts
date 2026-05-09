@@ -39,6 +39,20 @@ export const EN_MESSAGES = {
     urlFieldLabel: "Website, domain, or link",
     urlPlaceholder: "https://example.com"
   },
+  /** Live progress strip during `/api/check` (homepage scanner). */
+  scanProgress: {
+    phaseStart: "Starting website check...",
+    phaseSecurity: "Running security checks on the URL...",
+    phaseSignals: "Gathering public signals...",
+    phaseScoring: "Scoring trust and risk signals...",
+    phaseFinalizing: "Finalizing analysis...",
+    complete: "Analysis complete.",
+    failedGeneric: "Website check couldn't finish. Please try again.",
+    failedNetwork: "Could not reach the scanner. Check your connection and try again.",
+    stoppedSignIn: "Sign-in required — check stopped.",
+    stoppedLimit: "Check limit reached — upgrade or sign in.",
+    stoppedInvalidResponse: "Unexpected response — check stopped."
+  },
   checkout: {
     invalidResponse: "Unexpected server response.",
     checkoutFailed: "Checkout failed.",

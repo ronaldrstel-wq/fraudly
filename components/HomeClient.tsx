@@ -22,6 +22,24 @@ import { EN_MESSAGES } from "@/lib/messages.en";
 import { GENERIC_CHECK_ERROR } from "@/lib/messages";
 import { isCheckApiResponse, type ScamCheckResult } from "@/types/scam";
 
+const SIMULATED_PROGRESS_MAX = 89;
+const SCAN_PROGRESS_START = 5;
+const RESULT_DISPLAY_HOLD_MS = 450;
+const PROGRESS_SIM_INTERVAL_MS = 440;
+
+function scanPhaseMessage(progress: number): string {
+  if (progress >= 100) return EN_MESSAGES.scanProgress.complete;
+  if (progress >= 78) return EN_MESSAGES.scanProgress.phaseFinalizing;
+  if (progress >= 55) return EN_MESSAGES.scanProgress.phaseScoring;
+  if (progress >= 32) return EN_MESSAGES.scanProgress.phaseSignals;
+  if (progress >= 15) return EN_MESSAGES.scanProgress.phaseSecurity;
+  return EN_MESSAGES.scanProgress.phaseStart;
+}
+
+async function yieldOneUiFrame() {
+  await new Promise((resolve) => setTimeout(resolve, 50));
+}
+
 const ResultCard = dynamic(() => import("@/components/ResultCard").then((m) => ({ default: m.ResultCard })), {
   loading: () => <div className="min-h-[280px] w-full animate-pulse rounded-xl bg-slate-100" aria-hidden />
 });
@@ -42,13 +60,44 @@ export function HomeClient({ children }: { children?: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [hasUsedFreeCheck, setHasUsedFreeCheck] = useState(false);
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
+  const [scanProgress, setScanProgress] = useState(0);
+  const [scanStatus, setScanStatus] = useState("");
+  const [scanFailed, setScanFailed] = useState(false);
   const inFlight = useRef(false);
+  const mountedRef = useRef(true);
+  const progressSimRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const clearProgressSimulation = () => {
+    if (progressSimRef.current) {
+      clearInterval(progressSimRef.current);
+      progressSimRef.current = null;
+    }
+  };
 
   const disabled = useMemo(() => url.trim().length === 0 || loading, [url, loading]);
 
   useEffect(() => {
     setHasUsedFreeCheck(hasUsedAnonymousFreeCheck());
   }, []);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (progressSimRef.current) {
+        clearInterval(progressSimRef.current);
+        progressSimRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!loading || scanFailed) return;
+    setScanStatus((prev) => {
+      const next = scanPhaseMessage(scanProgress);
+      return prev === next ? prev : next;
+    });
+  }, [loading, scanFailed, scanProgress]);
 
   async function runCheck() {
     if (inFlight.current) return;
@@ -75,10 +124,27 @@ export function HomeClient({ children }: { children?: ReactNode }) {
       return;
     }
 
-    inFlight.current = true;
-    setLoading(true);
+    clearProgressSimulation();
+    setResult(null);
     setError(null);
     setShowSignupPrompt(false);
+    setScanFailed(false);
+
+    inFlight.current = true;
+    setLoading(true);
+    setScanProgress(SCAN_PROGRESS_START);
+    setScanStatus(EN_MESSAGES.scanProgress.phaseStart);
+
+    await yieldOneUiFrame();
+
+    progressSimRef.current = setInterval(() => {
+      if (!mountedRef.current) return;
+      setScanProgress((p) => {
+        if (p >= SIMULATED_PROGRESS_MAX) return p;
+        const bump = 2 + Math.floor(Math.random() * 7);
+        return Math.min(SIMULATED_PROGRESS_MAX, p + bump);
+      });
+    }, PROGRESS_SIM_INTERVAL_MS);
 
     try {
       if (isSignedIn) {
@@ -97,6 +163,8 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         })
       });
 
+      clearProgressSimulation();
+
       const rawBody = await response.text();
       let payload: Record<string, unknown> | null = null;
       try {
@@ -104,6 +172,12 @@ export function HomeClient({ children }: { children?: ReactNode }) {
       } catch {
         payload = null;
       }
+
+      const failStrip = (stripMessage: string) => {
+        setScanFailed(true);
+        setScanStatus(stripMessage);
+        setLoading(false);
+      };
 
       if (response.status === 401) {
         setResult(null);
@@ -113,6 +187,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
             : EN_MESSAGES.auth.loginForUrlCheck;
         setError(msg);
         setShowSignupPrompt(true);
+        failStrip(EN_MESSAGES.scanProgress.stoppedSignIn);
         trackEvent("signup_prompt_shown", { source: "api_401" });
         trackCheckFailed("unauthorized");
         return;
@@ -122,6 +197,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         setResult(null);
         setShowSignupPrompt(true);
         setError(EN_MESSAGES.auth.loginForAnotherCheck);
+        failStrip(EN_MESSAGES.scanProgress.stoppedLimit);
         trackEvent("signup_prompt_shown", { source: "api_402" });
         trackCheckFailed("rate_limit");
         return;
@@ -148,14 +224,17 @@ export function HomeClient({ children }: { children?: ReactNode }) {
 
         if (msgFromApi) {
           setError(msgFromApi);
+          failStrip(msgFromApi);
         } else if (requestId) {
           setError(`${GENERIC_CHECK_ERROR} Reference: ${requestId}`);
+          failStrip(EN_MESSAGES.scanProgress.failedGeneric);
         } else {
           setError(
             process.env.NODE_ENV === "production"
               ? GENERIC_CHECK_ERROR
               : `Request failed (HTTP ${response.status}). ${bodySnippet ? `Body: ${bodySnippet}` : ""}`
           );
+          failStrip(EN_MESSAGES.scanProgress.failedGeneric);
         }
 
         trackCheckFailed(`http_${response.status}`);
@@ -169,9 +248,16 @@ export function HomeClient({ children }: { children?: ReactNode }) {
             ? GENERIC_CHECK_ERROR
             : `Unexpected API response (HTTP ${response.status}). Body: ${rawBody.slice(0, 180)}`
         );
+        failStrip(EN_MESSAGES.scanProgress.stoppedInvalidResponse);
         trackCheckFailed("invalid_response_shape");
         return;
       }
+
+      setScanProgress(100);
+      setScanStatus(EN_MESSAGES.scanProgress.complete);
+      await new Promise((resolve) => setTimeout(resolve, RESULT_DISPLAY_HOLD_MS));
+
+      if (!mountedRef.current) return;
 
       setResult(payload.result as ScamCheckResult);
       if (!isSignedIn) {
@@ -183,17 +269,22 @@ export function HomeClient({ children }: { children?: ReactNode }) {
       } else {
         trackAnonymousCheckCompleted(payload.result.score);
       }
+      setLoading(false);
     } catch (err) {
+      clearProgressSimulation();
       setResult(null);
       const message = err instanceof Error ? err.message : "Unknown error";
       if (process.env.NODE_ENV !== "production") {
         console.error("[/api/check] fetch failed", { message });
       }
       setError(process.env.NODE_ENV === "production" ? GENERIC_CHECK_ERROR : `Network error: ${message}`);
+      setScanFailed(true);
+      setScanStatus(EN_MESSAGES.scanProgress.failedNetwork);
+      setLoading(false);
       trackCheckFailed("network");
     } finally {
+      clearProgressSimulation();
       inFlight.current = false;
-      setLoading(false);
     }
   }
 
@@ -254,6 +345,9 @@ export function HomeClient({ children }: { children?: ReactNode }) {
           onSubmit={handleCheck}
           loading={loading}
           disabled={disabled}
+          scanProgress={scanProgress}
+          scanStatus={scanStatus}
+          scanFailed={scanFailed}
         />
 
         {error && (

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { URLInput } from "@/components/URLInput";
+import { WebsiteScanProgress } from "@/components/WebsiteScanProgress";
 
 interface HeroProps {
   url: string;
@@ -7,11 +8,25 @@ interface HeroProps {
   onSubmit: () => void;
   loading: boolean;
   disabled: boolean;
+  /** 0–100 while a check is in progress (or 100 briefly at completion). */
+  scanProgress: number;
+  scanStatus: string;
+  scanFailed?: boolean;
   /** Shown when the user must sign in before running a check (e.g. Clerk gate). */
   authGate?: ReactNode;
 }
 
-export function Hero({ url, onUrlChange, onSubmit, loading, disabled, authGate }: HeroProps) {
+export function Hero({
+  url,
+  onUrlChange,
+  onSubmit,
+  loading,
+  disabled,
+  scanProgress,
+  scanStatus,
+  scanFailed = false,
+  authGate
+}: HeroProps) {
   return (
     <section id="link-check" className="mx-auto w-full max-w-4xl scroll-mt-20 text-center">
       <div className="mx-auto mb-2.5 inline-flex items-center rounded-full border border-blue-100 bg-white px-3.5 py-1 text-xs font-semibold tracking-wide text-blue-700 shadow-sm sm:mb-3 sm:px-4">
@@ -34,11 +49,9 @@ export function Hero({ url, onUrlChange, onSubmit, loading, disabled, authGate }
       <div className="mx-auto mt-3.5 max-w-3xl sm:mt-4">
         <URLInput value={url} onChange={onUrlChange} onSubmit={onSubmit} disabled={disabled} loading={loading} />
         {authGate ? <div className="mt-2.5 sm:mt-3">{authGate}</div> : null}
-        {loading && (
-          <p className="mt-2 text-center text-sm text-slate-500" role="status" aria-live="polite">
-            Checking website...
-          </p>
-        )}
+        {loading ? (
+          <WebsiteScanProgress progress={scanProgress} status={scanStatus} failed={scanFailed} />
+        ) : null}
       </div>
 
       <p className="mx-auto mt-3.5 max-w-2xl px-1 text-pretty text-xs leading-relaxed text-slate-500 sm:mt-4.5 sm:text-sm">
