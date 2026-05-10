@@ -1,10 +1,10 @@
 import { SITE_URL } from "@/lib/seo";
-import { publicTrustGaugeDisplay } from "@/lib/trustGaugeDisplay";
+import { displayTrustScoreForResult } from "@/lib/scanPresentation";
 import type { ScamCheckResult } from "@/types/scam";
 
 export function DomainCheckJsonLd({ domain, pathname, result }: { domain: string; pathname: string; result: ScamCheckResult }) {
   const url = `${SITE_URL}${pathname}`;
-  const trust = publicTrustGaugeDisplay(result);
+  const trust = displayTrustScoreForResult(result);
   const sslLabel = result.ssl.httpsEnabled ? (result.ssl.validCertificate ? "HTTPS with valid certificate" : "HTTPS with certificate issues") : "HTTPS unavailable";
 
   const description =

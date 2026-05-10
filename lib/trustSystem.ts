@@ -33,8 +33,8 @@ export function trustScoreFromRisk(riskScore: number): number {
  */
 export function trustLevelFromScore(trustScore: number): TrustLevel {
   const t = clampScore(trustScore);
-  if (t >= 80) return "trusted";
-  if (t >= 60) return "likelyLegit";
+  if (t >= 90) return "trusted";
+  if (t >= 70) return "likelyLegit";
   if (t >= 40) return "limitedEvidence";
   if (t >= 20) return "suspicious";
   return "highRisk";
@@ -107,7 +107,10 @@ export function trustPresentationFromScore(score: number): TrustPresentation {
  * Maps trust projection to legacy API verdicts.
  * Low confidence / missing intel alone must not yield `scam` unless risk is extreme or deception is strong.
  */
-export function verdictFromTrustScore(trustScore: number, opts?: Pick<VerdictAssessmentInput, "confirmedMalicious" | "lexicalStrong">): ScamVerdict {
+export function verdictFromTrustScore(
+  trustScore: number,
+  opts?: { confirmedMalicious?: boolean; lexicalStrong?: boolean }
+): ScamVerdict {
   return verdictFromAssessment({
     riskScore: 100 - clampScore(trustScore),
     confirmedMalicious: opts?.confirmedMalicious ?? false,

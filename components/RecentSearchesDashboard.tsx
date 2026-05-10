@@ -26,9 +26,10 @@ function normalizeScore(score: number): number {
 
 function getScoreColor(score: number): string {
   const normalized = normalizeScore(score);
-  if (normalized >= 80) return "#22c55e";
-  if (normalized >= 60) return "#facc15";
-  if (normalized >= 40) return "#f97316";
+  if (normalized >= 90) return "#22c55e";
+  if (normalized >= 70) return "#14b8a6";
+  if (normalized >= 40) return "#facc15";
+  if (normalized >= 20) return "#f97316";
   return "#ef4444";
 }
 

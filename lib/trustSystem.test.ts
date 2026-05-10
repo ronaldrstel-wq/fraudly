@@ -8,22 +8,23 @@ import {
 } from "@/lib/trustSystem";
 
 describe("trust bands", () => {
-  it("maps five trust levels by score", () => {
+  it("maps five trust levels by score (90 / 70 / 40 / 20 thresholds)", () => {
+    expect(trustLevelFromScore(95)).toBe("trusted");
     expect(trustLevelFromScore(90)).toBe("trusted");
-    expect(trustLevelFromScore(80)).toBe("trusted");
+    expect(trustLevelFromScore(89)).toBe("likelyLegit");
     expect(trustLevelFromScore(70)).toBe("likelyLegit");
-    expect(trustLevelFromScore(60)).toBe("likelyLegit");
+    expect(trustLevelFromScore(69)).toBe("limitedEvidence");
     expect(trustLevelFromScore(50)).toBe("limitedEvidence");
     expect(trustLevelFromScore(40)).toBe("limitedEvidence");
-    expect(trustLevelFromScore(30)).toBe("suspicious");
+    expect(trustLevelFromScore(39)).toBe("suspicious");
     expect(trustLevelFromScore(20)).toBe("suspicious");
-    expect(trustLevelFromScore(10)).toBe("highRisk");
+    expect(trustLevelFromScore(19)).toBe("highRisk");
     expect(trustLevelFromScore(0)).toBe("highRisk");
   });
 
   it("labels presentation for each band", () => {
-    expect(trustPresentationFromScore(85).label).toBe("Trusted");
-    expect(trustPresentationFromScore(65).label).toBe("Likely Legit");
+    expect(trustPresentationFromScore(92).label).toBe("Trusted");
+    expect(trustPresentationFromScore(75).label).toBe("Likely Legit");
     expect(trustPresentationFromScore(45).label).toBe("Limited Evidence");
     expect(trustPresentationFromScore(25).label).toBe("Suspicious");
     expect(trustPresentationFromScore(5).label).toBe("High Risk");

@@ -31,7 +31,23 @@ export const EN_MESSAGES = {
   },
   scoring: {
     limitedPublicSources:
-      "Some public data sources were unavailable or did not return enough information. This lowers rating confidence, but it is not direct evidence that the website is unsafe."
+      "Some public data sources were unavailable or did not return enough information. This lowers how complete the picture is, but it is not direct evidence that the website is unsafe."
+  },
+  scanResult: {
+    trustScoreExplainer:
+      "Measures estimated safety from this scan’s signals (higher is safer). It is not a guarantee.",
+    keyReasonHeading: "Main takeaway",
+    signalReliability: "Source reliability"
+  },
+  threatOverride: {
+    bannerTitle: "Confirmed phishing intelligence detected",
+    bannerBody:
+      "This domain appeared in one or more public phishing or malware intelligence feeds. Avoid interacting with this website unless an official trusted source confirms it is safe.",
+    /** When Safe Browsing or feeds indicate malware-distribution style threats */
+    bannerTitleMalware: "Malware or harmful URL intelligence detected",
+    confirmedPhishingRisk: "Confirmed phishing risk",
+    malwareDetected: "Malware detected",
+    confirmedMalicious: "Confirmed malicious"
   },
   check: {
     missingUrl: "Please enter a URL to check.",
@@ -127,11 +143,13 @@ export const EN_MESSAGES = {
     }
   },
   siteOutcome: {
-    statusHeading: "Site status",
-    confidenceHeading: "Rating confidence",
-    confidenceHighLabel: "High — multiple independent stewardship or reputation checks aligned.",
-    confidenceMediumLabel: "Medium — some checks succeeded, others were inconclusive.",
-    confidenceLowLabel: "Low — limited observable evidence; Fraudly avoids strong conclusions.",
+    statusHeading: "Threat status",
+    confidenceHeading: "Evidence strength",
+    confidenceHelper:
+      "How much public and technical data was available for this scan. Low evidence strength does not automatically mean a site is dangerous.",
+    confidenceHighLabel: "High — multiple independent checks returned usable data.",
+    confidenceMediumLabel: "Medium — some sources succeeded; others were missing or inconclusive.",
+    confidenceLowLabel: "Low — limited public data. This does not automatically mean the site is unsafe.",
     trusted: "Trusted",
     unverified: "Unverified",
     caution: "Caution",
@@ -195,7 +213,7 @@ export const EN_MESSAGES = {
     columns: {
       query: "Searched",
       entity: "Entity type",
-      score: "Trust-style score",
+      score: "Trust score",
       status: "Status",
       searchedAt: "Searched at",
       action: "Open"

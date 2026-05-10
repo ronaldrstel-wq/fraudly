@@ -10,7 +10,7 @@ import { ResultCard } from "@/components/ResultCard";
 import { SiteFooter } from "@/components/SiteFooter";
 import { DomainCheckJsonLd } from "@/components/seo/DomainCheckJsonLd";
 import { EN_MESSAGES } from "@/lib/messages.en";
-import { publicTrustGaugeDisplay } from "@/lib/trustGaugeDisplay";
+import { displayTrustScoreForResult } from "@/lib/scanPresentation";
 
 export const revalidate = 3600;
 
@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   try {
     const result = await getCachedWebsiteAnalysis(domain);
-    const trustScore = publicTrustGaugeDisplay(result);
+    const trustScore = displayTrustScoreForResult(result);
     const title = `Is ${domain} Safe? Website Trust Analysis`;
     const description = safeDescription(domain, trustScore, result.reviewSummary);
 
@@ -91,7 +91,7 @@ export default async function DomainCheckPage({ params }: PageProps) {
     notFound();
   }
 
-  const trustScore = publicTrustGaugeDisplay(result);
+  const trustScore = displayTrustScoreForResult(result);
   const sslShort = result.ssl.httpsEnabled
     ? result.ssl.validCertificate
       ? "HTTPS available — encrypts transit, does not prove legitimacy"

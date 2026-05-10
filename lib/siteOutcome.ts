@@ -63,9 +63,11 @@ export function deriveSiteStatus(args: {
   inactiveWebsite: boolean;
   ctx: ScoringIdentityContext | undefined;
   reviewSignals: ReviewSignals;
+  /** Tier‑1 feed/police/Safe Browsing/danger-tier intel — same as `requiresCriticalTrustClamp` in scan pipeline. */
+  tier1Threat?: boolean;
 }): SiteStatus {
   if (args.treatAsNonexistent) return "nonexistent";
-  if (isConfirmedMalicious(args.malicious)) return "confirmed_malicious";
+  if (args.tier1Threat || isConfirmedMalicious(args.malicious)) return "confirmed_malicious";
   if (args.inactiveWebsite) return "inactive";
 
   const trust = Math.max(0, Math.min(100, Math.round(100 - args.scoreRisk)));
@@ -79,9 +81,18 @@ export function deriveSiteStatus(args: {
       typeof args.ctx?.ageDaysKnown === "number" &&
       (args.ctx?.ageDaysKnown ?? 0) >= 730);
 
-  if (trust >= 80 && anchorsPresent && !args.ctx?.domainPatterns.hasStrongLexicalSuspicion) return "trusted";
-  if (trust >= 80) return "unverified";
-  /** Aligns with trust bands: “Likely Legit” through “Limited Evidence” stay in caution-style messaging, not high_risk. */
+  /** Policy namespaces: high trust but may sit just under the 90 trust band from residual scoring noise. */
+  if (
+    args.ctx?.domainPatterns.officialRegistrableExempt &&
+    trust >= 85 &&
+    !args.ctx.domainPatterns.hasStrongLexicalSuspicion
+  ) {
+    return "trusted";
+  }
+
+  if (trust >= 90 && anchorsPresent && !args.ctx?.domainPatterns.hasStrongLexicalSuspicion) return "trusted";
+  if (trust >= 90) return "unverified";
+  /** Aligns with score bands (40–69 Limited Evidence, 70–89 Likely Legit): caution-style until genuinely low trust. */
   if (trust >= 40) return "caution";
   return "high_risk";
 }

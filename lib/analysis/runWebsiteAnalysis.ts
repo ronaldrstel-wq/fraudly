@@ -28,6 +28,7 @@ import { EN_MESSAGES } from "@/lib/messages.en";
 import { composeTrustEvidenceBundle } from "@/lib/evidence/composeTrustEvidence";
 import { hasMeaningfulClientEvidence, type WebsiteAnalysisClientEvidence } from "@/lib/evidence/types";
 import { collectDns } from "@/lib/public-intel/dns";
+import { requiresCriticalTrustClamp } from "@/lib/scanPresentation";
 import { verdictFromAssessment } from "@/lib/trustSystem";
 import type { ScamCheckResult } from "@/types/scam";
 import type { PendingPageBehaviorSignals } from "@/types/behavioral-signals";
@@ -81,7 +82,8 @@ export async function runWebsiteAnalysis(
   const trustSignals = buildTrustSignalsFromEvidence(externalChecks.providerEvidence);
   const scoringContext = buildScoringIdentityContext(normalizedDomain, externalChecks, reviewSignals);
   const maliciousSignals = collectMaliciousSignals(externalChecks);
-  const confirmedMalicious = isConfirmedMalicious(maliciousSignals);
+  const criticalThreatClamp = requiresCriticalTrustClamp(externalChecks);
+  const confirmedMalicious = isConfirmedMalicious(maliciousSignals) || criticalThreatClamp;
   const mailDnsHints = dnsMail.ok && dnsMail.data ? dnsMail.data : null;
   const intelSurface = {
     confirmedMalicious,
@@ -185,6 +187,10 @@ export async function runWebsiteAnalysis(
     }
   }
 
+  if (criticalThreatClamp) {
+    adjustedRisk = Math.max(adjustedRisk, 80);
+  }
+
   const adjustedVerdict = verdictFromAssessment({
     riskScore: adjustedRisk,
     confirmedMalicious,
@@ -220,7 +226,8 @@ export async function runWebsiteAnalysis(
     treatAsNonexistent: false,
     inactiveWebsite,
     ctx: scoringContext,
-    reviewSignals
+    reviewSignals,
+    tier1Threat: criticalThreatClamp
   });
 
   return {
