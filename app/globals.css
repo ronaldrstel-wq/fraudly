@@ -35,7 +35,7 @@ body {
 @layer components {
   /**
    * Fraudly mini design system — motion, focus, buttons, surfaces.
-   * Radius: buttons xl, inputs/cards 2xl, modals 3xl, pills full.
+   * Radius: buttons xl, inputs/cards 2xl, modals 3xl.
    */
 
   .fraudly-motion {
@@ -69,11 +69,6 @@ body {
   .btn-secondary {
     @apply fraudly-motion fraudly-focus inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200/90 bg-white px-5 text-sm font-semibold text-slate-900;
     @apply shadow-subtle hover:border-slate-300/90 hover:bg-slate-50;
-    @apply disabled:pointer-events-none disabled:opacity-45;
-  }
-
-  .btn-ghost {
-    @apply fraudly-motion fraudly-focus inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900;
     @apply disabled:pointer-events-none disabled:opacity-45;
   }
 
@@ -125,39 +120,9 @@ body {
     @apply fraudly-motion font-medium text-slate-700 hover:text-slate-900;
   }
 
-  /* Status / trust pills — soft fills, full radius */
-  .pill-trusted {
-    @apply inline-flex items-center rounded-full border border-emerald-200/80 bg-emerald-50/95 px-2 py-0.5 text-xs font-semibold text-emerald-900;
-  }
-
-  .pill-caution {
-    @apply inline-flex items-center rounded-full border border-amber-200/80 bg-amber-50/95 px-2 py-0.5 text-xs font-semibold text-amber-950;
-  }
-
-  .pill-highrisk {
-    @apply inline-flex items-center rounded-full border border-rose-200/80 bg-rose-50/95 px-2 py-0.5 text-xs font-semibold text-rose-950;
-  }
-
-  .pill-neutral {
-    @apply inline-flex items-center rounded-full border border-slate-200/90 bg-slate-50/95 px-2 py-0.5 text-xs font-semibold text-slate-800;
-  }
-
   /** Homepage hero headline accent — aligns with Fraudly logo blues / violet / cyan */
   .hero-gradient-trust-it {
     @apply bg-gradient-to-r from-cyan-600 via-blue-600 to-violet-600 bg-clip-text text-transparent;
   }
 }
 
-@layer utilities {
-  .surface-card {
-    @apply fraudly-card border-slate-200/80;
-  }
-
-  .surface-card-soft {
-    @apply fraudly-motion rounded-2xl border border-slate-200/75 bg-slate-50/65 shadow-subtle;
-  }
-
-  .section-stack {
-    @apply space-y-4 md:space-y-5;
-  }
-}

@@ -1,15 +1,11 @@
-import "server-only";
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
-import { auth } from "@clerk/nextjs/server";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { MAIN_NAV_LINKS } from "@/components/navbar/mainNavLinks";
 
-export async function NavbarShell() {
-  const { userId } = await auth();
-  const isSignedIn = Boolean(userId);
-
+export function NavbarView({ isSignedIn, authReady }: { isSignedIn: boolean; authReady: boolean }) {
   return (
     <nav className="sticky top-0 z-20 border-b border-slate-200/70 bg-white/90 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4">
@@ -39,7 +35,12 @@ export async function NavbarShell() {
         </div>
 
         <div className="flex min-h-9 shrink-0 flex-wrap items-center justify-end gap-1 sm:gap-2 md:gap-3">
-          {isSignedIn ? (
+          {!authReady ? (
+            <div className="flex min-h-9 items-center gap-2" aria-hidden>
+              <span className="h-9 w-[88px] animate-pulse rounded-xl bg-slate-100" />
+              <span className="h-9 w-[98px] animate-pulse rounded-xl bg-slate-100" />
+            </div>
+          ) : isSignedIn ? (
             <>
               <Link
                 href="/recent-searches"

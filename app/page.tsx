@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { auth } from "@clerk/nextjs/server";
+import { Suspense } from "react";
 import { HomeBelowFold } from "@/components/HomeBelowFold";
+import { HomeAuthProvider } from "@/components/home/HomeAuthContext";
+import { HomeNavbar } from "@/components/home/HomeNavbar";
 import { HomeFaqJsonLd } from "@/components/HomeFaqJsonLd";
 import { HomeClient } from "@/components/HomeClient";
-import { Navbar } from "@/components/Navbar";
 import { OG_IMAGE } from "@/lib/seo-metadata";
 import { defaultKeywords, SITE_URL } from "@/lib/seo";
 
@@ -33,16 +34,31 @@ export const metadata: Metadata = {
   }
 };
 
-export default async function HomePage() {
-  const { userId } = await auth();
+/** Hint CDN / data cache refresh for the marketing shell (no `force-static` — incompatible with Clerk + prerender). */
+export const revalidate = 3600;
 
+function HomeBelowFoldFallback() {
+  return (
+    <div className="mx-auto mt-14 max-w-6xl space-y-6 sm:mt-16 md:mt-20" aria-hidden>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="h-44 w-full animate-pulse rounded-2xl bg-slate-100" />
+      ))}
+    </div>
+  );
+}
+
+export default function HomePage() {
   return (
     <>
       <HomeFaqJsonLd />
-      <Navbar />
-      <HomeClient initialIsSignedIn={Boolean(userId)}>
-        <HomeBelowFold />
-      </HomeClient>
+      <HomeAuthProvider>
+        <HomeNavbar />
+        <HomeClient>
+          <Suspense fallback={<HomeBelowFoldFallback />}>
+            <HomeBelowFold />
+          </Suspense>
+        </HomeClient>
+      </HomeAuthProvider>
     </>
   );
 }

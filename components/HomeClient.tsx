@@ -4,9 +4,9 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useHomeAuth } from "@/components/home/HomeAuthContext";
 import { Hero } from "@/components/Hero";
-import { OptionalEvidenceScanSection, type OptionalEvidenceScanValues } from "@/components/OptionalEvidenceScanSection";
-import { SiteFooter } from "@/components/SiteFooter";
+import type { OptionalEvidenceScanValues } from "@/components/OptionalEvidenceScanSection";
 import { hasUsedAnonymousFreeCheck, markAnonymousFreeCheckUsed } from "@/lib/accessControl";
 import {
   trackAnonymousCheckCompleted,
@@ -52,14 +52,19 @@ const PostScanAppPromo = dynamic(() => import("@/components/PostScanAppPromo").t
   loading: () => <div className="h-32 w-full animate-pulse rounded-2xl bg-slate-100" aria-hidden />
 });
 
-export function HomeClient({
-  children,
-  initialIsSignedIn
-}: {
-  children?: ReactNode;
-  initialIsSignedIn: boolean;
-}) {
-  const isSignedIn = initialIsSignedIn;
+const OptionalEvidenceScanSection = dynamic(
+  () => import("@/components/OptionalEvidenceScanSection").then((m) => ({ default: m.OptionalEvidenceScanSection })),
+  {
+    loading: () => <div className="mt-3.5 h-36 max-w-2xl animate-pulse rounded-2xl bg-slate-100" aria-hidden />
+  }
+);
+
+const SiteFooter = dynamic(() => import("@/components/SiteFooter").then((m) => ({ default: m.SiteFooter })), {
+  loading: () => <footer className="min-h-[100px] border-t border-slate-200/80 bg-white/80 py-8" aria-hidden />
+});
+
+export function HomeClient({ children }: { children?: ReactNode }) {
+  const { signedIn: isSignedIn } = useHomeAuth();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScamCheckResult | null>(null);

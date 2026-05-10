@@ -1,9 +1,24 @@
 import type { ReactNode } from "react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { URLInput } from "@/components/URLInput";
 import { WebsiteScanProgress } from "@/components/WebsiteScanProgress";
 import { EN_MESSAGES } from "@/lib/messages.en";
+
+const URLInput = dynamic(() => import("@/components/URLInput").then((m) => ({ default: m.URLInput })), {
+  loading: () => (
+    <div
+      className="mx-auto w-full max-w-6xl rounded-3xl border border-slate-200/70 bg-white p-5 shadow-lg shadow-slate-200/60 sm:p-6"
+      aria-hidden
+    >
+      <div className="mb-3 h-4 max-w-md animate-pulse rounded bg-slate-100 sm:w-2/3" />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+        <div className="h-16 min-h-[4rem] flex-1 animate-pulse rounded-2xl bg-slate-100" />
+        <div className="h-16 min-h-[4rem] w-full shrink-0 animate-pulse rounded-2xl bg-slate-200/70 sm:min-w-[220px]" />
+      </div>
+    </div>
+  )
+});
 
 const home = EN_MESSAGES.home;
 
