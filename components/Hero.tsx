@@ -93,7 +93,7 @@ export function Hero({
   ] as const;
 
   return (
-    <section id="link-check" className="relative scroll-mt-20 overflow-hidden py-16 lg:py-20">
+    <section id="link-check" className="relative scroll-mt-20 overflow-hidden pb-16 pt-2 lg:pb-20 lg:pt-3">
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_66%_52%_at_23%_15%,rgba(139,92,246,0.09),transparent_65%),radial-gradient(ellipse_58%_50%_at_79%_19%,rgba(56,189,248,0.1),transparent_67%)]"
         aria-hidden

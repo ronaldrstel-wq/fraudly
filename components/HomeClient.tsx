@@ -403,7 +403,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
       <Navbar />
 
-      <main className="mx-auto w-full max-w-6xl px-4 pb-14 pt-6 sm:pt-8 md:pt-11">
+      <main className="mx-auto w-full max-w-6xl px-4 pb-14 pt-0">
         <Hero
           url={url}
           onUrlChange={setUrl}
