@@ -164,7 +164,7 @@ export function Hero({
           </div>
         </div>
 
-        <div className="mx-auto mt-7 w-full max-w-[1150px] md:mt-9">
+        <div className="mx-auto mt-10 w-full md:mt-11">
           <URLInput
             value={url}
             onChange={onUrlChange}
