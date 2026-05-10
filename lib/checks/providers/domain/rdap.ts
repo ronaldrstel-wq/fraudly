@@ -93,6 +93,7 @@ export async function runRdapProvider(domain: string): Promise<ProviderRun<Domai
         "Registration data (RDAP)",
         [
           typeof ageDays === "number" ? `Approximate domain age: ${ageDays} days.` : "Domain age could not be derived.",
+          `RDAP target (registrable/root domain): ${normalizedDomain}.`,
           registrar ? `Registrar: ${registrar}.` : "Registrar: not parsed.",
           rdap.country ? `Country field: ${rdap.country}.` : "Country: not provided.",
           expirationDate ? `Expiration: ${expirationDate.toISOString()}.` : "Expiration: not parsed.",

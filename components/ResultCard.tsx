@@ -294,6 +294,10 @@ export function ResultCard({ result }: ResultCardProps) {
   }, [result.domain, result.score]);
 
   const meter = trustMeterTone(displayTrust ?? 0, threat.active);
+  const checkedHostname = result.domainIntelligence.checkedHostname ?? result.domain;
+  const registeredDomain = result.registrableDomain ?? result.domainIntelligence.registrableDomain ?? result.domain;
+  const isSubdomain = Boolean(result.isSubdomain ?? result.domainIntelligence.subdomain);
+  const suspiciousSubTerms = result.suspiciousSubdomainTerms ?? result.domainIntelligence.suspiciousSubdomainTerms ?? [];
 
   return (
     <div
@@ -409,7 +413,12 @@ export function ResultCard({ result }: ResultCardProps) {
           <div className="flex w-full min-w-0 flex-col gap-3 sm:w-auto sm:max-w-md sm:items-end sm:text-right">
             <div className="text-sm text-slate-600 sm:text-right">
               <p className="font-medium text-slate-900">{EN_MESSAGES.scanResult.resultSections.analyzedDomainHeading}</p>
-              <p className="mt-1 break-all">{result.domain}</p>
+              <p className="mt-1 break-all">{checkedHostname}</p>
+              {registeredDomain !== checkedHostname ? (
+                <p className="mt-1 text-xs text-slate-500">
+                  Registered domain: <span className="font-medium text-slate-700">{registeredDomain}</span>
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
@@ -498,29 +507,51 @@ export function ResultCard({ result }: ResultCardProps) {
 
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
             <p className="text-sm font-semibold text-slate-900">{sec.domainBlockHeading}</p>
-        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-700">
-          <li>
-            Registration date: <span className="font-medium">{result.domainIntelligence.registrationDate ?? "unknown"}</span>
-          </li>
-          <li>
-            Domain age (days): <span className="font-medium">{result.domainIntelligence.ageDays ?? "unknown"}</span>
-          </li>
-          <li>
-            Registrar: <span className="font-medium">{result.domainIntelligence.registrar ?? "unknown"}</span>
-          </li>
-          <li>
-            Country: <span className="font-medium">{result.domainIntelligence.country ?? "unknown"}</span>
-          </li>
-          <li>
-            Expiration date: <span className="font-medium">{result.domainIntelligence.expirationDate ?? "unknown"}</span>
-          </li>
-          <li>
-            Privacy / redacted ownership hints:{" "}
-            <span className="font-medium">{result.domainIntelligence.hasPrivacyProtection ? "yes" : "no / unknown"}</span>
-          </li>
-        </ul>
-        <p className="mt-2 text-xs text-slate-500">Source: {result.domainIntelligence.source}</p>
-      </div>
+            {isSubdomain ? (
+              <p className="mt-2 text-xs leading-relaxed text-slate-600">
+                The submitted address is a subdomain. Fraudly also checked the registered domain because domain age and
+                ownership belong to the root domain.
+              </p>
+            ) : null}
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-700">
+              <li>
+                Checked URL/hostname: <span className="font-medium">{checkedHostname}</span>
+              </li>
+              <li>
+                Registered domain: <span className="font-medium">{registeredDomain}</span>
+              </li>
+              <li>
+                Registration date: <span className="font-medium">{result.domainIntelligence.registrationDate ?? "unknown"}</span>
+              </li>
+              <li>
+                Domain age (days): <span className="font-medium">{result.domainIntelligence.ageDays ?? "unknown"}</span>
+              </li>
+              <li>
+                Registrar: <span className="font-medium">{result.domainIntelligence.registrar ?? "unknown"}</span>
+              </li>
+              <li>
+                Country: <span className="font-medium">{result.domainIntelligence.country ?? "unknown"}</span>
+              </li>
+              <li>
+                Expiration date: <span className="font-medium">{result.domainIntelligence.expirationDate ?? "unknown"}</span>
+              </li>
+              <li>
+                Privacy / redacted ownership hints:{" "}
+                <span className="font-medium">{result.domainIntelligence.hasPrivacyProtection ? "yes" : "no / unknown"}</span>
+              </li>
+              {isSubdomain ? (
+                <li>
+                  Subdomain analysis:{" "}
+                  <span className="font-medium">
+                    {suspiciousSubTerms.length > 0
+                      ? `Potentially risky wording found (${suspiciousSubTerms.join(", ")}).`
+                      : "No high-risk wording detected in subdomain labels."}
+                  </span>
+                </li>
+              ) : null}
+            </ul>
+            <p className="mt-2 text-xs text-slate-500">Source: {result.domainIntelligence.source}</p>
+          </div>
 
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
         <p className="text-sm font-semibold text-slate-900">{sec.sslBlockHeading}</p>

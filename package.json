@@ -27,7 +27,8 @@
     "prisma": "^6.19.3",
     "react": "19.1.4",
     "react-dom": "19.1.4",
-    "stripe": "^22.1.0"
+    "stripe": "^22.1.0",
+    "tldts": "^7.0.30"
   },
   "devDependencies": {
     "@types/node": "22.15.21",

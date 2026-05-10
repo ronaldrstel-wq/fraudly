@@ -1,5 +1,6 @@
 import type { DomainPatternAnalysis } from "@/lib/domainPatternHeuristics";
 import { analyzeDomainPatterns } from "@/lib/domainPatternHeuristics";
+import { parseDomainParts } from "@/lib/domain/parseDomain";
 import type { ReviewSignals } from "@/lib/reviewSignals";
 import type { ScoringIdentityContext } from "@/lib/scoringIdentityContext";
 import { computeTrustAnchors } from "@/lib/scoringIdentityContext";
@@ -177,6 +178,7 @@ function pushMailDnsTrustSignals(hints: MailDnsHints | null | undefined, out: Sc
 export function buildDomainHeuristicReasons(domain: string): string[] {
   const d = domain.toLowerCase();
   const reasons: string[] = [];
+  const suspiciousSubdomainWords = ["billing", "login", "secure", "verify", "account", "payment", "meta", "support"];
   const riskyKeywords = ["cheap", "free", "deal"];
   const matched = riskyKeywords.filter((word) => d.includes(word));
   if (matched.length > 0) {
@@ -191,6 +193,16 @@ export function buildDomainHeuristicReasons(domain: string): string[] {
   }
   if (d.split(".").length > 3) {
     reasons.push("Multiple subdomains detected, which can be used to imitate trusted brands.");
+  }
+  const parsedDomain = parseDomainParts(d);
+  if (parsedDomain.subdomainParts.length > 0) {
+    const subdomainParts = parsedDomain.subdomainParts;
+    const suspiciousSubParts = subdomainParts.filter((part) =>
+      suspiciousSubdomainWords.some((word) => part.includes(word))
+    );
+    if (suspiciousSubParts.length > 0) {
+      reasons.push(`Subdomain labels include high-risk wording: ${[...new Set(suspiciousSubParts)].join(", ")}.`);
+    }
   }
   return reasons.slice(0, 3);
 }
@@ -238,6 +250,7 @@ function computeReviewTierFlags(review?: ReviewSignals): ReviewTierFlags {
 
 function pushDomainSignals(domain: string, out: ScoreSignal[]): void {
   const d = domain.toLowerCase();
+  const suspiciousSubdomainWords = ["billing", "login", "secure", "verify", "account", "payment", "meta", "support"];
   const risky = ["cheap", "free", "deal"];
   const matched = risky.filter((w) => d.includes(w));
   if (matched.length > 0) {
@@ -269,6 +282,23 @@ function pushDomainSignals(domain: string, out: ScoreSignal[]): void {
       confidence: "medium",
       reason: "Extra hostname segments can be used to mimic trusted brands."
     });
+  }
+  const parsedDomain = parseDomainParts(d);
+  if (parsedDomain.subdomainParts.length > 0) {
+    const subdomainParts = parsedDomain.subdomainParts;
+    const suspiciousSubParts = subdomainParts.filter((part) =>
+      suspiciousSubdomainWords.some((word) => part.includes(word))
+    );
+    if (suspiciousSubParts.length > 0) {
+      out.push({
+        id: "domain-subdomain-risk-terms",
+        label: "Suspicious subdomain wording",
+        category: "domain",
+        impact: 5,
+        confidence: "medium",
+        reason: `Subdomain labels include risky wording (${[...new Set(suspiciousSubParts)].join(", ")}).`
+      });
+    }
   }
 }
 

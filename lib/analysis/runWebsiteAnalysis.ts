@@ -5,7 +5,6 @@ import {
   type AiScamReasonsResult
 } from "@/lib/aiScamReasons";
 import { buildNonexistentWebsiteResult } from "@/lib/analysis/nonexistentWebsiteResult";
-import { normalizeDomain } from "@/lib/cache";
 import { runAllChecks } from "@/lib/checks";
 import { buildDomainInfrastructure, probeApexDnsResolution } from "@/lib/domainInfrastructure";
 import { buildIntelScoring, buildTrustSignalsFromEvidence } from "@/lib/checks/scoring";
@@ -32,6 +31,7 @@ import { requiresCriticalTrustClamp } from "@/lib/scanPresentation";
 import { verdictFromAssessment } from "@/lib/trustSystem";
 import type { ScamCheckResult } from "@/types/scam";
 import type { PendingPageBehaviorSignals } from "@/types/behavioral-signals";
+import { parseDomainParts } from "@/lib/domain/parseDomain";
 
 const EMPTY_BEHAVIOR: PendingPageBehaviorSignals = {};
 
@@ -44,7 +44,8 @@ export async function runWebsiteAnalysis(
   language: "en" | "nl" = "en",
   options?: { evidence?: WebsiteAnalysisClientEvidence | null }
 ): Promise<ScamCheckResult> {
-  const normalizedDomain = normalizeDomain(inputUrl);
+  const parsedDomain = parseDomainParts(inputUrl);
+  const normalizedDomain = parsedDomain.normalizedHostname;
   const heuristicReasons = buildDomainHeuristicReasons(normalizedDomain);
   const [reviewSignals, websiteSignals, externalChecks, dnsProbe, dnsMail] = await Promise.all([
     getReviewSignals(normalizedDomain),
@@ -234,6 +235,11 @@ export async function runWebsiteAnalysis(
     score: adjustedRisk,
     verdict: adjustedVerdict,
     domain: normalizedDomain,
+    registrableDomain: parsedDomain.registrableDomain,
+    submittedHostname: parsedDomain.inputHostname || normalizedDomain,
+    subdomain: parsedDomain.subdomain,
+    isSubdomain: parsedDomain.isSubdomain,
+    suspiciousSubdomainTerms: parsedDomain.suspiciousSubdomainTerms,
     reasons: mergedReasons,
     trustSignals,
     providerEvidence: externalChecks.providerEvidence,

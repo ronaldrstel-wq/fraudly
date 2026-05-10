@@ -17,6 +17,14 @@ export interface ScamCheckResult {
   score: number;
   verdict: ScamVerdict;
   domain: string;
+  /** Raw submitted host token (before/after URL normalization). */
+  submittedHostname?: string;
+  /** eTLD+1 root used for RDAP/registration lookups. */
+  registrableDomain?: string;
+  /** Parsed subdomain portion when present. */
+  subdomain?: string | null;
+  isSubdomain?: boolean;
+  suspiciousSubdomainTerms?: string[];
   reasons: string[];
   trustSignals: TrustSignal[];
   /** Modular intel providers (normalized). */
@@ -242,6 +250,14 @@ export function isScamCheckResult(value: unknown): value is ScamCheckResult {
   if (typeof o.score !== "number" || Number.isNaN(o.score)) return false;
   if (typeof o.verdict !== "string" || !VERDICTS.includes(o.verdict as ScamVerdict)) return false;
   if (typeof o.domain !== "string") return false;
+  if (o.submittedHostname !== undefined && typeof o.submittedHostname !== "string") return false;
+  if (o.registrableDomain !== undefined && typeof o.registrableDomain !== "string") return false;
+  if (o.subdomain !== undefined && o.subdomain !== null && typeof o.subdomain !== "string") return false;
+  if (o.isSubdomain !== undefined && typeof o.isSubdomain !== "boolean") return false;
+  if (o.suspiciousSubdomainTerms !== undefined) {
+    if (!Array.isArray(o.suspiciousSubdomainTerms)) return false;
+    if (!o.suspiciousSubdomainTerms.every((s) => typeof s === "string")) return false;
+  }
   if (typeof o.reviewSummary !== "string") return false;
   if (typeof o.aiUsed !== "boolean") return false;
   if (!Array.isArray(o.reasons)) return false;

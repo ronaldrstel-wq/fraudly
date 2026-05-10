@@ -162,6 +162,36 @@ export function buildIntelScoring(checks: ExternalChecksResult): {
     });
   }
 
+  const suspiciousSubdomainTerms = checks.domainIntelligence.suspiciousSubdomainTerms ?? [];
+  const subdomainDepth = checks.domainIntelligence.subdomainDepth ?? 0;
+  if (suspiciousSubdomainTerms.length > 0) {
+    const youngRoot =
+      typeof checks.domainIntelligence.ageDays === "number" ? checks.domainIntelligence.ageDays <= 120 : false;
+    pushContribution(signals, breakdown, {
+      id: "intel-suspicious-subdomain-terms",
+      source: checks.domainIntelligence.source,
+      label: "Suspicious subdomain wording",
+      category: "domain",
+      impact: youngRoot ? 9 : 4,
+      confidence: "medium",
+      evidenceTier: "risk_indicator",
+      reason: `Subdomain terms like ${suspiciousSubdomainTerms.join(", ")} are often used in impersonation/login lures${youngRoot ? " and the registrable root is still young." : "."}`
+    });
+  }
+
+  if (subdomainDepth >= 2) {
+    pushContribution(signals, breakdown, {
+      id: "intel-deep-subdomain",
+      source: checks.domainIntelligence.source,
+      label: "Deep subdomain chain",
+      category: "domain",
+      impact: 3,
+      confidence: "low",
+      evidenceTier: "risk_indicator",
+      reason: "Multiple nested subdomains can be legitimate, but are also a common camouflage pattern in phishing links."
+    });
+  }
+
   if (checks.domainIntelligence.suspiciouslyShortRegistration) {
     pushContribution(signals, breakdown, {
       id: "intel-short-registration",

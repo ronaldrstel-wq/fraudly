@@ -1,5 +1,5 @@
-import { normalizeDomain } from "@/lib/cache";
 import { checksConfig } from "@/lib/checks/config";
+import { parseDomainParts } from "@/lib/domain/parseDomain";
 import { runPoliceNlProvider } from "@/lib/checks/providers/government/police-nl";
 import { runDeBsiStub } from "@/lib/checks/providers/government/de-bsi.stub";
 import { runFrAnssiStub } from "@/lib/checks/providers/government/fr-anssi.stub";
@@ -15,8 +15,7 @@ import { runTrancoStub } from "@/lib/checks/providers/reputation/tranco.stub";
 import { runUmbrellaStub } from "@/lib/checks/providers/reputation/umbrella.stub";
 import { runVirusTotalStub } from "@/lib/checks/providers/reputation/virusTotal.stub";
 import { runTlsProvider } from "@/lib/checks/providers/ssl/tls";
-import { evidenceUnavailable } from "@/lib/checks/providers/shared";
-import { runWithDeadline } from "@/lib/checks/providers/shared";
+import { evidenceUnavailable, runWithDeadline, wrapEvidence } from "@/lib/checks/providers/shared";
 import type { ProviderEvidenceResult, ProviderRun } from "@/lib/checks/providers/types";
 import type {
   DomainIntelligence,
@@ -50,7 +49,9 @@ async function withDeadline<TResult>(
 }
 
 export async function runAllChecks(url: string): Promise<ExternalChecksResult> {
-  const domain = normalizeDomain(url);
+  const parsedDomain = parseDomainParts(url);
+  const domain = parsedDomain.normalizedHostname;
+  const registrableDomain = parsedDomain.registrableDomain;
 
   const [
     policeOutcome,
@@ -71,7 +72,7 @@ export async function runAllChecks(url: string): Promise<ExternalChecksResult> {
         warnings: [message]
       } satisfies PoliceScamCheck
     })),
-    withDeadline("rdap", () => runRdapProvider(domain), (message) => ({
+    withDeadline("rdap", () => runRdapProvider(registrableDomain), (message) => ({
       evidence: [evidenceUnavailable(DEADLINE_LABEL.rdap, "domain", `RDAP lookup overrun or error: ${message}`)],
       result: {
         source: "RDAP (rdap.org)",
@@ -140,6 +141,20 @@ export async function runAllChecks(url: string): Promise<ExternalChecksResult> {
   ]);
 
   const providerEvidence: ProviderEvidenceResult[] = [
+    ...(domain !== registrableDomain
+      ? [
+          wrapEvidence(
+            "Fraudly hostname analysis",
+            "domain",
+            "info",
+            false,
+            "Subdomain submitted; root registration also checked",
+            `The submitted host ${domain} is a subdomain. Fraudly checks RDAP/domain-age on ${registrableDomain} because ownership and registration belong to the registrable root domain.`,
+            "high",
+            { checkedHostname: domain, registrableDomain }
+          )
+        ]
+      : []),
     ...policeOutcome.evidence,
     ...domainOutcome.evidence,
     ...safeBrowsingOutcome.evidence,
@@ -157,9 +172,18 @@ export async function runAllChecks(url: string): Promise<ExternalChecksResult> {
   };
   providerEvidence.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
 
+  const domainIntelligence = {
+    ...domainOutcome.result,
+    checkedHostname: domain,
+    registrableDomain,
+    subdomain: parsedDomain.subdomain ?? undefined,
+    subdomainDepth: parsedDomain.subdomainParts.length,
+    suspiciousSubdomainTerms: parsedDomain.suspiciousSubdomainTerms
+  };
+
   return {
     police: policeOutcome.result,
-    domainIntelligence: domainOutcome.result,
+    domainIntelligence,
     safeBrowsing: safeBrowsingOutcome.result,
     openPhish: openPhishOutcome.result,
     urlHaus: urlHausOutcome.result,
@@ -167,7 +191,7 @@ export async function runAllChecks(url: string): Promise<ExternalChecksResult> {
     providerEvidence,
     warnings: [
       ...policeOutcome.result.warnings,
-      ...domainOutcome.result.warnings,
+      ...domainIntelligence.warnings,
       ...safeBrowsingOutcome.result.warnings,
       ...openPhishOutcome.result.warnings,
       ...urlHausOutcome.result.warnings,

@@ -79,7 +79,7 @@ export function URLInput({
           aria-label={isHero ? EN_MESSAGES.check.urlFieldLabel : undefined}
           className={
             isHero
-              ? "fraudly-focus h-[3.05rem] w-full rounded-2xl border border-slate-300/85 bg-white px-4 text-[15px] text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] placeholder:text-slate-500 hover:border-slate-400/70 focus:border-blue-500/70 sm:h-[3.1rem] sm:text-base"
+              ? "fraudly-focus h-14 w-full rounded-2xl border border-slate-300/85 bg-white px-5 text-base text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] placeholder:text-slate-400 hover:border-slate-400/75 focus:border-blue-500/75 sm:h-16 sm:text-lg"
               : "fraudly-search-field"
           }
         />
@@ -90,7 +90,7 @@ export function URLInput({
         disabled={disabled || loading}
         className={
           isHero
-            ? "fraudly-motion fraudly-focus group inline-flex h-[3.05rem] shrink-0 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-6 text-[15px] font-semibold text-white shadow-[0_12px_24px_-14px_rgb(79_70_229_/_0.58),0_8px_16px_-14px_rgb(37_99_235_/_0.45)] hover:-translate-y-[1px] hover:brightness-[1.06] disabled:cursor-not-allowed disabled:opacity-45 sm:h-[3.1rem] sm:min-w-[11rem]"
+            ? "fraudly-motion fraudly-focus group inline-flex h-14 shrink-0 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-7 text-base font-semibold text-white shadow-[0_18px_34px_-20px_rgb(79_70_229_/_0.7),0_10px_20px_-18px_rgb(37_99_235_/_0.55)] hover:scale-[1.01] hover:brightness-[1.06] disabled:cursor-not-allowed disabled:opacity-45 sm:h-16 sm:min-w-[12rem]"
             : "btn-primary-lg group"
         }
       >
@@ -104,8 +104,8 @@ export function URLInput({
 
   if (isHero) {
     return (
-      <div className="fraudly-motion w-full rounded-3xl bg-gradient-to-br from-cyan-200/75 via-violet-200/65 to-blue-200/70 p-[1px] shadow-[0_20px_44px_-30px_rgb(79_70_229_/_0.38),0_10px_26px_-20px_rgb(14_165_233_/_0.28)] ring-1 ring-white/70">
-        <div className="rounded-[calc(1.5rem-1px)] bg-white/95 px-3.5 py-3.5 sm:px-4 sm:py-4">
+      <div className="fraudly-motion w-full rounded-3xl bg-gradient-to-br from-cyan-200/80 via-violet-200/70 to-blue-200/75 p-[1.5px] shadow-[0_32px_70px_-42px_rgb(79_70_229_/_0.62),0_24px_56px_-44px_rgb(14_165_233_/_0.44)] ring-1 ring-violet-100/65">
+        <div className="rounded-[calc(1.5rem-1px)] bg-white/97 px-5 py-5 sm:px-6 sm:py-6">
           {shellInner}
         </div>
       </div>

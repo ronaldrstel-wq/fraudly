@@ -17,6 +17,11 @@ export type PoliceScamCheck = {
 };
 
 export type DomainIntelligence = {
+  checkedHostname?: string;
+  registrableDomain?: string;
+  subdomain?: string;
+  subdomainDepth?: number;
+  suspiciousSubdomainTerms?: string[];
   registrationDate?: string;
   ageDays?: number;
   registrar?: string;
