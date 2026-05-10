@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { URLInput } from "@/components/URLInput";
 import { WebsiteScanProgress } from "@/components/WebsiteScanProgress";
-import { HeroTrustIllustration } from "@/components/HeroTrustIllustration";
 import { EN_MESSAGES } from "@/lib/messages.en";
 
 const home = EN_MESSAGES.home;
@@ -132,7 +132,26 @@ export function Hero({
             </ul>
           </div>
 
-          <HeroTrustIllustration />
+          <div className="relative mx-auto hidden w-full max-w-[260px] justify-center sm:flex sm:max-w-[min(92vw,22rem)] md:max-w-[min(92vw,28rem)] lg:mx-0 lg:max-w-[min(100%,38rem)] lg:justify-end xl:max-w-[40rem]">
+            {/* Soft halo — ties illustration into Fraudly cyan / violet */}
+            <div
+              className="pointer-events-none absolute -inset-6 rounded-[2rem] bg-[radial-gradient(ellipse_at_50%_40%,rgba(56,189,248,0.22),transparent_62%),radial-gradient(ellipse_at_80%_70%,rgba(139,92,246,0.18),transparent_55%),radial-gradient(ellipse_at_20%_60%,rgba(59,130,246,0.12),transparent_50%)] blur-2xl"
+              aria-hidden
+            />
+            <div className="relative rounded-3xl bg-gradient-to-br from-white/95 via-cyan-50/40 to-violet-50/50 p-2 shadow-[0_28px_64px_-32px_rgb(79_70_229_/_0.18),0_16px_40px_-28px_rgb(14_165_233_/_0.12)] ring-1 ring-white/90 sm:p-2.5 lg:p-3">
+              <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200/40 shadow-subtle">
+                <Image
+                  src="/images/fraudly-hero-trust-visual.png"
+                  alt="Fraudly website trust analysis illustration"
+                  width={1536}
+                  height={1024}
+                  sizes="(max-width: 640px) 92vw, (max-width: 1024px) 45vw, 600px"
+                  className="h-auto w-full object-cover"
+                  priority
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="mx-auto mt-10 w-full max-w-3xl sm:mt-11 lg:-mt-2 lg:max-w-5xl xl:max-w-6xl xl:mt-12">
