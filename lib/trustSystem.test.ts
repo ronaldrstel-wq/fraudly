@@ -25,7 +25,7 @@ describe("trust bands", () => {
   it("labels presentation for each band", () => {
     expect(trustPresentationFromScore(92).label).toBe("Trusted");
     expect(trustPresentationFromScore(75).label).toBe("Likely Legit");
-    expect(trustPresentationFromScore(45).label).toBe("Limited Evidence");
+    expect(trustPresentationFromScore(45).label).toBe("Limited Public Data");
     expect(trustPresentationFromScore(25).label).toBe("Suspicious");
     expect(trustPresentationFromScore(5).label).toBe("High Risk");
   });

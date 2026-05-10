@@ -2,70 +2,66 @@
 
 import type { BasicCheckResult } from "@/types/scam";
 import { EN_MESSAGES } from "@/lib/messages.en";
-import { trustIconGlyph, trustPresentationFromScore } from "@/lib/trustSystem";
-
-function verdictLabel(verdict: BasicCheckResult["verdict"]) {
-  if (verdict === "safe") {
-    return {
-      label: EN_MESSAGES.basicResult.safeLabel,
-      tone: "border-emerald-200 bg-emerald-50 text-emerald-800",
-      explanation: EN_MESSAGES.basicResult.safeExplanation
-    };
-  }
-  if (verdict === "suspicious") {
-    return {
-      label: EN_MESSAGES.basicResult.suspiciousLabel,
-      tone: "border-amber-200 bg-amber-50 text-amber-800",
-      explanation: EN_MESSAGES.basicResult.suspiciousExplanation
-    };
-  }
-  return {
-    label: EN_MESSAGES.basicResult.highRiskLabel,
-    tone: "border-rose-200 bg-rose-50 text-rose-800",
-    explanation: EN_MESSAGES.basicResult.highRiskExplanation
-  };
-}
+import {
+  humanRecGlyph,
+  humanRecHeadline,
+  humanRecHeadlineTone,
+  resolveHumanRecKindForBasicCheck,
+  shortExplainForBasic
+} from "@/lib/scanResultDualLayer";
+import { trustPresentationFromScore } from "@/lib/trustSystem";
 
 export function BasicResultCard({ result }: { result: BasicCheckResult }) {
-  const verdict = verdictLabel(result.verdict);
   const trustStyle = Math.max(0, Math.min(100, Math.round(100 - result.score)));
   const trust = trustPresentationFromScore(trustStyle);
+  const humanKind = resolveHumanRecKindForBasicCheck(result.verdict, result.score);
+  const humanHeadline = humanRecHeadline(humanKind);
+  const humanTone = humanRecHeadlineTone(humanKind);
+  const shortEx = shortExplainForBasic(result.verdict, result.score);
 
   return (
     <article className="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/60 sm:p-7">
       <div className="flex flex-col gap-4">
         <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">{EN_MESSAGES.basicResult.heading}</h2>
       </div>
-      <p className="mt-2 text-sm text-slate-600">
-        {EN_MESSAGES.basicResult.intro}
-      </p>
+      <p className="mt-2 text-sm text-slate-600">{EN_MESSAGES.basicResult.intro}</p>
 
       <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{EN_MESSAGES.basicResult.checkedLink}</p>
         <p className="mt-1 break-all text-base font-semibold text-slate-900 sm:text-lg">{result.domain}</p>
       </div>
 
-      <div className={`mt-5 rounded-xl border p-4 sm:p-5 ${verdict.tone}`}>
-        <p className="text-xs font-semibold uppercase tracking-wide opacity-80">{EN_MESSAGES.basicResult.riskStatus}</p>
-        <p className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">{verdict.label}</p>
-        <p className="mt-2 text-sm leading-relaxed opacity-90">{verdict.explanation}</p>
-      </div>
-
-      <div className={`mt-5 rounded-xl border p-4 ${trust.toneSoftBorder} ${trust.toneSoftBg}`}>
-        <p className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${trust.toneSoftBorder} ${trust.toneSoftBg} ${trust.toneText}`}>
-          <span aria-hidden>{trustIconGlyph(trust.icon)}</span>
-          {trust.label}
-        </p>
-        <p className={`mt-2 text-sm font-semibold tabular-nums ${trust.toneText}`}>Trust score: {trustStyle}/100</p>
-        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/80">
-          <div className={`h-full ${trust.progressBar}`} style={{ width: `${trustStyle}%` }} />
+      <header className="mt-6 space-y-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className={`select-none text-3xl ${humanTone.icon}`} aria-hidden>
+            {humanRecGlyph(humanKind)}
+          </span>
+          <h3 className={`text-balance text-2xl font-bold tracking-tight sm:text-3xl ${humanTone.text}`}>{humanHeadline}</h3>
         </div>
-      </div>
+        <p className="text-base leading-relaxed text-slate-700">{shortEx}</p>
+      </header>
+
+      <section
+        className="mt-5 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3"
+        aria-label={`${EN_MESSAGES.scanResult.technicalStatusHeading}: ${trust.label}`}
+      >
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+          {EN_MESSAGES.scanResult.technicalStatusHeading}
+        </p>
+        <p className="mt-1 text-sm font-semibold text-slate-900">{trust.label}</p>
+      </section>
+
+      <section className="mt-5 border-t border-slate-100 pt-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{EN_MESSAGES.scanResult.trustScoreLabel}</p>
+        <p className="mt-1 text-lg font-medium tabular-nums text-slate-600">
+          {trustStyle}
+          <span className="text-slate-400"> / 100</span>
+        </p>
+        <p className="mt-1 text-xs text-slate-500">{EN_MESSAGES.scanResult.trustScoreExplainer}</p>
+      </section>
 
       <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50 p-4">
-        <p className="text-sm font-medium text-blue-900">
-          {EN_MESSAGES.basicResult.unlockHint}
-        </p>
+        <p className="text-sm font-medium text-blue-900">{EN_MESSAGES.basicResult.unlockHint}</p>
       </div>
     </article>
   );

@@ -9,8 +9,8 @@ import { db } from "@/lib/db";
 import { OG_IMAGE } from "@/lib/seo-metadata";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { SITE_URL } from "@/lib/seo";
+import { humanRecHeadline, humanRecKindFromTrustVerdict } from "@/lib/scanResultDualLayer";
 import { trustDisplayFromRiskScore } from "@/lib/trustDisplay";
-import { trustIconGlyph } from "@/lib/trustSystem";
 
 export const revalidate = 120;
 
@@ -135,6 +135,7 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
                     {(() => {
                       const trust = trustDisplayFromRiskScore(row.riskScoreSnapshot);
                       const trustScore = trust.trustScore;
+                      const humanLine = humanRecHeadline(humanRecKindFromTrustVerdict(trustScore, null));
                       return (
                         <>
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -154,25 +155,25 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
                         <p className="mt-2 break-all text-sm font-semibold leading-snug text-slate-900 md:text-base">
                           {row.checkedValue}
                         </p>
+                        <p className="mt-2 text-sm font-semibold text-slate-900">{humanLine}</p>
+                        <p className="mt-0.5 text-xs font-medium text-slate-600">
+                          {EN_MESSAGES.scanResult.technicalStatusHeading}: {trust.label}
+                        </p>
                       </div>
-                      <dl className="grid shrink-0 grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-700 md:text-right md:text-sm">
-                        <div className="md:col-span-2">
+                      <dl className="grid shrink-0 grid-cols-1 gap-y-1 text-xs text-slate-700 md:text-right md:text-sm">
+                        <div>
                           <dt className="sr-only">{EN_MESSAGES.latestChecks.labels.risk}</dt>
-                          <dd className="flex items-center gap-2 md:justify-end">
-                            <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${trust.toneSoftBorder} ${trust.toneSoftBg} ${trust.toneText}`}>
-                              <span aria-hidden>{trustIconGlyph(trust.icon)}</span>
-                              {trust.label}
-                            </span>
-                            <span className={`font-semibold tabular-nums ${trust.toneText}`}>{trustScore}/100</span>
+                          <dd className={`tabular-nums text-slate-600`}>
+                            {EN_MESSAGES.scanResult.trustScoreLabel}: {trustScore}/100
                           </dd>
                         </div>
-                        <div className="md:col-span-2">
+                        <div>
                           <dt className="sr-only">{EN_MESSAGES.latestChecks.labels.status}</dt>
-                          <dd className="text-slate-600">Unified trust system</dd>
+                          <dd className="text-slate-500">{EN_MESSAGES.latestChecks.labels.assessmentNote}</dd>
                         </div>
                       </dl>
                     </div>
-                    <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div className="mt-3 h-1 w-full max-w-xl overflow-hidden rounded-full bg-slate-100">
                       <div className={`h-full ${trust.progressBar}`} style={{ width: `${trustScore}%` }} />
                     </div>
                     <div className="mt-4 flex border-t border-slate-100 pt-3 sm:justify-end">

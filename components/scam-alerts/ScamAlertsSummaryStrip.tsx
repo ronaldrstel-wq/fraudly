@@ -1,4 +1,5 @@
 import type { ScamAlertsIndexStats } from "@/lib/scam-alerts/service";
+import { EN_MESSAGES } from "@/lib/messages.en";
 
 type Props = {
   stats: ScamAlertsIndexStats;
@@ -25,7 +26,9 @@ export function ScamAlertsSummaryStrip({ stats, filteredTotal, rangeStart, range
           <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">{stats.total}</p>
         </div>
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">High+ (conf. ≥ 75)</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            {EN_MESSAGES.scamAlertsUi.summaryHighScore}
+          </p>
           <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">{stats.elevatedConfidenceCount}</p>
         </div>
         <div>
@@ -41,7 +44,7 @@ export function ScamAlertsSummaryStrip({ stats, filteredTotal, rangeStart, range
       </div>
       <p className="mt-3 border-t border-slate-100 pt-3 text-sm text-slate-700">
         Showing <span className="font-semibold text-slate-900">{rangeLabel}</span>
-        <span className="text-slate-500"> · Sorted by newest publication, then confidence</span>
+        <span className="text-slate-500"> · {EN_MESSAGES.scamAlertsUi.sortByScore}</span>
       </p>
     </section>
   );

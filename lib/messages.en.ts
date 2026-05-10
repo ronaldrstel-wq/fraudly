@@ -34,10 +34,102 @@ export const EN_MESSAGES = {
       "Some public data sources were unavailable or did not return enough information. This lowers how complete the picture is, but it is not direct evidence that the website is unsafe."
   },
   scanResult: {
-    trustScoreExplainer:
-      "Measures estimated safety from this scan’s signals (higher is safer). It is not a guarantee.",
-    keyReasonHeading: "Main takeaway",
-    signalReliability: "Source reliability"
+    technicalStatusHeading: "Technical status",
+    /** Primary consumer headline — maps to trust/threat tier */
+    humanRec: {
+      glyphs: {
+        positive: "✓",
+        info: "ⓘ",
+        warning: "⚠",
+        critical: "⛔"
+      },
+      headlines: {
+        trusted: "Trusted",
+        looksSafe: "Looks Safe",
+        notEnoughInfo: "Not Enough Information",
+        beCareful: "Be Careful",
+        highRisk: "High Risk",
+        avoidWebsite: "Avoid This Website",
+        dangerousWebsite: "Dangerous Website",
+        invalidDomain: "Domain Not Verified",
+        unreachable: "Site Unavailable"
+      }
+    },
+    /** Short explanation under the human headline (browser-warning style) */
+    shortExplain: {
+      trusted: "No major risk indicators were detected.",
+      looksSafe: "This website appears legitimate based on available signals.",
+      notEnoughInfo: "We could not find enough public information to confidently assess this website.",
+      notEnoughInfoLowCoverage:
+        "We could not find enough public information to confidently assess this website. Low scan coverage does not automatically mean the site is unsafe.",
+      beCareful:
+        "Some risk indicators were detected. Proceed carefully before entering personal or payment information.",
+      highRisk: "Several strong risk signals were detected in this scan.",
+      avoidPhishing: "This domain was flagged by phishing intelligence sources.",
+      dangerousMalware: "This website may distribute malware or unsafe content.",
+      avoidGeneric: "Authoritative sources flagged serious problems with this website.",
+      confirmedMalicious: "At least one authoritative feed or reference flagged this host as malicious.",
+      invalidDomain: "We could not verify this as a live, registered website hostname.",
+      unreachable: "We could not load usable content from this address in this scan."
+    },
+    trustScoreExplainer: "Higher means fewer risk-style signals in this scan—not a guarantee of safety.",
+    trustScoreLabel: "Trust score",
+    recommendationHeading: "Recommendation",
+    whyHeading: "Why this result?",
+    mainDetailHeading: "What we observed",
+    signalReliability: "Source reliability",
+    providerRowReliability: "reliability",
+    enrichmentCompletenessLabel: "Public-source data completeness",
+    footerDisclaimer:
+      "Fraudly summarizes public and technical signals for awareness. It is not legal, financial, or infallible security advice—always verify before payments or sensitive actions.",
+    limitedStripTitle: "Limited public information available",
+    limitedStripBody:
+      "No confirmed malicious indicators were detected, but public scan coverage was limited. Low coverage does not automatically mean a website is unsafe.",
+    /** Tier‑1 threat “why” lines */
+    whyThreat: {
+      phishingFeed: "This domain was identified in one or more phishing intelligence feeds.",
+      malwareFeed: "This host appeared in malware or harmful-URL intelligence.",
+      government: "A public police or government scam-warning source overlapped with this domain.",
+      safeBrowsingPhishing: "Google Safe Browsing reported phishing or deceptive content for this URL.",
+      safeBrowsingMalware: "Google Safe Browsing reported malware or harmful software linked to this URL.",
+      intelDanger: "One or more intelligence sources reported a high-severity match for this host.",
+      generic: "Authoritative threat intelligence reported a serious match for this website."
+    },
+    whyTrustBand: {
+      trusted: "This website showed strong trust signals and no known phishing or malware list matches in this scan.",
+      likelyLegit:
+        "Available signals look broadly legitimate, and we did not see a confirmed malicious list match.",
+      limitedPublicData:
+        "This website did not show confirmed malicious indicators, but only limited public information was available to score it.",
+      suspicious: "Some risk-style signals were present—extra care is warranted before you trust or pay.",
+      highRisk: "Several concerning signals accumulated in this scan relative to typical benign sites."
+    },
+    why: {
+      nonexistent: "DNS and registration checks did not corroborate this hostname as a live, registered apex.",
+      inactive: "The hostname may exist, but no usable website content was retrieved in this crawl.",
+      confirmedMaliciousGeneric: "At least one authoritative feed or reference flagged this host as malicious."
+    },
+    recommendThreat: {
+      phishing:
+        "This website was flagged by phishing intelligence sources. Do not enter passwords, card numbers, or recovery codes.",
+      malware: "Treat downloads and links as unsafe unless an independent security tool clears them.",
+      government: "Treat this host as high risk until you can verify it through an official channel you opened yourself.",
+      intelDanger: "Avoid interacting with this site unless a trusted security professional or vendor clears it.",
+      generic: "Do not use this website for payments or sensitive data until the threat can be ruled out."
+    },
+    recommendTrustBand: {
+      trusted: "No major risk indicators showed up in this scan—still use normal care with payments and personal data.",
+      likelyLegit: "This website appears broadly legitimate from available signals—verify the organisation if anything feels off.",
+      limitedPublicData:
+        "Not enough public information was available to score this site confidently—double-check the business through independent channels.",
+      suspicious: "Use caution before signing in, paying, or downloading. Prefer contacting the company through a known official route.",
+      highRisk: "Avoid sharing personal or payment details until you can verify the site through a separate trusted source."
+    },
+    recommend: {
+      nonexistent: "Do not treat this hostname as a trustworthy business until registration and DNS look correct from your side.",
+      inactive: "If you expected a real store here, verify the URL with the brand through a channel you trust.",
+      confirmedMalicious: "Do not trust this site for logins or payments unless independent corroboration contradicts the feeds."
+    }
   },
   threatOverride: {
     bannerTitle: "Confirmed phishing intelligence detected",
@@ -144,17 +236,24 @@ export const EN_MESSAGES = {
   },
   siteOutcome: {
     statusHeading: "Threat status",
-    confidenceHeading: "Evidence strength",
+    scanCoverageHeading: "Scan coverage",
+    scanCoverageHelper:
+      "This reflects how much public and technical data was available during the scan. Low scan coverage does not automatically mean a website is unsafe.",
+    scanCoverageHighLabel: "High — multiple checks returned usable data.",
+    scanCoverageMediumLabel: "Medium — some sources succeeded; others were missing or inconclusive.",
+    scanCoverageLowLabel: "Low — limited public data. That only limits how complete the picture is.",
+    /** @deprecated Use scanCoverage* labels in UI */
+    confidenceHeading: "Scan coverage",
     confidenceHelper:
-      "How much public and technical data was available for this scan. Low evidence strength does not automatically mean a site is dangerous.",
-    confidenceHighLabel: "High — multiple independent checks returned usable data.",
+      "This reflects how much public and technical data was available during the scan. Low coverage does not automatically mean a website is unsafe.",
+    confidenceHighLabel: "High — multiple checks returned usable data.",
     confidenceMediumLabel: "Medium — some sources succeeded; others were missing or inconclusive.",
-    confidenceLowLabel: "Low — limited public data. This does not automatically mean the site is unsafe.",
+    confidenceLowLabel: "Low — limited public data. That only limits how complete the picture is.",
     trusted: "Trusted",
-    unverified: "Unverified",
-    caution: "Caution",
+    unverified: "Strong snapshot",
+    caution: "Further review suggested",
     highRisk: "High risk",
-    confirmedMalicious: "Confirmed malicious signal",
+    confirmedMalicious: "Confirmed malicious",
     nonexistent: "Nonexistent domain",
     inactive: "Inactive / unreachable web",
     suppressedTrustMeter: "Trust score withheld — this hostname is not treated as an active website.",
@@ -164,6 +263,12 @@ export const EN_MESSAGES = {
   basicResult: {
     heading: "Basic result",
     intro: "This is the quick first assessment of the checked link.",
+    recommendationHeading: "Recommendation",
+    safeRecommendation: "No major risk indicators showed up in this quick scan—still verify payments and identities as usual.",
+    suspiciousRecommendation:
+      "Some risk signals were present. Prefer contacting the organization through a channel you already trust before paying or signing in.",
+    highRiskRecommendation:
+      "Treat this as elevated risk until you can verify the site through an independent, official channel.",
     checkedLink: "Checked link",
     riskStatus: "Risk status",
     safeLabel: "Safe",
@@ -214,7 +319,7 @@ export const EN_MESSAGES = {
       query: "Searched",
       entity: "Entity type",
       score: "Trust score",
-      status: "Status",
+      status: "Guidance",
       searchedAt: "Searched at",
       action: "Open"
     },
@@ -224,21 +329,29 @@ export const EN_MESSAGES = {
       scam: "strong risk snapshot"
     }
   },
+  scamAlertsUi: {
+    summaryHighScore: "High+ (score ≥ 75)",
+    sortByScore: "Sorted by newest publication, then alert score",
+    filterHighSub: "Uses aggregated alert score",
+    technicalMatchStrength: "Match strength",
+    technicalSignals: "Corroborating signals"
+  },
   latestChecks: {
     navLabel: "Latest checks",
     navLabelShort: "Latest",
     overline: "Public discovery · anonymized summaries",
     pageTitle: "Latest Fraud Checks",
     intro:
-      "Showing the last 10 publicly visible checks that cleared our privacy filter—no accounts, IPs, or private search history. Stronger scores mean more risk-style signals in that snapshot. When in doubt, we exclude items from this list.",
+      "Showing recent public checks that cleared our privacy filter—no accounts, IPs, or private search history. Higher trust scores mean fewer risk-style signals in that snapshot (not a guarantee). We exclude uncertain items from this list.",
     emptyState: "No public fraud checks yet. Recent public-safe checks will appear here.",
     ctaPrimary: "Run a website check",
     listAria: "Latest public fraud check summaries",
     riskHint: "risk-style score",
     viewSnapshot: "View public result",
     labels: {
-      risk: "Risk score",
-      status: "Status label"
+      risk: "Trust score",
+      status: "Status label",
+      assessmentNote: "Fraudly trust assessment (same model as full results)"
     },
     entityLabels: {
       domain: "Domain / website",

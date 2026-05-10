@@ -3,7 +3,7 @@ export type ScamVerdict = "safe" | "suspicious" | "scam";
 
 export type TrustPresentation = {
   level: TrustLevel;
-  label: "Trusted" | "Likely Legit" | "Limited Evidence" | "Suspicious" | "High Risk";
+  label: "Trusted" | "Likely Legit" | "Limited Public Data" | "Suspicious" | "High Risk";
   icon: "check" | "info" | "alert" | "risk";
   toneText: string;
   toneSoftBg: string;
@@ -49,9 +49,9 @@ export function trustPresentationFromScore(score: number): TrustPresentation {
       level,
       label: "Trusted",
       icon: "check",
-      toneText: "text-emerald-700",
-      toneSoftBg: "bg-emerald-50",
-      toneSoftBorder: "border-emerald-200",
+      toneText: "text-emerald-800",
+      toneSoftBg: "bg-emerald-50/90",
+      toneSoftBorder: "border-emerald-200/80",
       progressBar: "bg-emerald-500"
     };
   }
@@ -61,9 +61,9 @@ export function trustPresentationFromScore(score: number): TrustPresentation {
       level,
       label: "Likely Legit",
       icon: "check",
-      toneText: "text-teal-800",
-      toneSoftBg: "bg-teal-50",
-      toneSoftBorder: "border-teal-200",
+      toneText: "text-teal-900",
+      toneSoftBg: "bg-teal-50/90",
+      toneSoftBorder: "border-teal-200/90",
       progressBar: "bg-teal-500"
     };
   }
@@ -71,11 +71,11 @@ export function trustPresentationFromScore(score: number): TrustPresentation {
   if (level === "limitedEvidence") {
     return {
       level,
-      label: "Limited Evidence",
+      label: "Limited Public Data",
       icon: "info",
-      toneText: "text-slate-700",
-      toneSoftBg: "bg-slate-100",
-      toneSoftBorder: "border-slate-200",
+      toneText: "text-slate-600",
+      toneSoftBg: "bg-slate-100/90",
+      toneSoftBorder: "border-slate-300/90",
       progressBar: "bg-slate-400"
     };
   }
@@ -85,9 +85,9 @@ export function trustPresentationFromScore(score: number): TrustPresentation {
       level,
       label: "Suspicious",
       icon: "alert",
-      toneText: "text-amber-700",
-      toneSoftBg: "bg-amber-50",
-      toneSoftBorder: "border-amber-200",
+      toneText: "text-amber-900",
+      toneSoftBg: "bg-amber-50/90",
+      toneSoftBorder: "border-amber-300/80",
       progressBar: "bg-amber-500"
     };
   }
@@ -96,10 +96,10 @@ export function trustPresentationFromScore(score: number): TrustPresentation {
     level,
     label: "High Risk",
     icon: "risk",
-    toneText: "text-rose-700",
-    toneSoftBg: "bg-rose-50",
-    toneSoftBorder: "border-rose-200",
-    progressBar: "bg-rose-500"
+    toneText: "text-rose-900",
+    toneSoftBg: "bg-rose-50/90",
+    toneSoftBorder: "border-rose-300/80",
+    progressBar: "bg-rose-600"
   };
 }
 

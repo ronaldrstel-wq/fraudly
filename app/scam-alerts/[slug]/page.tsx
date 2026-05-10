@@ -5,6 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SITE_URL } from "@/lib/seo";
 import { getPublishedScamAlertBySlug } from "@/lib/scam-alerts/service";
+import { EN_MESSAGES } from "@/lib/messages.en";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
@@ -68,7 +69,7 @@ export default async function ScamAlertDetailPage({ params }: PageProps) {
               </dd>
             </div>
             <div>
-              <dt className="font-semibold text-slate-900">Confidence</dt>
+              <dt className="font-semibold text-slate-900">{EN_MESSAGES.scamAlertsUi.technicalMatchStrength}</dt>
               <dd>{alert.confidence}%</dd>
             </div>
             <div>

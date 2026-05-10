@@ -8,6 +8,7 @@ import {
   formatRelativeTimeEn,
   whyThisMattersLine
 } from "@/lib/scam-alerts/presentation";
+import { EN_MESSAGES } from "@/lib/messages.en";
 
 type ScamAlertCardProps = {
   alert: PublicScamAlertListItem;
@@ -133,11 +134,11 @@ export function ScamAlertCard({ alert, now, showRelatedHint }: ScamAlertCardProp
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-1">
             <div>
-              <dt className="font-semibold text-slate-800">Confidence</dt>
+              <dt className="font-semibold text-slate-800">{EN_MESSAGES.scamAlertsUi.technicalMatchStrength}</dt>
               <dd>{alert.confidence}%</dd>
             </div>
             <div>
-              <dt className="font-semibold text-slate-800">Signals</dt>
+              <dt className="font-semibold text-slate-800">{EN_MESSAGES.scamAlertsUi.technicalSignals}</dt>
               <dd>{alert.evidenceCount}</dd>
             </div>
           </div>

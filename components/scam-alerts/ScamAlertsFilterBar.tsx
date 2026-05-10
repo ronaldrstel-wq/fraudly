@@ -3,10 +3,11 @@ import type { ListFilterKey } from "@/lib/scam-alerts/presentation";
 import { buildScamAlertsQuery } from "@/lib/scam-alerts/presentation";
 import type { ScamAlertsTimeWindow } from "@/lib/scam-alerts/service";
 import { ScamAlertsTimeWindowTabs } from "@/components/scam-alerts/ScamAlertsTimeWindowTabs";
+import { EN_MESSAGES } from "@/lib/messages.en";
 
 const primaryFilters: Array<{ key: ListFilterKey; label: string; sub?: string }> = [
   { key: "all", label: "All severities" },
-  { key: "high", label: "High risk only", sub: "Confidence-based" },
+  { key: "high", label: "High risk only", sub: EN_MESSAGES.scamAlertsUi.filterHighSub },
   { key: "malware", label: "Malware" },
   { key: "phishing", label: "Phishing" }
 ];

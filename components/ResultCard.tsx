@@ -10,16 +10,20 @@ import {
   reviewWarningsSafeForUi,
   sanitizePublicIntelWarningsForUi
 } from "@/lib/reviewSourceNormalization";
+import { assessCriticalThreat, criticalThreatBannerTitle, displayTrustScoreForResult } from "@/lib/scanPresentation";
 import {
-  assessCriticalThreat,
-  criticalThreatBannerTitle,
-  criticalThreatStatusHeadline,
-  displayTrustScoreForResult,
-  primaryCriticalThreatReason
-} from "@/lib/scanPresentation";
+  humanRecGlyph,
+  humanRecHeadline,
+  humanRecHeadlineTone,
+  resolveHumanRecKind,
+  shortScanExplanation,
+  technicalStatusText
+} from "@/lib/scanResultDualLayer";
+import { shouldShowLimitedPublicStrip } from "@/lib/scanResultNarrative";
+import { ThreatBanner } from "@/components/ThreatBanner";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { shouldShowTrustGauge } from "@/lib/trustGaugeDisplay";
-import { trustIconGlyph, trustPresentationFromScore } from "@/lib/trustSystem";
+import { trustLevelFromScore } from "@/lib/trustSystem";
 import { EvidenceSignalsCard } from "@/components/EvidenceSignalsCard";
 import type { ScamCheckResult } from "@/types/scam";
 import type { ConfidenceLevel, SiteStatus } from "@/types/site-outcome";
@@ -75,15 +79,15 @@ const TIER_ORDER: ScoreEvidenceTier[] = [
 function labelForEvidenceTier(tier: ScoreEvidenceTier): string {
   switch (tier) {
     case "confirmed_malicious":
-      return "Confirmed malicious evidence";
+      return "Confirmed malicious indicators";
     case "positive_trust":
-      return "Positive trust evidence";
+      return "Trust signals";
     case "neutral_observation":
-      return "Neutral technical observations";
+      return "Technical observations";
     case "risk_indicator":
       return "Risk indicators";
     case "missing_data":
-      return "Limited evidence / source unavailable";
+      return "Scan limitations (incomplete or missing data)";
   }
 }
 
@@ -115,33 +119,14 @@ function tierIntel(rows: IntelScoreBreakdownEntry[]): Record<ScoreEvidenceTier, 
   return base;
 }
 
-function labelForConfidence(level: ConfidenceLevel): string {
+function labelForScanCoverage(level: ConfidenceLevel): string {
   switch (level) {
     case "high":
-      return EN_MESSAGES.siteOutcome.confidenceHighLabel;
+      return EN_MESSAGES.siteOutcome.scanCoverageHighLabel;
     case "medium":
-      return EN_MESSAGES.siteOutcome.confidenceMediumLabel;
+      return EN_MESSAGES.siteOutcome.scanCoverageMediumLabel;
     case "low":
-      return EN_MESSAGES.siteOutcome.confidenceLowLabel;
-  }
-}
-
-function siteStatusLabel(status: SiteStatus): string {
-  switch (status) {
-    case "trusted":
-      return EN_MESSAGES.siteOutcome.trusted;
-    case "unverified":
-      return EN_MESSAGES.siteOutcome.unverified;
-    case "caution":
-      return EN_MESSAGES.siteOutcome.caution;
-    case "high_risk":
-      return EN_MESSAGES.siteOutcome.highRisk;
-    case "confirmed_malicious":
-      return EN_MESSAGES.siteOutcome.confirmedMalicious;
-    case "nonexistent":
-      return EN_MESSAGES.siteOutcome.nonexistent;
-    case "inactive":
-      return EN_MESSAGES.siteOutcome.inactive;
+      return EN_MESSAGES.siteOutcome.scanCoverageLowLabel;
   }
 }
 
@@ -152,68 +137,40 @@ function isConfirmedIntelTrustSignal(signal: TrustSignal): boolean {
   return /safe browsing|openphish|urlhaus|politie|\bpolice\b/.test(blob);
 }
 
-function footerFromSiteStatus(status: SiteStatus): { card: string; body: string } {
-  switch (status) {
-    case "trusted":
-      return {
-        card: "border-emerald-200 bg-emerald-50 text-emerald-950",
-        body: "Anchors look supportive for this snapshot—still verify payments and identities through normal diligence."
-      };
-    case "unverified":
-      return {
-        card: "border-slate-200 bg-slate-50 text-slate-900",
-        body: "Fraudly could not corroborate a strong public stewardship story. Low visibility is not proof of fraud—take extra verification steps."
-      };
-    case "caution":
-      return {
-        card: "border-amber-200 bg-amber-50 text-amber-950",
-        body: "Some warnings were found. Verify payment safety and seller legitimacy before buying."
-      };
-    case "high_risk":
-      return {
-        card: "border-rose-200 bg-rose-50 text-rose-950",
-        body: "Several structural or behavioural red flags showed up in this snapshot. Unless a feed confirmed a threat, this is not the same as a proven scam—still verify before paying or sharing sensitive data."
-      };
-    case "confirmed_malicious":
-      return {
-        card: "border-rose-300 bg-rose-100 text-rose-950",
-        body: "At least one authoritative feed or police‑aligned reference lists this host. Treat it as malicious until an independent official source contradicts that."
-      };
-    case "nonexistent":
-      return {
-        card: "border-rose-200 bg-rose-50 text-rose-950",
-        body: "This hostname is being treated as invalid or unverifiable—not as a safe or trusted website."
-      };
-    case "inactive":
-      return {
-        card: "border-slate-200 bg-slate-50 text-slate-900",
-        body: "The domain may exist, but no usable public website was observed here. That is common for parked names; it is not, by itself, proof of a scam."
-      };
-  }
-}
-
 export function ResultCard({ result }: ResultCardProps) {
   const threat = assessCriticalThreat(result);
   const displayTrust = displayTrustScoreForResult(result);
   const showGauge = shouldShowTrustGauge(result) && typeof displayTrust === "number";
   const showNonexistentHeadline = result.omitTrustScoreGauge === true;
-  const bandStyle = trustPresentationFromScore(displayTrust ?? 0);
-  const style = threat.active
-    ? {
-        ...bandStyle,
-        toneText: "text-rose-950",
-        toneSoftBg: "bg-rose-100",
-        toneSoftBorder: "border-rose-400",
-        progressBar: "bg-rose-600",
-        label: criticalThreatStatusHeadline(threat.kind),
-        icon: "risk" as const
-      }
-    : bandStyle;
 
-  const threatStatusTitle = threat.active ? criticalThreatStatusHeadline(threat.kind) : siteStatusLabel(result.siteStatus);
-  const keyReasonText = threat.active
-    ? primaryCriticalThreatReason(result)
-    : (result.reasons[0] ?? "See the detailed sections below for what we observed.");
+  const trustLevel = trustLevelFromScore(displayTrust ?? 0);
+  const humanKind = resolveHumanRecKind({
+    threatActive: threat.active,
+    threatKind: threat.kind,
+    siteStatus: result.siteStatus,
+    trustLevel
+  });
+  const humanHeadline = humanRecHeadline(humanKind);
+  const humanTone = humanRecHeadlineTone(humanKind);
+  const techStatus = technicalStatusText({
+    threatActive: threat.active,
+    threatKind: threat.kind,
+    displayTrust,
+    siteStatus: result.siteStatus
+  });
+  const shortExplain = shortScanExplanation({
+    threatActive: threat.active,
+    threatKind: threat.kind,
+    siteStatus: result.siteStatus,
+    trustLevel,
+    confidenceLevel: result.confidenceLevel
+  });
+  const showLimitedStrip = shouldShowLimitedPublicStrip({
+    threatActive: threat.active,
+    confidenceLevel: result.confidenceLevel,
+    trustLevel,
+    siteStatus: result.siteStatus
+  });
 
   const { reviewSignals } = result;
   const hasPublicReviewData = reviewSignals.trustpilotFound || reviewSignals.googleFound;
@@ -224,7 +181,6 @@ export function ResultCard({ result }: ResultCardProps) {
   const confirmedMaliciousSignals = keyRisks.filter(isConfirmedIntelTrustSignal);
   const otherRiskSignals = keyRisks.filter((s) => !isConfirmedIntelTrustSignal(s));
   const supportiveSignals = result.trustSignals.filter((s) => s.type === "positive" || s.type === "info");
-  const footer = footerFromSiteStatus(result.siteStatus);
   const [reputation, setReputation] = useState<ReputationEnrichment | null>(null);
   const [repLoading, setRepLoading] = useState(false);
   const [repError, setRepError] = useState<string | null>(null);
@@ -307,99 +263,94 @@ export function ResultCard({ result }: ResultCardProps) {
   }, [result.domain, result.score]);
 
   return (
-    <div className="w-full rounded-xl bg-white p-6 shadow-lg shadow-slate-200/60 transition-all duration-300">
-      {threat.active ? (
-        <div
-          className="mb-6 rounded-xl border-2 border-rose-600 bg-rose-50 px-4 py-4 shadow-sm ring-1 ring-rose-200/80"
-          role="alert"
-        >
-          <p className="text-xl font-bold tracking-tight text-rose-950">{criticalThreatBannerTitle(threat.kind)}</p>
-          <p className="mt-2 text-sm font-medium leading-relaxed text-rose-950">{EN_MESSAGES.threatOverride.bannerBody}</p>
-        </div>
-      ) : null}
+    <div
+      className={`w-full rounded-xl bg-white p-6 shadow-lg transition-all duration-300 ${
+        threat.active
+          ? "border-2 border-rose-500 shadow-rose-200/50 ring-2 ring-rose-300/50"
+          : "shadow-slate-200/60"
+      }`}
+    >
+      <div className="space-y-5">
+        {threat.active ? (
+          <ThreatBanner variant="critical" title={criticalThreatBannerTitle(threat.kind)} body={EN_MESSAGES.threatOverride.bannerBody} />
+        ) : showLimitedStrip ? (
+          <ThreatBanner variant="neutral" title={EN_MESSAGES.scanResult.limitedStripTitle} body={EN_MESSAGES.scanResult.limitedStripBody} />
+        ) : null}
 
-      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-6">
-        <div className="min-w-0 flex-1 space-y-5">
-          <header>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{EN_MESSAGES.siteOutcome.statusHeading}</p>
-            <p
-              className={`mt-1 text-2xl font-bold tracking-tight ${threat.active ? "text-rose-900" : "text-slate-900"}`}
+        <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-6">
+          <div className="min-w-0 flex-1 space-y-6">
+            <header className="space-y-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className={`select-none text-3xl sm:text-4xl ${humanTone.icon}`} aria-hidden>
+                  {humanRecGlyph(humanKind)}
+                </span>
+                <h2 className={`text-balance text-3xl font-bold tracking-tight sm:text-4xl ${humanTone.text}`}>
+                  {humanHeadline}
+                </h2>
+              </div>
+              <p className="max-w-2xl text-base leading-relaxed text-slate-700 sm:text-[17px]">{shortExplain}</p>
+            </header>
+
+            <section
+              className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3"
+              aria-label={`${EN_MESSAGES.scanResult.technicalStatusHeading}: ${techStatus}`}
             >
-              {threatStatusTitle}
-            </p>
-          </header>
-
-          {showGauge && typeof displayTrust === "number" ? (
-            <>
-              <section aria-label={`Trust score ${displayTrust} out of 100`}>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Trust score</p>
-                <div className="mt-2 flex min-w-0 flex-wrap items-center gap-4">
-                  <div
-                    className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-8 border-white text-2xl font-bold shadow-sm ${style.toneSoftBg} ${style.toneText}`}
-                  >
-                    {displayTrust}%
-                  </div>
-                  <div className="min-w-0">
-                    <p
-                      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-semibold ${style.toneSoftBorder} ${style.toneSoftBg} ${style.toneText}`}
-                    >
-                      <span aria-hidden>{trustIconGlyph(style.icon)}</span>
-                      {style.label}
-                    </p>
-                    {!threat.active ? (
-                      <p className="mt-1 text-sm text-slate-600">{EN_MESSAGES.scanResult.trustScoreExplainer}</p>
-                    ) : (
-                      <p className="mt-1 text-sm font-medium text-rose-900">
-                        Intelligence feeds override the usual score band—treat this host as dangerous.
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                  <div className={`h-full ${style.progressBar}`} style={{ width: `${displayTrust}%` }} />
-                </div>
-              </section>
-            </>
-          ) : showNonexistentHeadline ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-950">
-              <p className="text-base font-semibold text-amber-950">{EN_MESSAGES.specialOutcomes.nonexistent.headline}</p>
-              <p className="mt-2 leading-relaxed">{EN_MESSAGES.specialOutcomes.nonexistent.subline}</p>
-              <p className="mt-2 text-xs text-amber-900/90">{EN_MESSAGES.siteOutcome.suppressedTrustExplanation}</p>
-            </div>
-          ) : (
-            <div className="text-sm text-slate-600">
-              <p className="font-medium text-slate-800">Trust score unavailable</p>
-              <p className="mt-1 text-xs text-slate-500">This snapshot did not produce a numeric trust score.</p>
-            </div>
-          )}
-
-          <section>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              {EN_MESSAGES.scanResult.keyReasonHeading}
-            </p>
-            <p className="mt-1 text-sm leading-relaxed text-slate-800">{keyReasonText}</p>
-          </section>
-
-          <div className="rounded-xl border border-slate-200 bg-slate-50/90 px-4 py-3 text-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              {EN_MESSAGES.siteOutcome.confidenceHeading}
-            </p>
-            <p className="mt-1 font-semibold capitalize text-slate-900">{result.confidenceLevel}</p>
-            <p className="mt-1 text-xs text-slate-600">{EN_MESSAGES.siteOutcome.confidenceHelper}</p>
-            <p className="mt-1 text-xs leading-relaxed text-slate-600">{labelForConfidence(result.confidenceLevel)}</p>
-            {!threat.active ? <p className="mt-2 text-xs text-slate-600">{result.confidenceRationale}</p> : null}
-            {threat.active ? (
-              <p className="mt-2 text-xs font-medium text-rose-900">
-                Feed matches are decisive; evidence strength describes how much extra context we gathered, not whether the threat is real.
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                {EN_MESSAGES.scanResult.technicalStatusHeading}
               </p>
-            ) : null}
-          </div>
-        </div>
+              <p className="mt-1 text-sm font-semibold text-slate-900">{techStatus}</p>
+            </section>
 
-        <div className="flex w-full min-w-0 flex-col gap-3 sm:w-auto sm:max-w-md sm:items-end sm:text-right">
-          <div className="text-sm text-slate-600 sm:text-right">
-            <p className="font-medium text-slate-900">Analyzed domain</p>
-            <p className="mt-1 break-all">{result.domain}</p>
+            {showGauge && typeof displayTrust === "number" ? (
+              <section className="border-t border-slate-100 pt-4" aria-label={`Trust score ${displayTrust} out of 100`}>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  {EN_MESSAGES.scanResult.trustScoreLabel}
+                </p>
+                <p className="mt-2 text-lg font-medium tabular-nums">
+                  <span className={threat.active ? "text-slate-500" : "text-slate-700"}>{displayTrust}</span>
+                  <span className="text-slate-400"> / 100</span>
+                </p>
+                <p className="mt-2 max-w-xl text-xs leading-relaxed text-slate-500">{EN_MESSAGES.scanResult.trustScoreExplainer}</p>
+                {threat.active ? (
+                  <p className="mt-2 text-xs font-medium text-rose-900">
+                    Authoritative threat matches override the numeric score for safety guidance.
+                  </p>
+                ) : null}
+              </section>
+            ) : showNonexistentHeadline ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-950">
+                <p className="text-base font-semibold text-amber-950">{EN_MESSAGES.specialOutcomes.nonexistent.headline}</p>
+                <p className="mt-2 leading-relaxed">{EN_MESSAGES.specialOutcomes.nonexistent.subline}</p>
+                <p className="mt-2 text-xs text-amber-900/90">{EN_MESSAGES.siteOutcome.suppressedTrustExplanation}</p>
+              </div>
+            ) : (
+              <div className="text-sm text-slate-600">
+                <p className="font-medium text-slate-800">Trust score unavailable</p>
+                <p className="mt-1 text-xs text-slate-500">This snapshot did not produce a numeric trust score.</p>
+              </div>
+            )}
+
+            <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                {EN_MESSAGES.siteOutcome.scanCoverageHeading}
+              </p>
+              <p className="mt-1 font-semibold capitalize text-slate-900">{result.confidenceLevel}</p>
+              <p className="mt-1 text-xs text-slate-600">{EN_MESSAGES.siteOutcome.scanCoverageHelper}</p>
+              <p className="mt-1 text-xs leading-relaxed text-slate-600">{labelForScanCoverage(result.confidenceLevel)}</p>
+              {!threat.active ? <p className="mt-2 text-xs text-slate-600">{result.confidenceRationale}</p> : null}
+              {threat.active ? (
+                <p className="mt-2 text-xs font-medium text-rose-900">
+                  List matches are decisive for safety here; scan coverage only reflects how much extra context we could gather.
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="flex w-full min-w-0 flex-col gap-3 sm:w-auto sm:max-w-md sm:items-end sm:text-right">
+            <div className="text-sm text-slate-600 sm:text-right">
+              <p className="font-medium text-slate-900">Analyzed domain</p>
+              <p className="mt-1 break-all">{result.domain}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -473,10 +424,9 @@ export function ResultCard({ result }: ResultCardProps) {
       </div>
 
       <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Trust anchors & neutral observations</p>
+        <p className="text-sm font-semibold text-slate-900">Trust signals & technical notes</p>
         <p className="mt-1 text-xs text-slate-500">
-          Supportive facts and neutral technical notes. Absences (for example missing reviews or “no feed hit”) limit confidence—they are
-          not proof a site is safe.
+          Helpful facts and neutral checks. Missing reviews or a “no list hit” only means we did not see that signal—it is not proof either way.
         </p>
         <SignalList signals={supportiveSignals} empty="No supportive or informational trust rows were returned." />
       </div>
@@ -554,7 +504,8 @@ export function ResultCard({ result }: ResultCardProps) {
                 </div>
                 <p className="mt-1 text-xs text-slate-700">{row.description}</p>
                 <p className="mt-1 text-[11px] text-slate-500">
-                  Source: {row.source} · severity: {row.severity} · confidence: {row.confidence}
+                  Source: {row.source} · severity: {row.severity} · {EN_MESSAGES.scanResult.providerRowReliability}:{" "}
+                  {row.confidence}
                 </p>
               </li>
             ))}
@@ -596,7 +547,8 @@ export function ResultCard({ result }: ResultCardProps) {
                   </span>
                 </li>
                 <li>
-                  Confidence: <span className="font-medium">{reputation.publicSignals.confidence}</span>
+                  {EN_MESSAGES.scanResult.enrichmentCompletenessLabel}:{" "}
+                  <span className="font-medium">{reputation.publicSignals.confidence}</span>
                 </li>
               </ul>
             ) : null}
@@ -817,7 +769,9 @@ export function ResultCard({ result }: ResultCardProps) {
         <p className="mt-3 text-xs text-slate-500">AI model used in this run: {result.aiUsed ? "yes" : "no"}</p>
       </div>
 
-      <div className={`mt-6 rounded-xl border px-4 py-3 text-sm ${footer.card}`}>{footer.body}</div>
+      <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-xs leading-relaxed text-slate-600">
+        {EN_MESSAGES.scanResult.footerDisclaimer}
+      </div>
     </div>
   );
 }

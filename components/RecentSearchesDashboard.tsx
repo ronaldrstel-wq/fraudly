@@ -6,8 +6,9 @@ import { useCallback, useEffect, useState } from "react";
 import { CLEAR_ALL_CONFIRM_BODY } from "@/lib/recent-search/constants";
 import type { RecentSearchPublic } from "@/lib/recent-search/service";
 import { EN_MESSAGES } from "@/lib/messages.en";
+import { humanRecHeadline, humanRecKindFromTrustVerdict } from "@/lib/scanResultDualLayer";
 import { trustDisplayFromTrustScore } from "@/lib/trustDisplay";
-import { trustIconGlyph } from "@/lib/trustSystem";
+import type { ScamVerdict } from "@/lib/trustSystem";
 
 function formatSearched(iso: string): string {
   try {
@@ -28,7 +29,7 @@ function getScoreColor(score: number): string {
   const normalized = normalizeScore(score);
   if (normalized >= 90) return "#22c55e";
   if (normalized >= 70) return "#14b8a6";
-  if (normalized >= 40) return "#facc15";
+  if (normalized >= 40) return "#64748b";
   if (normalized >= 20) return "#f97316";
   return "#ef4444";
 }
@@ -151,6 +152,8 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
             const trust = trustDisplayFromTrustScore(displayScore);
             const normalizedScore = normalizeScore(trust.trustScore);
             const fillColor = getScoreColor(normalizedScore);
+            const verdict = row.verdictSnap as ScamVerdict | null;
+            const humanHeadline = humanRecHeadline(humanRecKindFromTrustVerdict(displayScore, verdict));
             return (
               <article
                 key={row.id}
@@ -177,16 +180,12 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
                     {trust.trustScore}/100
                   </p>
                 </div>
-                <div className="mt-3 lg:mt-0">
+                <div className="mt-3 min-w-0 lg:mt-0">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 lg:hidden">
                     {EN_MESSAGES.recentSearches.columns.status}
                   </p>
-                  <p
-                    className={`mt-0.5 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${trust.toneSoftBorder} ${trust.toneSoftBg} ${trust.toneText}`}
-                  >
-                    <span aria-hidden>{trustIconGlyph(trust.icon)}</span>
-                    {trust.label}
-                  </p>
+                  <p className="mt-0.5 text-sm font-semibold leading-snug text-slate-900">{humanHeadline}</p>
+                  <p className={`mt-0.5 text-xs font-medium ${trust.toneText}`}>{trust.label}</p>
                 </div>
                 <div className="mt-3 lg:mt-0">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 lg:hidden">
@@ -195,13 +194,12 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
                   <p className="mt-0.5 text-sm text-slate-600">{formatSearched(row.createdAt)}</p>
                 </div>
                 <div className="mt-3 lg:col-span-6 lg:mt-2">
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200/85">
+                  <div className="h-1 w-full overflow-hidden rounded-full bg-slate-200/85">
                     <div
                       className="h-full rounded-full transition-all duration-500 ease-out"
                       style={{
                         width: `${normalizedScore}%`,
-                        backgroundColor: fillColor,
-                        boxShadow: `0 0 8px ${fillColor}66`
+                        backgroundColor: fillColor
                       }}
                     />
                   </div>
