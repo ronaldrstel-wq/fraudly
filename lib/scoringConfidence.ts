@@ -67,12 +67,16 @@ export function computeRatingConfidence(args: {
   else if (scorePts >= 2) level = "medium";
   else level = "low";
 
-  const rationale =
+  let rationale =
     level === "low"
       ? `We do not have enough corroborating evidence for a firm rating.${notes.length ? ` ${notes.join(" ")}` : ""}`
       : level === "medium"
         ? `Evidence is partially complete.${notes.length ? ` ${notes.slice(0, 2).join(" ")}` : ""}`
         : `Several independent stewardship and technical checks aligned.${notes.length ? ` ${notes[0] ?? ""}` : ""}`;
+
+  if (level === "low") {
+    rationale = `${rationale.trim()} ${EN_MESSAGES.scoring.limitedPublicSources}`.trim();
+  }
 
   return { level, rationale: rationale.trim() };
 }

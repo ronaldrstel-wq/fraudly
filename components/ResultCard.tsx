@@ -72,7 +72,7 @@ function labelForEvidenceTier(tier: ScoreEvidenceTier): string {
     case "risk_indicator":
       return "Risk indicators";
     case "missing_data":
-      return "Missing / unknown data";
+      return "Limited evidence / source unavailable";
   }
 }
 
@@ -161,7 +161,7 @@ function footerFromSiteStatus(status: SiteStatus): { card: string; body: string 
     case "high_risk":
       return {
         card: "border-rose-200 bg-rose-50 text-rose-950",
-        body: "Multiple risk indicators were detected. Avoid sharing personal or payment details until independently verified."
+        body: "Several structural or behavioural red flags showed up in this snapshot. Unless a feed confirmed a threat, this is not the same as a proven scam—still verify before paying or sharing sensitive data."
       };
     case "confirmed_malicious":
       return {

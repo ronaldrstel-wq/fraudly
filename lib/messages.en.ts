@@ -29,6 +29,10 @@ export const EN_MESSAGES = {
     /** Public-intel bundle had scraping/crawler friction — concise, non-alarming. */
     reviewSnapshotIncomplete: "Some optional public-review snapshots were incomplete in this crawl; overall confidence may be lower."
   },
+  scoring: {
+    limitedPublicSources:
+      "Some public data sources were unavailable or did not return enough information. This lowers rating confidence, but it is not direct evidence that the website is unsafe."
+  },
   check: {
     missingUrl: "Please enter a URL to check.",
     invalidWebsiteInput:

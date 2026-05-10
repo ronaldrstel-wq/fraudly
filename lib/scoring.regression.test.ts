@@ -92,8 +92,8 @@ describe("trust scoring regressions", () => {
       externalSignals: external
     });
     const trust = trustScoreFromRisk(out.finalScore);
-    expect(trust).toBeLessThanOrEqual(30);
-    expect(trustLevelFromScore(trust)).toBe("highRisk");
+    expect(trust).toBeLessThanOrEqual(35);
+    expect(trustLevelFromScore(trust)).toMatch(/suspicious|highRisk/);
     expect(out.verdict).toBe("scam");
     expect(out.signals.some((s) => /ownership could not be verified/i.test(s.label))).toBe(true);
     expect(
@@ -378,6 +378,7 @@ describe("trust scoring regressions", () => {
       reviewSignals: reviews
     });
     expect(status).toBe("confirmed_malicious");
+    expect(out.verdict).toBe("scam");
   });
 
   it("Anchored reputation can still reach Trusted with scoring context attached", () => {
@@ -433,12 +434,65 @@ describe("trust scoring regressions", () => {
       heuristicReasons: [],
       reviewSignals: reviews,
       scoringContext: ctx,
-      externalSignals: scoreSignals
+      externalSignals: scoreSignals,
+      intelSurface: { confirmedMalicious: false, benignTechnicalBaseline: true }
     });
     expect(out.verdict).not.toBe("safe");
     const trust = trustScoreFromRisk(out.finalScore);
     expect(trust).toBeLessThanOrEqual(79);
     expect(trustLevelFromScore(trust)).not.toBe("trusted");
     expect(scoreSignals.every((s) => s.id !== "intel-valid-ssl")).toBe(true);
+  });
+
+  it("H) benign apex with TLS baseline, RDAP failed, no threat feeds: not scam verdict", () => {
+    const domain = "plainshop.nl";
+    const checks = minimalExternal({
+      source: "RDAP (rdap.org)",
+      warnings: ["ETIMEDOUT"],
+      registrationDate: undefined,
+      registrar: undefined,
+      ageDays: undefined
+    });
+    const reviews = emptyReviews();
+    const ctx = buildScoringIdentityContext(domain, checks, reviews);
+    const { scoreSignals } = buildIntelScoring(checks);
+    const out = calculateScamScore({
+      domain,
+      heuristicReasons: [],
+      reviewSignals: reviews,
+      scoringContext: ctx,
+      externalSignals: scoreSignals,
+      intelSurface: { confirmedMalicious: false, benignTechnicalBaseline: true },
+      mailDnsHints: { mxConfigured: true, hasSpf: true, hasDmarc: true }
+    });
+    const trust = trustScoreFromRisk(out.finalScore);
+    expect(out.verdict).not.toBe("scam");
+    expect(trust).toBeGreaterThanOrEqual(42);
+    expect(["likelyLegit", "limitedEvidence", "suspicious"]).toContain(trustLevelFromScore(trust));
+  });
+
+  it("J) Very young RDAP age with HTTPS and no feeds: not automatic scam verdict", () => {
+    const domain = "freshshop.example";
+    const checks = minimalExternal({
+      source: "RDAP",
+      warnings: [],
+      ageDays: 10,
+      registrationDate: "2026-04-01T00:00:00.000Z",
+      registrar: "Example Registrar",
+      hasPrivacyProtection: false,
+      suspiciouslyShortRegistration: false
+    });
+    const reviews = emptyReviews();
+    const ctx = buildScoringIdentityContext(domain, checks, reviews);
+    const out = calculateScamScore({
+      domain,
+      heuristicReasons: [],
+      reviewSignals: reviews,
+      scoringContext: ctx,
+      externalSignals: buildIntelScoring(checks).scoreSignals,
+      intelSurface: { confirmedMalicious: false, benignTechnicalBaseline: true }
+    });
+    expect(out.verdict).not.toBe("scam");
+    expect(trustScoreFromRisk(out.finalScore)).toBeGreaterThanOrEqual(35);
   });
 });

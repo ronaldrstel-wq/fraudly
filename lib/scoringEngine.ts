@@ -4,7 +4,7 @@ import type { ReviewSignals } from "@/lib/reviewSignals";
 import type { ScoringIdentityContext } from "@/lib/scoringIdentityContext";
 import { computeTrustAnchors } from "@/lib/scoringIdentityContext";
 import type { SupplyChainSignals } from "@/lib/supplyChainSignals";
-import { verdictFromRiskScore } from "@/lib/trustSystem";
+import { verdictFromAssessment } from "@/lib/trustSystem";
 
 export type ScoreConfidence = "low" | "medium" | "high";
 
@@ -60,6 +60,13 @@ export type AiRiskSignalsInput = {
   level?: "low" | "medium" | "high";
 };
 
+/** Optional DNS mail-auth probe (MX + SPF + DMARC) — small trust nudge when aligned. */
+export type MailDnsHints = {
+  mxConfigured: boolean;
+  hasSpf: boolean;
+  hasDmarc: boolean;
+};
+
 const CONF_MULT: Record<ScoreConfidence, number> = {
   low: 0.5,
   medium: 0.75,
@@ -94,10 +101,6 @@ export function formatScoreSignalsForPrompt(signals: ScoreSignal[]): string {
   );
 }
 
-function verdictFromScore(score: number): ScoreResult["verdict"] {
-  return verdictFromRiskScore(score);
-}
-
 const MISSING_SCORE_IDS = new Set([
   "missing-rdap-registration",
   "missing-registration-date",
@@ -114,6 +117,60 @@ export function inferScoreEvidenceTier(signal: Pick<ScoreSignal, "id" | "impact"
   if (signal.impact > 0) return "risk_indicator";
   if (signal.impact < 0) return "positive_trust";
   return "neutral_observation";
+}
+
+const MISSING_DATA_WEIGHTED_RISK_CAP = 10;
+
+/** Extra risk mass from “missing / unavailable” signals is capped so absent data does not read as strong guilt. */
+export function computeMissingDataRiskOverage(
+  signals: ScoreSignal[],
+  weights: Map<string, number>,
+  cap: number = MISSING_DATA_WEIGHTED_RISK_CAP
+): number {
+  let sum = 0;
+  for (const s of signals) {
+    if (inferScoreEvidenceTier(s) !== "missing_data") continue;
+    const w = weights.get(s.id) ?? 0;
+    if (w > 0) sum += w;
+  }
+  return Math.max(0, sum - cap);
+}
+
+function inferConfirmedMalicious(
+  signals: ScoreSignal[],
+  intel?: { confirmedMalicious: boolean }
+): boolean {
+  if (intel?.confirmedMalicious) return true;
+  return signals.some((s) => s.evidenceTier === "confirmed_malicious" && s.impact > 0);
+}
+
+function pushMailDnsTrustSignals(hints: MailDnsHints | null | undefined, out: ScoreSignal[]): void {
+  if (!hints) return;
+  const { mxConfigured, hasSpf, hasDmarc } = hints;
+  if (mxConfigured && hasSpf && hasDmarc) {
+    out.push({
+      id: "infra-emailauth-stack",
+      label: "MX with SPF and DMARC present",
+      category: "website_quality",
+      impact: -5,
+      confidence: "medium",
+      evidenceTier: "positive_trust",
+      reason:
+        "Public DNS shows mail exchangers plus SPF and DMARC records—a modest operational anchor when other reputation data is thin."
+    });
+    return;
+  }
+  if (mxConfigured && (hasSpf || hasDmarc)) {
+    out.push({
+      id: "infra-emailauth-partial",
+      label: "Mail exchangers with SPF or DMARC",
+      category: "website_quality",
+      impact: -3,
+      confidence: "low",
+      evidenceTier: "positive_trust",
+      reason: "MX exists and at least SPF or DMARC is published—common for serious domains and slightly reassuring when intel is incomplete."
+    });
+  }
 }
 
 /** Same narrative lines as legacy domain heuristics (for AI / UI copy). */
@@ -374,11 +431,11 @@ function pushUnknownIdentitySignals(ctx: ScoringIdentityContext | undefined, out
       id: "missing-rdap-registration",
       label: "Domain registration data unavailable",
       category: "domain",
-      impact: 8,
-      confidence: "medium",
+      impact: 3,
+      confidence: "low",
       evidenceTier: "missing_data",
       reason:
-        "RDAP lifecycle data could not be read in this run — this lowers confidence more than it proves abuse."
+        "RDAP could not be read in this run (timeout, error, or rate limit). That limits how well we can date the domain—it is logged as limited evidence, not as proof the site is unsafe."
     });
   } else {
     if (ctx.registrationDateUnknown) {
@@ -386,10 +443,10 @@ function pushUnknownIdentitySignals(ctx: ScoringIdentityContext | undefined, out
         id: "missing-registration-date",
         label: "Domain registration date unknown",
         category: "domain",
-        impact: 3,
+        impact: 2,
         confidence: "low",
         evidenceTier: "missing_data",
-        reason: "Registration timestamps were not parsed cleanly; Fraudly loses calibration precision."
+        reason: "Registration timestamps were not parsed cleanly; this lowers rating confidence, not direct safety proof."
       });
     }
     if (ctx.domainAgeUnknown) {
@@ -397,10 +454,10 @@ function pushUnknownIdentitySignals(ctx: ScoringIdentityContext | undefined, out
         id: "missing-registration-age-estimate",
         label: "Domain age unknown",
         category: "domain",
-        impact: 4,
+        impact: 2,
         confidence: "low",
         evidenceTier: "missing_data",
-        reason: "Age-based heuristics are blind without creation events — treat as weaker evidence only."
+        reason: "Age-based heuristics are blind without creation events—treat as weaker calibration only."
       });
     }
     if (ctx.registrarUnknown) {
@@ -408,10 +465,10 @@ function pushUnknownIdentitySignals(ctx: ScoringIdentityContext | undefined, out
         id: "missing-registrar",
         label: "Registrar unstated in parsed RDAP",
         category: "domain",
-        impact: 2,
+        impact: 1,
         confidence: "low",
         evidenceTier: "missing_data",
-        reason: "Missing registrar narration slightly lowers certainty about stewardship."
+        reason: "Registrar narration was missing—minor uncertainty, not a scam indicator."
       });
     }
   }
@@ -419,12 +476,13 @@ function pushUnknownIdentitySignals(ctx: ScoringIdentityContext | undefined, out
   if (ctx.ownershipUnverifiable) {
     out.push({
       id: "unknown-ownership-anchor",
-      label: "Domain ownership could not be verified",
+      label: "Domain ownership could not be verified from public registration data",
       category: "domain",
-      impact: 6,
-      confidence: "medium",
+      impact: 3,
+      confidence: "low",
       evidenceTier: "missing_data",
-      reason: "WHOIS/RDAP did not expose corroboratable registrant signals in this crawl — HTTPS alone cannot verify identity."
+      reason:
+        "WHOIS/RDAP did not expose corroboratable registrant signals in this crawl. That is common and mainly reduces how confidently we can score—not evidence of impersonation by itself."
     });
   }
 
@@ -448,7 +506,11 @@ function computeTrustScoreCap(args: {
   ctx: ScoringIdentityContext;
   lexicalStrong: boolean;
   anchors: ReturnType<typeof computeTrustAnchors>;
+  benignTechnicalBaseline: boolean;
+  confirmedMalicious: boolean;
 }): number {
+  if (args.confirmedMalicious) return 100;
+
   let maxTrust = 100;
   const c = args.ctx;
   const p = c.domainPatterns;
@@ -461,7 +523,11 @@ function computeTrustScoreCap(args: {
     maxTrust = Math.min(maxTrust, relief ? 58 : 44);
   }
   if (c.ownershipUnverifiable) {
-    maxTrust = Math.min(maxTrust, relief ? 42 : 34);
+    if (args.benignTechnicalBaseline && !args.lexicalStrong && c.rdapFailed) {
+      maxTrust = Math.min(maxTrust, relief ? 72 : 58);
+    } else {
+      maxTrust = Math.min(maxTrust, relief ? 42 : 34);
+    }
   }
   if (p.tldRiskTier !== "none" && p.fakeAuthoritySubstringInApex && c.limitedPublicReputation) {
     const tight = p.tldRiskTier === "hard" || args.lexicalStrong;
@@ -788,6 +854,12 @@ function scaleCategoryWeights(
   return weights;
 }
 
+export type IntelSurfaceInput = {
+  confirmedMalicious: boolean;
+  /** Valid HTTPS observed — relaxes “unknown identity” trust caps when no confirmed threats. */
+  benignTechnicalBaseline?: boolean;
+};
+
 export function calculateScamScore(input: {
   domain: string;
   heuristicReasons: string[];
@@ -801,6 +873,9 @@ export function calculateScamScore(input: {
   websiteText?: string;
   /** When omitted, guardrails stay permissive so offline/unit checks stay deterministic. */
   scoringContext?: ScoringIdentityContext;
+  /** Tier‑1 threat matches + connectivity hints for trust caps and verdicts. */
+  intelSurface?: IntelSurfaceInput;
+  mailDnsHints?: MailDnsHints | null;
 }): ScoreResult {
   void input.heuristicReasons;
 
@@ -828,6 +903,7 @@ export function calculateScamScore(input: {
   if (input.externalSignals?.length) {
     signals.push(...input.externalSignals);
   }
+  pushMailDnsTrustSignals(input.mailDnsHints, signals);
 
   const reviewW = scaleCategoryWeights(signals, "reviews", REVIEW_MAX_UP, REVIEW_MAX_DOWN);
 
@@ -878,6 +954,7 @@ export function calculateScamScore(input: {
   for (const s of signals) {
     total += allWeights.get(s.id) ?? 0;
   }
+  total -= computeMissingDataRiskOverage(signals, allWeights);
 
   let otherPositive = 0;
   for (const s of signals) {
@@ -896,10 +973,18 @@ export function calculateScamScore(input: {
   let trustScoreCap: number | undefined;
   let trustedBlockedReason: ScoreResult["trustedBlockedReason"];
 
+  const confirmedMalicious = inferConfirmedMalicious(signals, input.intelSurface);
+
   if (input.scoringContext) {
     const lexicalStrong = patterns.hasStrongLexicalSuspicion;
     const anchors = computeTrustAnchors(input.scoringContext.ageDaysKnown, input.reviewSignals);
-    trustScoreCap = computeTrustScoreCap({ ctx: input.scoringContext, lexicalStrong, anchors });
+    trustScoreCap = computeTrustScoreCap({
+      ctx: input.scoringContext,
+      lexicalStrong,
+      anchors,
+      benignTechnicalBaseline: Boolean(input.intelSurface?.benignTechnicalBaseline),
+      confirmedMalicious
+    });
 
     let trustScore = Math.max(0, Math.min(100, Math.round(100 - finalScore)));
     if (trustScore > trustScoreCap) {
@@ -930,7 +1015,11 @@ export function calculateScamScore(input: {
     }
   }
 
-  const verdict = verdictFromScore(finalScore);
+  const verdict = verdictFromAssessment({
+    riskScore: finalScore,
+    confirmedMalicious,
+    lexicalStrong: patterns.hasStrongLexicalSuspicion
+  });
 
   const ranked = [...signals].sort(
     (a, b) => Math.abs(allWeights.get(b.id) ?? 0) - Math.abs(allWeights.get(a.id) ?? 0)

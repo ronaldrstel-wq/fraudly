@@ -81,6 +81,7 @@ export function deriveSiteStatus(args: {
 
   if (trust >= 80 && anchorsPresent && !args.ctx?.domainPatterns.hasStrongLexicalSuspicion) return "trusted";
   if (trust >= 80) return "unverified";
-  if (trust >= 50) return "caution";
+  /** Aligns with trust bands: “Likely Legit” through “Limited Evidence” stay in caution-style messaging, not high_risk. */
+  if (trust >= 40) return "caution";
   return "high_risk";
 }

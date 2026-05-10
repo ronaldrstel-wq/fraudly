@@ -1,14 +1,22 @@
-export type TrustLevel = "trusted" | "caution" | "highRisk";
+export type TrustLevel = "trusted" | "likelyLegit" | "limitedEvidence" | "suspicious" | "highRisk";
 export type ScamVerdict = "safe" | "suspicious" | "scam";
 
 export type TrustPresentation = {
   level: TrustLevel;
-  label: "Trusted" | "Caution" | "High Risk";
-  icon: "check" | "alert" | "risk";
+  label: "Trusted" | "Likely Legit" | "Limited Evidence" | "Suspicious" | "High Risk";
+  icon: "check" | "info" | "alert" | "risk";
   toneText: string;
   toneSoftBg: string;
   toneSoftBorder: string;
   progressBar: string;
+};
+
+export type VerdictAssessmentInput = {
+  riskScore: number;
+  /** Tier‑1 feed / police matches (not “unknown” provider states). */
+  confirmedMalicious: boolean;
+  /** Strong hostname spoofing / disposable composition — allows scam verdict without only relying on missing data. */
+  lexicalStrong?: boolean;
 };
 
 export function clampScore(score: number): number {
@@ -19,21 +27,17 @@ export function trustScoreFromRisk(riskScore: number): number {
   return clampScore(100 - riskScore);
 }
 
+/**
+ * Trust-style projection bands (0–100, higher is better).
+ * Missing third-party data should move the score into “Limited Evidence”, not straight to “High Risk”.
+ */
 export function trustLevelFromScore(trustScore: number): TrustLevel {
-  if (trustScore >= 80) return "trusted";
-  if (trustScore >= 50) return "caution";
+  const t = clampScore(trustScore);
+  if (t >= 80) return "trusted";
+  if (t >= 60) return "likelyLegit";
+  if (t >= 40) return "limitedEvidence";
+  if (t >= 20) return "suspicious";
   return "highRisk";
-}
-
-export function verdictFromTrustScore(trustScore: number): ScamVerdict {
-  const level = trustLevelFromScore(trustScore);
-  if (level === "trusted") return "safe";
-  if (level === "caution") return "suspicious";
-  return "scam";
-}
-
-export function verdictFromRiskScore(riskScore: number): ScamVerdict {
-  return verdictFromTrustScore(trustScoreFromRisk(riskScore));
 }
 
 export function trustPresentationFromScore(score: number): TrustPresentation {
@@ -52,10 +56,34 @@ export function trustPresentationFromScore(score: number): TrustPresentation {
     };
   }
 
-  if (level === "caution") {
+  if (level === "likelyLegit") {
     return {
       level,
-      label: "Caution",
+      label: "Likely Legit",
+      icon: "check",
+      toneText: "text-teal-800",
+      toneSoftBg: "bg-teal-50",
+      toneSoftBorder: "border-teal-200",
+      progressBar: "bg-teal-500"
+    };
+  }
+
+  if (level === "limitedEvidence") {
+    return {
+      level,
+      label: "Limited Evidence",
+      icon: "info",
+      toneText: "text-slate-700",
+      toneSoftBg: "bg-slate-100",
+      toneSoftBorder: "border-slate-200",
+      progressBar: "bg-slate-400"
+    };
+  }
+
+  if (level === "suspicious") {
+    return {
+      level,
+      label: "Suspicious",
       icon: "alert",
       toneText: "text-amber-700",
       toneSoftBg: "bg-amber-50",
@@ -75,9 +103,30 @@ export function trustPresentationFromScore(score: number): TrustPresentation {
   };
 }
 
+/**
+ * Maps trust projection to legacy API verdicts.
+ * Low confidence / missing intel alone must not yield `scam` unless risk is extreme or deception is strong.
+ */
+export function verdictFromTrustScore(trustScore: number, opts?: Pick<VerdictAssessmentInput, "confirmedMalicious" | "lexicalStrong">): ScamVerdict {
+  return verdictFromAssessment({
+    riskScore: 100 - clampScore(trustScore),
+    confirmedMalicious: opts?.confirmedMalicious ?? false,
+    lexicalStrong: opts?.lexicalStrong
+  });
+}
+
+export function verdictFromAssessment(input: VerdictAssessmentInput): ScamVerdict {
+  const trust = trustScoreFromRisk(input.riskScore);
+  if (input.confirmedMalicious) return "scam";
+  if (input.lexicalStrong && trust < 55) return "scam";
+  if (trust < 20) return "scam";
+  if (trust < 60) return "suspicious";
+  return "safe";
+}
+
 export function trustIconGlyph(icon: TrustPresentation["icon"]): string {
   if (icon === "check") return "✓";
+  if (icon === "info") return "i";
   if (icon === "alert") return "!";
   return "✕";
 }
-

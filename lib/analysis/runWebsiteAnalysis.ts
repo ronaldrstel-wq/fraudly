@@ -17,12 +17,18 @@ import {
   calculateScamScore,
   formatScoreSignalsForPrompt
 } from "@/lib/scoringEngine";
-import { collectMaliciousSignals, deriveSiteStatus, isProbablyInactiveWebsite } from "@/lib/siteOutcome";
+import {
+  collectMaliciousSignals,
+  deriveSiteStatus,
+  isConfirmedMalicious,
+  isProbablyInactiveWebsite
+} from "@/lib/siteOutcome";
 import { getSupplyChainSignals } from "@/lib/supplyChainSignals";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { composeTrustEvidenceBundle } from "@/lib/evidence/composeTrustEvidence";
 import { hasMeaningfulClientEvidence, type WebsiteAnalysisClientEvidence } from "@/lib/evidence/types";
-import { verdictFromRiskScore } from "@/lib/trustSystem";
+import { collectDns } from "@/lib/public-intel/dns";
+import { verdictFromAssessment } from "@/lib/trustSystem";
 import type { ScamCheckResult } from "@/types/scam";
 import type { PendingPageBehaviorSignals } from "@/types/behavioral-signals";
 
@@ -39,11 +45,12 @@ export async function runWebsiteAnalysis(
 ): Promise<ScamCheckResult> {
   const normalizedDomain = normalizeDomain(inputUrl);
   const heuristicReasons = buildDomainHeuristicReasons(normalizedDomain);
-  const [reviewSignals, websiteSignals, externalChecks, dnsProbe] = await Promise.all([
+  const [reviewSignals, websiteSignals, externalChecks, dnsProbe, dnsMail] = await Promise.all([
     getReviewSignals(normalizedDomain),
     fetchWebsiteSignals(inputUrl),
     runAllChecks(inputUrl),
-    probeApexDnsResolution(normalizedDomain)
+    probeApexDnsResolution(normalizedDomain),
+    collectDns(normalizedDomain)
   ]);
   const dnsResolvable = dnsProbe.ipv4 || dnsProbe.ipv6;
 
@@ -73,6 +80,13 @@ export async function runWebsiteAnalysis(
   const { scoreSignals: externalScoreSignals, breakdown: intelScoreBreakdown } = buildIntelScoring(externalChecks);
   const trustSignals = buildTrustSignalsFromEvidence(externalChecks.providerEvidence);
   const scoringContext = buildScoringIdentityContext(normalizedDomain, externalChecks, reviewSignals);
+  const maliciousSignals = collectMaliciousSignals(externalChecks);
+  const confirmedMalicious = isConfirmedMalicious(maliciousSignals);
+  const mailDnsHints = dnsMail.ok && dnsMail.data ? dnsMail.data : null;
+  const intelSurface = {
+    confirmedMalicious,
+    benignTechnicalBaseline: externalChecks.ssl.httpsEnabled && externalChecks.ssl.validCertificate
+  };
 
   const scoreInputBase = {
     domain: normalizedDomain,
@@ -81,7 +95,9 @@ export async function runWebsiteAnalysis(
     supplyChainSignals,
     websiteText,
     externalSignals: externalScoreSignals,
-    scoringContext
+    scoringContext,
+    intelSurface,
+    mailDnsHints
   };
 
   const scorePre = calculateScamScore({
@@ -169,7 +185,11 @@ export async function runWebsiteAnalysis(
     }
   }
 
-  const adjustedVerdict = verdictFromRiskScore(adjustedRisk);
+  const adjustedVerdict = verdictFromAssessment({
+    riskScore: adjustedRisk,
+    confirmedMalicious,
+    lexicalStrong: scoringContext.domainPatterns.hasStrongLexicalSuspicion
+  });
   const adjustedScoreResult = { ...scoreResult, finalScore: adjustedRisk, verdict: adjustedVerdict };
 
   const scoreLinesFinal = [
@@ -179,7 +199,7 @@ export async function runWebsiteAnalysis(
   const heuristicForMerge = [...heuristicBase, ...scoreLinesFinal];
   const mergedReasons = mergeReasonsWithHeuristics(aiPayload, heuristicForMerge);
 
-  const malicious = collectMaliciousSignals(externalChecks);
+  const malicious = maliciousSignals;
   const inactiveWebsite = isProbablyInactiveWebsite({
     dnsResolvable,
     treatAsNonexistent: domainInfrastructure.treatAsNonExistentHost,

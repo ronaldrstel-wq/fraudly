@@ -2,48 +2,63 @@ import { describe, expect, it } from "vitest";
 import {
   trustLevelFromScore,
   trustPresentationFromScore,
-  trustScoreFromRisk
+  trustScoreFromRisk,
+  verdictFromAssessment,
+  verdictFromTrustScore
 } from "@/lib/trustSystem";
-import { trustDisplayFromRiskScore, trustDisplayFromTrustScore } from "@/lib/trustDisplay";
 
-describe("global trust thresholds", () => {
-  it("maps 80-100 to Trusted", () => {
+describe("trust bands", () => {
+  it("maps five trust levels by score", () => {
+    expect(trustLevelFromScore(90)).toBe("trusted");
     expect(trustLevelFromScore(80)).toBe("trusted");
-    expect(trustLevelFromScore(95)).toBe("trusted");
-    expect(trustPresentationFromScore(100).label).toBe("Trusted");
-  });
-
-  it("maps 50-79 to Caution", () => {
-    expect(trustLevelFromScore(50)).toBe("caution");
-    expect(trustLevelFromScore(79)).toBe("caution");
-    expect(trustPresentationFromScore(60).label).toBe("Caution");
-  });
-
-  it("maps 0-49 to High Risk", () => {
+    expect(trustLevelFromScore(70)).toBe("likelyLegit");
+    expect(trustLevelFromScore(60)).toBe("likelyLegit");
+    expect(trustLevelFromScore(50)).toBe("limitedEvidence");
+    expect(trustLevelFromScore(40)).toBe("limitedEvidence");
+    expect(trustLevelFromScore(30)).toBe("suspicious");
+    expect(trustLevelFromScore(20)).toBe("suspicious");
+    expect(trustLevelFromScore(10)).toBe("highRisk");
     expect(trustLevelFromScore(0)).toBe("highRisk");
-    expect(trustLevelFromScore(49)).toBe("highRisk");
-    expect(trustPresentationFromScore(20).label).toBe("High Risk");
   });
-});
 
-describe("risk to trust conversion", () => {
-  it("converts trust = 100 - risk (clamped)", () => {
+  it("labels presentation for each band", () => {
+    expect(trustPresentationFromScore(85).label).toBe("Trusted");
+    expect(trustPresentationFromScore(65).label).toBe("Likely Legit");
+    expect(trustPresentationFromScore(45).label).toBe("Limited Evidence");
+    expect(trustPresentationFromScore(25).label).toBe("Suspicious");
+    expect(trustPresentationFromScore(5).label).toBe("High Risk");
+  });
+
+  it("inverts risk to trust linearly", () => {
     expect(trustScoreFromRisk(0)).toBe(100);
-    expect(trustScoreFromRisk(20)).toBe(80);
-    expect(trustScoreFromRisk(50)).toBe(50);
+    expect(trustScoreFromRisk(40)).toBe(60);
     expect(trustScoreFromRisk(100)).toBe(0);
   });
 });
 
-describe("latest and recent trust display consistency", () => {
-  it("uses the same trust helper output for equivalent values", () => {
-    const latest = trustDisplayFromRiskScore(20); // trust 80
-    const recent = trustDisplayFromTrustScore(80);
+describe("verdictFromAssessment", () => {
+  it("flags scam on confirmed malicious regardless of score", () => {
+    expect(verdictFromAssessment({ riskScore: 20, confirmedMalicious: true })).toBe("scam");
+  });
 
-    expect(latest.label).toBe(recent.label);
-    expect(latest.icon).toBe(recent.icon);
-    expect(latest.toneText).toBe(recent.toneText);
-    expect(latest.progressBar).toBe(recent.progressBar);
+  it("flags scam on strong deception with modest trust", () => {
+    expect(verdictFromAssessment({ riskScore: 50, confirmedMalicious: false, lexicalStrong: true })).toBe("scam");
+  });
+
+  it("does not return scam for low-data modest risk without deception or feeds", () => {
+    expect(verdictFromAssessment({ riskScore: 55, confirmedMalicious: false, lexicalStrong: false })).toBe("suspicious");
+    expect(verdictFromAssessment({ riskScore: 45, confirmedMalicious: false, lexicalStrong: false })).toBe("suspicious");
+    expect(verdictFromAssessment({ riskScore: 35, confirmedMalicious: false, lexicalStrong: false })).toBe("safe");
+  });
+
+  it("returns scam only for extreme numeric risk when no other flags", () => {
+    expect(verdictFromAssessment({ riskScore: 85, confirmedMalicious: false })).toBe("scam");
   });
 });
 
+describe("verdictFromTrustScore", () => {
+  it("passes optional flags through to assessment", () => {
+    expect(verdictFromTrustScore(30, { lexicalStrong: true })).toBe("scam");
+    expect(verdictFromTrustScore(30, { lexicalStrong: false })).toBe("suspicious");
+  });
+});
