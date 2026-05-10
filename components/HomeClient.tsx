@@ -406,7 +406,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
       <Navbar />
 
-      <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-7 sm:pt-9 md:pt-12">
+      <main className="mx-auto w-full max-w-6xl px-4 pb-14 pt-6 sm:pt-8 md:pt-11">
         <Hero
           url={url}
           onUrlChange={setUrl}
@@ -426,7 +426,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         />
 
         {error && (
-          <div className="mx-auto mt-6 max-w-3xl rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <div className="mx-auto mt-5 max-w-3xl rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
             {error}
             {error.includes("Log in") ? (
               <div className="mt-3 flex justify-center">{signInModalButton}</div>
@@ -438,7 +438,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
 
         {result && (
           <>
-            <section className="result-in mt-8 grid gap-6 sm:mt-10 lg:grid-cols-[1.7fr_1fr]">
+            <section className="result-in mt-7 grid gap-5 sm:mt-9 lg:grid-cols-[1.7fr_1fr]">
               <div className="min-w-0 space-y-3">
                 <ResultCard result={result} />
                 <p className="text-center text-sm text-slate-600 md:text-left">
@@ -455,11 +455,11 @@ export function HomeClient({ children }: { children?: ReactNode }) {
                 <FeatureCards stacked />
               </div>
             </section>
-            <div className="result-in mx-auto mt-6 max-w-3xl">
+            <div className="result-in mx-auto mt-5 max-w-3xl">
               <PostScanAppPromo />
             </div>
             {!isSignedIn && (
-              <div className="result-in mx-auto mt-6 max-w-3xl rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+              <div className="result-in mx-auto mt-5 max-w-3xl rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
                 {EN_MESSAGES.freemium.afterResultBanner}
               </div>
             )}
@@ -467,7 +467,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         )}
 
         {!result && (
-          <section className="mt-6 [content-visibility:auto] [contain-intrinsic-size:1px_220px] sm:mt-8">
+          <section className="mt-5 [content-visibility:auto] [contain-intrinsic-size:1px_220px] sm:mt-7">
             <FeatureCards />
           </section>
         )}

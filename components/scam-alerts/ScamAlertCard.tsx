@@ -35,7 +35,7 @@ export function ScamAlertCard({ alert, now, showRelatedHint }: ScamAlertCardProp
 
   return (
     <article
-      className={`flex min-h-[26rem] flex-col overflow-hidden rounded-xl p-4 shadow-sm transition-[box-shadow,border-color] duration-200 hover:shadow-md sm:min-h-[28rem] sm:p-5 ${
+      className={`flex flex-col overflow-hidden rounded-xl p-4 shadow-sm transition-[box-shadow,border-color] duration-200 hover:shadow-sm sm:p-5 ${
         feedCritical
           ? "border-2 border-red-600 bg-gradient-to-b from-red-50/90 to-white ring-1 ring-red-300/40"
           : "border border-slate-200 bg-white hover:border-slate-300"
@@ -48,16 +48,16 @@ export function ScamAlertCard({ alert, now, showRelatedHint }: ScamAlertCardProp
       ) : null}
 
       <div
-        className={`mb-3 flex items-start gap-2.5 rounded-lg border px-3 py-2.5 ${
+        className={`mb-2 flex items-start gap-2.5 rounded-lg border px-3 py-2 ${
           feedCritical ? "border-red-200 bg-white/70" : "border-slate-200 bg-slate-50/90"
         }`}
       >
-        <span className={`select-none text-2xl ${humanTone.icon}`} aria-hidden>
+        <span className={`select-none text-xl leading-none ${humanTone.icon}`} aria-hidden>
           {humanRecGlyph(humanKind)}
         </span>
         <div className="min-w-0">
-          <p className={`text-lg font-bold leading-tight ${humanTone.text}`}>{humanHeadline}</p>
-          <p className="mt-0.5 text-xs font-medium text-slate-700">
+          <p className={`text-base font-bold leading-tight md:text-[17px] ${humanTone.text}`}>{humanHeadline}</p>
+          <p className="mt-0.5 text-[13px] font-medium text-slate-700">
             {EN_MESSAGES.scanResult.technicalStatusHeading}: {severity.label}
           </p>
         </div>
@@ -79,7 +79,7 @@ export function ScamAlertCard({ alert, now, showRelatedHint }: ScamAlertCardProp
         </div>
       </div>
 
-      <h2 className="mt-2.5 line-clamp-3 text-lg font-semibold leading-snug tracking-tight text-slate-900 sm:text-xl">
+      <h2 className="mt-2 line-clamp-3 text-[17px] font-semibold leading-snug tracking-tight text-slate-900 sm:text-lg">
         {title}
       </h2>
 
@@ -95,9 +95,9 @@ export function ScamAlertCard({ alert, now, showRelatedHint }: ScamAlertCardProp
         </p>
       ) : null}
 
-      <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-600 sm:line-clamp-4">{why}</p>
+      <p className="mt-1.5 line-clamp-3 text-sm leading-relaxed text-slate-600 sm:line-clamp-3">{why}</p>
 
-      <p className="mt-2 line-clamp-5 text-xs leading-relaxed text-slate-500 sm:line-clamp-4">{alert.summary}</p>
+      <p className="mt-1.5 line-clamp-4 text-xs leading-relaxed text-slate-500 sm:line-clamp-3">{alert.summary}</p>
 
       <div className="mt-3 space-y-1.5 border-t border-slate-100 pt-3 text-xs text-slate-500">
         <p className="break-words">
@@ -194,10 +194,10 @@ export function ScamAlertCard({ alert, now, showRelatedHint }: ScamAlertCardProp
         </dl>
       </details>
 
-      <div className="mt-auto border-t border-transparent pt-4">
+      <div className="mt-auto border-t border-transparent pt-3">
         <Link
           href={`/scam-alerts/${alert.slug}`}
-          className="inline-flex text-sm font-semibold text-blue-700 transition-colors hover:text-blue-900"
+          className="inline-flex min-h-11 items-center text-sm font-semibold text-blue-700 transition-colors hover:text-blue-900"
         >
           Read full alert →
         </Link>

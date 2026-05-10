@@ -5,9 +5,9 @@ import { HomeClient } from "@/components/HomeClient";
 import { OG_IMAGE } from "@/lib/seo-metadata";
 import { defaultKeywords, SITE_URL } from "@/lib/seo";
 
-const homeTitle = "Free Scam Website Checker & Website Trust Checker | Fraudly";
+const homeTitle = "Fraudly — AI-Assisted Scam Website Checker";
 const homeDescription =
-  "Check if a website is legit with Fraudly’s free website safety checker—scam signals, phishing-style risks, fake webshop patterns, and trust indicators in one place before you click or pay.";
+  "See if a website looks trustworthy before you buy or sign in—Fraudly blends scam intelligence, reputation insight, phishing detection, SSL checks, and AI-assisted summaries in one calm readout.";
 
 export const metadata: Metadata = {
   title: { absolute: homeTitle },

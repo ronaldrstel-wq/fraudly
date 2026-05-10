@@ -33,7 +33,7 @@ export function ScamAlertsFilterBar({ activeFilter, activeTime, selectedType, ty
     <div className="space-y-4">
       <ScamAlertsTimeWindowTabs active={activeTime} filter={activeFilter} selectedType={selectedType} />
 
-      <div>
+      <div className="rounded-xl border border-slate-200/80 bg-white/80 p-3.5 shadow-sm sm:p-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Severity &amp; type</p>
         <nav aria-label="Alert severity filters" className="mt-2 flex flex-wrap gap-2">
           {primaryFilters.map(({ key, label, sub }) => {
@@ -46,7 +46,7 @@ export function ScamAlertsFilterBar({ activeFilter, activeTime, selectedType, ty
                 title={sub}
                 className={`flex min-h-[2.75rem] flex-col justify-center rounded-xl border px-3.5 py-2 text-left text-sm font-semibold transition sm:min-w-[8.5rem] ${
                   active
-                    ? "border-blue-500 bg-blue-50 text-blue-950 shadow-sm ring-1 ring-blue-200"
+                    ? "border-blue-400 bg-blue-50 text-blue-900 shadow-sm ring-1 ring-blue-100"
                     : "border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50"
                 }`}
               >

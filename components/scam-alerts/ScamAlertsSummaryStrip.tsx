@@ -32,7 +32,7 @@ export function ScamAlertsSummaryStrip({ stats, filteredTotal, rangeStart, range
           <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">{stats.elevatedConfidenceCount}</p>
         </div>
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">New today (UTC)</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{EN_MESSAGES.scamAlertsUi.summaryNewTodayUtc}</p>
           <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">{stats.newTodayCount}</p>
         </div>
         <div className="col-span-2 sm:col-span-1">

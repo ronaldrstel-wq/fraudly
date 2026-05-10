@@ -23,7 +23,7 @@ import { shouldShowLimitedPublicStrip } from "@/lib/scanResultNarrative";
 import { ThreatBanner } from "@/components/ThreatBanner";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { shouldShowTrustGauge } from "@/lib/trustGaugeDisplay";
-import { trustLevelFromScore } from "@/lib/trustSystem";
+import { trustLevelFromScore, type TrustLevel } from "@/lib/trustSystem";
 import { EvidenceSignalsCard } from "@/components/EvidenceSignalsCard";
 import type { ScamCheckResult } from "@/types/scam";
 import type { ConfidenceLevel, SiteStatus } from "@/types/site-outcome";
@@ -77,18 +77,47 @@ const TIER_ORDER: ScoreEvidenceTier[] = [
 ];
 
 function labelForEvidenceTier(tier: ScoreEvidenceTier): string {
-  switch (tier) {
-    case "confirmed_malicious":
-      return "Confirmed malicious indicators";
-    case "positive_trust":
-      return "Trust signals";
-    case "neutral_observation":
-      return "Technical observations";
-    case "risk_indicator":
-      return "Risk indicators";
-    case "missing_data":
-      return "Scan limitations (incomplete or missing data)";
+  return EN_MESSAGES.scanResult.evidenceTierLabels[tier];
+}
+
+function consumerSummaryFor(trustLevel: TrustLevel, threatActive: boolean): string {
+  if (threatActive) return EN_MESSAGES.scanResult.consumerSummary.underThreat;
+  if (trustLevel === "trusted" || trustLevel === "likelyLegit") return EN_MESSAGES.scanResult.consumerSummary.positive;
+  if (trustLevel === "limitedEvidence" || trustLevel === "suspicious") return EN_MESSAGES.scanResult.consumerSummary.mixed;
+  return EN_MESSAGES.scanResult.consumerSummary.elevated;
+}
+
+function trustMeterTone(score: number, threatActive: boolean): {
+  track: string;
+  fill: string;
+  marker: string;
+} {
+  if (threatActive) {
+    return {
+      track: "bg-rose-100",
+      fill: "bg-gradient-to-r from-rose-500 via-rose-500 to-rose-600",
+      marker: "text-rose-900"
+    };
   }
+  if (score >= 70) {
+    return {
+      track: "bg-emerald-100",
+      fill: "bg-gradient-to-r from-emerald-500 via-emerald-500 to-teal-500",
+      marker: "text-emerald-900"
+    };
+  }
+  if (score >= 20) {
+    return {
+      track: "bg-amber-100",
+      fill: "bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500",
+      marker: "text-amber-900"
+    };
+  }
+  return {
+    track: "bg-rose-100",
+    fill: "bg-gradient-to-r from-rose-500 via-rose-500 to-rose-600",
+    marker: "text-rose-900"
+  };
 }
 
 function tierScoreSignals(rows: ScoreSignal[]): Record<ScoreEvidenceTier, ScoreSignal[]> {
@@ -171,6 +200,8 @@ export function ResultCard({ result }: ResultCardProps) {
     trustLevel,
     siteStatus: result.siteStatus
   });
+
+  const sec = EN_MESSAGES.scanResult.resultSections;
 
   const { reviewSignals } = result;
   const hasPublicReviewData = reviewSignals.trustpilotFound || reviewSignals.googleFound;
@@ -262,23 +293,25 @@ export function ResultCard({ result }: ResultCardProps) {
     };
   }, [result.domain, result.score]);
 
+  const meter = trustMeterTone(displayTrust ?? 0, threat.active);
+
   return (
     <div
-      className={`w-full rounded-xl bg-white p-6 shadow-lg transition-all duration-300 ${
+      className={`w-full rounded-2xl bg-white p-4 shadow-sm transition-all duration-300 sm:p-5 md:p-6 ${
         threat.active
-          ? "border-2 border-rose-500 shadow-rose-200/50 ring-2 ring-rose-300/50"
-          : "shadow-slate-200/60"
+          ? "border-2 border-rose-500 shadow-rose-200/40 ring-1 ring-rose-300/50"
+          : "border border-slate-200/85 shadow-slate-200/60"
       }`}
     >
-      <div className="space-y-5">
+      <div className="space-y-4 md:space-y-5">
         {threat.active ? (
           <ThreatBanner variant="critical" title={criticalThreatBannerTitle(threat.kind)} body={EN_MESSAGES.threatOverride.bannerBody} />
         ) : showLimitedStrip ? (
           <ThreatBanner variant="neutral" title={EN_MESSAGES.scanResult.limitedStripTitle} body={EN_MESSAGES.scanResult.limitedStripBody} />
         ) : null}
 
-        <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-6">
-          <div className="min-w-0 flex-1 space-y-6">
+        <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-5">
+          <div className="min-w-0 flex-1 space-y-4 md:space-y-5">
             <header className="space-y-3">
               <div className="flex flex-wrap items-center gap-3">
                 <span className={`select-none text-3xl sm:text-4xl ${humanTone.icon}`} aria-hidden>
@@ -291,8 +324,17 @@ export function ResultCard({ result }: ResultCardProps) {
               <p className="max-w-2xl text-base leading-relaxed text-slate-700 sm:text-[17px]">{shortExplain}</p>
             </header>
 
+            <div className="max-w-2xl rounded-xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm sm:px-5 sm:py-4">
+              <p className="text-sm leading-relaxed text-slate-800 sm:text-[15px] sm:leading-relaxed">
+                {consumerSummaryFor(trustLevel, threat.active)}
+              </p>
+              <p className="mt-2 border-t border-slate-100 pt-2 text-xs leading-relaxed text-slate-500">
+                {EN_MESSAGES.scanResult.consumerSummaryDisclaimer}
+              </p>
+            </div>
+
             <section
-              className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3"
+              className="rounded-xl border border-slate-200 bg-slate-50/75 px-4 py-3"
               aria-label={`${EN_MESSAGES.scanResult.technicalStatusHeading}: ${techStatus}`}
             >
               <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
@@ -302,18 +344,36 @@ export function ResultCard({ result }: ResultCardProps) {
             </section>
 
             {showGauge && typeof displayTrust === "number" ? (
-              <section className="border-t border-slate-100 pt-4" aria-label={`Trust score ${displayTrust} out of 100`}>
+              <section className="rounded-xl border border-slate-200 bg-white px-4 py-3" aria-label={`Trust score ${displayTrust} out of 100`}>
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   {EN_MESSAGES.scanResult.trustScoreLabel}
                 </p>
-                <p className="mt-2 text-lg font-medium tabular-nums">
+                <p className="mt-1.5 text-lg font-semibold tabular-nums">
                   <span className={threat.active ? "text-slate-500" : "text-slate-700"}>{displayTrust}</span>
                   <span className="text-slate-400"> / 100</span>
                 </p>
-                <p className="mt-2 max-w-xl text-xs leading-relaxed text-slate-500">{EN_MESSAGES.scanResult.trustScoreExplainer}</p>
+                <div className="mt-3">
+                  <div className={`h-2.5 w-full overflow-hidden rounded-full ${meter.track}`}>
+                    <div
+                      className={`h-full rounded-full ${meter.fill} transition-[width] duration-500 ease-out`}
+                      style={{ width: `${Math.max(0, Math.min(100, displayTrust))}%` }}
+                    />
+                  </div>
+                  <div className={`mt-1.5 grid grid-cols-3 text-[11px] font-medium ${meter.marker}`}>
+                    <span className="text-left">Trusted</span>
+                    <span className="text-center">Caution</span>
+                    <span className="text-right">High Risk</span>
+                  </div>
+                </div>
+                <p className="mt-2 max-w-xl text-xs leading-relaxed text-slate-600 sm:text-[13px]">
+                  {EN_MESSAGES.scanResult.trustScoreExplainer}
+                </p>
+                <p className="mt-1.5 max-w-xl text-xs leading-relaxed text-slate-500">
+                  {EN_MESSAGES.scanResult.trustScoreExplainerFootnote}
+                </p>
                 {threat.active ? (
                   <p className="mt-2 text-xs font-medium text-rose-900">
-                    Authoritative threat matches override the numeric score for safety guidance.
+                    {EN_MESSAGES.scanResult.resultSections.trustScoreThreatNote}
                   </p>
                 ) : null}
               </section>
@@ -340,7 +400,7 @@ export function ResultCard({ result }: ResultCardProps) {
               {!threat.active ? <p className="mt-2 text-xs text-slate-600">{result.confidenceRationale}</p> : null}
               {threat.active ? (
                 <p className="mt-2 text-xs font-medium text-rose-900">
-                  List matches are decisive for safety here; scan coverage only reflects how much extra context we could gather.
+                  {EN_MESSAGES.scanResult.resultSections.trustScoreThreatNote}
                 </p>
               ) : null}
             </div>
@@ -348,7 +408,7 @@ export function ResultCard({ result }: ResultCardProps) {
 
           <div className="flex w-full min-w-0 flex-col gap-3 sm:w-auto sm:max-w-md sm:items-end sm:text-right">
             <div className="text-sm text-slate-600 sm:text-right">
-              <p className="font-medium text-slate-900">Analyzed domain</p>
+              <p className="font-medium text-slate-900">{EN_MESSAGES.scanResult.resultSections.analyzedDomainHeading}</p>
               <p className="mt-1 break-all">{result.domain}</p>
             </div>
           </div>
@@ -358,10 +418,9 @@ export function ResultCard({ result }: ResultCardProps) {
       {result.trustEvidence ? (
         <div className="mt-6 space-y-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">Optional evidence analysis</h2>
-            <p className="mt-1 text-sm text-slate-600">
-              You added optional context (screenshot, ad text, or source). We combined it with the website scan—this
-              does not replace technical checks.
+            <h2 className="text-lg font-bold text-slate-900">{EN_MESSAGES.scanResult.resultSections.optionalEvidenceHeading}</h2>
+            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-600">
+              {EN_MESSAGES.scanResult.resultSections.optionalEvidenceBody}
             </p>
           </div>
           {result.trustEvidence.screenshotAd ? <EvidenceSignalsCard section={result.trustEvidence.screenshotAd} /> : null}
@@ -405,34 +464,40 @@ export function ResultCard({ result }: ResultCardProps) {
         </div>
       ) : null}
 
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Confirmed malicious intelligence</p>
-        <p className="mt-1 text-xs text-slate-500">Structured matches from phishing/malware lists or police-aligned references only.</p>
-        <SignalList
-          signals={confirmedMaliciousSignals}
-          empty="No Safe Browsing, OpenPhish, URLhaus, or police-aligned list matches were returned in this crawl."
-        />
-      </div>
+      <details className="mt-5 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm sm:px-5">
+        <summary className="cursor-pointer list-none py-1 [&::-webkit-details-marker]:hidden">
+          <span className="block text-base font-semibold text-slate-900">{EN_MESSAGES.scanResult.detailedFindingsToggle}</span>
+          <span className="mt-1 block max-w-prose text-pretty text-xs font-normal leading-relaxed text-slate-500">
+            {EN_MESSAGES.scanResult.detailedFindingsHint}
+          </span>
+        </summary>
+        <div className="mt-4 space-y-4 border-t border-slate-100 pt-4">
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+            <p className="text-sm font-semibold text-slate-900">{sec.confirmedIntelHeading}</p>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">{sec.confirmedIntelHint}</p>
+            <SignalList
+              signals={confirmedMaliciousSignals}
+              empty="No Safe Browsing, OpenPhish, URLhaus, or police-aligned list matches were returned in this crawl."
+            />
+          </div>
 
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Other risk indicators</p>
-        <p className="mt-1 text-xs text-slate-500">Higher-severity heuristics and technical warnings that still require independent verification.</p>
-        <SignalList
-          signals={otherRiskSignals}
-          empty="No additional prioritized risk rows were raised beyond curated list matches."
-        />
-      </div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+            <p className="text-sm font-semibold text-slate-900">{sec.otherRiskHeading}</p>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">{sec.otherRiskHint}</p>
+            <SignalList
+              signals={otherRiskSignals}
+              empty="No additional prioritized risk rows were raised beyond curated list matches."
+            />
+          </div>
 
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Trust signals & technical notes</p>
-        <p className="mt-1 text-xs text-slate-500">
-          Helpful facts and neutral checks. Missing reviews or a “no list hit” only means we did not see that signal—it is not proof either way.
-        </p>
-        <SignalList signals={supportiveSignals} empty="No supportive or informational trust rows were returned." />
-      </div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+            <p className="text-sm font-semibold text-slate-900">{sec.trustNotesHeading}</p>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">{sec.trustNotesHint}</p>
+            <SignalList signals={supportiveSignals} empty="No supportive or informational trust rows were returned." />
+          </div>
 
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Domain information</p>
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+            <p className="text-sm font-semibold text-slate-900">{sec.domainBlockHeading}</p>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-700">
           <li>
             Registration date: <span className="font-medium">{result.domainIntelligence.registrationDate ?? "unknown"}</span>
@@ -457,8 +522,8 @@ export function ResultCard({ result }: ResultCardProps) {
         <p className="mt-2 text-xs text-slate-500">Source: {result.domainIntelligence.source}</p>
       </div>
 
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Security checks</p>
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">{sec.sslBlockHeading}</p>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-700">
           <li>
             HTTPS/TLS reachable:{" "}
@@ -482,11 +547,9 @@ export function ResultCard({ result }: ResultCardProps) {
         <p className="mt-2 text-xs text-slate-500">Source: {result.ssl.source}</p>
       </div>
 
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Intelligence sources</p>
-        <p className="mt-1 text-xs text-slate-500">
-          Normalized provider output. “Matched” means the provider reported a hit or pattern in this run.
-        </p>
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+            <p className="text-sm font-semibold text-slate-900">{sec.intelProvidersHeading}</p>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">{sec.intelProvidersHint}</p>
         {result.providerEvidence.length === 0 ? (
           <p className="mt-2 text-sm text-slate-600">No modular provider rows were recorded.</p>
         ) : (
@@ -511,19 +574,15 @@ export function ResultCard({ result }: ResultCardProps) {
             ))}
           </ul>
         )}
-      </div>
+          </div>
 
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Public reputation signals</p>
-        <p className="mt-1 text-xs text-slate-500">
-          Cached / Outscraper-backed enrichment when it runs—broader than the quick baseline probes below.
-        </p>
-        {repLoading ? (
-          <p className="mt-2 text-sm text-slate-600">Checking public-source signals...</p>
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+            <p className="text-sm font-semibold text-slate-900">{sec.reputationBlockHeading}</p>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">{sec.reputationBlockHint}</p>
+            {repLoading ? (
+          <p className="mt-2 text-sm text-slate-600">{sec.reputationChecking}</p>
         ) : repError ? (
-          <p className="mt-2 text-sm text-slate-600">
-            Public-source enrichment is currently unavailable. Base scan signals are still shown.
-          </p>
+          <p className="mt-2 text-sm text-slate-600">{sec.reputationUnavailable}</p>
         ) : reputation ? (
           <div className="mt-2 space-y-2 text-sm text-slate-700">
             <ReviewSummary enrichment={reputation} />
@@ -580,17 +639,13 @@ export function ResultCard({ result }: ResultCardProps) {
             </button>
           </div>
         ) : (
-          <p className="mt-2 text-sm text-slate-600">
-            No public reputation profile found. This does not automatically mean unsafe.
-          </p>
+          <p className="mt-2 text-sm text-slate-600">{sec.reputationEmptyHint}</p>
         )}
-      </div>
+          </div>
 
-      <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Baseline review signals (main scan)</p>
-        <p className="mt-1 text-xs text-slate-500">
-          Lightweight directory probes for the numeric model. Crawler or feed hiccups here describe Fraudly’s snapshot—not the merchant’s honesty.
-        </p>
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+            <p className="text-sm font-semibold text-slate-900">{sec.baselineReviewsHeading}</p>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">{sec.baselineReviewsHint}</p>
         {hasPublicReviewData ? (
           <div className="mt-2 space-y-2 text-sm text-slate-700">
             {reviewSignals.googleFound && (
@@ -645,10 +700,10 @@ export function ResultCard({ result }: ResultCardProps) {
             </ul>
           </details>
         ) : null}
-      </div>
+          </div>
 
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">Supply chain</p>
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+            <p className="text-sm font-semibold text-slate-900">{sec.supplyChainHeading}</p>
         <p className="mt-2 text-xs text-slate-600">
           Dropshipping: {result.supplyChainSignals.likelyDropshipping ? "likely" : "unlikely"} · China-linked
           fulfillment: {result.supplyChainSignals.likelyChinaShipping ? "likely" : "unlikely"} · Local
@@ -661,10 +716,10 @@ export function ResultCard({ result }: ResultCardProps) {
             <li key={`${i}-${r.slice(0, 48)}`}>{r}</li>
           ))}
         </ul>
-      </div>
+          </div>
 
-      <details className="mt-6 rounded-xl border border-dashed border-slate-200 bg-white px-4 py-3 text-sm">
-        <summary className="cursor-pointer font-semibold text-slate-900">Score evidence (debug)</summary>
+          <details className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-3 text-sm">
+            <summary className="cursor-pointer font-semibold text-slate-900">{sec.scoreDebugToggle}</summary>
         <p className="mt-2 text-xs text-slate-500">
           Composite model uses raw impacts × confidence weights on the server. Positive numbers push the risk score up;
           negative numbers pull it down. Neutral rows are explanatory only — they must not be read as endorsement.
@@ -681,9 +736,7 @@ export function ResultCard({ result }: ResultCardProps) {
           </p>
         ) : null}
 
-        <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-600">
-          Combined scoring signals (reviews, domain literacy, Tier‑1 intel, supply chain…)
-        </p>
+        <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-600">{sec.scoreDebugCombinedHeading}</p>
         {result.scoreResult.signals.length === 0 ? (
           <p className="mt-2 text-xs text-slate-600">No modeled signals captured.</p>
         ) : (
@@ -708,7 +761,7 @@ export function ResultCard({ result }: ResultCardProps) {
           </div>
         )}
 
-        <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-slate-600">Tier‑1 intelligence weighting only</p>
+        <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-slate-600">{sec.scoreDebugTierHeading}</p>
         {result.intelScoreBreakdown.length === 0 ? (
           <p className="mt-2 text-xs text-slate-600">No weighted intel contributions in this run.</p>
         ) : (
@@ -734,7 +787,7 @@ export function ResultCard({ result }: ResultCardProps) {
           </div>
         )}
 
-        <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-slate-600">Baseline review probes (debug)</p>
+        <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-slate-600">{sec.scoreDebugBaselineHeading}</p>
         <p className="mt-1 text-xs text-slate-500">
           Buckets distinguish provider errors, source outages, review-derived signals, and (rare) website crawler transparency—never merged with fraud intel.
         </p>
@@ -753,14 +806,13 @@ export function ResultCard({ result }: ResultCardProps) {
             ))}
           </ul>
         )}
+          </details>
+        </div>
       </details>
 
       <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">AI summary & key factors</p>
-        <p className="mt-1 text-xs text-slate-500">
-          Blended automated notes (heuristics, intel-weighted scoring context, and optional AI). This is not legal or
-          financial advice.
-        </p>
+        <p className="text-sm font-semibold text-slate-900">{sec.aiFactorsHeading}</p>
+        <p className="mt-1 max-w-prose text-pretty text-xs leading-relaxed text-slate-500">{sec.aiFactorsHint}</p>
         <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-700">
           {result.reasons.map((reason, index) => (
             <li key={`${index}-${reason.slice(0, 48)}`}>{reason}</li>

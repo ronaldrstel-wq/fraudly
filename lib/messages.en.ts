@@ -20,6 +20,59 @@ export const EN_MESSAGES = {
     loginForCheckout: "Log in to continue.",
     loginForAccount: "Log in to view your account."
   },
+  home: {
+    heroBadge: "AI-assisted website safety check",
+    headline: "Check if a website looks trustworthy before you buy, click, or sign in.",
+    subhead:
+      "Fraudly analyzes websites using scam intelligence, trust signals, reputation data, technical checks, and AI-assisted detection to help you spot suspicious websites faster.",
+    trustBullets: [
+      "Detect phishing and fake webshop signals",
+      "Analyze trust and reputation indicators",
+      "Check domain age and security signals",
+      "AI-assisted risk analysis in seconds"
+    ] as const,
+    primaryCta: "Check a Website",
+    secondaryCta: "How Fraudly Works",
+    secondaryCtaHref: "/how-it-works",
+    trustHelperBelowSearch: "No installation required · Works instantly · Free basic checks",
+    whatAnalyzesTitle: "What Fraudly analyzes",
+    whatAnalyzesIntro:
+      "Each check layers public data, technical signals, and scam intelligence into a readable snapshot—without drowning you in jargon.",
+    whatAnalyzesCards: [
+      {
+        title: "Scam Detection",
+        body: "Looks for common scam patterns, phishing setups, and behavior that often appears on risky sites."
+      },
+      {
+        title: "Reputation Signals",
+        body: "Reviews public trust cues from multiple sources—including review-style reputation where available."
+      },
+      {
+        title: "Domain & Website History",
+        body: "Checks website age, registration context, and consistency with what legitimate sites usually show."
+      },
+      {
+        title: "AI-Assisted Analysis",
+        body: "Uses intelligent heuristics to flag unusual combinations that are hard to eyeball in a hurry."
+      },
+      {
+        title: "Security Checks",
+        body: "Reviews SSL and other technical trust cues, plus settings that often matter for safe browsing."
+      },
+      {
+        title: "Brand Impersonation",
+        body: "Surfaces signs a site may be posing as a trusted brand, bank, or delivery service."
+      },
+      {
+        title: "Public Scam Intelligence",
+        body: "Cross-checks known scam and phishing feeds so serious list-style matches are not missed."
+      },
+      {
+        title: "Deep Scan Technology",
+        body: "Advanced scans can add extra technical and reputation insight when you need a fuller picture."
+      }
+    ] as const
+  },
   reviewEvidence: {
     noPublicReviewProfile:
       "No public review profile was found. This limits confidence but does not prove the site is unsafe.",
@@ -34,7 +87,66 @@ export const EN_MESSAGES = {
       "Some public data sources were unavailable or did not return enough information. This lowers how complete the picture is, but it is not direct evidence that the website is unsafe."
   },
   scanResult: {
-    technicalStatusHeading: "Technical status",
+    /** Friendly label for the compact line under the main recommendation (maps to trust tier / threat state). */
+    technicalStatusHeading: "Signals behind your score",
+    /** Plain-language summary bands (non-technical readers). */
+    consumerSummary: {
+      positive:
+        "This website currently shows multiple positive trust indicators, and no major scam signals were detected in this snapshot.",
+      mixed:
+        "This website has mixed trust signals. It may still be legitimate, but some indicators are worth a closer look before you pay or sign in.",
+      elevated:
+        "This website triggered several risk indicators commonly associated with scams, phishing, or misleading websites.",
+      underThreat:
+        "Authoritative scam or phishing intelligence flagged this website. Treat it as high risk until you can verify through a channel you already trust."
+    },
+    consumerSummaryDisclaimer:
+      "Online risks can change over time. Always use your own judgment before purchasing or sharing personal information.",
+    detailedFindingsToggle: "Detailed scan findings",
+    detailedFindingsHint:
+      "Technical notes, list matches, reputation snapshots, and modeling detail—open when you want the full picture.",
+    evidenceTierLabels: {
+      confirmed_malicious: "Matches from scam intelligence",
+      positive_trust: "Trust-positive signals",
+      neutral_observation: "Website & technical observations",
+      risk_indicator: "Detected risk patterns",
+      missing_data: "Incomplete or unavailable data"
+    } as const,
+    resultSections: {
+      confirmedIntelHeading: "Matches from scam intelligence",
+      confirmedIntelHint: "Structured hits from curated phishing, malware, or police-aligned feeds in this crawl.",
+      otherRiskHeading: "Detected risk patterns",
+      otherRiskHint:
+        "Extra risk-style signals scored in this snapshot. They are not definitive proof—a quick second opinion still helps.",
+      trustNotesHeading: "Helpful signals & observations",
+      trustNotesHint:
+        "Facts and neutral checks that balance the picture. Missing a row usually means “not seen”, not proof either way.",
+      domainBlockHeading: "Domain & registration",
+      sslBlockHeading: "Security checks (HTTPS / certificates)",
+      intelProvidersHeading: "Scam intelligence sources",
+      intelProvidersHint: "Normalized provider output. “Matched” means that source reported something relevant in this run.",
+      reputationBlockHeading: "Reputation enrichment",
+      reputationBlockHint: "Optional broader reputation pass when available—beyond the quick baseline probes.",
+      reputationChecking: "Checking reputation and security signals…",
+      reputationUnavailable: "Reputation enrichment unavailable right now—your baseline scan findings still apply.",
+      reputationEmptyHint: "No enriched reputation profile surfaced. That limits context; it does not prove the site is unsafe.",
+      baselineReviewsHeading: "Quick review probes (baseline scan)",
+      baselineReviewsHint: "Lightweight directory checks powering part of the model—hiccups here describe our snapshot, not the shop’s honesty.",
+      supplyChainHeading: "Fulfillment signals",
+      scoreDebugToggle: "Scoring detail (advanced)",
+      scoreDebugTierHeading: "Scam intelligence weighting (model)",
+      scoreDebugBaselineHeading: "Review collector notes (neutral)",
+      scoreDebugCombinedHeading: "Combined scoring signals (reviews, reputation, feeds, fulfillment…)",
+      aiFactorsHeading: "Key factors explained",
+      aiFactorsHint:
+        "Blended notes from patterns we detected, scam intelligence scoring, and optional AI assistance—not legal or financial advice.",
+      optionalEvidenceHeading: "Optional context you added",
+      optionalEvidenceBody:
+        "Screenshots, ad notes, or social context are layered on top of the URL scan. They sharpen the story but never replace technical checks.",
+      analyzedDomainHeading: "Website checked",
+      trustScoreThreatNote:
+        "Authoritative scam intelligence overrides the headline score so guidance stays cautious when feeds disagree with the numeric model."
+    },
     /** Primary consumer headline — maps to trust/threat tier */
     humanRec: {
       glyphs: {
@@ -84,7 +196,10 @@ export const EN_MESSAGES = {
       invalidDomain: "We could not verify this as a live, registered website hostname.",
       unreachable: "We could not load usable content from this address in this scan."
     },
-    trustScoreExplainer: "Higher means fewer risk-style signals in this scan—not a guarantee of safety.",
+    trustScoreExplainer:
+      "The trust score combines technical checks, reputation signals where available, website history cues, scam intelligence, and AI-assisted analysis.",
+    trustScoreExplainerFootnote:
+      "Higher scores usually mean fewer red flags appeared in this snapshot—not proof a site is safe or unsafe.",
     trustScoreLabel: "Trust score",
     recommendationHeading: "Recommendation",
     whyHeading: "Why this result?",
@@ -93,7 +208,7 @@ export const EN_MESSAGES = {
     providerRowReliability: "reliability",
     enrichmentCompletenessLabel: "Public-source data completeness",
     footerDisclaimer:
-      "Fraudly summarizes public and technical signals for awareness. It is not legal, financial, or infallible security advice—always verify before payments or sensitive actions.",
+      "Fraudly summarizes public scam intelligence, reputation snapshots, and technical signals for awareness. It is not legal, financial, or flawless security advice—verify important decisions yourself.",
     limitedStripTitle: "Limited public information available",
     limitedStripBody:
       "No confirmed malicious indicators were detected, but public scan coverage was limited. Low coverage does not automatically mean a website is unsafe.",
@@ -113,7 +228,7 @@ export const EN_MESSAGES = {
         "Available signals look broadly legitimate, and we did not see a confirmed malicious list match.",
       limitedPublicData:
         "This website did not show confirmed malicious indicators, but only limited public information was available to score it.",
-      suspicious: "Some risk-style signals were present—extra care is warranted before you trust or pay.",
+      suspicious: "Some caution-style signals appeared—slow down before you trust links, logins, or checkout pages.",
       highRisk: "Several concerning signals accumulated in this scan relative to typical benign sites."
     },
     why: {
@@ -161,15 +276,16 @@ export const EN_MESSAGES = {
     upsellPremium: "Create a free account to continue checking websites.",
     viewPremium: "Continue",
     urlFieldLabel: "Website, domain, or link",
-    urlPlaceholder: "https://example.com"
+    urlPlaceholder: "https://example.com",
+    urlInputHelper: "Enter a website URL to analyze trust and scam indicators."
   },
   /** Live progress strip during `/api/check` (homepage scanner). */
   scanProgress: {
-    phaseStart: "Starting website check...",
-    phaseSecurity: "Running security checks on the URL...",
-    phaseSignals: "Gathering public signals...",
-    phaseScoring: "Scoring trust and risk signals...",
-    phaseFinalizing: "Finalizing analysis...",
+    phaseStart: "Analyzing trust and scam indicators…",
+    phaseSecurity: "Checking reputation and security signals…",
+    phaseSignals: "Gathering public reputation and scam intelligence…",
+    phaseScoring: "Running AI-assisted website analysis…",
+    phaseFinalizing: "Summarizing findings…",
     complete: "Analysis complete.",
     failedGeneric: "Website check couldn't finish. Please try again.",
     failedNetwork: "Could not reach the scanner. Check your connection and try again.",
@@ -283,10 +399,10 @@ export const EN_MESSAGES = {
       "Treat this as elevated risk until you can verify the site through an independent, official channel.",
     checkedLink: "Checked link",
     riskStatus: "Risk status",
-    safeLabel: "Safe",
-    safeExplanation: "The basic scan did not find direct fraud indicators.",
-    suspiciousLabel: "Possibly suspicious",
-    suspiciousExplanation: "Signals were found that require extra caution.",
+    safeLabel: "Trusted",
+    safeExplanation: "The basic scan did not highlight major fraud indicators.",
+    suspiciousLabel: "Caution",
+    suspiciousExplanation: "Signals were found that merit extra caution.",
     highRiskLabel: "High risk",
     highRiskExplanation: "Multiple signals indicate an elevated fraud risk.",
     unlockHint: "Create a free account to continue checking more websites."
@@ -310,6 +426,7 @@ export const EN_MESSAGES = {
     emptyState: "Your recent searches will appear here after you run a fraud check.",
     loadError: "Could not load your history. Refresh the page or try again.",
     reopenResult: "View result",
+    reopenResultArrow: "View result →",
     deleteOne: "Delete",
     clearing: "Removing…",
     clearAll: "Clear all history",
@@ -337,8 +454,8 @@ export const EN_MESSAGES = {
     },
     verdictLabels: {
       safe: "lower risk snapshot",
-      suspicious: "mixed signals",
-      scam: "strong risk snapshot"
+      suspicious: "mixed signals • caution",
+      scam: "high-risk snapshot"
     }
   },
   scamAlertsUi: {
@@ -346,20 +463,34 @@ export const EN_MESSAGES = {
     sortByScore: "Sorted by newest publication, then alert score",
     filterHighSub: "Uses aggregated alert score",
     technicalMatchStrength: "Match strength",
-    technicalSignals: "Corroborating signals"
+    technicalSignals: "Corroborating signals",
+    pageEyebrow: "Scam intelligence",
+    overviewIntro:
+      "Fraudly continuously monitors public scam intelligence and suspicious website signals to surface emerging threats in plain language.",
+    explainChipRecentlyDetected: "Recently detected threats",
+    explainChipTrendingDomains: "Trending risky domains",
+    explainChipPhishing: "Phishing indicators",
+    explainChipSuspiciousDomains: "New suspicious registrations",
+    chipHint: "Use filters to zoom in on phishing-style alerts, trending domains, and high-confidence summaries.",
+    summaryNewTodayUtc: "Recently published (UTC)"
   },
   latestChecks: {
     navLabel: "Latest checks",
     navLabelShort: "Latest",
-    overline: "Public discovery · anonymized summaries",
+    overline: "Community snapshot · anonymized summaries",
     pageTitle: "Latest Fraud Checks",
     intro:
-      "Showing recent public checks that cleared our privacy filter—no accounts, IPs, or private search history. Higher trust scores mean fewer risk-style signals in that snapshot (not a guarantee). We exclude uncertain items from this list.",
-    emptyState: "No public fraud checks yet. Recent public-safe checks will appear here.",
+      "Recent public website checks run through Fraudly. This feed highlights sites people are actively verifying—shown without accounts or private history.",
+    scoreExplainerFootnote:
+      "Scores are generated automatically using trust, reputation where available, technical checks, scam intelligence feeds, and AI-assisted analysis—not a verdict on goodness or badness by itself.",
+    emptyState:
+      "No public checks published yet. As soon as privacy-safe summaries are available, they will appear here so you can see what others are looking up.",
     ctaPrimary: "Run a website check",
     listAria: "Latest public fraud check summaries",
     riskHint: "risk-style score",
     viewSnapshot: "View public result",
+    /** Compact feed rows (latest checks · discovery list) */
+    viewResultArrow: "View result →",
     labels: {
       risk: "Trust score",
       status: "Status label",

@@ -3,7 +3,7 @@ export type ScamVerdict = "safe" | "suspicious" | "scam";
 
 export type TrustPresentation = {
   level: TrustLevel;
-  label: "Trusted" | "Likely Legit" | "Limited Public Data" | "Suspicious" | "High Risk";
+  label: "Trusted" | "Likely Legit" | "Limited Public Data" | "Caution" | "High Risk";
   icon: "check" | "info" | "alert" | "risk";
   toneText: string;
   toneSoftBg: string;
@@ -83,7 +83,7 @@ export function trustPresentationFromScore(score: number): TrustPresentation {
   if (level === "suspicious") {
     return {
       level,
-      label: "Suspicious",
+      label: "Caution",
       icon: "alert",
       toneText: "text-amber-900",
       toneSoftBg: "bg-amber-50/90",

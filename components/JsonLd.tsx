@@ -8,7 +8,7 @@ const graph = [
     url: SITE_URL,
     logo: `${SITE_URL}/icon.png`,
     description:
-      "Fraudly helps people check scam websites, phishing links, fake webshops, and other suspicious URLs with clear trust and risk indicators.",
+      "Fraudly helps consumers quietly vet websites—combining phishing intelligence, HTTPS checks, domain history cues, curated scam feeds, and AI-assisted narration without fear-based hype.",
     sameAs: [] as string[]
   },
   {
@@ -17,7 +17,7 @@ const graph = [
     name: "Fraudly",
     url: SITE_URL,
     description:
-      "Website trust checker for scam signals, phishing-style risks, and fake online stores—with explainable indicators and calm guidance.",
+      "Website trust checker with scam intelligence, reputation snapshots, SSL signals, deep scans, and AI-assisted explanations for everyday shoppers.",
     publisher: { "@id": `${SITE_URL}/#organization` },
     inLanguage: "en"
   },
@@ -29,7 +29,7 @@ const graph = [
     operatingSystem: "Web",
     url: SITE_URL,
     description:
-      "Free website checker for scam indicators, phishing links, and dubious shops—risk signals and optional AI summary in plain language.",
+      "Free AI-assisted website checker for scam signals, phishing-style pages, fake stores, and suspicious URLs—plain-language trust guidance with honest limits.",
     offers: {
       "@type": "Offer",
       price: "0",

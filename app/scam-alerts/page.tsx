@@ -14,6 +14,7 @@ import {
   parseScamAlertsPageParam,
   parseScamAlertsTimeWindow
 } from "@/lib/scam-alerts/presentation";
+import { EN_MESSAGES } from "@/lib/messages.en";
 import { SITE_URL } from "@/lib/seo";
 import {
   getPublishedScamAlertsPageResult,
@@ -25,7 +26,7 @@ import {
 export const revalidate = 300;
 
 const PAGE_DESCRIPTION =
-  "Consumer-friendly scam and phishing alerts from public threat feeds—what changed, why it matters, and how to stay safe.";
+  "Fraudly aggregates public scam intelligence—phishing, risky domains, and emerging fraud patterns—with calm explanations so you know what to double-check.";
 
 type PageProps = {
   searchParams: Promise<{ type?: string; filter?: string; page?: string; time?: string }>;
@@ -111,22 +112,28 @@ export default async function ScamAlertsPage({ searchParams }: PageProps) {
   return (
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
       <Navbar />
-      <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-10">
+      <main className="mx-auto w-full max-w-6xl px-4 pb-14 pt-8 sm:pt-9">
         <header className="max-w-3xl">
-          <p className="text-sm font-medium text-blue-700">Threat intelligence</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">Scam &amp; phishing alerts</h1>
-          <p className="mt-3 text-base text-slate-600">
-            Plain-language summaries of what public feeds are flagging right now—so you can scan risks quickly and dig
-            into details only when you need them.
+          <p className="text-sm font-medium text-blue-700">{EN_MESSAGES.scamAlertsUi.pageEyebrow}</p>
+          <h1 className="mt-2 text-balance text-3xl font-bold tracking-tight md:text-4xl">Scam &amp; phishing alerts</h1>
+          <p className="mt-3 max-w-prose text-pretty text-base leading-relaxed text-slate-600">
+            {EN_MESSAGES.scamAlertsUi.overviewIntro}
           </p>
-          <p className="mt-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
-            Fraudly aggregates third-party signals. Treat every alert as a hint to double-check, not proof by itself.
+          <div className="mt-4 flex flex-wrap gap-2 text-xs font-medium text-slate-700 sm:text-sm">
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 shadow-sm">{EN_MESSAGES.scamAlertsUi.explainChipRecentlyDetected}</span>
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 shadow-sm">{EN_MESSAGES.scamAlertsUi.explainChipTrendingDomains}</span>
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 shadow-sm">{EN_MESSAGES.scamAlertsUi.explainChipPhishing}</span>
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 shadow-sm">{EN_MESSAGES.scamAlertsUi.explainChipSuspiciousDomains}</span>
+          </div>
+          <p className="mt-3 max-w-prose text-pretty text-sm leading-relaxed text-slate-600">{EN_MESSAGES.scamAlertsUi.chipHint}</p>
+          <p className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm leading-relaxed text-slate-700">
+            Fraudly aggregates third-party intelligence. Treat every alert as encouragement to verify—not as proof by itself.
           </p>
         </header>
 
         <ScamAlertsSummaryStrip stats={stats} filteredTotal={total} rangeStart={rangeStart} rangeEnd={rangeEnd} />
 
-        <div className="mt-6">
+        <div className="mt-5">
           <ScamAlertsFilterBar activeFilter={filter} activeTime={timeWindow} selectedType={selectedType} types={types} />
         </div>
 
@@ -161,7 +168,7 @@ export default async function ScamAlertsPage({ searchParams }: PageProps) {
           </section>
         ) : (
           <>
-            <section className="mt-8 grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Published alerts">
+            <section className="mt-7 grid auto-rows-fr gap-3.5 sm:grid-cols-2 lg:grid-cols-3" aria-label="Published alerts">
               {alerts.map((alert) => {
                 const key = clusterDomainKey(alert.domain);
                 const showRelated = Boolean(key && prevDomainKey === key);

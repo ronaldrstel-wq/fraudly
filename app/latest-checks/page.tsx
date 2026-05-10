@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Prisma } from "@prisma/client";
 import { LatestChecksJsonLd } from "@/components/seo/LatestChecksJsonLd";
+import { CompactOverviewFeedLinkCard } from "@/components/overview/CompactOverviewFeedCard";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { formatPublicCheckRelativeTime } from "@/lib/latest-public-checks/relative-time";
 import { db } from "@/lib/db";
+import { overviewFeedPrimaryLine } from "@/lib/overviewFeedDisplay";
 import { OG_IMAGE } from "@/lib/seo-metadata";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { SITE_URL } from "@/lib/seo";
@@ -34,7 +36,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   return {
     title: titleSegment,
     description:
-      "See recently checked domains, URLs, companies, usernames, and crypto wallets with fraud risk scores.",
+      "Explore recent community website checks powered by Fraudly trust signals, scam intelligence, reputation data, and AI-assisted analysis—shown as privacy-safe summaries.",
     alternates: { canonical },
     robots: { index: true, follow: true },
     openGraph: {
@@ -98,13 +100,14 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
       <LatestChecksJsonLd items={rows} positionOffset={skip} />
       <Navbar />
 
-      <main className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:pt-10 md:pt-14">
+      <main className="mx-auto w-full max-w-5xl px-4 pb-14 pt-7 sm:pt-9 md:pt-12">
         <header className="max-w-3xl">
           <p className="text-sm font-medium text-blue-700">{EN_MESSAGES.latestChecks.overline}</p>
           <h1 className="mt-2 text-balance text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
             {EN_MESSAGES.latestChecks.pageTitle}
           </h1>
-          <p className="mt-4 text-pretty text-base leading-relaxed text-slate-600">{EN_MESSAGES.latestChecks.intro}</p>
+          <p className="mt-4 max-w-prose text-pretty text-base leading-relaxed text-slate-600">{EN_MESSAGES.latestChecks.intro}</p>
+          <p className="mt-3 max-w-prose text-pretty text-sm leading-relaxed text-slate-600">{EN_MESSAGES.latestChecks.scoreExplainerFootnote}</p>
         </header>
 
         {rows.length === 0 ? (
@@ -123,71 +126,29 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
             </Link>
           </section>
         ) : (
-          <section className="mt-10" aria-labelledby="latest-list-heading">
+          <section className="mt-8" aria-labelledby="latest-list-heading">
             <h2 id="latest-list-heading" className="sr-only">
               {EN_MESSAGES.latestChecks.listAria}
             </h2>
-            <ol className="space-y-3">
+            <ol className="space-y-3 md:space-y-4">
               {rows.map((row) => {
                 const m = buildOverviewFromPublicCheck(row);
+                const iso = row.lastSeenAt.toISOString();
+                const primaryLine = overviewFeedPrimaryLine(row.checkedValue);
                 return (
                 <li key={row.id}>
-                  <article
-                    className={`rounded-2xl p-4 shadow-sm transition md:p-5 ${m.articleClass} ${
-                      m.isCritical ? "" : "hover:border-slate-300 hover:shadow-md"
-                    }`}
-                  >
-                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                      <div className="min-w-0 flex-1 space-y-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-full bg-white/80 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-slate-600 ring-1 ring-slate-200/80">
-                            {entityBadge(row.entityType)}
-                          </span>
-                          <time
-                            className="text-xs text-slate-500"
-                            dateTime={row.lastSeenAt.toISOString()}
-                            title={row.lastSeenAt.toUTCString()}
-                          >
-                            {formatPublicCheckRelativeTime(row.lastSeenAt.toISOString())}
-                          </time>
-                        </div>
-
-                        <div className="flex flex-wrap items-start gap-2.5">
-                          <span className={`select-none text-2xl ${m.tone.icon}`} aria-hidden>
-                            {m.glyph}
-                          </span>
-                          <div className="min-w-0">
-                            <p className={`text-xl font-bold tracking-tight sm:text-2xl ${m.tone.text}`}>{m.headline}</p>
-                            <p className="mt-0.5 text-sm font-semibold text-slate-800">{m.technicalLabel}</p>
-                          </div>
-                        </div>
-
-                        <p className="max-w-2xl text-xs leading-relaxed text-slate-600">{m.oneLiner}</p>
-
-                        <p className="break-all text-base font-semibold leading-snug text-slate-900 md:text-lg">{row.checkedValue}</p>
-                      </div>
-
-                      <div className="shrink-0 text-left md:text-right">
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                          {EN_MESSAGES.scanResult.trustScoreLabel}
-                        </p>
-                        <p className="mt-0.5 text-base tabular-nums text-slate-500 md:text-lg">
-                          <span className={m.isCritical ? "font-medium text-slate-600" : "font-semibold text-slate-700"}>
-                            {m.trustScore}
-                          </span>
-                          <span className="text-slate-400"> / 100</span>
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-4 flex border-t border-slate-200/80 pt-3 sm:justify-end">
-                      <Link
-                        href={row.publicResultPath}
-                        className="inline-flex shrink-0 justify-center rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 md:text-sm"
-                      >
-                        {EN_MESSAGES.latestChecks.viewSnapshot}
-                      </Link>
-                    </div>
-                  </article>
+                  <CompactOverviewFeedLinkCard
+                    model={m}
+                    headlineId={`latest-check-headline-${row.id}`}
+                    domainLine={primaryLine.primary}
+                    domainFullTitle={primaryLine.fullTitle}
+                    href={row.publicResultPath}
+                    viewLabel={EN_MESSAGES.latestChecks.viewResultArrow}
+                    timeIso={iso}
+                    timeRelative={formatPublicCheckRelativeTime(iso)}
+                    timeTitle={row.lastSeenAt.toUTCString()}
+                    entityBadge={entityBadge(row.entityType)}
+                  />
                 </li>
                 );
               })}
@@ -196,7 +157,7 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
         )}
 
         {(prevPage !== null || nextPage !== null) && rows.length > 0 ? (
-          <nav className="mt-10 flex items-center justify-between gap-4 border-t border-slate-200 pt-6" aria-label="Pagination">
+          <nav className="mt-8 flex items-center justify-between gap-4 border-t border-slate-200 pt-5" aria-label="Pagination">
             <div className="min-w-0">
               {prevPage !== null ? (
                 <Link

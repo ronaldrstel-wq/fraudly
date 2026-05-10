@@ -62,9 +62,9 @@ export function deriveAlertSeverity(
       badgeClass: "border-orange-300 bg-orange-50 text-orange-900 ring-1 ring-orange-200"
     },
     suspicious: {
-      label: "Suspicious",
-      badge: "Suspicious",
-      accessibleDescription: "Suspicious: treat with caution until verified.",
+      label: "Caution",
+      badge: "Caution",
+      accessibleDescription: "Caution: worth double-checking until you can verify the source.",
       badgeClass: "border-amber-300 bg-amber-50 text-amber-900 ring-1 ring-amber-200"
     },
     monitoring: {
@@ -92,12 +92,12 @@ export function consumerAlertTitle(alert: Pick<PublicScamAlertListItem, "scamTyp
     return "Possible brand impersonation reported";
   }
   if (t.includes("suspicious") || t.includes("domain")) {
-    return "Suspicious domain reported by public feeds";
+    return "Domain flagged by public scam intelligence feeds";
   }
   if (t.includes("url") || alert.title.toLowerCase().includes("url")) {
     return "Known malicious URL reported";
   }
-  return "Suspicious website flagged by public threat data";
+  return "Website flagged by public threat intelligence feeds";
 }
 
 export function whyThisMattersLine(alert: Pick<PublicScamAlertListItem, "scamType" | "domain" | "sourceName">): string {

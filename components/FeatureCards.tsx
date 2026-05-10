@@ -1,15 +1,15 @@
 const cards = [
   {
-    title: "Clear trust signals",
-    description: "Each website check brings together technical checks, public feeds, and on-page cues in plain language."
+    title: "Signals, not noise",
+    description: "Reputation, scam feeds, SSL, domain story, and wording cues—rolled into one readable view."
   },
   {
-    title: "Results in seconds",
-    description: "Get a concise readout quickly—no install and no jargon wall."
+    title: "Seconds, not guesswork",
+    description: "Runs in the browser instantly. No install, no signup required for your first look."
   },
   {
-    title: "Safety-first wording",
-    description: "Calm explanations of phishing risks, suspicious patterns, and what looks trustworthy—not fear-based hype."
+    title: "Straight talk",
+    description: "Plain-language guidance with honest limits—Fraudly augments your judgment; it doesn’t replace it."
   }
 ];
 
@@ -23,7 +23,7 @@ export function FeatureCards({ stacked = false }: FeatureCardsProps) {
       {cards.map((card) => (
         <article key={card.title} className="rounded-xl bg-white p-5 shadow-lg shadow-slate-200/60">
           <h3 className="text-base font-semibold text-slate-900">{card.title}</h3>
-          <p className="mt-2 text-sm text-slate-600">{card.description}</p>
+          <p className="mt-2 text-sm leading-relaxed text-slate-600">{card.description}</p>
         </article>
       ))}
     </aside>

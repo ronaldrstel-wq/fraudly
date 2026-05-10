@@ -8,22 +8,27 @@ export const metadata = buildPageMetadata({
   path: "/about",
   titleSegment: "About Fraudly",
   description:
-    "What Fraudly is, why it exists, and how it helps you check suspicious links and websites before you click or buy."
+    "Fraudly helps consumers quietly vet websites—mixing phishing intelligence, SSL checks, domain history, review signals, and AI-assisted summaries without the hype."
 });
 
-const whatWeDoBullets = [
-  "Checks public review data (like Google ratings)",
-  "Detects suspicious website patterns and domain signals",
-  "Identifies dropshipping and supply chain indicators",
-  "Evaluates business transparency (addresses, policies, etc.)",
-  "Uses AI to explain the results in plain language"
+const pillars = [
+  {
+    title: "Built for skeptical shoppers",
+    body: "We focus on phishing sites, bogus stores, and social ad scams—the places people lose money in minutes."
+  },
+  {
+    title: "Signals you can inspect",
+    body: "Every check cites the technical, reputation, and intelligence context we could reach so nothing feels like a black box."
+  },
+  {
+    title: "Fast by design",
+    body: "No installs or lengthy questionnaires—paste a URL, read the takeaway, optionally open deep scans when you want more proof."
+  }
 ] as const;
 
 function SectionCard({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <section
-      className={`rounded-xl border border-slate-100 bg-white p-6 shadow-lg shadow-slate-200/60 sm:p-8 ${className}`}
-    >
+    <section className={`rounded-xl border border-slate-100 bg-white p-6 shadow-lg shadow-slate-200/60 sm:p-8 ${className}`}>
       {children}
     </section>
   );
@@ -37,73 +42,59 @@ export default function AboutPage() {
       <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-10 sm:pt-14 md:pt-16">
         <header className="text-center">
           <div className="mx-auto mb-4 inline-flex items-center rounded-full border border-blue-100 bg-white px-4 py-1 text-xs font-semibold tracking-wide text-blue-700 shadow-sm">
-            About us
+            About Fraudly
           </div>
-          <h1 className="text-balance text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">About Fraudly</h1>
-          <p className="mx-auto mt-4 max-w-2xl text-balance text-base leading-relaxed text-slate-600 md:text-lg">
-            Fraudly helps you check websites before you click, so you can avoid scams, fake shops, and risky links.
+          <h1 className="text-balance text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">Helping people pause before risky clicks</h1>
+          <p className="mx-auto mt-4 max-w-2xl text-pretty text-base leading-relaxed text-slate-600 md:text-lg">
+            Fraudly gives consumers a grounded second opinion on unfamiliar websites—before purchases, banking logins, or sharing
+            personal details—using calm language and understandable signals.
           </p>
         </header>
 
         <div className="mt-10 space-y-8 sm:mt-12 md:mt-14 md:space-y-10">
           <SectionCard>
-            <h2 className="text-lg font-bold text-slate-900 md:text-xl">Our mission</h2>
-            <p className="mt-3 text-sm leading-relaxed text-slate-700 md:text-base">
-              Online scams are getting harder to spot. Fake webshops, phishing pages, and misleading offers are
-              everywhere. Fraudly was built to give people a simple way to check if a website looks trustworthy before
-              they share personal information or make a purchase.
+            <h2 className="text-lg font-bold text-slate-900 md:text-xl">Why Fraudly exists</h2>
+            <p className="mt-3 text-pretty text-sm leading-relaxed text-slate-700 md:text-base">
+              Online scams keep evolving—fake storefronts powered by slick ads, copycat banking portals, phishing DMs, and shady
+              marketplaces. Most people simply need a trustworthy nudge plus enough detail to act wisely. Fraudly combines
+              human-readable guidance with optional deep scan technology so curiosity does not mean clicking blind.
             </p>
           </SectionCard>
 
           <SectionCard>
-            <h2 className="text-lg font-bold text-slate-900 md:text-xl">What Fraudly does</h2>
-            <p className="mt-3 text-sm leading-relaxed text-slate-700 md:text-base">
-              Fraudly analyzes multiple signals to estimate how trustworthy a website is. Instead of guessing, you get
-              a clear explanation of what was found and what it means.
+            <h2 className="text-lg font-bold text-slate-900 md:text-xl">How we approach trust</h2>
+            <p className="mt-3 text-pretty text-sm leading-relaxed text-slate-700 md:text-base">
+              We fuse website trust signals with scam indicators, SSL posture, WHOIS clues, curated intelligence feeds,
+              lightweight review probes, richer reputation enrichment when it succeeds, and AI-assisted narration. Nothing is
+              perfect—coverage gaps happen—so every screen encourages independent verification before high-stakes actions.
             </p>
-            <ul className="mt-5 space-y-2.5 border-t border-slate-100 pt-5 text-sm text-slate-700 md:text-base">
-              {whatWeDoBullets.map((item) => (
-                <li key={item} className="flex gap-3">
-                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gradient-to-br from-blue-500 to-purple-600" aria-hidden />
-                  <span>{item}</span>
+            <ul className="mt-6 space-y-4 text-sm leading-relaxed text-slate-700 md:text-base">
+              {pillars.map((pillar) => (
+                <li key={pillar.title} className="border-t border-slate-100 pt-4 first:border-t-0 first:pt-0">
+                  <p className="font-semibold text-slate-900">{pillar.title}</p>
+                  <p className="mt-2 text-slate-600">{pillar.body}</p>
                 </li>
               ))}
             </ul>
           </SectionCard>
 
-          <SectionCard>
-            <h2 className="text-lg font-bold text-slate-900 md:text-xl">Why we built this</h2>
-            <p className="mt-3 text-sm leading-relaxed text-slate-700 md:text-base">
-              Most people don’t have the time or knowledge to manually investigate every website. Fraudly simplifies that
-              process into a fast, easy check you can use in seconds.
-            </p>
-          </SectionCard>
-
           <SectionCard className="border-amber-200/80 bg-amber-50/50">
-            <h2 className="text-lg font-bold text-slate-900 md:text-xl">Transparency matters</h2>
-            <p className="mt-3 text-sm leading-relaxed text-slate-700 md:text-base">
-              No tool can guarantee that a website is 100% safe or a scam. Fraudly highlights signals that are commonly
-              associated with trustworthy or suspicious websites, so you can make a better-informed decision.
+            <h2 className="text-lg font-bold text-slate-900 md:text-xl">Honest limits</h2>
+            <p className="mt-3 text-pretty text-sm leading-relaxed text-slate-700 md:text-base">
+              Fraudly will never promise perfect accuracy—the web changes too quickly. Treat each result as situational awareness:
+              combine it with issuer warnings, banking apps, retailer support chats, or people you trust in real life whenever the
+              stakes are high.
             </p>
-          </SectionCard>
-
-          <SectionCard>
-            <h2 className="text-lg font-bold text-slate-900 md:text-xl">Built for users</h2>
-            <p className="mt-3 text-sm leading-relaxed text-slate-700 md:text-base">
-              Fraudly is designed to help users, not to manipulate them. We focus on clear explanations, honest scoring,
-              and privacy-first design.
-            </p>
-            <p className="mt-4 text-xs text-slate-500 md:text-sm">We do not sell your personal data.</p>
           </SectionCard>
         </div>
 
         <section className="mt-12 rounded-xl border border-slate-200 bg-white/90 px-6 py-8 text-center shadow-md shadow-slate-200/50 sm:mt-14 md:mt-16">
-          <p className="text-base font-medium text-slate-900">Want to check a website?</p>
+          <p className="text-base font-medium text-slate-900">Have a questionable link?</p>
           <Link
             href="/"
             className="mt-4 inline-flex rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition duration-200 hover:scale-[1.02] hover:brightness-110 active:scale-[0.98]"
           >
-            Try it free
+            Run a Fraudly check
           </Link>
         </section>
       </main>
