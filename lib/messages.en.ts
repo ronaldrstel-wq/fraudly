@@ -22,19 +22,30 @@ export const EN_MESSAGES = {
   },
   home: {
     heroBadge: "AI-assisted website safety check",
-    headline: "Check if a website looks trustworthy before you buy, click, or sign in.",
+    /** Legacy full headline — homepage hero uses split headline in `Hero.tsx` for styling. */
+    headline: "See it. Check it. Trust it.",
     subhead:
-      "Fraudly analyzes websites using scam intelligence, trust signals, reputation data, technical checks, and AI-assisted detection to help you spot suspicious websites faster.",
-    trustBullets: [
-      "Detect phishing and fake webshop signals",
-      "Analyze trust and reputation indicators",
-      "Check domain age and security signals",
-      "AI-assisted risk analysis in seconds"
+      "Fraudly analyzes scam intelligence, trust signals, reputation data, and AI-assisted risk patterns so you can spot suspicious websites before you buy, click, or sign in.",
+    heroTrustFeatures: [
+      "Detect scams & phishing",
+      "Analyze trust & reputation",
+      "Check domain age & security",
+      "AI-assisted risk analysis"
     ] as const,
-    primaryCta: "Check a Website",
+    /** Kept for any consumers expecting `trustBullets`; homepage uses `heroTrustFeatures`. */
+    trustBullets: [
+      "Detect scams & phishing",
+      "Analyze trust & reputation",
+      "Check domain age & security",
+      "AI-assisted risk analysis"
+    ] as const,
+    primaryCta: "Check Website",
     secondaryCta: "How Fraudly Works",
     secondaryCtaHref: "/how-it-works",
-    trustHelperBelowSearch: "No installation required · Works instantly · Free basic checks",
+    heroSearchHelper: "Fast. Private. Secure. No signup required for your first check.",
+    heroHowSteps: ["Submit", "Analyze", "AI Review", "Get Results"] as const,
+    trustHelperBelowSearch:
+      "No installation required · Works instantly · Fraudly analyzes sites with public scam intelligence — not legal advice.",
     whatAnalyzesTitle: "What Fraudly analyzes",
     whatAnalyzesIntro:
       "Each check layers public data, technical signals, and scam intelligence into a readable snapshot—without drowning you in jargon.",

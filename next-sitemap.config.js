@@ -41,13 +41,19 @@ module.exports = {
     return {
       loc: path,
       changefreq: path === "/" || isLatestChecks ? "daily" : config.changefreq,
-      priority: path === "/" ? 1.0 : path.startsWith("/check/") || isLatestChecks ? 0.8 : 0.7,
+      priority:
+        path === "/"
+          ? 1.0
+          : path.startsWith("/check/") || path.startsWith("/domain/") || isLatestChecks
+            ? 0.8
+            : 0.7,
       lastmod: new Date().toISOString()
     };
   },
   additionalPaths: async () => {
     return [
       { loc: "/check/example.com", changefreq: "daily", priority: 0.8 },
+      { loc: "/domain/example.com", changefreq: "daily", priority: 0.8 },
       { loc: "/latest-checks", changefreq: "daily", priority: 0.8 },
       // Index only: paginated `/scam-alerts?page=N` URLs are intentionally omitted as low unique value for crawlers.
       { loc: "/scam-alerts", changefreq: "daily", priority: 0.8 }

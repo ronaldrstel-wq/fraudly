@@ -131,6 +131,16 @@ export default async function DomainCheckPage({ params }: PageProps) {
             showing risk indicators, trust signals, and technical checks. Results are not legal or financial advice and are
             not a guarantee that a site is safe or unsafe.
           </p>
+          <p className="mt-3 text-sm text-slate-600">
+            Looking for the long-form trust guide (FAQs, scam vs. legit framing)?{" "}
+            <Link
+              href={`/domain/${encodeURIComponent(domain)}`}
+              className="font-semibold text-blue-600 underline decoration-blue-600/35 underline-offset-2 hover:text-blue-800"
+            >
+              Open the {domain} trust intelligence page
+            </Link>
+            .
+          </p>
         </header>
 
         <section className="mt-6 rounded-xl border border-amber-200/80 bg-amber-50/80 px-4 py-3 text-sm text-amber-950">
