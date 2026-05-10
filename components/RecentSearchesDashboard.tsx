@@ -92,7 +92,7 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
           <button
             type="button"
-            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50"
+            className="fraudly-focus-on-white inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-subtle hover:bg-slate-50"
             onClick={() => setShowClearModal(true)}
           >
             {EN_MESSAGES.recentSearches.clearAll}
@@ -102,7 +102,7 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
       )}
 
       {rows.length === 0 ? (
-        <div className="mt-10 rounded-2xl border border-dashed border-slate-200 bg-white/80 p-10 text-center shadow-sm">
+        <div className="mt-10 rounded-2xl border border-dashed border-slate-200 bg-white/90 p-8 text-center shadow-subtle sm:p-10">
           <p className="mx-auto max-w-lg text-pretty text-sm leading-relaxed text-slate-600">{EN_MESSAGES.recentSearches.emptyState}</p>
           <p className="mt-5 text-sm">
             <Link href="/#link-check" className="font-semibold text-blue-600 underline decoration-blue-600/30 underline-offset-2">
@@ -143,7 +143,7 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
                   <button
                     type="button"
                     disabled={busyRow}
-                    className="inline-flex min-h-11 items-center rounded-lg border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-800 shadow-sm hover:bg-slate-50 disabled:opacity-50"
+                    className="btn-secondary min-h-10 px-3 text-[13px] shadow-subtle disabled:opacity-50"
                     onClick={() => void removeRow(row.id)}
                   >
                     {busyRow ? EN_MESSAGES.recentSearches.clearing : EN_MESSAGES.recentSearches.deleteOne}
@@ -163,12 +163,7 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
             aria-label="Close dialog backdrop"
             onClick={() => (clearBusy ? null : setShowClearModal(false))}
           />
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="recent-clear-title"
-            className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl"
-          >
+          <div role="dialog" aria-modal="true" aria-labelledby="recent-clear-title" className="fraudly-modal">
             <h2 id="recent-clear-title" className="text-lg font-semibold text-slate-900">
               {EN_MESSAGES.recentSearches.clearModalTitle}
             </h2>
@@ -177,7 +172,7 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
               <button
                 type="button"
                 disabled={clearBusy}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-slate-50 disabled:opacity-50"
+                className="btn-secondary px-5 disabled:opacity-50"
                 onClick={() => setShowClearModal(false)}
               >
                 {EN_MESSAGES.recentSearches.clearModalCancel}
@@ -185,7 +180,7 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
               <button
                 type="button"
                 disabled={clearBusy}
-                className="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-rose-700 disabled:opacity-50"
+                className="btn-danger px-5 disabled:opacity-50"
                 onClick={() => void clearAll()}
               >
                 {clearBusy ? EN_MESSAGES.recentSearches.clearing : EN_MESSAGES.recentSearches.clearModalConfirm}

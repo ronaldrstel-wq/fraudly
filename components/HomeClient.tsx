@@ -43,15 +43,15 @@ async function yieldOneUiFrame() {
 }
 
 const ResultCard = dynamic(() => import("@/components/ResultCard").then((m) => ({ default: m.ResultCard })), {
-  loading: () => <div className="min-h-[280px] w-full animate-pulse rounded-xl bg-slate-100" aria-hidden />
+  loading: () => <div className="min-h-[280px] w-full animate-pulse rounded-2xl bg-slate-100" aria-hidden />
 });
 
 const FeatureCards = dynamic(() => import("@/components/FeatureCards").then((m) => ({ default: m.FeatureCards })), {
-  loading: () => <div className="h-44 w-full animate-pulse rounded-xl bg-slate-100 md:h-36" aria-hidden />
+  loading: () => <div className="h-44 w-full animate-pulse rounded-2xl bg-slate-100 md:h-36" aria-hidden />
 });
 
 const PostScanAppPromo = dynamic(() => import("@/components/PostScanAppPromo").then((m) => ({ default: m.PostScanAppPromo })), {
-  loading: () => <div className="h-32 w-full animate-pulse rounded-xl bg-slate-100" aria-hidden />
+  loading: () => <div className="h-32 w-full animate-pulse rounded-2xl bg-slate-100" aria-hidden />
 });
 
 export function HomeClient({ children }: { children?: ReactNode }) {
@@ -362,10 +362,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
 
   const signInModalButton = (
     <SignInButton mode="modal">
-      <button
-        type="button"
-        className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-      >
+      <button type="button" className="btn-secondary px-5">
         {EN_MESSAGES.auth.loginCta}
       </button>
     </SignInButton>
@@ -374,7 +371,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
     <SignUpButton mode="modal">
       <button
         type="button"
-        className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+        className="btn-primary px-5"
         onClick={() => trackEvent("signup_started", { source: "signup_prompt" })}
       >
         {EN_MESSAGES.freemium.createFreeAccount}
@@ -384,15 +381,15 @@ export function HomeClient({ children }: { children?: ReactNode }) {
 
   const signupPrompt =
     showSignupPrompt && !isSignedIn ? (
-      <div className="mx-auto mt-8 w-full max-w-[860px] rounded-[18px] border border-sky-100 bg-white p-[18px] shadow-md shadow-slate-200/40 md:p-6">
+      <div className="mx-auto mt-8 w-full max-w-[860px] fraudly-cta-panel">
         <h3 className="text-lg font-bold tracking-tight text-slate-900 md:text-xl">{EN_MESSAGES.freemium.promptTitle}</h3>
         <p className="mt-2 text-sm leading-relaxed text-slate-600">{EN_MESSAGES.freemium.promptBody}</p>
         <div className="mt-5 flex flex-col gap-3 sm:flex-row">
           {signUpModalButton}
-          <SignInButton mode="modal">
+            <SignInButton mode="modal">
             <button
               type="button"
-              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
+              className="btn-secondary px-5"
               onClick={() => trackEvent("login_started", { source: "signup_prompt" })}
             >
               {EN_MESSAGES.auth.loginCta}
@@ -426,7 +423,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         />
 
         {error && (
-          <div className="mx-auto mt-5 max-w-3xl rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <div className="mx-auto mt-5 max-w-3xl rounded-2xl border border-rose-200/85 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-subtle">
             {error}
             {error.includes("Log in") ? (
               <div className="mt-3 flex justify-center">{signInModalButton}</div>
@@ -459,7 +456,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
               <PostScanAppPromo />
             </div>
             {!isSignedIn && (
-              <div className="result-in mx-auto mt-5 max-w-3xl rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+              <div className="result-in mx-auto mt-5 max-w-3xl rounded-2xl border border-slate-200/85 bg-slate-50 px-4 py-3 text-sm text-slate-700 shadow-subtle">
                 {EN_MESSAGES.freemium.afterResultBanner}
               </div>
             )}

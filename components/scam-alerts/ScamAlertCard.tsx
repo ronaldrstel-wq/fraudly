@@ -35,10 +35,10 @@ export function ScamAlertCard({ alert, now, showRelatedHint }: ScamAlertCardProp
 
   return (
     <article
-      className={`flex flex-col overflow-hidden rounded-xl p-4 shadow-sm transition-[box-shadow,border-color] duration-200 hover:shadow-sm sm:p-5 ${
+      className={`fraudly-motion flex flex-col overflow-hidden rounded-2xl border p-4 shadow-subtle sm:p-5 ${
         feedCritical
-          ? "border-2 border-red-600 bg-gradient-to-b from-red-50/90 to-white ring-1 ring-red-300/40"
-          : "border border-slate-200 bg-white hover:border-slate-300"
+          ? "border-red-600/95 bg-gradient-to-b from-red-50/90 to-white ring-1 ring-red-300/35 hover:shadow-elevated"
+          : "border-slate-200/85 bg-white hover:border-slate-300/90 hover:shadow-elevated"
       }`}
     >
       {showRelatedHint && domainKey ? (

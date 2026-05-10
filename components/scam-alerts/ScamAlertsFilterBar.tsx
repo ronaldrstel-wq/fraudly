@@ -33,7 +33,7 @@ export function ScamAlertsFilterBar({ activeFilter, activeTime, selectedType, ty
     <div className="space-y-4">
       <ScamAlertsTimeWindowTabs active={activeTime} filter={activeFilter} selectedType={selectedType} />
 
-      <div className="rounded-xl border border-slate-200/80 bg-white/80 p-3.5 shadow-sm sm:p-4">
+      <div className="rounded-2xl border border-slate-200/85 bg-white/90 p-3.5 shadow-subtle backdrop-blur-sm sm:p-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Severity &amp; type</p>
         <nav aria-label="Alert severity filters" className="mt-2 flex flex-wrap gap-2">
           {primaryFilters.map(({ key, label, sub }) => {
@@ -44,10 +44,10 @@ export function ScamAlertsFilterBar({ activeFilter, activeTime, selectedType, ty
                 href={hrefFor(key, selectedType, activeTime)}
                 scroll={false}
                 title={sub}
-                className={`flex min-h-[2.75rem] flex-col justify-center rounded-xl border px-3.5 py-2 text-left text-sm font-semibold transition sm:min-w-[8.5rem] ${
+                className={`fraudly-focus flex min-h-11 flex-col justify-center rounded-xl border px-3.5 py-2 text-left text-sm font-semibold sm:min-w-[8.5rem] ${
                   active
-                    ? "border-blue-400 bg-blue-50 text-blue-900 shadow-sm ring-1 ring-blue-100"
-                    : "border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50"
+                    ? "border-blue-400/90 bg-blue-50/95 text-blue-900 shadow-subtle ring-1 ring-blue-100/80"
+                    : "border-slate-200/90 bg-white text-slate-800 hover:border-slate-300/90 hover:bg-slate-50"
                 }`}
               >
                 <span>{label}</span>

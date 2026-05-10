@@ -47,7 +47,7 @@ export function OptionalEvidenceScanSection({ values, onChange, disabled }: Prop
   }
 
   return (
-    <div className="rounded-xl border border-slate-200/90 bg-slate-50/60 p-3 sm:p-4">
+    <div className="rounded-2xl border border-slate-200/85 bg-slate-50/60 p-3 shadow-subtle sm:p-4">
       <button
         type="button"
         disabled={disabled}
@@ -82,7 +82,7 @@ export function OptionalEvidenceScanSection({ values, onChange, disabled }: Prop
               type="file"
               accept={accept}
               disabled={disabled}
-              className="mt-1 block w-full max-w-md text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-600 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-700"
+              className="mt-1 block w-full max-w-md text-sm text-slate-700 file:mr-3 file:rounded-xl file:border-0 file:bg-blue-600 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white file:transition hover:file:bg-blue-700"
               onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
             />
             {values.file ? (
@@ -93,7 +93,7 @@ export function OptionalEvidenceScanSection({ values, onChange, disabled }: Prop
           </div>
 
           {values.previewUrl ? (
-            <div className="relative mx-auto max-h-48 w-full max-w-xs overflow-hidden rounded-lg border border-slate-200 bg-white">
+            <div className="relative mx-auto max-h-48 w-full max-w-xs overflow-hidden rounded-xl border border-slate-200/85 bg-white shadow-subtle">
               {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
               <img src={values.previewUrl} alt="Screenshot preview" className="max-h-48 w-full object-contain" />
             </div>
@@ -116,7 +116,7 @@ export function OptionalEvidenceScanSection({ values, onChange, disabled }: Prop
               disabled={disabled}
               value={values.adText}
               onChange={(e) => onChange({ ...values, adText: e.target.value })}
-              className="mt-1 w-full max-w-xl rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="fraudly-input mt-1 w-full max-w-xl"
               placeholder="Example: “90% off Nike shoes today only — link in bio”"
             />
           </div>
@@ -131,7 +131,7 @@ export function OptionalEvidenceScanSection({ values, onChange, disabled }: Prop
               disabled={disabled}
               value={values.sourcePlatform}
               onChange={(e) => onChange({ ...values, sourcePlatform: e.target.value })}
-              className="mt-1 w-full max-w-xs rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="fraudly-input mt-1 w-full max-w-xs"
             >
               {PLATFORMS.map((p) => (
                 <option key={p.value || "unset"} value={p.value}>

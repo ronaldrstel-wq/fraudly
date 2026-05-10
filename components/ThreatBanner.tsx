@@ -28,11 +28,11 @@ export function ThreatBanner({
   if (variant === "critical") {
     return (
       <div
-        className="relative overflow-hidden rounded-xl border-2 border-red-700 bg-gradient-to-br from-red-50 via-rose-50 to-rose-100 px-4 py-4 shadow-xl shadow-red-300/40 ring-2 ring-red-400/50"
+        className="relative overflow-hidden rounded-2xl border border-red-700/90 bg-gradient-to-br from-red-50 via-rose-50 to-rose-100 px-4 py-4 shadow-elevated shadow-red-900/10 ring-1 ring-red-400/35"
         role="alert"
       >
         <div className="flex gap-3">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-700 text-white shadow-lg shadow-red-500/30">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-700 text-white shadow-subtle shadow-red-900/20">
             <WarningGlyph className="h-5 w-5" />
           </span>
           <div className="min-w-0 flex-1">
@@ -46,7 +46,7 @@ export function ThreatBanner({
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 shadow-sm ring-1 ring-slate-100">
+    <div className="rounded-2xl border border-slate-200/85 bg-slate-50/80 px-4 py-3 shadow-subtle ring-1 ring-slate-100/80">
       <div className="flex gap-3">
         <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200/80 text-slate-600">
           <WarningGlyph className="h-4 w-4" />

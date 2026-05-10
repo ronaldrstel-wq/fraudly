@@ -21,7 +21,7 @@ export function FeatureCards({ stacked = false }: FeatureCardsProps) {
   return (
     <aside className={stacked ? "space-y-4" : "grid gap-4 md:grid-cols-3"}>
       {cards.map((card) => (
-        <article key={card.title} className="rounded-xl bg-white p-5 shadow-lg shadow-slate-200/60">
+        <article key={card.title} className="fraudly-card border-slate-100 p-5">
           <h3 className="text-base font-semibold text-slate-900">{card.title}</h3>
           <p className="mt-2 text-sm leading-relaxed text-slate-600">{card.description}</p>
         </article>

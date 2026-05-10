@@ -53,25 +53,28 @@ export function deriveAlertSeverity(
       badge: "Critical",
       accessibleDescription: "Critical severity: very high confidence or strong corroborating signals.",
       badgeClass:
-        "border-rose-300 bg-rose-50 text-rose-900 ring-1 ring-rose-200 px-1.5 py-0.5 text-[10px] leading-tight sm:px-2 sm:py-0.5 sm:text-xs"
+        "rounded-full border border-rose-300/85 bg-rose-50/95 px-2 py-0.5 text-[10px] font-semibold leading-tight text-rose-900 ring-1 ring-rose-200/80 sm:px-2.5 sm:text-xs"
     },
     high: {
       label: "High risk",
       badge: "High risk",
       accessibleDescription: "High risk: elevated confidence from public threat data.",
-      badgeClass: "border-orange-300 bg-orange-50 text-orange-900 ring-1 ring-orange-200"
+      badgeClass:
+        "rounded-full border border-orange-300/85 bg-orange-50/95 px-2 py-0.5 text-xs font-semibold text-orange-950 ring-1 ring-orange-200/70"
     },
     suspicious: {
       label: "Caution",
       badge: "Caution",
       accessibleDescription: "Caution: worth double-checking until you can verify the source.",
-      badgeClass: "border-amber-300 bg-amber-50 text-amber-900 ring-1 ring-amber-200"
+      badgeClass:
+        "rounded-full border border-amber-300/85 bg-amber-50/95 px-2 py-0.5 text-xs font-semibold text-amber-950 ring-1 ring-amber-200/70"
     },
     monitoring: {
       label: "Monitoring",
       badge: "Monitoring",
       accessibleDescription: "Monitoring: lower confidence; still worth awareness.",
-      badgeClass: "border-slate-300 bg-slate-50 text-slate-800 ring-1 ring-slate-200"
+      badgeClass:
+        "rounded-full border border-slate-300/85 bg-slate-50/95 px-2 py-0.5 text-xs font-semibold text-slate-800 ring-1 ring-slate-200/70"
     }
   };
   return { severity, ...map[severity] };

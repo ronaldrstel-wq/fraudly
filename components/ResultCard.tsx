@@ -297,10 +297,10 @@ export function ResultCard({ result }: ResultCardProps) {
 
   return (
     <div
-      className={`w-full rounded-2xl bg-white p-4 shadow-sm transition-all duration-300 sm:p-5 md:p-6 ${
+      className={`fraudly-motion w-full rounded-2xl bg-white p-4 shadow-subtle sm:p-5 md:p-6 ${
         threat.active
-          ? "border-2 border-rose-500 shadow-rose-200/40 ring-1 ring-rose-300/50"
-          : "border border-slate-200/85 shadow-slate-200/60"
+          ? "border border-rose-500/95 shadow-elevated ring-1 ring-rose-300/40"
+          : "border border-slate-200/80"
       }`}
     >
       <div className="space-y-4 md:space-y-5">

@@ -25,25 +25,13 @@ export function CookieBanner({ onAcceptAll, onRejectAll, onManagePreferences }: 
           </p>
         </div>
         <div className="flex flex-shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-          <button
-            type="button"
-            onClick={onManagePreferences}
-            className="order-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 sm:order-1"
-          >
+          <button type="button" onClick={onManagePreferences} className="btn-secondary order-3 px-5 sm:order-1">
             Manage Preferences
           </button>
-          <button
-            type="button"
-            onClick={onRejectAll}
-            className="order-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
-          >
+          <button type="button" onClick={onRejectAll} className="btn-secondary order-2 px-5">
             Reject All
           </button>
-          <button
-            type="button"
-            onClick={onAcceptAll}
-            className="order-1 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-500/20 transition hover:brightness-110 sm:order-3"
-          >
+          <button type="button" onClick={onAcceptAll} className="btn-primary order-1 px-5 sm:order-3">
             Accept All
           </button>
         </div>

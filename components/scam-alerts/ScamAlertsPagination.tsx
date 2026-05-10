@@ -34,12 +34,12 @@ export function ScamAlertsPagination({ filter, time, selectedType, page, maxPage
             rel="prev"
             href={href(prevPage, filter, selectedType, time)}
             scroll={false}
-            className="inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50"
+            className="btn-secondary border-slate-200/90 px-4 py-2"
           >
             ← Previous
           </Link>
         ) : (
-          <span className="inline-flex cursor-not-allowed rounded-xl border border-slate-100 px-4 py-2 text-sm font-semibold text-slate-400">
+          <span className="inline-flex min-h-11 cursor-not-allowed items-center rounded-xl border border-slate-100 bg-slate-50/90 px-4 py-2 text-sm font-semibold text-slate-400">
             ← Previous
           </span>
         )}
@@ -54,12 +54,12 @@ export function ScamAlertsPagination({ filter, time, selectedType, page, maxPage
             rel="next"
             href={href(nextPage, filter, selectedType, time)}
             scroll={false}
-            className="inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50"
+            className="btn-secondary border-slate-200/90 px-4 py-2"
           >
             Next →
           </Link>
         ) : (
-          <span className="inline-flex cursor-not-allowed rounded-xl border border-slate-100 px-4 py-2 text-sm font-semibold text-slate-400">
+          <span className="inline-flex min-h-11 cursor-not-allowed items-center rounded-xl border border-slate-100 bg-slate-50/90 px-4 py-2 text-sm font-semibold text-slate-400">
             Next →
           </span>
         )}

@@ -19,7 +19,7 @@ export function ScamAlertsSummaryStrip({ stats, filteredTotal, rangeStart, range
         : `${rangeStart}–${rangeEnd} of ${filteredTotal} published alerts`;
 
   return (
-    <section aria-label="Alert summary" className="mt-8 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+    <section aria-label="Alert summary" className="mt-8 rounded-2xl border border-slate-200/85 bg-white p-4 shadow-subtle sm:p-5">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Total published</p>

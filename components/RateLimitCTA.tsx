@@ -14,7 +14,7 @@ export function RateLimitCTA() {
   }
 
   return (
-    <div className="rounded-xl border border-amber-200/70 bg-gradient-to-br from-amber-50/90 via-white to-indigo-50/40 p-6 shadow-lg shadow-amber-900/5">
+    <div className="rounded-2xl border border-amber-200/65 bg-gradient-to-br from-amber-50/90 via-white to-indigo-50/40 p-6 shadow-subtle shadow-amber-950/10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
         <div
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-100 to-amber-50 text-amber-600 shadow-sm ring-1 ring-amber-200/60"
@@ -34,7 +34,7 @@ export function RateLimitCTA() {
             <button
               type="button"
               onClick={scrollToCheck}
-              className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 sm:flex-initial sm:min-w-[11rem]"
+              className="btn-secondary flex-1 border-slate-200/90 px-5 sm:flex-initial sm:min-w-[11rem]"
             >
               Try again tomorrow
             </button>

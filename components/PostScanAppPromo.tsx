@@ -12,7 +12,7 @@ function PhoneIcon({ className }: { className?: string }) {
 
 export function PostScanAppPromo() {
   return (
-    <div className="rounded-xl border border-slate-200/90 bg-gradient-to-br from-slate-50 to-white p-5 shadow-md shadow-slate-200/40 transition hover:shadow-lg hover:shadow-slate-200/50">
+    <div className="fraudly-motion rounded-2xl border border-slate-200/85 bg-gradient-to-br from-slate-50 to-white p-5 shadow-subtle hover:shadow-elevated">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
         <div
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate-500 shadow-sm ring-1 ring-slate-200/80"

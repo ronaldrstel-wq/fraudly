@@ -12,7 +12,7 @@ export function WebsiteScanProgress({ progress, status, failed = false }: Websit
     <div
       role="region"
       aria-label="Website scan status"
-      className={`mx-auto mt-4 w-full max-w-3xl rounded-xl border p-4 text-left shadow-sm sm:p-[18px] ${
+      className={`fraudly-motion mx-auto mt-4 w-full max-w-3xl rounded-2xl border p-4 text-left shadow-subtle sm:p-5 ${
         failed
           ? "border-rose-200 bg-rose-50/95"
           : "border-sky-100 bg-white shadow-sky-100/40"

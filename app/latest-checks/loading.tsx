@@ -11,7 +11,7 @@ export default function LatestChecksLoading() {
         <div className="mt-4 h-20 max-w-2xl animate-pulse rounded bg-slate-200/80" aria-hidden />
         <div className="mt-10 space-y-3" aria-busy aria-label="Loading latest checks">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-[5.75rem] animate-pulse rounded-2xl border border-slate-100 bg-white" />
+            <div key={i} className="h-[5.75rem] animate-pulse rounded-2xl border border-slate-100 bg-white shadow-subtle" />
           ))}
         </div>
       </main>

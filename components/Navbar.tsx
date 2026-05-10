@@ -30,7 +30,7 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-20 border-b border-slate-200/70 bg-white/90 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4">
-        <Link href="/" className="mr-2 inline-flex shrink-0 items-center opacity-90 transition-opacity duration-200 hover:opacity-100">
+        <Link href="/" className="mr-2 inline-flex shrink-0 items-center opacity-90 transition-opacity hover:opacity-100">
           <Image
             src="/logo.png"
             alt="Fraudly — scam and fraud checker"
@@ -44,11 +44,11 @@ export function Navbar() {
         <div className="hidden min-w-0 flex-1 items-center justify-center gap-7 text-sm font-medium text-slate-600 md:flex">
           {navLinks.map((link) =>
             link.href.startsWith("/") ? (
-              <Link key={link.label} href={link.href} className="transition hover:text-slate-900">
+              <Link key={link.label} href={link.href} className="fraudly-nav-link">
                 {link.label}
               </Link>
             ) : (
-              <a key={link.label} href={link.href} className="transition hover:text-slate-900">
+              <a key={link.label} href={link.href} className="fraudly-nav-link">
                 {link.label}
               </a>
             )

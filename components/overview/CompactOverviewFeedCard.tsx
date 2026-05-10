@@ -3,9 +3,6 @@ import type { ReactNode } from "react";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import type { OverviewCardModel } from "@/lib/overviewCardPresentation";
 
-const focusRing =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F9FAFB]";
-
 function TrustScoreBadge({ score, isCritical }: { score: number; isCritical: boolean }) {
   return (
     <span
@@ -106,7 +103,7 @@ export function CompactOverviewFeedLinkCard(props: CompactOverviewFeedBaseProps 
     bgClassName
   } = props;
 
-  const shell = `${m.articleClass} block rounded-2xl p-4 shadow-sm transition md:p-5 ${m.isCritical ? "" : "hover:border-slate-300 hover:shadow-sm"} ${focusRing}`;
+  const shell = `${m.articleClass} fraudly-motion block rounded-2xl p-4 shadow-subtle md:p-5 ${m.isCritical ? "" : "hover:border-slate-300/90 hover:shadow-elevated"} fraudly-focus`;
 
   const ctaPresentation = (
     <span className="text-sm font-semibold text-blue-700 underline decoration-blue-600/35 underline-offset-2">{viewLabel}</span>
@@ -149,10 +146,13 @@ export function CompactOverviewFeedArticleCard(props: CompactOverviewFeedBasePro
     entityBadge
   } = props;
 
-  const viewLinkCls = `text-sm font-semibold text-blue-700 underline decoration-blue-600/35 underline-offset-2 hover:text-blue-800 ${focusRing} rounded`;
+  const viewLinkCls =
+    "fraudly-focus rounded-lg text-sm font-semibold text-blue-700 underline decoration-blue-600/35 underline-offset-2 hover:text-blue-800";
 
   return (
-    <article className={`${m.articleClass} rounded-2xl p-4 shadow-sm md:p-5 ${m.isCritical ? "" : "hover:border-slate-300 hover:shadow-sm"}`}>
+    <article
+      className={`${m.articleClass} fraudly-motion rounded-2xl p-4 shadow-subtle md:p-5 ${m.isCritical ? "" : "hover:border-slate-300/90 hover:shadow-elevated"}`}
+    >
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-6">
         <FeedLeading m={m} headlineId={headlineId} entityBadge={entityBadge} domainLine={domainLine} domainFullTitle={domainFullTitle} />
 

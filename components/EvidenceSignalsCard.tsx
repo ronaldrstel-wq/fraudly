@@ -28,7 +28,7 @@ export function EvidenceSignalsCard({ section }: { section: TrustEvidenceSection
   const badge = impactBadge(section.impactLevel);
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+    <section className="rounded-2xl border border-slate-200/85 bg-white p-4 shadow-subtle sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h3 className="text-base font-semibold text-slate-900">{section.title}</h3>
         <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}>{badge.label}</span>

@@ -50,10 +50,10 @@ export function overviewOneLiner(kind: HumanRecKind): string {
  */
 export function overviewCardArticleClass(kind: HumanRecKind): string {
   if (kind === "avoidWebsite" || kind === "dangerousWebsite") {
-    return "border-2 border-red-600 bg-gradient-to-br from-red-50/90 to-white shadow-md shadow-red-200/35 ring-1 ring-red-300/45";
+    return "border border-red-600/95 bg-gradient-to-br from-red-50/90 to-white shadow-subtle ring-1 ring-red-300/35";
   }
   if (kind === "highRisk") {
-    return "border-2 border-rose-300 bg-rose-50/40 shadow-sm";
+    return "border border-rose-300/90 bg-rose-50/40 shadow-subtle";
   }
   if (kind === "beCareful") {
     return "border-amber-200 bg-amber-50/35";

@@ -27,7 +27,7 @@ function href(time: ScamAlertsTimeWindow, filter: ListFilterKey, type: string) {
 
 export function ScamAlertsTimeWindowTabs({ active, filter, selectedType }: Props) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
+    <div className="rounded-2xl border border-slate-200/85 bg-white p-3 shadow-subtle sm:p-4">
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Time range</p>
       <nav className="mt-2 flex flex-wrap gap-1.5 sm:gap-2" aria-label="Alert time range">
         {TABS.map(({ key, label, hint }) => {
@@ -39,10 +39,10 @@ export function ScamAlertsTimeWindowTabs({ active, filter, selectedType }: Props
               scroll={false}
               title={hint}
               aria-current={isActive ? "true" : undefined}
-              className={`min-h-[2.5rem] rounded-lg border px-2.5 py-2 text-center text-xs font-semibold transition sm:min-h-0 sm:px-3 sm:text-sm ${
+              className={`fraudly-focus min-h-10 rounded-xl border px-2.5 py-2 text-center text-xs font-semibold sm:min-h-0 sm:px-3 sm:text-sm ${
                 isActive
-                  ? "border-blue-600 bg-blue-600 text-white shadow-sm"
-                  : "border-slate-200 bg-slate-50 text-slate-800 hover:border-slate-300 hover:bg-white"
+                  ? "border-blue-600/95 bg-blue-600 text-white shadow-subtle"
+                  : "border-slate-200/90 bg-slate-50 text-slate-800 hover:border-slate-300/90 hover:bg-white"
               }`}
             >
               {label}

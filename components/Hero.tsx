@@ -77,7 +77,7 @@ export function Hero({
         <div className="mt-2.5 flex justify-center sm:mt-3">
           <Link
             href={secondaryCtaHref}
-            className="text-sm font-semibold text-blue-700 underline decoration-blue-600/35 underline-offset-2 transition hover:text-blue-900"
+            className="fraudly-motion text-sm font-semibold text-blue-700 underline decoration-blue-600/35 underline-offset-2 hover:text-blue-900"
           >
             {secondaryCta}
           </Link>

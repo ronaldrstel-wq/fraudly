@@ -20,7 +20,7 @@ export function HomeBelowFold() {
           {whatAnalyzesCards.map((card, i) => (
             <article
               key={card.title}
-              className="flex h-full flex-col rounded-2xl border border-slate-100 bg-white p-4 shadow-lg shadow-slate-200/55 sm:p-5"
+              className="flex h-full flex-col rounded-2xl border border-slate-100 bg-white p-4 shadow-subtle sm:p-5"
             >
               <div className="flex items-start gap-2.5">
                 <span className="text-xl leading-none sm:text-2xl" aria-hidden>
@@ -34,7 +34,7 @@ export function HomeBelowFold() {
         </div>
       </section>
 
-      <section id="trust-safety" aria-labelledby="trust-safety-heading" className="rounded-2xl border border-slate-100 bg-white p-6 shadow-lg shadow-slate-200/60 md:p-8">
+      <section id="trust-safety" aria-labelledby="trust-safety-heading" className="rounded-2xl border border-slate-100 bg-white p-6 shadow-subtle md:p-8">
         <h2 id="trust-safety-heading" className="text-xl font-bold text-slate-900 md:text-2xl">
           Calm checks for real-life shopping moments
         </h2>
@@ -49,22 +49,16 @@ export function HomeBelowFold() {
           <li>Public “latest checks” plus threat alerts for wider awareness</li>
         </ul>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link
-            href="/features"
-            className="inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
-          >
+          <Link href="/features" className="btn-secondary px-4">
             See features
           </Link>
-          <Link
-            href="/learn"
-            className="inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
-          >
+          <Link href="/learn" className="btn-secondary px-4">
             Learn about online scams
           </Link>
         </div>
       </section>
 
-      <section id="how-it-works-home" aria-labelledby="how-heading" className="rounded-2xl border border-slate-100 bg-white p-6 shadow-lg shadow-slate-200/60 md:p-8">
+      <section id="how-it-works-home" aria-labelledby="how-heading" className="rounded-2xl border border-slate-100 bg-white p-6 shadow-subtle md:p-8">
         <h2 id="how-heading" className="text-xl font-bold text-slate-900 md:text-2xl">
           How the check works
         </h2>
@@ -88,7 +82,7 @@ export function HomeBelowFold() {
         </h2>
         <div className="mx-auto mt-8 max-w-3xl space-y-3">
           {HOME_FAQ_ITEMS.map((item) => (
-            <details key={item.question} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <details key={item.question} className="rounded-2xl border border-slate-200/85 bg-white p-4 shadow-subtle">
               <summary className="cursor-pointer list-none text-sm font-semibold text-slate-900">{item.question}</summary>
               <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.answer}</p>
             </details>
@@ -101,42 +95,42 @@ export function HomeBelowFold() {
           What people say
         </h2>
         <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-lg shadow-slate-200/60">
+          <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-subtle">
             <p className="text-sm leading-relaxed text-slate-700">
               “Luckily I didn’t buy this product — Fraudly showed me it was a risky site.”
             </p>
             <p className="mt-3 text-sm font-semibold text-slate-900">— Emma</p>
           </article>
-          <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-lg shadow-slate-200/60">
+          <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-subtle">
             <p className="text-sm leading-relaxed text-slate-700">
               “I now check every Instagram ad with Fraudly before ordering.”
             </p>
             <p className="mt-3 text-sm font-semibold text-slate-900">— Noah</p>
           </article>
-          <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-lg shadow-slate-200/60">
+          <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-subtle">
             <p className="text-sm leading-relaxed text-slate-700">“Saved me from buying from a shady sneaker store.”</p>
             <p className="mt-3 text-sm font-semibold text-slate-900">— Jason</p>
           </article>
-          <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-lg shadow-slate-200/60">
+          <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-subtle">
             <p className="text-sm leading-relaxed text-slate-700">
               “Within seconds I knew that TikTok shop needed a second look.”
             </p>
             <p className="mt-3 text-sm font-semibold text-slate-900">— Mila</p>
           </article>
-          <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-lg shadow-slate-200/60">
+          <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-subtle">
             <p className="text-sm leading-relaxed text-slate-700">
               “The ad looked legit. Fraudly showed the red flags in plain English.”
             </p>
             <p className="mt-3 text-sm font-semibold text-slate-900">— Olivia</p>
           </article>
-          <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-lg shadow-slate-200/60">
+          <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-subtle">
             <p className="text-sm leading-relaxed text-slate-700">“Great for double-checking social promos before I buy.”</p>
             <p className="mt-3 text-sm font-semibold text-slate-900">— Daan</p>
           </article>
         </div>
       </section>
 
-      <section className="rounded-2xl border border-blue-100 bg-blue-50/60 p-6 text-center md:p-8">
+      <section className="rounded-2xl border border-blue-100/85 bg-blue-50/55 p-6 text-center shadow-subtle md:p-8">
         <h2 className="text-lg font-bold text-slate-900 md:text-xl">Ready to check a link?</h2>
         <p className="mx-auto mt-2 max-w-xl text-pretty text-sm text-slate-600">
           Run a free scan and share a calm snapshot like{" "}
@@ -145,10 +139,7 @@ export function HomeBelowFold() {
           </Link>{" "}
           when someone asks, “Does this site look OK?”
         </p>
-        <Link
-          href="/#link-check"
-          className="mt-5 inline-flex rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:brightness-110"
-        >
+        <Link href="/#link-check" className="btn-primary mx-auto mt-5 px-8">
           {EN_MESSAGES.home.primaryCta}
         </Link>
       </section>
