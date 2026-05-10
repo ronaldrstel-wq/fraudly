@@ -100,14 +100,14 @@ export function URLInput({
             <input
               {...inputCommon}
               aria-label={EN_MESSAGES.check.urlFieldLabel}
-              className="h-16 min-h-[4rem] w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-6 text-lg text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+              className="h-16 min-h-[4rem] w-full min-w-0 rounded-2xl border border-blue-100/60 bg-gradient-to-r from-sky-50 to-violet-50 px-6 text-lg text-slate-900 shadow-inner outline-none placeholder:text-slate-400 focus:border-blue-300/90 focus:ring-4 focus:ring-blue-100/80"
             />
           </div>
           <button
             type="button"
             onClick={onSubmit}
             disabled={disabled || loading}
-            className="fraudly-motion fraudly-focus-on-white group inline-flex h-16 min-h-[4rem] w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-violet-500 px-8 text-base font-bold text-white shadow-lg shadow-blue-500/20 transition hover:scale-[1.01] hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto sm:min-w-[220px]"
+            className="fraudly-motion fraudly-focus-on-white group inline-flex h-16 min-h-[4rem] w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-8 text-base font-bold text-white shadow-lg shadow-indigo-500/25 transition hover:scale-[1.01] hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto sm:min-w-[220px]"
           >
             {loading ? loadingLabel : primaryCtaLabel}
             {!loading ? (
