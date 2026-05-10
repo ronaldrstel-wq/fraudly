@@ -87,43 +87,43 @@ export function Hero({
   } = home;
 
   return (
-    <section id="link-check" className="relative scroll-mt-20 overflow-hidden pb-10 pt-8 sm:pb-12 sm:pt-10 md:pt-14">
+    <section id="link-check" className="relative scroll-mt-20 overflow-hidden pb-7 pt-6 sm:pb-9 sm:pt-8 md:pt-10">
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 min-h-[22rem] bg-[radial-gradient(ellipse_85%_55%_at_50%_-8%,rgba(56,189,248,0.14),transparent_58%),radial-gradient(ellipse_55%_40%_at_92%_12%,rgba(139,92,246,0.1),transparent_52%),radial-gradient(ellipse_50%_36%_at_8%_28%,rgba(59,130,246,0.09),transparent_48%)]"
+        className="pointer-events-none absolute inset-x-0 top-0 min-h-[17rem] bg-[radial-gradient(ellipse_76%_50%_at_52%_-10%,rgba(56,189,248,0.12),transparent_58%),radial-gradient(ellipse_38%_30%_at_88%_12%,rgba(139,92,246,0.08),transparent_56%)]"
         aria-hidden
       />
 
       <div className="relative mx-auto w-full max-w-7xl px-4">
-        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.92fr)] lg:gap-14 xl:gap-16">
+        <div className="grid items-center gap-6 md:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.88fr)] lg:gap-10 xl:gap-12">
           <div className="mx-auto w-full max-w-xl text-center lg:mx-0 lg:max-w-2xl lg:text-left">
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-violet-200/70 bg-gradient-to-r from-violet-100/85 via-cyan-100/65 to-blue-50/90 px-3.5 py-1 text-xs font-semibold tracking-wide text-blue-950 shadow-subtle backdrop-blur-sm sm:mb-6 sm:px-4">
-              <SparkleGlyph className="h-4 w-4 shrink-0 text-violet-600" />
+            <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-violet-200/80 bg-gradient-to-r from-violet-100/95 via-cyan-100/85 to-blue-50/95 px-3 py-1 text-[11px] font-semibold tracking-wide text-slate-900 shadow-subtle sm:mb-5 sm:px-3.5 sm:text-xs">
+              <SparkleGlyph className="h-3.5 w-3.5 shrink-0 text-violet-600" />
               {heroBadge}
             </div>
 
-            <h1 className="text-balance font-black leading-[1.08] tracking-tight">
-              <span className="block text-[clamp(1.875rem,calc(1.1rem+3.8vw),3.125rem)] text-slate-900 sm:inline sm:text-[clamp(2.125rem,calc(1.2rem+3.5vw),3.375rem)]">
-                See it. Check it.{" "}
+            <h1 className="max-w-[14ch] text-balance font-black leading-[0.95] tracking-tight">
+              <span className="block text-[clamp(1.875rem,calc(1.18rem+2.5vw),2.65rem)] text-slate-950 sm:text-[clamp(2.05rem,calc(1.2rem+2vw),3rem)]">
+                See it. Check it.
               </span>
-              <span className="block pt-1 text-[clamp(1.875rem,calc(1.1rem+3.8vw),3.125rem)] hero-gradient-trust-it sm:inline sm:pt-0 sm:text-[clamp(2.125rem,calc(1.2rem+3.5vw),3.375rem)]">
+              <span className="hero-gradient-trust-it block pt-0.5 text-[clamp(1.875rem,calc(1.18rem+2.5vw),2.65rem)] sm:text-[clamp(2.05rem,calc(1.2rem+2vw),3rem)]">
                 Trust it.
               </span>
             </h1>
 
-            <p className="mx-auto mt-4 max-w-xl text-pretty text-[15px] leading-relaxed text-slate-600 sm:mt-5 sm:text-[16px] md:text-[17px] lg:mx-0 lg:max-w-[28rem]">
+            <p className="mx-auto mt-3.5 max-w-xl text-pretty text-[15px] leading-relaxed text-slate-700 sm:mt-4 sm:text-[15px] md:text-[16px] lg:mx-0 lg:max-w-[35rem]">
               {subhead}
             </p>
 
             <ul
-              className="mx-auto mt-6 flex max-w-xl flex-wrap justify-center gap-2 sm:mt-8 sm:gap-2.5 lg:mx-0 lg:max-w-none lg:justify-start"
+              className="mx-auto mt-5 flex max-w-2xl flex-wrap justify-center gap-1.5 sm:mt-6 sm:gap-2 lg:mx-0 lg:justify-start"
               aria-label="What Fraudly checks"
             >
               {heroTrustFeatures.map((label, i) => (
                 <li
                   key={label}
-                  className="inline-flex max-w-[100%] items-center gap-2 rounded-full border border-slate-200/60 bg-white/80 px-3 py-1.5 text-left text-[11px] font-semibold text-slate-800 shadow-subtle backdrop-blur-sm sm:text-xs"
+                  className="fraudly-motion inline-flex max-w-[100%] items-center gap-1.5 rounded-full border border-slate-200/70 bg-white/90 px-2.5 py-1 text-left text-[11px] font-semibold text-slate-800 shadow-subtle hover:border-slate-300/85 hover:bg-white sm:text-[11px]"
                 >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-100/90 to-cyan-100/80 text-blue-800 ring-1 ring-white/70">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-100/95 to-cyan-100/90 text-blue-800 ring-1 ring-white/80">
                     {FEATURE_ICONS[i] ?? FEATURE_ICONS[0]}
                   </span>
                   <span className="leading-snug">{label}</span>
@@ -132,21 +132,21 @@ export function Hero({
             </ul>
           </div>
 
-          <div className="relative mx-auto hidden w-full max-w-[260px] justify-center sm:flex sm:max-w-[min(92vw,22rem)] md:max-w-[min(92vw,28rem)] lg:mx-0 lg:max-w-[min(100%,38rem)] lg:justify-end xl:max-w-[40rem]">
+          <div className="relative mx-auto hidden w-full max-w-[260px] justify-center sm:flex sm:max-w-[min(88vw,20rem)] md:max-w-[min(88vw,24rem)] lg:mx-0 lg:max-w-[min(100%,35rem)] lg:justify-end xl:max-w-[36rem]">
             {/* Soft halo — ties illustration into Fraudly cyan / violet */}
             <div
-              className="pointer-events-none absolute -inset-6 rounded-[2rem] bg-[radial-gradient(ellipse_at_50%_40%,rgba(56,189,248,0.22),transparent_62%),radial-gradient(ellipse_at_80%_70%,rgba(139,92,246,0.18),transparent_55%),radial-gradient(ellipse_at_20%_60%,rgba(59,130,246,0.12),transparent_50%)] blur-2xl"
+              className="pointer-events-none absolute -inset-3 rounded-[1.6rem] bg-[radial-gradient(ellipse_at_50%_40%,rgba(56,189,248,0.14),transparent_64%),radial-gradient(ellipse_at_80%_70%,rgba(139,92,246,0.12),transparent_58%)] blur-xl"
               aria-hidden
             />
-            <div className="relative rounded-3xl bg-gradient-to-br from-white/95 via-cyan-50/40 to-violet-50/50 p-2 shadow-[0_28px_64px_-32px_rgb(79_70_229_/_0.18),0_16px_40px_-28px_rgb(14_165_233_/_0.12)] ring-1 ring-white/90 sm:p-2.5 lg:p-3">
-              <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200/40 shadow-subtle">
+            <div className="relative rounded-[1.65rem] bg-gradient-to-br from-white via-cyan-50/30 to-violet-50/35 p-1.5 shadow-[0_20px_52px_-34px_rgb(79_70_229_/_0.16),0_12px_28px_-22px_rgb(14_165_233_/_0.11)] ring-1 ring-slate-100/95 sm:p-2 lg:p-2.5">
+              <div className="overflow-hidden rounded-[1.2rem] ring-1 ring-slate-200/65 shadow-[0_12px_28px_-20px_rgba(15,23,42,0.35)]">
                 <Image
                   src="/images/fraudly-hero-trust-visual.png"
                   alt="Fraudly website trust analysis illustration"
                   width={1536}
                   height={1024}
                   sizes="(max-width: 640px) 92vw, (max-width: 1024px) 45vw, 600px"
-                  className="h-auto w-full object-cover"
+                  className="h-auto w-full object-cover contrast-[1.04] saturate-[1.03]"
                   priority
                 />
               </div>
@@ -154,7 +154,7 @@ export function Hero({
           </div>
         </div>
 
-        <div className="mx-auto mt-10 w-full max-w-3xl sm:mt-11 lg:-mt-2 lg:max-w-5xl xl:max-w-6xl xl:mt-12">
+        <div className="mx-auto mt-6 w-full max-w-3xl sm:mt-7 lg:mt-8 lg:max-w-5xl xl:max-w-6xl">
           <URLInput
             value={url}
             onChange={onUrlChange}
@@ -168,7 +168,7 @@ export function Hero({
           />
           <ol
             aria-label="How Fraudly analyzes a URL"
-            className="mx-auto mt-5 flex list-none flex-wrap items-center justify-center gap-x-2 gap-y-2 p-0 lg:justify-start xl:gap-x-3"
+            className="mx-auto mt-4 flex list-none flex-wrap items-center justify-center gap-x-2 gap-y-1.5 p-0 lg:justify-start xl:gap-x-2.5"
           >
             {heroHowSteps.map((step, idx) => (
               <li key={step} className="flex items-center gap-1.5">
@@ -185,7 +185,7 @@ export function Hero({
             ))}
           </ol>
 
-          <div className="mt-4 flex justify-center sm:mt-5 lg:justify-start">
+          <div className="mt-3.5 flex justify-center sm:mt-4 lg:justify-start">
             <Link
               href={secondaryCtaHref}
               className="fraudly-motion inline-flex items-center gap-1.5 text-sm font-semibold text-blue-700 underline decoration-blue-600/35 underline-offset-4 hover:text-violet-800"
@@ -196,8 +196,8 @@ export function Hero({
               </svg>
             </Link>
           </div>
-          {extraBelowInput ? <div className="mt-4 max-w-none text-left">{extraBelowInput}</div> : null}
-          {authGate ? <div className="mt-4 sm:mt-5">{authGate}</div> : null}
+          {extraBelowInput ? <div className="mt-3.5 max-w-none text-left">{extraBelowInput}</div> : null}
+          {authGate ? <div className="mt-3.5 sm:mt-4">{authGate}</div> : null}
           {loading ? (
             <div className="mt-6">
               <WebsiteScanProgress progress={scanProgress} status={scanStatus} failed={scanFailed} />
