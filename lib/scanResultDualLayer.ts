@@ -218,7 +218,8 @@ export function humanRecGlyph(kind: HumanRecKind): string {
 export function resolveHumanRecKindForBasicCheck(verdict: ScamVerdict, riskScore: number): HumanRecKind {
   const trust = clampScore(100 - riskScore);
   const level = trustLevelFromScore(trust);
-  if (verdict === "scam") return "highRisk";
+  /** Overview + basic checks: scam verdict maps to the same consumer headline as feed-confirmed risk. */
+  if (verdict === "scam") return "avoidWebsite";
   if (verdict === "suspicious") return "beCareful";
   return resolveHumanRecKind({
     threatActive: false,
@@ -238,7 +239,7 @@ export function humanRecKindFromTrustVerdict(trustScore: number, verdict: ScamVe
 export function shortExplainForBasic(verdict: ScamVerdict, riskScore: number): string {
   const kind = resolveHumanRecKindForBasicCheck(verdict, riskScore);
   const s = EN_MESSAGES.scanResult.shortExplain;
-  if (verdict === "scam") return s.highRisk;
+  if (verdict === "scam") return s.avoidGeneric;
   if (verdict === "suspicious") return s.beCareful;
   switch (kind) {
     case "trusted":

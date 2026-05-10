@@ -9,6 +9,8 @@ import {
   whyThisMattersLine
 } from "@/lib/scam-alerts/presentation";
 import { EN_MESSAGES } from "@/lib/messages.en";
+import { humanRecGlyph, humanRecHeadline, humanRecHeadlineTone } from "@/lib/scanResultDualLayer";
+import { humanRecKindFromScamAlertType, isCriticalOverviewKind } from "@/lib/overviewCardPresentation";
 
 type ScamAlertCardProps = {
   alert: PublicScamAlertListItem;
@@ -19,6 +21,10 @@ type ScamAlertCardProps = {
 
 export function ScamAlertCard({ alert, now, showRelatedHint }: ScamAlertCardProps) {
   const severity = deriveAlertSeverity(alert, now);
+  const humanKind = humanRecKindFromScamAlertType(alert.scamType);
+  const humanHeadline = humanRecHeadline(humanKind);
+  const humanTone = humanRecHeadlineTone(humanKind);
+  const feedCritical = isCriticalOverviewKind(humanKind);
   const title = consumerAlertTitle(alert);
   const why = whyThisMattersLine(alert);
   const publishedAt = alert.publishedAt;
@@ -28,12 +34,35 @@ export function ScamAlertCard({ alert, now, showRelatedHint }: ScamAlertCardProp
   const domainKey = clusterDomainKey(alert.domain);
 
   return (
-    <article className="flex min-h-[26rem] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-[box-shadow,border-color] duration-200 hover:border-slate-300 hover:shadow-md sm:min-h-[28rem] sm:p-5">
+    <article
+      className={`flex min-h-[26rem] flex-col overflow-hidden rounded-xl p-4 shadow-sm transition-[box-shadow,border-color] duration-200 hover:shadow-md sm:min-h-[28rem] sm:p-5 ${
+        feedCritical
+          ? "border-2 border-red-600 bg-gradient-to-b from-red-50/90 to-white ring-1 ring-red-300/40"
+          : "border border-slate-200 bg-white hover:border-slate-300"
+      }`}
+    >
       {showRelatedHint && domainKey ? (
         <p className="mb-2 text-xs font-medium text-slate-500" role="note">
           Related alert · same domain
         </p>
       ) : null}
+
+      <div
+        className={`mb-3 flex items-start gap-2.5 rounded-lg border px-3 py-2.5 ${
+          feedCritical ? "border-red-200 bg-white/70" : "border-slate-200 bg-slate-50/90"
+        }`}
+      >
+        <span className={`select-none text-2xl ${humanTone.icon}`} aria-hidden>
+          {humanRecGlyph(humanKind)}
+        </span>
+        <div className="min-w-0">
+          <p className={`text-lg font-bold leading-tight ${humanTone.text}`}>{humanHeadline}</p>
+          <p className="mt-0.5 text-xs font-medium text-slate-700">
+            {EN_MESSAGES.scanResult.technicalStatusHeading}: {severity.label}
+          </p>
+        </div>
+      </div>
+
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           <span

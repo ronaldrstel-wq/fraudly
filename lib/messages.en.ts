@@ -55,6 +55,18 @@ export const EN_MESSAGES = {
         unreachable: "Site Unavailable"
       }
     },
+    /** Single line under recommendation on compact overview cards (latest checks, recent searches) */
+    overviewOneLine: {
+      trusted: "No major risk indicators detected.",
+      looksSafe: "No major phishing indicators detected.",
+      notEnoughInfo: "Limited public information available.",
+      beCareful: "Some risk indicators were detected.",
+      highRisk: "Elevated risk in this snapshot.",
+      avoidWebsite: "Strong risk indicators — verify independently before interacting.",
+      dangerousWebsite: "Possible malware or harmful content.",
+      invalidDomain: "Hostname could not be verified as a normal website.",
+      unreachable: "No usable webpage was retrieved."
+    },
     /** Short explanation under the human headline (browser-warning style) */
     shortExplain: {
       trusted: "No major risk indicators were detected.",

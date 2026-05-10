@@ -54,9 +54,9 @@ describe("scanResultDualLayer", () => {
     expect(humanRecHeadline(kind)).toMatch(/Dangerous/i);
   });
 
-  it("maps basic scam verdict to High Risk headline", () => {
+  it("maps basic scam verdict to Avoid headline", () => {
     const k = resolveHumanRecKindForBasicCheck("scam", 90);
-    expect(humanRecHeadline(k)).toMatch(/High Risk/i);
+    expect(humanRecHeadline(k)).toMatch(/Avoid/i);
   });
 
   it("exposes technical status from trust band when no threat", () => {

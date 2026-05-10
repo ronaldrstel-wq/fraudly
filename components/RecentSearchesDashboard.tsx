@@ -6,8 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CLEAR_ALL_CONFIRM_BODY } from "@/lib/recent-search/constants";
 import type { RecentSearchPublic } from "@/lib/recent-search/service";
 import { EN_MESSAGES } from "@/lib/messages.en";
-import { humanRecHeadline, humanRecKindFromTrustVerdict } from "@/lib/scanResultDualLayer";
-import { trustDisplayFromTrustScore } from "@/lib/trustDisplay";
+import { buildOverviewFromTrustAndVerdict } from "@/lib/overviewCardPresentation";
 import type { ScamVerdict } from "@/lib/trustSystem";
 
 function formatSearched(iso: string): string {
@@ -28,7 +27,7 @@ function normalizeScore(score: number): number {
 function getScoreColor(score: number): string {
   const normalized = normalizeScore(score);
   if (normalized >= 90) return "#22c55e";
-  if (normalized >= 70) return "#14b8a6";
+  if (normalized >= 70) return "#0d9488";
   if (normalized >= 40) return "#64748b";
   if (normalized >= 20) return "#f97316";
   return "#ef4444";
@@ -134,11 +133,11 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
         </div>
       ) : (
         <div className="mt-8 space-y-3">
-          <div className="hidden lg:grid lg:grid-cols-[minmax(0,1.35fr)_0.5fr_0.35fr_minmax(0,0.9fr)_minmax(0,0.9fr)_auto] lg:gap-3 lg:rounded-lg lg:bg-slate-100/80 lg:px-4 lg:py-2 lg:text-[11px] lg:font-semibold lg:uppercase lg:tracking-wide lg:text-slate-500">
-            <span>{EN_MESSAGES.recentSearches.columns.query}</span>
+          <div className="hidden lg:grid lg:grid-cols-[minmax(0,1.2fr)_0.45fr_0.38fr_minmax(0,1.15fr)_minmax(0,0.85fr)_auto] lg:gap-3 lg:rounded-lg lg:bg-slate-100/80 lg:px-4 lg:py-2 lg:text-[11px] lg:font-semibold lg:uppercase lg:tracking-wide lg:text-slate-500">
+            <span>{EN_MESSAGES.recentSearches.columns.status}</span>
             <span>{EN_MESSAGES.recentSearches.columns.entity}</span>
             <span>{EN_MESSAGES.recentSearches.columns.score}</span>
-            <span>{EN_MESSAGES.recentSearches.columns.status}</span>
+            <span>{EN_MESSAGES.recentSearches.columns.query}</span>
             <span>{EN_MESSAGES.recentSearches.columns.searchedAt}</span>
             <span className="text-right">Actions</span>
           </div>
@@ -149,22 +148,29 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
               row.entityType;
             const busyRow = pendingId === row.id;
             const displayScore = row.trustScoreSnap ?? fallbackScoreFromVerdict(row.verdictSnap);
-            const trust = trustDisplayFromTrustScore(displayScore);
-            const normalizedScore = normalizeScore(trust.trustScore);
-            const fillColor = getScoreColor(normalizedScore);
             const verdict = row.verdictSnap as ScamVerdict | null;
-            const humanHeadline = humanRecHeadline(humanRecKindFromTrustVerdict(displayScore, verdict));
+            const m = buildOverviewFromTrustAndVerdict(displayScore, verdict);
+            const normalizedScore = normalizeScore(m.trustScore);
+            const fillColor = getScoreColor(normalizedScore);
             return (
               <article
                 key={row.id}
-                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:grid lg:grid-cols-[minmax(0,1.35fr)_0.5fr_0.35fr_minmax(0,0.9fr)_minmax(0,0.9fr)_auto] lg:items-center lg:gap-3 lg:p-4"
+                className={`rounded-2xl p-4 shadow-sm lg:grid lg:grid-cols-[minmax(0,1.2fr)_0.45fr_0.38fr_minmax(0,1.15fr)_minmax(0,0.85fr)_auto] lg:items-start lg:gap-3 lg:p-4 ${m.articleClass}`}
               >
-                <div className="min-w-0 lg:pr-2">
+                <div className="min-w-0 lg:pr-1">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 lg:hidden">
-                    {EN_MESSAGES.recentSearches.columns.query}
+                    {EN_MESSAGES.recentSearches.columns.status}
                   </p>
-                  <p className="mt-0.5 break-all font-medium text-slate-900">{row.originalQuery}</p>
-                  <p className="mt-1 truncate text-[11px] text-slate-500 lg:hidden">{row.normalizedQuery}</p>
+                  <div className="mt-1 flex flex-wrap items-start gap-2">
+                    <span className={`select-none text-xl ${m.tone.icon}`} aria-hidden>
+                      {m.glyph}
+                    </span>
+                    <div className="min-w-0">
+                      <p className={`text-sm font-bold leading-snug sm:text-base ${m.tone.text}`}>{m.headline}</p>
+                      <p className="mt-0.5 text-xs font-semibold text-slate-700">{m.technicalLabel}</p>
+                      <p className="mt-1 text-[11px] leading-relaxed text-slate-600">{m.oneLiner}</p>
+                    </div>
+                  </div>
                 </div>
                 <div className="mt-3 lg:mt-0">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 lg:hidden">
@@ -176,16 +182,19 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 lg:hidden">
                     {EN_MESSAGES.recentSearches.columns.score}
                   </p>
-                  <p className={`mt-0.5 text-sm font-semibold tabular-nums ${trust.toneText}`}>
-                    {trust.trustScore}/100
+                  <p className="mt-0.5 text-xs tabular-nums text-slate-500">
+                    <span className={m.isCritical ? "font-medium text-slate-600" : "font-semibold text-slate-700"}>
+                      {m.trustScore}
+                    </span>
+                    <span className="text-slate-400"> / 100</span>
                   </p>
                 </div>
                 <div className="mt-3 min-w-0 lg:mt-0">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 lg:hidden">
-                    {EN_MESSAGES.recentSearches.columns.status}
+                    {EN_MESSAGES.recentSearches.columns.query}
                   </p>
-                  <p className="mt-0.5 text-sm font-semibold leading-snug text-slate-900">{humanHeadline}</p>
-                  <p className={`mt-0.5 text-xs font-medium ${trust.toneText}`}>{trust.label}</p>
+                  <p className="mt-0.5 break-all font-medium text-slate-900">{row.originalQuery}</p>
+                  <p className="mt-1 truncate text-[11px] text-slate-500">{row.normalizedQuery}</p>
                 </div>
                 <div className="mt-3 lg:mt-0">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 lg:hidden">

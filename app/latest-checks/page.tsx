@@ -9,8 +9,7 @@ import { db } from "@/lib/db";
 import { OG_IMAGE } from "@/lib/seo-metadata";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { SITE_URL } from "@/lib/seo";
-import { humanRecHeadline, humanRecKindFromTrustVerdict } from "@/lib/scanResultDualLayer";
-import { trustDisplayFromRiskScore } from "@/lib/trustDisplay";
+import { buildOverviewFromPublicCheck } from "@/lib/overviewCardPresentation";
 
 export const revalidate = 120;
 
@@ -129,19 +128,19 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
               {EN_MESSAGES.latestChecks.listAria}
             </h2>
             <ol className="space-y-3">
-              {rows.map((row) => (
+              {rows.map((row) => {
+                const m = buildOverviewFromPublicCheck(row);
+                return (
                 <li key={row.id}>
-                  <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md md:p-5">
-                    {(() => {
-                      const trust = trustDisplayFromRiskScore(row.riskScoreSnapshot);
-                      const trustScore = trust.trustScore;
-                      const humanLine = humanRecHeadline(humanRecKindFromTrustVerdict(trustScore, null));
-                      return (
-                        <>
-                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                      <div className="min-w-0 flex-1">
+                  <article
+                    className={`rounded-2xl p-4 shadow-sm transition md:p-5 ${m.articleClass} ${
+                      m.isCritical ? "" : "hover:border-slate-300 hover:shadow-md"
+                    }`}
+                  >
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                      <div className="min-w-0 flex-1 space-y-3">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                          <span className="rounded-full bg-white/80 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-slate-600 ring-1 ring-slate-200/80">
                             {entityBadge(row.entityType)}
                           </span>
                           <time
@@ -152,31 +151,35 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
                             {formatPublicCheckRelativeTime(row.lastSeenAt.toISOString())}
                           </time>
                         </div>
-                        <p className="mt-2 break-all text-sm font-semibold leading-snug text-slate-900 md:text-base">
-                          {row.checkedValue}
+
+                        <div className="flex flex-wrap items-start gap-2.5">
+                          <span className={`select-none text-2xl ${m.tone.icon}`} aria-hidden>
+                            {m.glyph}
+                          </span>
+                          <div className="min-w-0">
+                            <p className={`text-xl font-bold tracking-tight sm:text-2xl ${m.tone.text}`}>{m.headline}</p>
+                            <p className="mt-0.5 text-sm font-semibold text-slate-800">{m.technicalLabel}</p>
+                          </div>
+                        </div>
+
+                        <p className="max-w-2xl text-xs leading-relaxed text-slate-600">{m.oneLiner}</p>
+
+                        <p className="break-all text-base font-semibold leading-snug text-slate-900 md:text-lg">{row.checkedValue}</p>
+                      </div>
+
+                      <div className="shrink-0 text-left md:text-right">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                          {EN_MESSAGES.scanResult.trustScoreLabel}
                         </p>
-                        <p className="mt-2 text-sm font-semibold text-slate-900">{humanLine}</p>
-                        <p className="mt-0.5 text-xs font-medium text-slate-600">
-                          {EN_MESSAGES.scanResult.technicalStatusHeading}: {trust.label}
+                        <p className="mt-0.5 text-base tabular-nums text-slate-500 md:text-lg">
+                          <span className={m.isCritical ? "font-medium text-slate-600" : "font-semibold text-slate-700"}>
+                            {m.trustScore}
+                          </span>
+                          <span className="text-slate-400"> / 100</span>
                         </p>
                       </div>
-                      <dl className="grid shrink-0 grid-cols-1 gap-y-1 text-xs text-slate-700 md:text-right md:text-sm">
-                        <div>
-                          <dt className="sr-only">{EN_MESSAGES.latestChecks.labels.risk}</dt>
-                          <dd className={`tabular-nums text-slate-600`}>
-                            {EN_MESSAGES.scanResult.trustScoreLabel}: {trustScore}/100
-                          </dd>
-                        </div>
-                        <div>
-                          <dt className="sr-only">{EN_MESSAGES.latestChecks.labels.status}</dt>
-                          <dd className="text-slate-500">{EN_MESSAGES.latestChecks.labels.assessmentNote}</dd>
-                        </div>
-                      </dl>
                     </div>
-                    <div className="mt-3 h-1 w-full max-w-xl overflow-hidden rounded-full bg-slate-100">
-                      <div className={`h-full ${trust.progressBar}`} style={{ width: `${trustScore}%` }} />
-                    </div>
-                    <div className="mt-4 flex border-t border-slate-100 pt-3 sm:justify-end">
+                    <div className="mt-4 flex border-t border-slate-200/80 pt-3 sm:justify-end">
                       <Link
                         href={row.publicResultPath}
                         className="inline-flex shrink-0 justify-center rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 md:text-sm"
@@ -184,12 +187,10 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
                         {EN_MESSAGES.latestChecks.viewSnapshot}
                       </Link>
                     </div>
-                        </>
-                      );
-                    })()}
                   </article>
                 </li>
-              ))}
+                );
+              })}
             </ol>
           </section>
         )}
