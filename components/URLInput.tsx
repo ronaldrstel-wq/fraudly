@@ -105,7 +105,7 @@ export function URLInput({
   if (isHero) {
     return (
       <div className="fraudly-motion w-full rounded-3xl bg-gradient-to-br from-cyan-200/80 via-violet-200/70 to-blue-200/75 p-[1.5px] shadow-[0_32px_70px_-42px_rgb(79_70_229_/_0.62),0_24px_56px_-44px_rgb(14_165_233_/_0.44)] ring-1 ring-violet-100/65">
-        <div className="rounded-[calc(1.5rem-1px)] bg-white/97 px-5 py-5 sm:px-6 sm:py-6">
+        <div className="rounded-[calc(1.5rem-1px)] bg-white/97 p-6 md:p-8">
           {shellInner}
         </div>
       </div>

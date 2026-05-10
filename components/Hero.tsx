@@ -93,33 +93,33 @@ export function Hero({
   ] as const;
 
   return (
-    <section id="link-check" className="relative scroll-mt-20 overflow-hidden py-16 md:py-24">
+    <section id="link-check" className="relative scroll-mt-20 overflow-hidden py-16 lg:py-20">
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_68%_55%_at_21%_12%,rgba(139,92,246,0.13),transparent_62%),radial-gradient(ellipse_62%_56%_at_78%_18%,rgba(56,189,248,0.12),transparent_64%),radial-gradient(ellipse_54%_46%_at_68%_58%,rgba(59,130,246,0.08),transparent_70%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_66%_52%_at_23%_15%,rgba(139,92,246,0.09),transparent_65%),radial-gradient(ellipse_58%_50%_at_79%_19%,rgba(56,189,248,0.1),transparent_67%)]"
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute right-[5%] top-[9%] h-64 w-64 rounded-full bg-violet-400/15 blur-3xl md:h-80 md:w-80"
+        className="pointer-events-none absolute right-[8%] top-[10%] h-52 w-52 rounded-full bg-violet-400/10 blur-3xl md:h-64 md:w-64"
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute left-[8%] top-[2%] h-56 w-56 rounded-full bg-cyan-300/12 blur-3xl md:h-72 md:w-72"
+        className="pointer-events-none absolute left-[9%] top-[4%] h-48 w-48 rounded-full bg-cyan-300/10 blur-3xl md:h-56 md:w-56"
         aria-hidden
       />
 
       <div className="relative mx-auto w-full max-w-[1400px] px-6 md:px-10">
-        <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-14 xl:gap-16">
+        <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12 xl:gap-20">
           <div className="w-full text-center lg:text-left">
             <div className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-violet-200/80 bg-gradient-to-r from-violet-100/95 via-cyan-100/85 to-blue-50/95 px-3 py-1 text-[11px] font-semibold tracking-wide text-slate-900 shadow-subtle md:mb-7 md:px-4">
               <SparkleGlyph className="h-3.5 w-3.5 shrink-0 text-violet-600" />
               {heroBadge}
             </div>
 
-            <h1 className="mx-auto max-w-[12ch] text-balance font-black leading-[0.92] tracking-tight lg:mx-0 lg:max-w-[13ch]">
-              <span className="block text-[clamp(2.55rem,6.2vw,4.55rem)] text-slate-950">
+            <h1 className="mx-auto -mt-1 max-w-[760px] text-balance font-black tracking-[-0.04em] leading-[0.92] lg:-mt-2 lg:mx-0">
+              <span className="block text-slate-950 text-[50px] md:text-[64px] lg:text-[72px] xl:text-[88px]">
                 See it. Check it.
               </span>
-              <span className="hero-gradient-trust-it block pt-1 text-[clamp(2.55rem,6.2vw,4.55rem)]">
+              <span className="hero-gradient-trust-it block pt-1 text-[50px] md:text-[64px] lg:text-[72px] xl:text-[88px]">
                 Trust it.
               </span>
             </h1>
@@ -128,14 +128,11 @@ export function Hero({
               {subhead}
             </p>
 
-            <ul
-              className="mx-auto mt-7 grid max-w-[620px] grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3 lg:mx-0"
-              aria-label="What Fraudly checks"
-            >
+            <ul className="mx-auto mt-7 flex max-w-[760px] flex-wrap justify-center gap-4 lg:mx-0 lg:justify-start" aria-label="What Fraudly checks">
               {heroTrustFeatures.map((label, i) => (
                 <li
                   key={label}
-                  className="fraudly-motion inline-flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/95 px-3 py-2 text-left text-xs font-semibold text-slate-800 shadow-subtle hover:-translate-y-[1px] hover:shadow-elevated"
+                  className="fraudly-motion inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/95 px-3.5 py-2 text-left text-xs font-semibold text-slate-800 shadow-subtle hover:-translate-y-[1px] hover:shadow-elevated"
                 >
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-100 to-cyan-100 text-blue-800 ring-1 ring-slate-100/80">
                     {FEATURE_ICONS[i] ?? FEATURE_ICONS[0]}
@@ -146,9 +143,9 @@ export function Hero({
             </ul>
           </div>
 
-          <div className="relative mx-auto mt-2 hidden w-full max-w-[640px] sm:flex lg:mt-0 lg:justify-end">
+          <div className="relative mx-auto mt-0 hidden w-full max-w-[620px] sm:flex lg:-mt-4 lg:w-full lg:max-w-[620px] lg:translate-x-4 lg:justify-end">
             <div
-              className="pointer-events-none absolute -inset-12 bg-[radial-gradient(ellipse_at_50%_40%,rgba(56,189,248,0.24),transparent_62%),radial-gradient(ellipse_at_75%_70%,rgba(139,92,246,0.22),transparent_58%)] blur-3xl"
+              className="pointer-events-none absolute -inset-8 bg-[radial-gradient(ellipse_at_50%_40%,rgba(56,189,248,0.2),transparent_62%),radial-gradient(ellipse_at_75%_70%,rgba(139,92,246,0.17),transparent_60%)] blur-2xl"
               aria-hidden
             />
             <div className="relative w-full max-w-[620px]">
@@ -167,7 +164,7 @@ export function Hero({
           </div>
         </div>
 
-        <div className="mx-auto mt-10 w-full max-w-5xl md:mt-12">
+        <div className="mx-auto mt-7 w-full max-w-[1150px] md:mt-9">
           <URLInput
             value={url}
             onChange={onUrlChange}
