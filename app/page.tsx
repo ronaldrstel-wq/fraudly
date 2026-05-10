@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { auth } from "@clerk/nextjs/server";
 import { HomeBelowFold } from "@/components/HomeBelowFold";
 import { HomeFaqJsonLd } from "@/components/HomeFaqJsonLd";
 import { HomeClient } from "@/components/HomeClient";
+import { Navbar } from "@/components/Navbar";
 import { OG_IMAGE } from "@/lib/seo-metadata";
 import { defaultKeywords, SITE_URL } from "@/lib/seo";
 
@@ -31,11 +33,14 @@ export const metadata: Metadata = {
   }
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  const { userId } = await auth();
+
   return (
     <>
       <HomeFaqJsonLd />
-      <HomeClient>
+      <Navbar />
+      <HomeClient initialIsSignedIn={Boolean(userId)}>
         <HomeBelowFold />
       </HomeClient>
     </>

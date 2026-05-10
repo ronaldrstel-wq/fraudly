@@ -1,13 +1,11 @@
 "use client";
 
-import { SignInButton, SignUpButton, useAuth } from "@clerk/nextjs";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Hero } from "@/components/Hero";
 import { OptionalEvidenceScanSection, type OptionalEvidenceScanValues } from "@/components/OptionalEvidenceScanSection";
-import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { hasUsedAnonymousFreeCheck, markAnonymousFreeCheckUsed } from "@/lib/accessControl";
 import {
@@ -54,8 +52,14 @@ const PostScanAppPromo = dynamic(() => import("@/components/PostScanAppPromo").t
   loading: () => <div className="h-32 w-full animate-pulse rounded-2xl bg-slate-100" aria-hidden />
 });
 
-export function HomeClient({ children }: { children?: ReactNode }) {
-  const { isSignedIn } = useAuth();
+export function HomeClient({
+  children,
+  initialIsSignedIn
+}: {
+  children?: ReactNode;
+  initialIsSignedIn: boolean;
+}) {
+  const isSignedIn = initialIsSignedIn;
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScamCheckResult | null>(null);
@@ -360,23 +364,19 @@ export function HomeClient({ children }: { children?: ReactNode }) {
     runCheck();
   }
 
-  const signInModalButton = (
-    <SignInButton mode="modal">
-      <button type="button" className="btn-secondary px-5">
-        {EN_MESSAGES.auth.loginCta}
-      </button>
-    </SignInButton>
+  const signInLink = (
+    <Link href="/sign-in" className="btn-secondary inline-flex px-5">
+      {EN_MESSAGES.auth.loginCta}
+    </Link>
   );
-  const signUpModalButton = (
-    <SignUpButton mode="modal">
-      <button
-        type="button"
-        className="btn-primary px-5"
-        onClick={() => trackEvent("signup_started", { source: "signup_prompt" })}
-      >
-        {EN_MESSAGES.freemium.createFreeAccount}
-      </button>
-    </SignUpButton>
+  const signUpLink = (
+    <Link
+      href="/sign-up"
+      className="btn-primary inline-flex px-5"
+      onClick={() => trackEvent("signup_started", { source: "signup_prompt" })}
+    >
+      {EN_MESSAGES.freemium.createFreeAccount}
+    </Link>
   );
 
   const signupPrompt =
@@ -385,24 +385,20 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         <h3 className="text-lg font-bold tracking-tight text-slate-900 md:text-xl">{EN_MESSAGES.freemium.promptTitle}</h3>
         <p className="mt-2 text-sm leading-relaxed text-slate-600">{EN_MESSAGES.freemium.promptBody}</p>
         <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-          {signUpModalButton}
-            <SignInButton mode="modal">
-            <button
-              type="button"
-              className="btn-secondary px-5"
-              onClick={() => trackEvent("login_started", { source: "signup_prompt" })}
-            >
-              {EN_MESSAGES.auth.loginCta}
-            </button>
-          </SignInButton>
+          {signUpLink}
+          <Link
+            href="/sign-in"
+            className="btn-secondary inline-flex px-5"
+            onClick={() => trackEvent("login_started", { source: "signup_prompt" })}
+          >
+            {EN_MESSAGES.auth.loginCta}
+          </Link>
         </div>
       </div>
     ) : null;
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
-      <Navbar />
-
       <main className="mx-auto w-full max-w-6xl px-4 pb-14 pt-0">
         <Hero
           url={url}
@@ -425,9 +421,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         {error && (
           <div className="mx-auto mt-5 max-w-3xl rounded-2xl border border-rose-200/85 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-subtle">
             {error}
-            {error.includes("Log in") ? (
-              <div className="mt-3 flex justify-center">{signInModalButton}</div>
-            ) : null}
+            {error.includes("Log in") ? <div className="mt-3 flex justify-center">{signInLink}</div> : null}
           </div>
         )}
 

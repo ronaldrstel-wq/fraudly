@@ -11,7 +11,7 @@ interface AnalysisPaywallProps {
   activePurchase: PurchaseAction | null;
   checkoutError: string | null;
   onPurchase: (action: PurchaseAction) => void;
-  /** e.g. Clerk SignInButton when checkout returns 401 */
+  /** e.g. link to `/sign-in` when checkout returns 401 */
   checkoutLoginSlot?: ReactNode;
   useCreditRow?: {
     loading: boolean;

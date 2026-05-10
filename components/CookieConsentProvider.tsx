@@ -15,7 +15,8 @@ type CookieConsentContextValue = {
 
 const CookieConsentContext = createContext<CookieConsentContextValue | null>(null);
 const CookiePreferencesModal = dynamic<CookiePreferencesModalProps>(
-  () => import("@/components/CookiePreferencesModal").then((m) => m.CookiePreferencesModal)
+  () => import("@/components/CookiePreferencesModal").then((m) => m.CookiePreferencesModal),
+  { ssr: false }
 );
 
 export function useCookieConsent(): CookieConsentContextValue {

@@ -1,4 +1,3 @@
-import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { CookieConsentProvider } from "@/components/CookieConsentProvider";
@@ -81,16 +80,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim() ?? "";
-
   return (
     <html lang="en" className={inter.variable}>
       <body className={`${inter.className} min-h-screen antialiased`}>
-        <ClerkProvider publishableKey={clerkPublishableKey} signInUrl="/sign-in" signUpUrl="/sign-up">
-          <PwaServiceWorkerRegister />
-          <JsonLd />
-          <CookieConsentProvider>{children}</CookieConsentProvider>
-        </ClerkProvider>
+        <PwaServiceWorkerRegister />
+        <JsonLd />
+        <CookieConsentProvider>{children}</CookieConsentProvider>
       </body>
     </html>
   );

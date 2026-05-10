@@ -14,6 +14,7 @@ export const EN_MESSAGES = {
   auth: {
     loginCta: "Log in",
     signUpCta: "Sign up",
+    signOutCta: "Sign out",
     loginForFullAnalysis: "Log in to continue checking websites.",
     loginForAnotherCheck: "Your first free check is complete. Create a free account or log in to check another website.",
     loginForUrlCheck: "Log in to run a URL check.",
