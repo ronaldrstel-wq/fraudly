@@ -8,6 +8,7 @@ import type { PendingPageBehaviorSignals } from "@/types/behavioral-signals";
 import type { DomainInfrastructure } from "@/types/domain-infrastructure";
 import type { ConfidenceLevel, SiteStatus } from "@/types/site-outcome";
 import type { TrustEvidenceBundle } from "@/lib/evidence/types";
+import type { RedirectChainAnalysis } from "@/lib/checks/redirectChain";
 
 export type { ScoreResult, ScoreSignal };
 
@@ -62,6 +63,8 @@ export interface ScamCheckResult {
   omitTrustScoreGauge?: boolean;
   /** Reserved structure for deterministic page-behaviour phishing checks (all optional booleans today). */
   behavioralSignalsPending: PendingPageBehaviorSignals;
+  /** Redirect relationship between entered URL and final destination URL. */
+  redirectChain?: RedirectChainAnalysis;
   /** Optional screenshot / ad / webshop heuristics layered on top of the URL scan. */
   trustEvidence?: TrustEvidenceBundle;
 }
@@ -195,6 +198,22 @@ function isPendingBehaviorSignals(value: unknown): value is PendingPageBehaviorS
   const b = value as Record<string, unknown>;
   const ok = Object.values(b).every((v) => v === undefined || typeof v === "boolean");
   return ok;
+}
+
+function isRedirectChainAnalysis(value: unknown): value is RedirectChainAnalysis {
+  if (!value || typeof value !== "object") return false;
+  const r = value as Record<string, unknown>;
+  if (typeof r.originalUrl !== "string") return false;
+  if (typeof r.originalDomain !== "string") return false;
+  if (!Array.isArray(r.redirectChain) || !r.redirectChain.every((s) => typeof s === "string")) return false;
+  if (typeof r.finalUrl !== "string") return false;
+  if (typeof r.finalDomain !== "string") return false;
+  if (typeof r.redirectCount !== "number") return false;
+  if (typeof r.crossDomainRedirect !== "boolean") return false;
+  if (typeof r.timedOut !== "boolean") return false;
+  if (typeof r.tooManyRedirects !== "boolean") return false;
+  if (r.error !== undefined && typeof r.error !== "string") return false;
+  return true;
 }
 
 const REVIEW_FETCH_DEBUG_BUCKETS = [
@@ -333,6 +352,7 @@ export function isScamCheckResult(value: unknown): value is ScamCheckResult {
     return false;
   }
   if (!o.behavioralSignalsPending || !isPendingBehaviorSignals(o.behavioralSignalsPending)) return false;
+  if (o.redirectChain !== undefined && o.redirectChain !== null && !isRedirectChainAnalysis(o.redirectChain)) return false;
 
   if (o.trustEvidence !== undefined && o.trustEvidence !== null && !isTrustEvidenceBundle(o.trustEvidence)) {
     return false;

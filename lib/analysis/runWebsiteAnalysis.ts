@@ -32,6 +32,9 @@ import { verdictFromAssessment } from "@/lib/trustSystem";
 import type { ScamCheckResult } from "@/types/scam";
 import type { PendingPageBehaviorSignals } from "@/types/behavioral-signals";
 import { parseDomainParts } from "@/lib/domain/parseDomain";
+import { resolveRedirectChain } from "@/lib/checks/redirectChain";
+import type { ScoreSignal } from "@/lib/scoringEngine";
+import { wrapEvidence } from "@/lib/checks/providers/shared";
 
 const EMPTY_BEHAVIOR: PendingPageBehaviorSignals = {};
 
@@ -44,16 +47,28 @@ export async function runWebsiteAnalysis(
   language: "en" | "nl" = "en",
   options?: { evidence?: WebsiteAnalysisClientEvidence | null }
 ): Promise<ScamCheckResult> {
-  const parsedDomain = parseDomainParts(inputUrl);
+  const redirectChain = await resolveRedirectChain(inputUrl);
+  const analysisUrl = redirectChain.finalUrl;
+  const parsedDomain = parseDomainParts(analysisUrl);
   const normalizedDomain = parsedDomain.normalizedHostname;
   const heuristicReasons = buildDomainHeuristicReasons(normalizedDomain);
   const [reviewSignals, websiteSignals, externalChecks, dnsProbe, dnsMail] = await Promise.all([
     getReviewSignals(normalizedDomain),
-    fetchWebsiteSignals(inputUrl),
-    runAllChecks(inputUrl),
+    fetchWebsiteSignals(analysisUrl),
+    runAllChecks(analysisUrl),
     probeApexDnsResolution(normalizedDomain),
     collectDns(normalizedDomain)
   ]);
+  let originalChecks = externalChecks;
+  if (redirectChain.crossDomainRedirect && redirectChain.originalUrl !== redirectChain.finalUrl) {
+    try {
+      originalChecks = await runAllChecks(redirectChain.originalUrl);
+    } catch {
+      // Keep analysis resilient if original-domain checks fail.
+      originalChecks = externalChecks;
+    }
+  }
+  const originalParsed = parseDomainParts(redirectChain.originalUrl);
   const dnsResolvable = dnsProbe.ipv4 || dnsProbe.ipv6;
 
   const domainInfrastructure = buildDomainInfrastructure({
@@ -79,8 +94,136 @@ export async function runWebsiteAnalysis(
   const websiteText = websiteSignals?.text ?? "";
   const supplyChainSignals = await getSupplyChainSignals(normalizedDomain, websiteText);
 
-  const { scoreSignals: externalScoreSignals, breakdown: intelScoreBreakdown } = buildIntelScoring(externalChecks);
-  const trustSignals = buildTrustSignalsFromEvidence(externalChecks.providerEvidence);
+  const { scoreSignals: finalIntelSignals, breakdown: finalIntelBreakdown } = buildIntelScoring(externalChecks);
+  const { scoreSignals: originalIntelSignals, breakdown: originalIntelBreakdown } =
+    originalChecks === externalChecks ? { scoreSignals: [] as ScoreSignal[], breakdown: [] as typeof finalIntelBreakdown } : buildIntelScoring(originalChecks);
+  const redirectSignals: ScoreSignal[] = [];
+  const redirectEvidence = [];
+
+  if (redirectChain.redirectCount > 0) {
+    redirectEvidence.push(
+      wrapEvidence(
+        "Fraudly redirect analysis",
+        "domain",
+        redirectChain.crossDomainRedirect ? "warning" : "info",
+        true,
+        "Redirect chain detected",
+        redirectChain.crossDomainRedirect
+          ? "The entered website forwards visitors to a different registrable domain. Fraudly included the final destination in this scan."
+          : "The entered website redirects before loading the final page. This appears to remain within the same registrable domain.",
+        "high",
+        {
+          originalUrl: redirectChain.originalUrl,
+          finalUrl: redirectChain.finalUrl,
+          redirectCount: redirectChain.redirectCount
+        }
+      )
+    );
+  }
+
+  if (redirectChain.crossDomainRedirect) {
+    redirectSignals.push({
+      id: "redirect-cross-domain",
+      label: "Redirects to another domain",
+      category: "domain",
+      impact: 8,
+      confidence: "high",
+      evidenceTier: "risk_indicator",
+      reason: "The entered website forwards visitors to a different domain. The final destination was included in this scan."
+    });
+    redirectEvidence.push(
+      wrapEvidence(
+        "Fraudly redirect analysis",
+        "domain",
+        "warning",
+        true,
+        "Redirects to another domain",
+        "The entered website forwards visitors to a different domain. The final destination was included in this scan.",
+        "high"
+      )
+    );
+  }
+
+  if (redirectChain.redirectCount >= 3) {
+    redirectSignals.push({
+      id: "redirect-long-chain",
+      label: "Long redirect chain",
+      category: "website_quality",
+      impact: 6,
+      confidence: "medium",
+      evidenceTier: "risk_indicator",
+      reason: `The URL followed ${redirectChain.redirectCount} redirects before landing on the final page.`
+    });
+  }
+
+  if (redirectChain.tooManyRedirects || redirectChain.timedOut) {
+    redirectSignals.push({
+      id: "redirect-unreliable-chain",
+      label: "Redirect destination could not be fully confirmed",
+      category: "website_quality",
+      impact: 10,
+      confidence: "high",
+      evidenceTier: "risk_indicator",
+      reason: redirectChain.tooManyRedirects
+        ? "The URL hit the redirect limit before a stable destination was reached."
+        : "Redirect resolution timed out before destination confirmation."
+    });
+  }
+
+  const originalAge = originalChecks.domainIntelligence.ageDays;
+  const finalAge = externalChecks.domainIntelligence.ageDays;
+  if (
+    redirectChain.crossDomainRedirect &&
+    typeof originalAge === "number" &&
+    typeof finalAge === "number" &&
+    originalAge >= 365 &&
+    finalAge <= 60
+  ) {
+    redirectSignals.push({
+      id: "redirect-young-destination",
+      label: "Redirect destination is much newer",
+      category: "domain",
+      impact: 11,
+      confidence: "high",
+      evidenceTier: "risk_indicator",
+      reason: `The entered domain is about ${originalAge} days old, but the final destination is about ${finalAge} days old.`
+    });
+  }
+
+  const finalHasIntelHits =
+    externalChecks.safeBrowsing.safeBrowsingStatus === "flagged" || externalChecks.openPhish.listed || externalChecks.urlHaus.listed;
+  if (redirectChain.crossDomainRedirect && finalHasIntelHits) {
+    redirectSignals.push({
+      id: "redirect-destination-risky",
+      label: "Redirect destination may be risky",
+      category: "website_quality",
+      impact: 18,
+      confidence: "high",
+      evidenceTier: "confirmed_malicious",
+      reason: "The final website after redirect has stronger risk indicators than the entered domain."
+    });
+    redirectEvidence.push(
+      wrapEvidence(
+        "Fraudly redirect analysis",
+        "phishing",
+        "danger",
+        true,
+        "Redirect destination may be risky",
+        "The final website after redirect has stronger risk indicators than the entered domain.",
+        "high"
+      )
+    );
+  }
+
+  if (redirectChain.crossDomainRedirect) {
+    heuristicReasons.push(
+      "This site redirects to another domain, so Fraudly checked the final destination too."
+    );
+  }
+
+  const intelScoreBreakdown = [...finalIntelBreakdown, ...originalIntelBreakdown];
+  const combinedProviderEvidence = [...externalChecks.providerEvidence, ...redirectEvidence];
+  const trustSignals = buildTrustSignalsFromEvidence(combinedProviderEvidence);
   const scoringContext = buildScoringIdentityContext(normalizedDomain, externalChecks, reviewSignals);
   const maliciousSignals = collectMaliciousSignals(externalChecks);
   const criticalThreatClamp = requiresCriticalTrustClamp(externalChecks);
@@ -97,7 +240,7 @@ export async function runWebsiteAnalysis(
     reviewSignals,
     supplyChainSignals,
     websiteText,
-    externalSignals: externalScoreSignals,
+    externalSignals: [...finalIntelSignals, ...originalIntelSignals, ...redirectSignals],
     scoringContext,
     intelSurface,
     mailDnsHints
@@ -116,7 +259,7 @@ export async function runWebsiteAnalysis(
   const heuristicForOpenAi = [...heuristicBase, ...scoreLinesPre];
   const trustIntelJson = JSON.stringify(
     {
-      providerEvidence: externalChecks.providerEvidence,
+      providerEvidence: combinedProviderEvidence,
       intelScoreBreakdown,
       supplemental: {
         police: externalChecks.police,
@@ -236,13 +379,13 @@ export async function runWebsiteAnalysis(
     verdict: adjustedVerdict,
     domain: normalizedDomain,
     registrableDomain: parsedDomain.registrableDomain,
-    submittedHostname: parsedDomain.inputHostname || normalizedDomain,
+    submittedHostname: parsedDomain.inputHostname || originalParsed.inputHostname || normalizedDomain,
     subdomain: parsedDomain.subdomain,
     isSubdomain: parsedDomain.isSubdomain,
     suspiciousSubdomainTerms: parsedDomain.suspiciousSubdomainTerms,
     reasons: mergedReasons,
     trustSignals,
-    providerEvidence: externalChecks.providerEvidence,
+    providerEvidence: combinedProviderEvidence,
     intelScoreBreakdown,
     domainIntelligence: externalChecks.domainIntelligence,
     safeBrowsing: externalChecks.safeBrowsing,
@@ -260,6 +403,7 @@ export async function runWebsiteAnalysis(
     confidenceLevel,
     confidenceRationale,
     behavioralSignalsPending: EMPTY_BEHAVIOR,
+    redirectChain,
     ...(trustEvidence ? { trustEvidence } : {})
   };
 }

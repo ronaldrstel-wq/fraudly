@@ -160,6 +160,17 @@ function labelForScanCoverage(level: ConfidenceLevel): string {
   }
 }
 
+function toSafeHttpUrl(input: string | null | undefined): string | null {
+  if (!input) return null;
+  try {
+    const url = new URL(input);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 /** Tier‑1 phishing/malware list matches surfaced as structured provider rows (not guesses). */
 function isConfirmedIntelTrustSignal(signal: TrustSignal): boolean {
   if (signal.type !== "danger" && signal.type !== "warning") return false;
@@ -296,6 +307,17 @@ export function ResultCard({ result }: ResultCardProps) {
   }, [result.domain, result.score]);
 
   const meter = trustMeterTone(displayTrust ?? 0, threat.active);
+  const trustedBand = typeof displayTrust === "number" && displayTrust >= 80;
+  const trustedVisitUrl =
+    toSafeHttpUrl(result.redirectChain?.finalUrl) ??
+    toSafeHttpUrl(`https://${result.domain}`);
+  const showVisitWebsiteCta =
+    trustedBand &&
+    trustLevel === "trusted" &&
+    result.confidenceLevel !== "low" &&
+    result.siteStatus !== "inactive" &&
+    result.siteStatus !== "nonexistent" &&
+    Boolean(trustedVisitUrl);
   const checkedHostname = result.domainIntelligence.checkedHostname ?? result.domain;
   const registeredDomain = result.registrableDomain ?? result.domainIntelligence.registrableDomain ?? result.domain;
   const isSubdomain = Boolean(result.isSubdomain ?? result.domainIntelligence.subdomain);
@@ -328,6 +350,12 @@ export function ResultCard({ result }: ResultCardProps) {
                 </h2>
               </div>
               <p className="max-w-2xl text-base leading-relaxed text-slate-700 sm:text-[17px]">{shortExplain}</p>
+              {result.redirectChain?.crossDomainRedirect ? (
+                <p className="max-w-2xl text-sm leading-relaxed text-slate-600">
+                  This website redirects to another domain. Fraudly also checked the final destination because redirects
+                  can change the real risk.
+                </p>
+              ) : null}
             </header>
 
             <div className="max-w-2xl rounded-xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm sm:px-5 sm:py-4">
@@ -338,6 +366,23 @@ export function ResultCard({ result }: ResultCardProps) {
                 {EN_MESSAGES.scanResult.consumerSummaryDisclaimer}
               </p>
             </div>
+
+            {showVisitWebsiteCta && trustedVisitUrl ? (
+              <div className="max-w-2xl rounded-xl border border-slate-200 bg-white/70 px-4 py-3 sm:px-5">
+                <a
+                  href={trustedVisitUrl}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2"
+                >
+                  Visit website
+                  <span aria-hidden>↗</span>
+                </a>
+                <p className="mt-2 text-xs leading-relaxed text-slate-600">
+                  Fraudly did not detect strong risk indicators in this scan. Always use your own judgment.
+                </p>
+              </div>
+            ) : null}
 
             {showGauge && typeof displayTrust === "number" ? (
               <section className="rounded-xl border border-slate-200 bg-white px-4 py-3" aria-label={`Trust score ${displayTrust} out of 100`}>
@@ -501,6 +546,54 @@ export function ResultCard({ result }: ResultCardProps) {
             </ul>
             <p className="mt-2 text-xs text-slate-500">Source: {result.domainIntelligence.source}</p>
           </div>
+
+          {result.redirectChain ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+              <p className="text-sm font-semibold text-slate-900">Redirect analysis</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-700">
+                <li>
+                  Original URL: <span className="font-medium break-all">{result.redirectChain.originalUrl}</span>
+                </li>
+                <li>
+                  Final URL: <span className="font-medium break-all">{result.redirectChain.finalUrl}</span>
+                </li>
+                <li>
+                  Final domain: <span className="font-medium">{result.redirectChain.finalDomain}</span>
+                </li>
+                <li>
+                  Redirect count: <span className="font-medium">{result.redirectChain.redirectCount}</span>
+                </li>
+                <li>
+                  Crossed registrable domain:{" "}
+                  <span className="font-medium">{result.redirectChain.crossDomainRedirect ? "yes" : "no"}</span>
+                </li>
+                {result.redirectChain.tooManyRedirects ? (
+                  <li>
+                    Redirect chain state: <span className="font-medium">Stopped after maximum redirect limit.</span>
+                  </li>
+                ) : null}
+                {result.redirectChain.timedOut ? (
+                  <li>
+                    Redirect chain state: <span className="font-medium">Resolution timed out before final confirmation.</span>
+                  </li>
+                ) : null}
+                {result.redirectChain.error ? (
+                  <li>
+                    Redirect resolver note: <span className="font-medium">{result.redirectChain.error}</span>
+                  </li>
+                ) : null}
+              </ul>
+              {result.redirectChain.redirectChain.length > 0 ? (
+                <ol className="mt-2 list-decimal space-y-1 pl-5 text-xs text-slate-600">
+                  {result.redirectChain.redirectChain.map((hop, idx) => (
+                    <li key={`${idx}-${hop}`} className="break-all">
+                      {hop}
+                    </li>
+                  ))}
+                </ol>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
         <p className="text-sm font-semibold text-slate-900">{sec.sslBlockHeading}</p>

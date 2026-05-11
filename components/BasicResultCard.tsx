@@ -12,6 +12,17 @@ import {
 import { ResultSupportBox } from "@/components/ResultSupportBox";
 import { trustPresentationFromScore } from "@/lib/trustSystem";
 
+function toSafeHttpUrl(input: string | null | undefined): string | null {
+  if (!input) return null;
+  try {
+    const url = new URL(input);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 export function BasicResultCard({ result }: { result: BasicCheckResult }) {
   const trustStyle = Math.max(0, Math.min(100, Math.round(100 - result.score)));
   const trust = trustPresentationFromScore(trustStyle);
@@ -19,6 +30,8 @@ export function BasicResultCard({ result }: { result: BasicCheckResult }) {
   const humanHeadline = humanRecHeadline(humanKind);
   const humanTone = humanRecHeadlineTone(humanKind);
   const shortEx = shortExplainForBasic(result.verdict, result.score);
+  const trustedVisitUrl = toSafeHttpUrl(`https://${result.domain}`);
+  const showVisitWebsiteCta = trustStyle >= 80 && trust.level === "trusted" && Boolean(trustedVisitUrl);
 
   return (
     <article className="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/60 sm:p-7">
@@ -60,6 +73,23 @@ export function BasicResultCard({ result }: { result: BasicCheckResult }) {
         </p>
         <p className="mt-1 text-xs text-slate-500">{EN_MESSAGES.scanResult.trustScoreExplainer}</p>
       </section>
+
+      {showVisitWebsiteCta && trustedVisitUrl ? (
+        <section className="mt-5 rounded-xl border border-slate-200 bg-white/70 px-4 py-3">
+          <a
+            href={trustedVisitUrl}
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2"
+          >
+            Visit website
+            <span aria-hidden>↗</span>
+          </a>
+          <p className="mt-2 text-xs leading-relaxed text-slate-600">
+            Fraudly did not detect strong risk indicators in this scan. Always use your own judgment.
+          </p>
+        </section>
+      ) : null}
 
       <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50 p-4">
         <p className="text-sm font-medium text-blue-900">{EN_MESSAGES.basicResult.unlockHint}</p>
