@@ -39,14 +39,14 @@ export function computeRatingConfidence(args: {
     scorePts += 3;
     notes.push("Public review footprint observed.");
   } else if (reviewSignalsThin(args.reviewSignals)) {
-    scorePts -= 1;
-    notes.push("No public review profile surfaced in this crawl — this limits certainty.");
+    scorePts -= 0.5;
+    notes.push("No public review snapshot was available in this scan.");
   }
 
   const reviewDebug = args.reviewSignals.reviewFetchDebug ?? [];
   const thirdPartyFriction = reviewDebug.some((r) => r.bucket === "provider_error" || r.bucket === "source_unavailable");
   if (thirdPartyFriction && !reviewSignalsAnchored(args.reviewSignals)) {
-    scorePts -= 1;
+    scorePts -= 0.5;
     notes.push(EN_MESSAGES.reviewEvidence.reviewSnapshotIncomplete);
   }
 
@@ -60,7 +60,7 @@ export function computeRatingConfidence(args: {
   if (args.websiteTextLength >= 400) scorePts += 1;
   else if (args.websiteTextLength < 120 && args.ctx.rdapFailed) scorePts -= 1;
 
-  if (args.checks.safeBrowsing.safeBrowsingStatus === "unknown") notes.push("Safe Browsing status was unclear.");
+  if (args.checks.safeBrowsing.safeBrowsingStatus === "unknown") notes.push("Some optional public safety sources were unavailable.");
 
   let level: ConfidenceLevel;
   if (scorePts >= 5) level = "high";
@@ -69,7 +69,7 @@ export function computeRatingConfidence(args: {
 
   let rationale =
     level === "low"
-      ? `We do not have enough corroborating evidence for a firm rating.${notes.length ? ` ${notes.join(" ")}` : ""}`
+      ? `Some public data sources were unavailable during this scan. No major risk indicators were detected, but scan completeness may be lower than usual.${notes.length ? ` ${notes.join(" ")}` : ""}`
       : level === "medium"
         ? `Evidence is partially complete.${notes.length ? ` ${notes.slice(0, 2).join(" ")}` : ""}`
         : `Several independent stewardship and technical checks aligned.${notes.length ? ` ${notes[0] ?? ""}` : ""}`;

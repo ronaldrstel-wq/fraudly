@@ -12,6 +12,8 @@ import { collectWhois } from "@/lib/public-intel/whois";
 export type PublicReputationSignals = {
   trustpilotScore: number | null;
   trustpilotReviewCount: number | null;
+  googleScore: number | null;
+  googleReviewCount: number | null;
   redditWarnings: number;
   domainAgeDays: number | null;
   sslStatus: "valid" | "invalid" | "unavailable";
@@ -147,8 +149,8 @@ export async function getPublicIntelEnrichment(domain: string): Promise<PublicIn
   const whois = (resultsByKey.get("rdap") as { data?: { ageDays?: number | null } } | undefined)?.data ?? null;
 
   const risk = computeRiskImpact({
-    trustpilotRating: trustpilot?.rating ?? snippets?.possibleRating ?? null,
-    trustpilotReviewCount: trustpilot?.reviewCount ?? snippets?.possibleReviewCount ?? null,
+    trustpilotRating: trustpilot?.rating ?? null,
+    trustpilotReviewCount: trustpilot?.reviewCount ?? null,
     scamAdviserScore: scamadviser?.trustScore ?? null,
     redditWarnings: (reddit?.scamMentions ?? 0) + (reddit?.phishingMentions ?? 0) + (reddit?.complaintMentions ?? 0),
     domainAgeDays: whois?.ageDays ?? null,
@@ -161,8 +163,10 @@ export async function getPublicIntelEnrichment(domain: string): Promise<PublicIn
   return {
     normalizedDomain: normalized,
     signals: {
-      trustpilotScore: trustpilot?.rating ?? snippets?.possibleRating ?? null,
-      trustpilotReviewCount: trustpilot?.reviewCount ?? snippets?.possibleReviewCount ?? null,
+      trustpilotScore: trustpilot?.rating ?? null,
+      trustpilotReviewCount: trustpilot?.reviewCount ?? null,
+      googleScore: snippets?.possibleRating ?? null,
+      googleReviewCount: snippets?.possibleReviewCount ?? null,
       redditWarnings: (reddit?.scamMentions ?? 0) + (reddit?.phishingMentions ?? 0) + (reddit?.complaintMentions ?? 0),
       domainAgeDays: whois?.ageDays ?? null,
       sslStatus: ssl ? (ssl.validCertificate ? "valid" : "invalid") : "unavailable",

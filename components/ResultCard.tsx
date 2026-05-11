@@ -176,6 +176,24 @@ function formatReviewCount(value: number | undefined): string {
   return new Intl.NumberFormat("en-US").format(Math.max(0, Math.round(value)));
 }
 
+function providerStateLabel(reputation: ReputationEnrichment | null, repError: string | null): string {
+  if (repError) return "Provider failed";
+  switch (reputation?.providerState) {
+    case "not_configured":
+      return "Provider not configured";
+    case "not_called":
+      return "Provider not called for this scan";
+    case "failed":
+      return "Provider failed";
+    case "no_match":
+      return "Provider returned no match";
+    case "found":
+      return "Review data found";
+    default:
+      return "Provider status unavailable";
+  }
+}
+
 /** Tier‑1 phishing/malware list matches surfaced as structured provider rows (not guesses). */
 function isConfirmedIntelTrustSignal(signal: TrustSignal): boolean {
   if (signal.type !== "danger" && signal.type !== "warning") return false;
@@ -233,6 +251,7 @@ export function ResultCard({ result }: ResultCardProps) {
   const [reputation, setReputation] = useState<ReputationEnrichment | null>(null);
   const [repLoading, setRepLoading] = useState(false);
   const [repError, setRepError] = useState<string | null>(null);
+  const [devBypassCache, setDevBypassCache] = useState(false);
 
   const reviewAvailabilityRollup = useMemo(() => {
     const bundled = [...(reviewSignals.publicReviewAvailabilityNotes ?? [])];
@@ -248,7 +267,7 @@ export function ResultCard({ result }: ResultCardProps) {
 
   const reviewFetchAudit = reviewSignals.reviewFetchDebug ?? [];
 
-  async function loadReputationSignals(deepScan: boolean) {
+  async function loadReputationSignals(deepScan: boolean, bypassCacheOverride?: boolean) {
     setRepLoading(true);
     setRepError(null);
     try {
@@ -259,7 +278,10 @@ export function ResultCard({ result }: ResultCardProps) {
         body: JSON.stringify({
           domain: result.domain,
           baseRiskScore: result.score,
-          deepScan
+          deepScan,
+          confidenceLevel: result.confidenceLevel,
+          missingReviewSignals: !hasPublicReviewData,
+          bypassCache: bypassCacheOverride ?? devBypassCache
         })
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -288,7 +310,10 @@ export function ResultCard({ result }: ResultCardProps) {
           body: JSON.stringify({
             domain: result.domain,
             baseRiskScore: result.score,
-            deepScan: false
+            deepScan: false,
+            confidenceLevel: result.confidenceLevel,
+            missingReviewSignals: !hasPublicReviewData,
+            bypassCache: false
           })
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -309,7 +334,22 @@ export function ResultCard({ result }: ResultCardProps) {
     return () => {
       active = false;
     };
-  }, [result.domain, result.score]);
+  }, [result.domain, result.score, result.confidenceLevel, hasPublicReviewData]);
+
+  const trustpilotRating = reviewSignals.trustpilotRating ?? reputation?.trustpilotRating ?? reputation?.trustpilot?.rating ?? null;
+  const trustpilotCount =
+    reviewSignals.trustpilotReviewCount ?? reputation?.trustpilotReviewCount ?? reputation?.trustpilot?.reviewCount ?? null;
+  const googleRating = reviewSignals.googleRating ?? reputation?.googleRating ?? reputation?.google?.rating ?? null;
+  const googleCount = reviewSignals.googleReviewCount ?? reputation?.googleReviewCount ?? reputation?.google?.reviewCount ?? null;
+  const trustpilotFound = reviewSignals.trustpilotFound || trustpilotRating != null || trustpilotCount != null;
+  const googleFound = reviewSignals.googleFound || googleRating != null || googleCount != null;
+  const providerLabel = providerStateLabel(reputation, repError);
+  const cacheLabel =
+    reputation?.cacheStatus === "hit"
+      ? "Result cached from previous scan"
+      : reputation?.cacheStatus === "bypassed"
+        ? "Cache bypassed (development)"
+        : "Fresh lookup attempted";
 
   const meter = trustMeterTone(displayTrust ?? 0, threat.active);
   const trustedBand = typeof displayTrust === "number" && displayTrust >= 80;
@@ -450,35 +490,35 @@ export function ResultCard({ result }: ResultCardProps) {
               <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
                 <article className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Trustpilot</p>
-                  {reviewSignals.trustpilotFound ? (
+                  {trustpilotFound ? (
                     <>
                       <p className="mt-1 text-sm font-semibold text-slate-900">
                         <span aria-hidden className="mr-1 text-amber-500">
                           ★
                         </span>
-                        {reviewSignals.trustpilotRating?.toFixed(1) ?? "—"} / 5
+                        {trustpilotRating?.toFixed(1) ?? "—"} / 5
                       </p>
-                      <p className="mt-1 text-xs text-slate-600">{formatReviewCount(reviewSignals.trustpilotReviewCount)} reviews</p>
+                      <p className="mt-1 text-xs text-slate-600">{formatReviewCount(trustpilotCount ?? undefined)} reviews</p>
                     </>
                   ) : (
-                    <p className="mt-1 text-xs text-slate-600">No public profile found in this scan.</p>
+                    <p className="mt-1 text-xs text-slate-600">{reputation?.providerReason ?? "No public profile found in this scan."}</p>
                   )}
                 </article>
 
                 <article className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Google Reviews</p>
-                  {reviewSignals.googleFound ? (
+                  {googleFound ? (
                     <>
                       <p className="mt-1 text-sm font-semibold text-slate-900">
                         <span aria-hidden className="mr-1 text-amber-500">
                           ★
                         </span>
-                        {reviewSignals.googleRating?.toFixed(1) ?? "—"} / 5
+                        {googleRating?.toFixed(1) ?? "—"} / 5
                       </p>
-                      <p className="mt-1 text-xs text-slate-600">{formatReviewCount(reviewSignals.googleReviewCount)} reviews</p>
+                      <p className="mt-1 text-xs text-slate-600">{formatReviewCount(googleCount ?? undefined)} reviews</p>
                     </>
                   ) : (
-                    <p className="mt-1 text-xs text-slate-600">No review snapshot available.</p>
+                    <p className="mt-1 text-xs text-slate-600">{reputation?.providerReason ?? "No review snapshot available."}</p>
                   )}
                 </article>
               </div>
@@ -487,8 +527,11 @@ export function ResultCard({ result }: ResultCardProps) {
                 <p>
                   Reputation source status:{" "}
                   <span className="font-medium text-slate-700">
-                    {reviewSignals.sources.length > 0 ? reviewSignals.sources.join(", ") : "No review source responded in this scan."}
+                    {providerLabel}
                   </span>
+                </p>
+                <p className="mt-1">
+                  Cache status: <span className="font-medium text-slate-700">{cacheLabel}</span>
                 </p>
                 <p className="mt-1">
                   Last checked:{" "}
@@ -496,6 +539,19 @@ export function ResultCard({ result }: ResultCardProps) {
                     {reputation?.lastUpdated ? new Date(reputation.lastUpdated).toLocaleString("en") : "During this scan"}
                   </span>
                 </p>
+                {process.env.NODE_ENV !== "production" ? (
+                  <button
+                    type="button"
+                    className="mt-2 rounded-lg border border-slate-300 px-2 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50"
+                    onClick={() => {
+                      const next = !devBypassCache;
+                      setDevBypassCache(next);
+                      void loadReputationSignals(false, next);
+                    }}
+                  >
+                    {devBypassCache ? "Disable cache bypass" : "Bypass cache and refresh"}
+                  </button>
+                ) : null}
               </div>
             </section>
 
@@ -760,6 +816,19 @@ export function ResultCard({ result }: ResultCardProps) {
                 {reputation.impactOnRisk > 0 ? "+" : ""}
                 {reputation.impactOnRisk} risk points
               </span>
+            </p>
+            <p>
+              Provider summary:{" "}
+              <span className="font-medium">
+                {providerStateLabel(reputation, repError)} · {cacheLabel}
+              </span>
+            </p>
+            <p>
+              Matched query: <span className="font-medium">{reputation.matchedQuery ?? result.domain}</span>
+            </p>
+            <p>
+              Matched profile/domain:{" "}
+              <span className="font-medium">{reputation.businessName ?? reputation.normalizedDomain}</span>
             </p>
             {reputation.sentimentSummary ? <p className="text-xs text-slate-600">{reputation.sentimentSummary}</p> : null}
             {reputation.message ? <p className="text-xs text-slate-500">{reputation.message}</p> : null}

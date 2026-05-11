@@ -344,6 +344,26 @@ function pushDomainTrustSignals(
       reason: "Hostname length looks typical rather than excessively long."
     });
   }
+
+  if (!ctx) return;
+  const patterns = ctx.domainPatterns;
+  const mature = typeof ctx.ageDaysKnown === "number" && ctx.ageDaysKnown >= 365;
+  const cleanLexical = !patterns.hasStrongLexicalSuspicion && !patterns.combinedGibberishApex;
+  const institutionalHint = /(bank|insurance|insur|assur|gov|gouv|overheid|ministry|ministerie|gemeente|politie|belasting)/i.test(
+    d
+  );
+  if (mature && cleanLexical && (institutionalHint || patterns.officialRegistrableExempt)) {
+    out.push({
+      id: "domain-established-institutional-presence",
+      label: "Established institutional-style domain",
+      category: "domain",
+      impact: -10,
+      confidence: "medium",
+      evidenceTier: "positive_trust",
+      reason:
+        "The domain appears long-lived with stable naming patterns often seen on established service or institutional sites."
+    });
+  }
 }
 
 function pushDomainPatternSignals(patterns: DomainPatternAnalysis, out: ScoreSignal[]): void {
@@ -461,7 +481,7 @@ function pushUnknownIdentitySignals(ctx: ScoringIdentityContext | undefined, out
       id: "missing-rdap-registration",
       label: "Domain registration data unavailable",
       category: "domain",
-      impact: 3,
+      impact: 1,
       confidence: "low",
       evidenceTier: "missing_data",
       reason:
@@ -473,7 +493,7 @@ function pushUnknownIdentitySignals(ctx: ScoringIdentityContext | undefined, out
         id: "missing-registration-date",
         label: "Domain registration date unknown",
         category: "domain",
-        impact: 2,
+        impact: 1,
         confidence: "low",
         evidenceTier: "missing_data",
         reason: "Registration timestamps were not parsed cleanly; this lowers rating confidence, not direct safety proof."
@@ -484,7 +504,7 @@ function pushUnknownIdentitySignals(ctx: ScoringIdentityContext | undefined, out
         id: "missing-registration-age-estimate",
         label: "Domain age unknown",
         category: "domain",
-        impact: 2,
+        impact: 1,
         confidence: "low",
         evidenceTier: "missing_data",
         reason: "Age-based heuristics are blind without creation events—treat as weaker calibration only."
@@ -495,7 +515,7 @@ function pushUnknownIdentitySignals(ctx: ScoringIdentityContext | undefined, out
         id: "missing-registrar",
         label: "Registrar unstated in parsed RDAP",
         category: "domain",
-        impact: 1,
+        impact: 0,
         confidence: "low",
         evidenceTier: "missing_data",
         reason: "Registrar narration was missing—minor uncertainty, not a scam indicator."
@@ -508,7 +528,7 @@ function pushUnknownIdentitySignals(ctx: ScoringIdentityContext | undefined, out
       id: "unknown-ownership-anchor",
       label: "Domain ownership could not be verified from public registration data",
       category: "domain",
-      impact: 3,
+      impact: 1,
       confidence: "low",
       evidenceTier: "missing_data",
       reason:
@@ -547,16 +567,16 @@ function computeTrustScoreCap(args: {
   const relief = trustCapReliefEligible(c, args.anchors);
 
   if (c.rdapFailed || c.domainAgeUnknown) {
-    maxTrust = Math.min(maxTrust, relief ? 84 : 76);
+    maxTrust = Math.min(maxTrust, relief ? 92 : 86);
   }
   if (c.rdapFailed && args.lexicalStrong) {
-    maxTrust = Math.min(maxTrust, relief ? 58 : 44);
+    maxTrust = Math.min(maxTrust, relief ? 68 : 54);
   }
   if (c.ownershipUnverifiable) {
     if (args.benignTechnicalBaseline && !args.lexicalStrong && c.rdapFailed) {
-      maxTrust = Math.min(maxTrust, relief ? 72 : 58);
+      maxTrust = Math.min(maxTrust, relief ? 88 : 74);
     } else {
-      maxTrust = Math.min(maxTrust, relief ? 42 : 34);
+      maxTrust = Math.min(maxTrust, relief ? 72 : 62);
     }
   }
   if (p.tldRiskTier !== "none" && p.fakeAuthoritySubstringInApex && c.limitedPublicReputation) {
@@ -575,10 +595,10 @@ function anchorsAdjustFloor(
   ctx: ScoringIdentityContext
 ): number {
   if (ctx.domainPatterns.officialRegistrableExempt) return 88;
-  if (anchors.hasStrongReputation) return 82;
-  if (anchors.hasAnchoredReputation) return 76;
-  if (!ctx.rdapFailed && typeof ctx.ageDaysKnown === "number" && ctx.ageDaysKnown >= 730) return 72;
-  return 72;
+  if (anchors.hasStrongReputation) return 86;
+  if (anchors.hasAnchoredReputation) return 80;
+  if (!ctx.rdapFailed && typeof ctx.ageDaysKnown === "number" && ctx.ageDaysKnown >= 730) return 78;
+  return 74;
 }
 
 function eligibleForTrustedLabel(args: {
@@ -590,7 +610,6 @@ function eligibleForTrustedLabel(args: {
   if (args.ctx?.domainPatterns.officialRegistrableExempt && !args.lexicalStrong) return true;
   if (
     args.ctx &&
-    !args.ctx.rdapFailed &&
     typeof args.ctx.ageDaysKnown === "number" &&
     args.ctx.ageDaysKnown >= 365 &&
     !args.lexicalStrong
@@ -930,6 +949,17 @@ export function calculateScamScore(input: {
   pushUnknownIdentitySignals(input.scoringContext, signals);
   pushDomainTrustSignals(domain, signals, reviewTier, input.scoringContext);
   pushAiRiskSignals(input.aiRiskSignals?.level, signals, reviewTier);
+  if (input.intelSurface?.benignTechnicalBaseline && !patterns.hasStrongLexicalSuspicion) {
+    signals.push({
+      id: "infra-valid-https-baseline",
+      label: "Valid HTTPS baseline",
+      category: "website_quality",
+      impact: -3,
+      confidence: "low",
+      evidenceTier: "positive_trust",
+      reason: "HTTPS and certificate checks looked healthy in this run. This is supportive context, not proof of legitimacy."
+    });
+  }
   if (input.externalSignals?.length) {
     signals.push(...input.externalSignals);
   }
@@ -1002,12 +1032,14 @@ export function calculateScamScore(input: {
 
   let trustScoreCap: number | undefined;
   let trustedBlockedReason: ScoreResult["trustedBlockedReason"];
+  let anchorsForContext: ReturnType<typeof computeTrustAnchors> | undefined;
 
   const confirmedMalicious = inferConfirmedMalicious(signals, input.intelSurface);
 
   if (input.scoringContext) {
     const lexicalStrong = patterns.hasStrongLexicalSuspicion;
     const anchors = computeTrustAnchors(input.scoringContext.ageDaysKnown, input.reviewSignals);
+    anchorsForContext = anchors;
     trustScoreCap = computeTrustScoreCap({
       ctx: input.scoringContext,
       lexicalStrong,
@@ -1042,6 +1074,23 @@ export function calculateScamScore(input: {
     ) {
       trustScore = Math.min(trustScore, 49);
       finalScore = Math.max(0, Math.min(100, Math.round(100 - trustScore)));
+    }
+
+    const limitedEvidenceOnly =
+      input.scoringContext.limitedPublicReputation &&
+      !input.scoringContext.domainPatterns.officialRegistrableExempt &&
+      !lexicalStrong &&
+      !confirmedMalicious &&
+      !(anchorsForContext?.hasAnchoredReputation ?? false) &&
+      (input.scoringContext.rdapFailed ||
+        input.scoringContext.domainAgeUnknown ||
+        (typeof input.scoringContext.ageDaysKnown === "number" && input.scoringContext.ageDaysKnown < 365));
+
+    /**
+     * Lack of optional corroboration should not imply high risk, but it should avoid over-confident "safe" on weakly anchored domains.
+     */
+    if (limitedEvidenceOnly && finalScore < 41) {
+      finalScore = 41;
     }
   }
 

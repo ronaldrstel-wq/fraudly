@@ -17,5 +17,19 @@ describe("scoring engine trust outcomes", () => {
     expect(trustLevel).toBe("trusted");
     expect(result.verdict).toBe("safe");
   });
+
+  it("classifies paypal.com as Trusted when no major risk signals are present", () => {
+    const result = calculateScamScore({
+      domain: "paypal.com",
+      heuristicReasons: []
+    });
+
+    const trustScore = trustScoreFromRisk(result.finalScore);
+    const trustLevel = trustLevelFromScore(trustScore);
+
+    expect(trustScore).toBeGreaterThanOrEqual(85);
+    expect(trustLevel).toBe("trusted");
+    expect(result.verdict).toBe("safe");
+  });
 });
 

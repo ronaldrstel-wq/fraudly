@@ -27,8 +27,13 @@ export function buildScoringIdentityContext(
   const registrarUnknown = !di.registrar;
   const domainAgeUnknown = typeof di.ageDays !== "number";
 
+  /**
+   * Unknown ownership should mean "hard to corroborate", not "automatically suspicious".
+   * Treat as unverifiable only when registration metadata is broadly absent.
+   */
   const ownershipUnverifiable =
-    rdapFailed || (registrationDateUnknown && domainAgeUnknown) || (rdapFailed && registrarUnknown && registrationDateUnknown);
+    (rdapFailed && registrarUnknown && registrationDateUnknown && domainAgeUnknown) ||
+    (!rdapFailed && registrarUnknown && registrationDateUnknown && domainAgeUnknown);
 
   /**
    * True only when bookkeeping explicitly tags `website_behavior` on the reviewed domain.

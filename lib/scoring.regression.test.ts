@@ -467,8 +467,8 @@ describe("trust scoring regressions", () => {
     });
     const trust = trustScoreFromRisk(out.finalScore);
     expect(out.verdict).not.toBe("scam");
-    expect(trust).toBeGreaterThanOrEqual(42);
-    expect(["suspicious", "highRisk"]).toContain(trustLevelFromScore(trust));
+    expect(trust).toBeGreaterThanOrEqual(55);
+    expect(trustLevelFromScore(trust)).not.toBe("highRisk");
   });
 
   it("J) Very young RDAP age with HTTPS and no feeds: not automatic scam verdict", () => {
@@ -494,5 +494,64 @@ describe("trust scoring regressions", () => {
     });
     expect(out.verdict).not.toBe("scam");
     expect(trustScoreFromRisk(out.finalScore)).toBeGreaterThanOrEqual(35);
+  });
+
+  it("K) established Dutch insurance-style domain with incomplete optional sources stays trusted", () => {
+    const domain = "nn.nl";
+    const checks = minimalExternal({
+      source: "RDAP",
+      warnings: [],
+      ageDays: 6000,
+      registrationDate: "2009-01-01T00:00:00.000Z",
+      registrar: "SIDN"
+    });
+    checks.safeBrowsing = {
+      safeBrowsingStatus: "unknown",
+      safeBrowsingThreats: [],
+      source: "Google Safe Browsing",
+      warnings: ["temporary unavailable"]
+    };
+    const reviews = emptyReviews({
+      suspiciousReviewSignals: [EN_MESSAGES.reviewEvidence.noPublicReviewProfile],
+      publicReviewAvailabilityNotes: [EN_MESSAGES.reviewEvidence.reviewSnapshotIncomplete]
+    });
+    const ctx = buildScoringIdentityContext(domain, checks, reviews);
+    const out = calculateScamScore({
+      domain,
+      heuristicReasons: [],
+      reviewSignals: reviews,
+      scoringContext: ctx,
+      externalSignals: buildIntelScoring(checks).scoreSignals,
+      intelSurface: { confirmedMalicious: false, benignTechnicalBaseline: true },
+      mailDnsHints: { mxConfigured: true, hasSpf: true, hasDmarc: true }
+    });
+    const trust = trustScoreFromRisk(out.finalScore);
+    expect(trust).toBeGreaterThanOrEqual(80);
+    expect(trustLevelFromScore(trust)).toBe("trusted");
+    expect(out.verdict).toBe("safe");
+  });
+
+  it("L) unknown tiny domain with no threat hits is caution, not high risk", () => {
+    const domain = "tinyfresh.example";
+    const checks = minimalExternal({
+      source: "RDAP",
+      warnings: [],
+      ageDays: 220,
+      registrationDate: "2025-10-01T00:00:00.000Z",
+      registrar: "Example Registrar"
+    });
+    const reviews = emptyReviews({ suspiciousReviewSignals: [EN_MESSAGES.reviewEvidence.noPublicReviewProfile] });
+    const ctx = buildScoringIdentityContext(domain, checks, reviews);
+    const out = calculateScamScore({
+      domain,
+      heuristicReasons: [],
+      reviewSignals: reviews,
+      scoringContext: ctx,
+      externalSignals: buildIntelScoring(checks).scoreSignals,
+      intelSurface: { confirmedMalicious: false, benignTechnicalBaseline: true }
+    });
+    const trust = trustScoreFromRisk(out.finalScore);
+    expect(trustLevelFromScore(trust)).toBe("suspicious");
+    expect(out.verdict).toBe("suspicious");
   });
 });

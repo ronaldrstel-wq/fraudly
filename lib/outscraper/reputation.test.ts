@@ -14,6 +14,14 @@ describe("outscraper enrichment trigger policy", () => {
   it("triggers for deep scan even outside uncertain range", () => {
     expect(shouldTriggerOutscraper({ baseRiskScore: 15, deepScan: true })).toBe(true);
   });
+
+  it("triggers when confidence is low", () => {
+    expect(shouldTriggerOutscraper({ baseRiskScore: 15, deepScan: false, confidenceLevel: "low" })).toBe(true);
+  });
+
+  it("triggers when review signals are missing", () => {
+    expect(shouldTriggerOutscraper({ baseRiskScore: 10, deepScan: false, missingReviewSignals: true })).toBe(true);
+  });
 });
 
 describe("outscraper reputation impact", () => {

@@ -10,6 +10,9 @@ type Body = {
   domain?: string;
   baseRiskScore?: number;
   deepScan?: boolean;
+  confidenceLevel?: "high" | "medium" | "low";
+  missingReviewSignals?: boolean;
+  bypassCache?: boolean;
 };
 
 export async function POST(request: Request) {
@@ -23,11 +26,19 @@ export async function POST(request: Request) {
   const domain = typeof body.domain === "string" ? body.domain.trim() : "";
   const baseRiskScore = typeof body.baseRiskScore === "number" ? body.baseRiskScore : 50;
   const deepScan = body.deepScan === true;
+  const confidenceLevel = body.confidenceLevel === "low" || body.confidenceLevel === "high" ? body.confidenceLevel : "medium";
+  const missingReviewSignals = body.missingReviewSignals === true;
+  const bypassCache = process.env.NODE_ENV !== "production" && body.bypassCache === true;
 
   console.info("[enrichment/reputation] route called", {
     deepScan,
     hasDomain: Boolean(domain),
-    publicIntelEnabled: process.env.ENABLE_PUBLIC_INTEL_ENRICHMENT !== "false"
+    publicIntelEnabled: process.env.ENABLE_PUBLIC_INTEL_ENRICHMENT !== "false",
+    outscraperEnabled: process.env.ENABLE_OUTSCRAPER_ENRICHMENT === "true",
+    hasOutscraperKey: Boolean(process.env.OUTSCRAPER_API_KEY),
+    confidenceLevel,
+    missingReviewSignals,
+    bypassCache
   });
 
   if (!domain) {
@@ -43,7 +54,10 @@ export async function POST(request: Request) {
   const enrichment = await getReputationEnrichment({
     domain,
     baseRiskScore,
-    deepScan
+    deepScan,
+    confidenceLevel,
+    missingReviewSignals,
+    bypassCache
   });
 
   console.info("[enrichment/reputation] response summary", {
@@ -52,7 +66,11 @@ export async function POST(request: Request) {
     trustpilotRating: enrichment.trustpilotRating,
     trustpilotReviewCount: enrichment.trustpilotReviewCount,
     googleRating: enrichment.googleRating,
-    googleReviewCount: enrichment.googleReviewCount
+    googleReviewCount: enrichment.googleReviewCount,
+    providerState: enrichment.providerState,
+    providerReason: enrichment.providerReason,
+    cacheStatus: enrichment.cacheStatus,
+    fromCache: enrichment.fromCache
   });
 
   return NextResponse.json({ enrichment });
