@@ -92,7 +92,7 @@ function emptyStats(now: Date): FraudlyPulseStats {
       newScamDomainsDetected: {
         title: "New scam domains detected",
         value: "0",
-        explanation: "Recently detected domains from alerts or high-risk checks.",
+        explanation: "Recently published scam-alert domains from the last 30 days.",
         reliability: "building",
         trend: "Trend data is building."
       },
@@ -319,9 +319,12 @@ export async function getFraudlyPulseStats(now: Date = new Date()): Promise<Frau
       newScamDomainsDetected: {
         title: "New scam domains detected",
         value: String(alertsDomainSet.size),
-        explanation: "Recently detected domains from alerts or high-risk checks.",
+        explanation: "Recently published scam-alert domains from the last 30 days.",
         reliability: reliabilityForCount(alertsDomainSet.size, 5, 1),
-        trend: alertsCount30d > 0 ? `${alertsCount30d} published alerts in 30 days` : null
+        trend:
+          alertsCount30d > 0
+            ? `${alertsCount30d} published alert${alertsCount30d === 1 ? "" : "s"} in 30 days`
+            : null
       },
       averageRiskyDomainAgeDays: {
         title: "Average domain age of risky sites",

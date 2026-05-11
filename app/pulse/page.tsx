@@ -23,24 +23,56 @@ function reliabilityChip(level: "reliable" | "limited" | "building") {
 
 function ReliabilityText({ level }: { level: "reliable" | "limited" | "building" }) {
   const label = level === "reliable" ? "Reliable" : level === "limited" ? "Limited data" : "Building";
-  return <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${reliabilityChip(level)}`}>{label}</span>;
+  return (
+    <span
+      className={`inline-flex shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold leading-none ${reliabilityChip(level)}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+function kpiValueIsLongForm(value: string): boolean {
+  if (value.includes("Not enough")) return true;
+  if (value.length > 14) return true;
+  return /\s/.test(value) && value.length > 6;
 }
 
 function KpiCard({ kpi, icon }: { kpi: PulseKpi; icon: string }) {
+  const longValue = kpiValueIsLongForm(kpi.value);
+  const supporting = kpi.trend ?? "Trend data is building.";
+
   return (
-    <article className="rounded-2xl border border-slate-200/70 bg-white/95 p-4 shadow-[0_8px_30px_rgba(15,23,42,0.06)]">
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-sm font-semibold text-slate-900">{kpi.title}</p>
-        <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-blue-50 to-violet-50 text-base text-blue-700">
+    <article className="flex h-full min-h-[15.25rem] flex-col rounded-2xl border border-slate-200/70 bg-white/95 p-4 pb-5 shadow-[0_8px_30px_rgba(15,23,42,0.06)] sm:min-h-[15.75rem] sm:p-5 sm:pb-5">
+      <header className="flex items-start justify-between gap-2.5">
+        <p className="min-w-0 flex-1 text-balance text-sm font-semibold leading-snug text-slate-900">{kpi.title}</p>
+        <span
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-50 to-violet-50 text-base text-blue-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]"
+          aria-hidden
+        >
           {icon}
         </span>
+      </header>
+
+      <div className="mt-3 flex min-h-0 flex-1 flex-col">
+        <p
+          className={
+            longValue
+              ? "text-[0.95rem] font-semibold leading-snug tracking-tight text-slate-800 sm:text-base"
+              : "text-2xl font-bold tabular-nums tracking-tight text-slate-900 sm:text-[1.65rem]"
+          }
+        >
+          {kpi.value}
+        </p>
+        <p className="mt-2.5 text-xs leading-relaxed text-slate-600">{kpi.explanation}</p>
       </div>
-      <p className="mt-3 text-2xl font-bold tracking-tight text-slate-900">{kpi.value}</p>
-      <p className="mt-2 text-xs leading-relaxed text-slate-600">{kpi.explanation}</p>
-      <div className="mt-3 flex items-center justify-between gap-2">
-        <ReliabilityText level={kpi.reliability} />
-        <p className="text-[11px] text-slate-500">{kpi.trend ?? "Trend data is building."}</p>
-      </div>
+
+      <footer className="mt-auto border-t border-slate-200/55 pt-3">
+        <div className="flex flex-col gap-2">
+          <ReliabilityText level={kpi.reliability} />
+          <p className="min-w-0 text-[11px] leading-snug text-slate-500">{supporting}</p>
+        </div>
+      </footer>
     </article>
   );
 }
@@ -142,7 +174,7 @@ export default async function FraudlyPulsePage() {
           </p>
         </section>
 
-        <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <section className="mt-6 grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <KpiCard kpi={stats.kpis.websitesCheckedToday} icon="◴" />
           <KpiCard kpi={stats.kpis.suspiciousPercentage} icon="△" />
           <KpiCard kpi={stats.kpis.highRiskPercentage} icon="!" />
