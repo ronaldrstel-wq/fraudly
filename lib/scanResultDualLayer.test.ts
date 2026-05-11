@@ -66,15 +66,15 @@ describe("scanResultDualLayer", () => {
       displayTrust: 85,
       siteStatus: "unverified"
     });
-    expect(tech).toBe("Likely Legit");
+    expect(tech).toBe("Looks safe / Trusted");
   });
 
-  it("combines low coverage + limited band for longer explanation", () => {
+  it("combines low coverage + non-top trust band for longer explanation", () => {
     const line = shortScanExplanation({
       threatActive: false,
       threatKind: null,
       siteStatus: "unverified",
-      trustLevel: "limitedEvidence",
+      trustLevel: "suspicious",
       confidenceLevel: "low"
     });
     expect(line.toLowerCase()).toContain("low scan coverage");
@@ -82,6 +82,6 @@ describe("scanResultDualLayer", () => {
 
   it("derives consumer headline from trust + verdict snapshot", () => {
     const k = humanRecKindFromTrustVerdict(92, "safe");
-    expect(humanRecHeadline(k)).toMatch(/Trusted|Looks Safe/);
+    expect(humanRecHeadline(k)).toMatch(/Looks safe|Trusted/i);
   });
 });

@@ -114,6 +114,12 @@ export const EN_MESSAGES = {
     },
     consumerSummaryDisclaimer:
       "Online risks can change over time. Always use your own judgment before purchasing or sharing personal information.",
+    /** Trust gauge (0 left → 100 right): axis captions aligned with trust score bands. */
+    trustMeterAxis: {
+      highRisk: "High risk",
+      caution: "Be careful / Caution",
+      looksSafe: "Looks safe / Trusted"
+    },
     detailedFindingsToggle: "Detailed scan findings",
     detailedFindingsHint:
       "Technical notes, list matches, reputation snapshots, and modeling detail—open when you want the full picture.",
@@ -168,11 +174,11 @@ export const EN_MESSAGES = {
         critical: "⛔"
       },
       headlines: {
-        trusted: "Trusted",
-        looksSafe: "Looks Safe",
+        trusted: "Looks safe / Trusted",
+        looksSafe: "Looks safe / Trusted",
         notEnoughInfo: "Not Enough Information",
-        beCareful: "Be Careful",
-        highRisk: "High Risk",
+        beCareful: "Be careful / Caution",
+        highRisk: "High risk",
         avoidWebsite: "Avoid This Website",
         dangerousWebsite: "Dangerous Website",
         invalidDomain: "Domain Not Verified",
@@ -398,7 +404,7 @@ export const EN_MESSAGES = {
     inactive: "Inactive / unreachable web",
     suppressedTrustMeter: "Trust score withheld — this hostname is not treated as an active website.",
     suppressedTrustExplanation:
-      "Because no registered/resolvable apex was verified for consumer trust grading, Fraudly hides the Trusted/Caution gauges for this hostname."
+      "Because no registered/resolvable apex was verified for consumer trust grading, Fraudly hides the trust score gauge for this hostname."
   },
   basicResult: {
     heading: "Basic result",
@@ -411,9 +417,9 @@ export const EN_MESSAGES = {
       "Treat this as elevated risk until you can verify the site through an independent, official channel.",
     checkedLink: "Checked link",
     riskStatus: "Risk status",
-    safeLabel: "Trusted",
+    safeLabel: "Looks safe / Trusted",
     safeExplanation: "The basic scan did not highlight major fraud indicators.",
-    suspiciousLabel: "Caution",
+    suspiciousLabel: "Be careful / Caution",
     suspiciousExplanation: "Signals were found that merit extra caution.",
     highRiskLabel: "High risk",
     highRiskExplanation: "Multiple signals indicate an elevated fraud risk.",

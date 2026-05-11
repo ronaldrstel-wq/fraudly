@@ -170,7 +170,7 @@ export function shortScanExplanation(args: {
   }
 
   const lowCoverage = confidenceLevel === "low";
-  if (lowCoverage && trustLevel === "limitedEvidence") {
+  if (lowCoverage && trustLevel !== "trusted") {
     return s.notEnoughInfoLowCoverage;
   }
 

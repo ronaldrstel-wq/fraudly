@@ -468,7 +468,7 @@ describe("trust scoring regressions", () => {
     const trust = trustScoreFromRisk(out.finalScore);
     expect(out.verdict).not.toBe("scam");
     expect(trust).toBeGreaterThanOrEqual(42);
-    expect(["likelyLegit", "limitedEvidence", "suspicious"]).toContain(trustLevelFromScore(trust));
+    expect(["suspicious", "highRisk"]).toContain(trustLevelFromScore(trust));
   });
 
   it("J) Very young RDAP age with HTTPS and no feeds: not automatic scam verdict", () => {

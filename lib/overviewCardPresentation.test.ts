@@ -31,6 +31,7 @@ describe("overviewCardPresentation", () => {
   it("uses non-critical band for benign snapshot", () => {
     const m = buildOverviewFromTrustAndVerdict(82, "safe");
     expect(m.isCritical).toBe(false);
-    expect(m.headline).toBe("Looks Safe");
+    expect(m.headline).toBe("Looks safe / Trusted");
+    expect(m.technicalLabel).toBe("Looks safe / Trusted");
   });
 });

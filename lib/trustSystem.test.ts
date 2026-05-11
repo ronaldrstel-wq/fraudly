@@ -7,27 +7,27 @@ import {
   verdictFromTrustScore
 } from "@/lib/trustSystem";
 
+const looksSafeTrusted = "Looks safe / Trusted";
+const beCarefulCaution = "Be careful / Caution";
+const highRiskLabel = "High risk";
+
 describe("trust bands", () => {
-  it("maps five trust levels by score (90 / 70 / 40 / 20 thresholds)", () => {
-    expect(trustLevelFromScore(95)).toBe("trusted");
-    expect(trustLevelFromScore(90)).toBe("trusted");
-    expect(trustLevelFromScore(89)).toBe("likelyLegit");
-    expect(trustLevelFromScore(70)).toBe("likelyLegit");
-    expect(trustLevelFromScore(69)).toBe("limitedEvidence");
-    expect(trustLevelFromScore(50)).toBe("limitedEvidence");
-    expect(trustLevelFromScore(40)).toBe("limitedEvidence");
-    expect(trustLevelFromScore(39)).toBe("suspicious");
-    expect(trustLevelFromScore(20)).toBe("suspicious");
-    expect(trustLevelFromScore(19)).toBe("highRisk");
+  it("maps three trust levels by score (80 / 50 thresholds)", () => {
+    expect(trustLevelFromScore(100)).toBe("trusted");
+    expect(trustLevelFromScore(80)).toBe("trusted");
+    expect(trustLevelFromScore(79)).toBe("suspicious");
+    expect(trustLevelFromScore(50)).toBe("suspicious");
+    expect(trustLevelFromScore(49)).toBe("highRisk");
     expect(trustLevelFromScore(0)).toBe("highRisk");
   });
 
-  it("labels presentation for each band", () => {
-    expect(trustPresentationFromScore(92).label).toBe("Trusted");
-    expect(trustPresentationFromScore(75).label).toBe("Likely Legit");
-    expect(trustPresentationFromScore(45).label).toBe("Limited Public Data");
-    expect(trustPresentationFromScore(25).label).toBe("Caution");
-    expect(trustPresentationFromScore(5).label).toBe("High Risk");
+  it("labels presentation for user-facing trust bands", () => {
+    expect(trustPresentationFromScore(100).label).toBe(looksSafeTrusted);
+    expect(trustPresentationFromScore(80).label).toBe(looksSafeTrusted);
+    expect(trustPresentationFromScore(79).label).toBe(beCarefulCaution);
+    expect(trustPresentationFromScore(50).label).toBe(beCarefulCaution);
+    expect(trustPresentationFromScore(49).label).toBe(highRiskLabel);
+    expect(trustPresentationFromScore(0).label).toBe(highRiskLabel);
   });
 
   it("inverts risk to trust linearly", () => {

@@ -1,9 +1,12 @@
 export type TrustLevel = "trusted" | "likelyLegit" | "limitedEvidence" | "suspicious" | "highRisk";
 export type ScamVerdict = "safe" | "suspicious" | "scam";
 
+/** User-facing trust band label (three bands on 0–100 trust, higher = safer). */
+export type TrustBandLabel = "Looks safe / Trusted" | "Be careful / Caution" | "High risk";
+
 export type TrustPresentation = {
   level: TrustLevel;
-  label: "Trusted" | "Likely Legit" | "Limited Public Data" | "Caution" | "High Risk";
+  label: TrustBandLabel;
   icon: "check" | "info" | "alert" | "risk";
   toneText: string;
   toneSoftBg: string;
@@ -28,15 +31,14 @@ export function trustScoreFromRisk(riskScore: number): number {
 }
 
 /**
- * Trust-style projection bands (0–100, higher is better).
- * Missing third-party data should move the score into “Limited Evidence”, not straight to “High Risk”.
+ * Trust-style projection (0–100 trust, higher = safer) — three user-facing bands:
+ * 80–100 → trusted, 50–79 → suspicious (caution), 0–49 → highRisk.
+ * Legacy `likelyLegit` / `limitedEvidence` are kept in the type for old payloads but are no longer emitted here.
  */
 export function trustLevelFromScore(trustScore: number): TrustLevel {
   const t = clampScore(trustScore);
-  if (t >= 90) return "trusted";
-  if (t >= 70) return "likelyLegit";
-  if (t >= 40) return "limitedEvidence";
-  if (t >= 20) return "suspicious";
+  if (t >= 80) return "trusted";
+  if (t >= 50) return "suspicious";
   return "highRisk";
 }
 
@@ -47,7 +49,7 @@ export function trustPresentationFromScore(score: number): TrustPresentation {
   if (level === "trusted") {
     return {
       level,
-      label: "Trusted",
+      label: "Looks safe / Trusted",
       icon: "check",
       toneText: "text-emerald-800",
       toneSoftBg: "bg-emerald-50/90",
@@ -56,34 +58,10 @@ export function trustPresentationFromScore(score: number): TrustPresentation {
     };
   }
 
-  if (level === "likelyLegit") {
-    return {
-      level,
-      label: "Likely Legit",
-      icon: "check",
-      toneText: "text-teal-900",
-      toneSoftBg: "bg-teal-50/90",
-      toneSoftBorder: "border-teal-200/90",
-      progressBar: "bg-teal-500"
-    };
-  }
-
-  if (level === "limitedEvidence") {
-    return {
-      level,
-      label: "Limited Public Data",
-      icon: "info",
-      toneText: "text-slate-600",
-      toneSoftBg: "bg-slate-100/90",
-      toneSoftBorder: "border-slate-300/90",
-      progressBar: "bg-slate-400"
-    };
-  }
-
   if (level === "suspicious") {
     return {
       level,
-      label: "Caution",
+      label: "Be careful / Caution",
       icon: "alert",
       toneText: "text-amber-900",
       toneSoftBg: "bg-amber-50/90",
@@ -94,7 +72,7 @@ export function trustPresentationFromScore(score: number): TrustPresentation {
 
   return {
     level,
-    label: "High Risk",
+    label: "High risk",
     icon: "risk",
     toneText: "text-rose-900",
     toneSoftBg: "bg-rose-50/90",

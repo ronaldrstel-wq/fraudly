@@ -76,4 +76,17 @@ describe("parseFlexibleWebsiteInput", () => {
     expect(r?.url.pathname).toBe("/reset");
     expect(r?.url.searchParams.get("x")).toBe("1");
   });
+
+  it("accepts multi-label suspicious-style subdomain without scheme", () => {
+    const r = expectOk("billing-meta.program-ads-agency.com");
+    expect(r?.url.hostname).toBe("billing-meta.program-ads-agency.com");
+    expect(r?.canonicalHref).toMatch(/^https:\/\/billing-meta\.program-ads-agency\.com\/?$/i);
+  });
+
+  it("accepts full URL with path and query on subdomain", () => {
+    const r = expectOk("https://shop.example.com/cart?ref=1");
+    expect(r?.url.hostname).toBe("shop.example.com");
+    expect(r?.url.pathname).toBe("/cart");
+    expect(r?.url.searchParams.get("ref")).toBe("1");
+  });
 });

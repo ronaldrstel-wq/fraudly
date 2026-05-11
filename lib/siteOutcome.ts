@@ -92,7 +92,7 @@ export function deriveSiteStatus(args: {
 
   if (trust >= 90 && anchorsPresent && !args.ctx?.domainPatterns.hasStrongLexicalSuspicion) return "trusted";
   if (trust >= 90) return "unverified";
-  /** Aligns with score bands (40–69 Limited Public Data, 70–89 Likely Legit): further review until genuinely low trust. */
+  /** Aligns with consumer trust presentation (80+ top band): further review until genuinely low trust. */
   if (trust >= 40) return "caution";
   return "high_risk";
 }

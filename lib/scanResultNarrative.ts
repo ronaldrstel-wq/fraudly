@@ -124,6 +124,5 @@ export function shouldShowLimitedPublicStrip(args: {
   if (args.siteStatus === "nonexistent" || args.siteStatus === "inactive") return false;
   if (args.siteStatus === "confirmed_malicious") return false;
   if (args.confidenceLevel === "low") return true;
-  if (args.trustLevel === "limitedEvidence") return true;
   return false;
 }

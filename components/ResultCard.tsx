@@ -99,14 +99,14 @@ function trustMeterTone(score: number, threatActive: boolean): {
       marker: "text-rose-900"
     };
   }
-  if (score >= 70) {
+  if (score >= 80) {
     return {
       track: "bg-emerald-100",
       fill: "bg-gradient-to-r from-emerald-500 via-emerald-500 to-teal-500",
       marker: "text-emerald-900"
     };
   }
-  if (score >= 20) {
+  if (score >= 50) {
     return {
       track: "bg-amber-100",
       fill: "bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500",
@@ -364,9 +364,9 @@ export function ResultCard({ result }: ResultCardProps) {
                     />
                   </div>
                   <div className={`mt-1.5 grid grid-cols-3 text-[11px] font-medium ${meter.marker}`}>
-                    <span className="text-left">Trusted</span>
-                    <span className="text-center">Caution</span>
-                    <span className="text-right">High Risk</span>
+                    <span className="text-left">{EN_MESSAGES.scanResult.trustMeterAxis.highRisk}</span>
+                    <span className="text-center">{EN_MESSAGES.scanResult.trustMeterAxis.caution}</span>
+                    <span className="text-right">{EN_MESSAGES.scanResult.trustMeterAxis.looksSafe}</span>
                   </div>
                 </div>
                 <p className="mt-2 max-w-xl text-xs leading-relaxed text-slate-600 sm:text-[13px]">
