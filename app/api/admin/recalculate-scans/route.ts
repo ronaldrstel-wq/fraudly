@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { recalculateRecentScans } from "@/lib/admin/recalculate-scans";
+import { isCurrentUserAdmin } from "@/lib/auth/isAdmin";
 
 export const runtime = "nodejs";
 
@@ -26,7 +27,13 @@ function hasValidSecret(request: Request): boolean {
 }
 
 export async function POST(request: Request) {
-  if (!hasValidSecret(request)) {
+  let isAdmin = false;
+  try {
+    isAdmin = await isCurrentUserAdmin();
+  } catch {
+    isAdmin = false;
+  }
+  if (!isAdmin && !hasValidSecret(request)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

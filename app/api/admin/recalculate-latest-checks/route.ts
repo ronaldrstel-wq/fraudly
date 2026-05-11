@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { recalculateRecentScans } from "@/lib/admin/recalculate-scans";
+import { isCurrentUserAdmin } from "@/lib/auth/isAdmin";
 
 export const runtime = "nodejs";
 
@@ -24,7 +25,13 @@ function parseLimit(url: URL): number {
 }
 
 export async function POST(request: Request) {
-  if (!isAuthorized(request)) {
+  let isAdmin = false;
+  try {
+    isAdmin = await isCurrentUserAdmin();
+  } catch {
+    isAdmin = false;
+  }
+  if (!isAdmin && !isAuthorized(request)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

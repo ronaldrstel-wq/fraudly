@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { DailyInMemoryRateLimiter, getClientIp } from "@/lib/rateLimiter";
 import { getReputationEnrichment } from "@/lib/outscraper/reputation";
+import { isCurrentUserAdmin } from "@/lib/auth/isAdmin";
 
 export const runtime = "nodejs";
 
@@ -17,6 +18,12 @@ type Body = {
 };
 
 export async function POST(request: Request) {
+  let isAdmin = false;
+  try {
+    isAdmin = await isCurrentUserAdmin();
+  } catch {
+    isAdmin = false;
+  }
   let body: Body;
   try {
     body = (await request.json()) as Body;
@@ -52,10 +59,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "domain_required" }, { status: 400 });
   }
 
-  const ip = getClientIp(request);
-  const limit = enrichmentLimiter.consume(`public-intel:${ip}`);
-  if (!limit.allowed) {
-    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  if (!isAdmin) {
+    const ip = getClientIp(request);
+    const limit = enrichmentLimiter.consume(`public-intel:${ip}`);
+    if (!limit.allowed) {
+      return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+    }
+  } else {
+    console.info("[enrichment/reputation] admin bypass", {
+      bypasses: ["reputation_rate_limits", "reputation_refresh_restrictions"],
+      scanStage
+    });
   }
 
   const enrichment = await getReputationEnrichment({
@@ -64,7 +78,7 @@ export async function POST(request: Request) {
     deepScan,
     confidenceLevel,
     missingReviewSignals,
-    bypassCache
+    bypassCache: isAdmin ? true : bypassCache
   });
 
   console.info("[enrichment/reputation] response summary", {

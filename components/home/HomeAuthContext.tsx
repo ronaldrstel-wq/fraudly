@@ -7,6 +7,7 @@ type HomeAuthState = {
   /** False until the first `/api/auth/status` response. */
   authReady: boolean;
   signedIn: boolean;
+  isAdmin: boolean;
 };
 
 const HomeAuthContext = createContext<HomeAuthState | null>(null);
@@ -14,15 +15,17 @@ const HomeAuthContext = createContext<HomeAuthState | null>(null);
 export function HomeAuthProvider({ children }: { children: ReactNode }) {
   const [authReady, setAuthReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const res = await fetch("/api/auth/status", { credentials: "same-origin" });
-        const data = (await res.json().catch(() => null)) as { signedIn?: boolean } | null;
+        const data = (await res.json().catch(() => null)) as { signedIn?: boolean; isAdmin?: boolean } | null;
         if (!cancelled && data && typeof data.signedIn === "boolean") {
           setSignedIn(data.signedIn);
+          setIsAdmin(data.isAdmin === true);
         }
       } finally {
         if (!cancelled) setAuthReady(true);
@@ -33,7 +36,7 @@ export function HomeAuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const value = useMemo(() => ({ authReady, signedIn }), [authReady, signedIn]);
+  const value = useMemo(() => ({ authReady, signedIn, isAdmin }), [authReady, signedIn, isAdmin]);
 
   return <HomeAuthContext.Provider value={value}>{children}</HomeAuthContext.Provider>;
 }

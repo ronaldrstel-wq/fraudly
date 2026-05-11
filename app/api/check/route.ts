@@ -13,6 +13,7 @@ import { tryRecordRecentSearch } from "@/lib/recent-search/service";
 import { getBillingUserOrNull } from "@/lib/user-store";
 import { persistScanEvidenceRows } from "@/lib/evidence/persistScanEvidence";
 import type { WebsiteAnalysisClientEvidence } from "@/lib/evidence/types";
+import { getAdminIdentityOrNull, isCurrentUserAdmin } from "@/lib/auth/isAdmin";
 
 export const runtime = "nodejs";
 
@@ -72,6 +73,14 @@ const ANON_BILLING_SNAPSHOT = {
   paidChecksCount: 0,
   subscriptionStatus: "inactive"
 } as const;
+const ADMIN_BILLING_SNAPSHOT = {
+  plan: "premium",
+  freeChecksUsed: 0,
+  credits: 9999,
+  monthlyChecksUsed: 0,
+  paidChecksCount: 9999,
+  subscriptionStatus: "active"
+} as const;
 
 function logNonCritical(message: string, error: unknown) {
   if (process.env.NODE_ENV !== "production") {
@@ -106,6 +115,16 @@ export async function POST(request: Request) {
     const userTrimmed = parsed.userTrimmed;
     const domainKey = parsedUrl.hostname.slice(0, 512);
 
+    let adminIdentity: Awaited<ReturnType<typeof getAdminIdentityOrNull>> = null;
+    let isAdmin = false;
+    try {
+      adminIdentity = await getAdminIdentityOrNull();
+      isAdmin = await isCurrentUserAdmin();
+    } catch (e) {
+      logNonCritical("[api/check] admin lookup failed; continuing without admin bypass:", e);
+      adminIdentity = null;
+      isAdmin = false;
+    }
     let billingUser: User | null = null;
     try {
       billingUser = await getBillingUserOrNull();
@@ -116,7 +135,7 @@ export async function POST(request: Request) {
     }
     const hasUsedAnonFreeCheck = hasUsedAnonymousFreeCheckCookie(request.headers.get("cookie"));
 
-    if (!billingUser) {
+    if (!billingUser && !isAdmin) {
       if (!canRunCheck(billingUser, { hasUsedAnonymousFreeCheck: hasUsedAnonFreeCheck })) {
         return NextResponse.json(
           { error: "second_check_requires_signup", message: EN_MESSAGES.auth.loginForAnotherCheck },
@@ -155,24 +174,32 @@ export async function POST(request: Request) {
 
     const clientIpRaw = getClientIp(request);
     const { ipHash, userAgentHash, abuseKey } = buildPrivacySafeRequestFingerprints(pepper, request, clientIpRaw);
-    const paid = billingUser ? hasPaidScanEntitlement(billingUser) : false;
+    const paid = isAdmin ? true : billingUser ? hasPaidScanEntitlement(billingUser) : false;
 
-    const quota = await reserveScanQuotaOrReject({
-      userId: billingUser?.id ?? null,
-      domain: domainKey,
-      scanType: scanKind,
-      ipHash,
-      userAgentHash,
-      abuseKey,
-      authenticated: Boolean(billingUser?.id),
-      paid
-    });
+    if (!isAdmin) {
+      const quota = await reserveScanQuotaOrReject({
+        userId: billingUser?.id ?? null,
+        domain: domainKey,
+        scanType: scanKind,
+        ipHash,
+        userAgentHash,
+        abuseKey,
+        authenticated: Boolean(billingUser?.id),
+        paid
+      });
 
-    if (!quota.ok) {
-      return NextResponse.json(
-        { error: "rate_limited", reason: quota.reason, message: quota.message },
-        { status: 429 }
-      );
+      if (!quota.ok) {
+        return NextResponse.json(
+          { error: "rate_limited", reason: quota.reason, message: quota.message },
+          { status: 429 }
+        );
+      }
+    } else {
+      console.info("[api/check] admin bypass", {
+        adminUserId: adminIdentity?.userId ?? null,
+        bypasses: ["rate_limits", "daily_limits", "deep_scan_limits", "paywall"],
+        domain: domainKey
+      });
     }
 
     const sanitizedEvidence = sanitizeClientEvidence(body.evidence);
@@ -217,11 +244,11 @@ export async function POST(request: Request) {
       detailLevel: "full" as const,
       result: fullResult,
       upsellPremium: false,
-      billing: billingUser ? toBillingSnapshot(billingUser) : ANON_BILLING_SNAPSHOT
+      billing: isAdmin ? ADMIN_BILLING_SNAPSHOT : billingUser ? toBillingSnapshot(billingUser) : ANON_BILLING_SNAPSHOT
     };
 
     const response = NextResponse.json(payload);
-    if (!billingUser) {
+    if (!billingUser && !isAdmin) {
       response.cookies.set(ANON_FREE_CHECK_COOKIE, "true", {
         httpOnly: true,
         sameSite: "lax",

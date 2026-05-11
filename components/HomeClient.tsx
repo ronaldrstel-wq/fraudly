@@ -64,7 +64,7 @@ const SiteFooter = dynamic(() => import("@/components/SiteFooter").then((m) => (
 });
 
 export function HomeClient({ children }: { children?: ReactNode }) {
-  const { signedIn: isSignedIn } = useHomeAuth();
+  const { signedIn: isSignedIn, isAdmin } = useHomeAuth();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScamCheckResult | null>(null);
@@ -414,6 +414,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
           scanProgress={scanProgress}
           scanStatus={scanStatus}
           scanFailed={scanFailed}
+          isAdmin={isAdmin}
           extraBelowInput={
             <OptionalEvidenceScanSection
               values={optionalEvidence}

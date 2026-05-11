@@ -74,6 +74,7 @@ interface HeroProps {
   scanProgress: number;
   scanStatus: string;
   scanFailed?: boolean;
+  isAdmin?: boolean;
   authGate?: ReactNode;
   extraBelowInput?: ReactNode;
 }
@@ -87,6 +88,7 @@ export function Hero({
   scanProgress,
   scanStatus,
   scanFailed = false,
+  isAdmin = false,
   authGate,
   extraBelowInput
 }: HeroProps) {
@@ -200,6 +202,11 @@ export function Hero({
               </svg>
             </span>
             <span>{heroSearchHelper}</span>
+            {isAdmin ? (
+              <span className="rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-700">
+                Admin
+              </span>
+            ) : null}
           </div>
 
           <div className="mt-4 flex justify-center">
