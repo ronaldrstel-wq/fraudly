@@ -428,6 +428,11 @@ export function ResultCard({ result }: ResultCardProps) {
                   can change the real risk.
                 </p>
               ) : null}
+              {result.availability?.status === "limited" ? (
+                <p className="max-w-2xl text-sm leading-relaxed text-slate-600">
+                  Website responded, but some page details could not be inspected.
+                </p>
+              ) : null}
             </header>
 
             <div className="max-w-2xl rounded-xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm sm:px-5 sm:py-4">
@@ -663,6 +668,12 @@ export function ResultCard({ result }: ResultCardProps) {
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
             <p className="text-sm font-semibold text-slate-900">{EN_MESSAGES.scanResult.technicalStatusHeading}</p>
             <p className="mt-1 text-xs text-slate-700">{techStatus}</p>
+            {result.availability ? (
+              <p className="mt-2 text-xs text-slate-600">
+                Availability: {result.availability.status} · {result.availability.reason}
+                {result.availability.httpStatus != null ? ` (HTTP ${result.availability.httpStatus})` : ""}
+              </p>
+            ) : null}
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">

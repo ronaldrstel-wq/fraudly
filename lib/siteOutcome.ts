@@ -40,20 +40,8 @@ export function isProbablyInactiveWebsite(args: {
   ssl: ExternalChecksResult["ssl"];
 }): boolean {
   if (!args.dnsResolvable || args.treatAsNonexistent) return false;
-
-  const textLen = args.websiteSignals?.text?.trim().length ?? 0;
-  const substantial = textLen >= 400;
-  if (substantial) return false;
-
-  if (args.websiteSignals === null) return true;
-
-  const thinParkedBand = textLen < 260;
-  if (!thinParkedBand) return false;
-
-  /* Valid TLS plus a modest scrape often still means something is reachable; avoid “inactive” for borderline SPA shells. */
-  if (args.ssl.httpsEnabled && args.ssl.validCertificate && textLen >= 140) return false;
-
-  return true;
+  if (!args.websiteSignals?.availability) return false;
+  return args.websiteSignals.availability.status === "unreachable";
 }
 
 export function deriveSiteStatus(args: {

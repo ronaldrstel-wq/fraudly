@@ -2,6 +2,7 @@
 
 import { useAuth, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { EN_MESSAGES } from "@/lib/messages.en";
 
 function AuthMenuSkeleton() {
@@ -20,6 +21,27 @@ function AuthMenuSkeleton() {
  */
 export function AuthMenu() {
   const { isLoaded, userId } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!userId) {
+      setIsAdmin(false);
+      return;
+    }
+    (async () => {
+      try {
+        const res = await fetch("/api/auth/status", { credentials: "same-origin" });
+        const data = (await res.json().catch(() => null)) as { isAdmin?: boolean } | null;
+        if (!cancelled) setIsAdmin(data?.isAdmin === true);
+      } catch {
+        if (!cancelled) setIsAdmin(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   if (!isLoaded) {
     return <AuthMenuSkeleton />;
@@ -40,13 +62,31 @@ export function AuthMenu() {
         >
           {EN_MESSAGES.recentSearches.navLabel}
         </Link>
+        {isAdmin ? (
+          <Link
+            href="/admin"
+            className="fraudly-motion rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 hover:bg-violet-100 md:text-sm"
+          >
+            Admin
+          </Link>
+        ) : null}
         <UserButton
           appearance={{
             elements: {
               avatarBox: "h-9 w-9 ring-1 ring-slate-200/80"
             }
           }}
-        />
+        >
+          {isAdmin ? (
+            <UserButton.MenuItems>
+              <UserButton.Link
+                label="Admin tools"
+                labelIcon={<span className="text-[10px] font-bold text-violet-700">A</span>}
+                href="/admin"
+              />
+            </UserButton.MenuItems>
+          ) : null}
+        </UserButton>
       </>
     );
   }

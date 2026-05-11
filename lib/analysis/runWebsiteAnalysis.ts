@@ -374,6 +374,22 @@ export async function runWebsiteAnalysis(
     tier1Threat: criticalThreatClamp
   });
 
+  const availability = {
+    status: websiteSignals?.availability?.status ?? "reachable",
+    methodTried: websiteSignals?.availability?.methodTried ?? "HEAD+GET",
+    httpStatus: websiteSignals?.availability?.httpStatus ?? null,
+    finalUrl: websiteSignals?.availability?.finalUrl ?? redirectChain.finalUrl ?? null,
+    dnsResolved: dnsResolvable,
+    tlsOk: externalChecks.ssl.httpsEnabled && externalChecks.ssl.validCertificate,
+    timedOut: websiteSignals?.availability?.timedOut ?? false,
+    errorCode: websiteSignals?.availability?.errorCode ?? null,
+    reason:
+      websiteSignals?.availability?.reason ??
+      (siteStatus === "inactive"
+        ? "Website unavailable."
+        : "Website responded, but some page details could not be inspected.")
+  } as const;
+
   return {
     score: adjustedRisk,
     verdict: adjustedVerdict,
@@ -402,6 +418,7 @@ export async function runWebsiteAnalysis(
     siteStatus,
     confidenceLevel,
     confidenceRationale,
+    availability,
     behavioralSignalsPending: EMPTY_BEHAVIOR,
     redirectChain,
     ...(trustEvidence ? { trustEvidence } : {})

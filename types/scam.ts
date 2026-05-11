@@ -73,6 +73,17 @@ export interface ScamCheckResult {
     note?: string | null;
     appliedAt: string;
   };
+  availability?: {
+    status: "reachable" | "limited" | "unreachable";
+    methodTried: "HEAD+GET" | "GET";
+    httpStatus: number | null;
+    finalUrl: string | null;
+    dnsResolved: boolean;
+    tlsOk: boolean;
+    timedOut: boolean;
+    errorCode: string | null;
+    reason: string;
+  };
 }
 
 export interface BasicCheckResult {
@@ -362,6 +373,19 @@ export function isScamCheckResult(value: unknown): value is ScamCheckResult {
 
   if (o.trustEvidence !== undefined && o.trustEvidence !== null && !isTrustEvidenceBundle(o.trustEvidence)) {
     return false;
+  }
+  if (o.availability !== undefined && o.availability !== null) {
+    if (typeof o.availability !== "object") return false;
+    const a = o.availability as Record<string, unknown>;
+    if (a.status !== "reachable" && a.status !== "limited" && a.status !== "unreachable") return false;
+    if (a.methodTried !== "HEAD+GET" && a.methodTried !== "GET") return false;
+    if (a.httpStatus !== null && a.httpStatus !== undefined && typeof a.httpStatus !== "number") return false;
+    if (a.finalUrl !== null && a.finalUrl !== undefined && typeof a.finalUrl !== "string") return false;
+    if (typeof a.dnsResolved !== "boolean") return false;
+    if (typeof a.tlsOk !== "boolean") return false;
+    if (typeof a.timedOut !== "boolean") return false;
+    if (a.errorCode !== null && a.errorCode !== undefined && typeof a.errorCode !== "string") return false;
+    if (typeof a.reason !== "string") return false;
   }
   if (o.adminOverride !== undefined && o.adminOverride !== null) {
     if (typeof o.adminOverride !== "object") return false;

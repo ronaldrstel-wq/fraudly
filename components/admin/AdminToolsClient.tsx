@@ -28,11 +28,17 @@ export function AdminToolsClient() {
     })();
   }, []);
 
-  async function runAction(body: Record<string, unknown>) {
+  async function runAction(
+    actionLabel: string,
+    endpoint: string,
+    body: Record<string, unknown>,
+    options?: { confirmMessage?: string }
+  ) {
+    if (options?.confirmMessage && !window.confirm(options.confirmMessage)) return;
     setLoading(true);
     setMessage(null);
     try {
-      const res = await fetch("/api/admin/tools", {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "content-type": "application/json" },
         credentials: "same-origin",
@@ -43,7 +49,7 @@ export function AdminToolsClient() {
         setMessage(`Action failed: ${String(json?.error ?? res.status)}`);
         return;
       }
-      setMessage(`Action "${String(body.action)}" completed.`);
+      setMessage(`${actionLabel} completed.`);
       setDebugJson(JSON.stringify(json, null, 2));
     } finally {
       setLoading(false);
@@ -76,8 +82,13 @@ export function AdminToolsClient() {
 
   return (
     <section className="mt-6 space-y-4">
+      <div className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">
+        <span className="h-1.5 w-1.5 rounded-full bg-violet-600" />
+        Admin mode active
+      </div>
+
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="text-sm font-semibold text-slate-900">Domain tools</p>
+        <p className="text-sm font-semibold text-slate-900">A. Scan Tools</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Domain
@@ -114,35 +125,49 @@ export function AdminToolsClient() {
         <div className="mt-3 flex flex-wrap gap-2">
           <button
             disabled={loading}
-            onClick={() => runAction({ action: "recalculate_domain", domain })}
+            onClick={() => runAction("Recalculate domain", "/api/admin/recalculate-domain", { domain })}
             className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700"
           >
             Recalculate domain
           </button>
           <button
             disabled={loading}
-            onClick={() => runAction({ action: "force_refresh_reputation", domain })}
+            onClick={() => runAction("Force refresh reputation", "/api/admin/force-refresh", { domain })}
             className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700"
           >
             Force refresh reputation
           </button>
           <button
             disabled={loading}
-            onClick={() => runAction({ action: "clear_reputation_cache", domain })}
+            onClick={() =>
+              runAction("Clear reputation cache", "/api/admin/clear-cache", { domain }, {
+                confirmMessage: `Clear reputation cache for ${domain || "this domain"}?`
+              })
+            }
             className="rounded-lg border border-slate-300 bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700"
           >
             Clear reputation cache
           </button>
           <button
             disabled={loading}
-            onClick={() => runAction({ action: "hide_latest_check", domain })}
+            onClick={() =>
+              runAction("Hide scan from latest checks", "/api/admin/hide-scan", { domain }, {
+                confirmMessage: `Hide ${domain || "this domain"} from the public latest checks feed?`
+              })
+            }
             className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700"
           >
             Hide from latest checks
           </button>
           <button
             disabled={loading}
-            onClick={() => runAction({ action: "set_override", domain, overrideVerdict, note: overrideNote })}
+            onClick={() =>
+              runAction("Save override", "/api/admin/set-override", {
+                domain,
+                overrideVerdict,
+                note: overrideNote
+              })
+            }
             className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700"
           >
             Save override
@@ -158,7 +183,7 @@ export function AdminToolsClient() {
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="text-sm font-semibold text-slate-900">Recent recalculate</p>
+        <p className="text-sm font-semibold text-slate-900">B. Latest Checks Moderation</p>
         <label className="mt-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
           Limit
           <input
@@ -170,7 +195,7 @@ export function AdminToolsClient() {
         </label>
         <button
           disabled={loading}
-          onClick={() => runAction({ action: "recalculate_recent", limit })}
+          onClick={() => runAction("Recalculate recent scans", "/api/admin/recalculate-scans", { limit })}
           className="mt-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700"
         >
           Recalculate/rerank recent scans
@@ -194,8 +219,31 @@ export function AdminToolsClient() {
         ) : null}
       </div>
 
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <p className="text-sm font-semibold text-slate-900">C. Reputation Debug</p>
+        <p className="mt-2 text-xs text-slate-600">
+          View provider status, cache status, last enrichment, normalized domain, and raw fetch results.
+        </p>
+        <button
+          disabled={loading}
+          onClick={loadDebug}
+          className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700"
+        >
+          Inspect scan details
+        </button>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <p className="text-sm font-semibold text-slate-900">D. Overrides</p>
+        <p className="mt-2 text-xs text-slate-600">
+          Set a domain override to trusted, suspicious, high risk, or clear it using <code>none</code>.
+        </p>
+      </div>
+
       {message ? (
-        <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">{message}</p>
+        <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+          {loading ? "Working..." : message}
+        </p>
       ) : null}
       {debugJson ? (
         <pre className="max-h-[560px] overflow-auto rounded-2xl border border-slate-200 bg-slate-950 p-4 text-xs text-slate-100">

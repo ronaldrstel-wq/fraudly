@@ -177,7 +177,7 @@ describe("trust scoring regressions", () => {
     expect(trustScoreFromRisk(res.score)).not.toBe(100);
   });
 
-  it("C) parked / inactive snapshot maps to inactive lifecycle status", () => {
+  it("C) parked/thin snapshots do not auto-mark site unavailable", () => {
     const dns = true;
     const infra = buildDomainInfrastructure({
       dnsResolvable: dns,
@@ -202,7 +202,7 @@ describe("trust scoring regressions", () => {
         warnings: []
       }
     });
-    expect(inactive).toBe(true);
+    expect(inactive).toBe(false);
 
     const domain = "parked-holder.example-regression.test";
     const checks = minimalExternal({
@@ -237,7 +237,7 @@ describe("trust scoring regressions", () => {
       ctx,
       reviewSignals: reviews
     });
-    expect(status).toBe("inactive");
+    expect(["caution", "unverified"]).toContain(status);
   });
 
   it("D) youthful legitimate-style domain avoids automatic high‑risk labeling", () => {

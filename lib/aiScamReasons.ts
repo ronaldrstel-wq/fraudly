@@ -18,6 +18,15 @@ export type WebsiteSignals = {
   text: string;
   /** Truncated HTML for offline heuristics (e.g. fake-shop); never exposed to the browser from `/api/check`. */
   htmlSnippet?: string;
+  availability?: {
+    status: "reachable" | "limited" | "unreachable";
+    methodTried: "HEAD+GET" | "GET";
+    httpStatus: number | null;
+    finalUrl: string | null;
+    timedOut: boolean;
+    errorCode: string | null;
+    reason: string;
+  };
 };
 
 type WebsiteCacheBox = { v: WebsiteSignals | null };
@@ -66,52 +75,126 @@ export async function fetchWebsiteSignals(url: string): Promise<WebsiteSignals |
   console.log("[Cache] website miss:", normalizedHost);
 
   const fetchUrl = resolveWebsiteFetchUrl(url, normalizedHost);
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), WEBSITE_FETCH_MS);
 
   let cacheable = true;
   let payload: WebsiteSignals | null = null;
 
   try {
-    const response = await fetch(fetchUrl, {
-      method: "GET",
-      redirect: "follow",
-      signal: controller.signal,
-      headers: {
-        "user-agent":
-          "Mozilla/5.0 (compatible; FraudlyBot/1.0; +https://fraudly.app)"
+    const headers = {
+      "user-agent": "Mozilla/5.0 (compatible; Fraudly scanner; +https://fraudly.app)",
+      accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "accept-language": "en-US,en;q=0.9"
+    };
+    const runAttempt = async (method: "HEAD" | "GET") => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), WEBSITE_FETCH_MS);
+      try {
+        const response = await fetch(fetchUrl, {
+          method,
+          redirect: "follow",
+          signal: controller.signal,
+          headers
+        });
+        return { response, timedOut: false, errorCode: null as string | null };
+      } catch (error) {
+        const timedOut = error instanceof Error && error.name === "AbortError";
+        return { response: null, timedOut, errorCode: timedOut ? "timeout" : "fetch_error" };
+      } finally {
+        clearTimeout(timeout);
       }
-    });
+    };
 
-    if (!response.ok) {
-      payload = null;
-    } else {
-      const contentType = response.headers.get("content-type") ?? "";
-      if (!contentType.includes("text/html")) {
-        payload = null;
-      } else {
-        const html = await response.text();
-        const title = extractTag(html, /<title[^>]*>([\s\S]*?)<\/title>/i);
-        const metaDescription = extractTag(
-          html,
-          /<meta[^>]*name=["']description["'][^>]*content=["']([\s\S]*?)["'][^>]*>/i
-        );
-        const bodySnippet = extractBodyText(html);
+    const head = await runAttempt("HEAD");
+    const get = await runAttempt("GET");
+    const headStatus = head.response?.status ?? null;
+    const getStatus = get.response?.status ?? null;
+    const usedStatus = getStatus ?? headStatus;
+    const finalUrl = get.response?.url ?? head.response?.url ?? null;
+    const timedOut = head.timedOut || get.timedOut;
+    const errorCode = get.errorCode ?? head.errorCode;
 
-        if (!title && !metaDescription && !bodySnippet) {
-          payload = null;
-        } else {
-          const text = [title, metaDescription, bodySnippet].filter(Boolean).join("\n\n");
-          const htmlSnippet = html.length > 80_000 ? `${html.slice(0, 80_000)}\n<!-- truncated -->` : html;
-          payload = { title, metaDescription, bodySnippet, text, htmlSnippet };
+    if (!get.response && head.response) {
+      payload = {
+        title: "",
+        metaDescription: "",
+        bodySnippet: "",
+        text: "",
+        availability: {
+          status: "limited",
+          methodTried: "HEAD+GET",
+          httpStatus: head.response.status,
+          finalUrl,
+          timedOut,
+          errorCode,
+          reason: "Website responded, but page content could not be fully inspected."
         }
-      }
+      };
+    } else if (!get.response && !head.response) {
+      payload = {
+        title: "",
+        metaDescription: "",
+        bodySnippet: "",
+        text: "",
+        availability: {
+          status: "unreachable",
+          methodTried: "HEAD+GET",
+          httpStatus: null,
+          finalUrl,
+          timedOut,
+          errorCode,
+          reason: "No response from website after retry."
+        }
+      };
+    } else if (get.response) {
+      const contentType = get.response.headers.get("content-type") ?? "";
+      const html = contentType.includes("text/html") ? await get.response.text() : "";
+      const title = html ? extractTag(html, /<title[^>]*>([\s\S]*?)<\/title>/i) : "";
+      const metaDescription = html
+        ? extractTag(html, /<meta[^>]*name=["']description["'][^>]*content=["']([\s\S]*?)["'][^>]*>/i)
+        : "";
+      const bodySnippet = html ? extractBodyText(html) : "";
+      const text = [title, metaDescription, bodySnippet].filter(Boolean).join("\n\n");
+      const htmlSnippet = html.length > 80_000 ? `${html.slice(0, 80_000)}\n<!-- truncated -->` : html;
+      const statusClass = get.response.status >= 200 && get.response.status < 400 ? "reachable" : "limited";
+      payload = {
+        title,
+        metaDescription,
+        bodySnippet,
+        text,
+        htmlSnippet,
+        availability: {
+          status: statusClass,
+          methodTried: "HEAD+GET",
+          httpStatus: usedStatus,
+          finalUrl,
+          timedOut,
+          errorCode,
+          reason:
+            statusClass === "reachable"
+              ? "Website responded."
+              : "Website responded, but some page details could not be inspected."
+        }
+      };
+    } else {
+      payload = null;
     }
   } catch {
     cacheable = false;
-    payload = null;
-  } finally {
-    clearTimeout(timeout);
+    payload = {
+      title: "",
+      metaDescription: "",
+      bodySnippet: "",
+      text: "",
+      availability: {
+        status: "unreachable",
+        methodTried: "HEAD+GET",
+        httpStatus: null,
+        finalUrl: null,
+        timedOut: false,
+        errorCode: "fetch_error",
+        reason: "Website availability check failed unexpectedly."
+      }
+    };
   }
 
   if (cacheable) {
