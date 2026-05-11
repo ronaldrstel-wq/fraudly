@@ -21,11 +21,16 @@ describe("availability classification", () => {
           text: "Hello",
           availability: {
             status: "reachable",
+            contentInspectionStatus: "full",
             methodTried: "HEAD+GET",
             httpStatus: 200,
             finalUrl: "https://example.com",
             timedOut: false,
             errorCode: null,
+            botProtectionDetected: false,
+            contentLength: 42,
+            parserFailure: false,
+            extractionFailureReason: null,
             reason: "Website responded."
           }
         },
@@ -45,12 +50,17 @@ describe("availability classification", () => {
           bodySnippet: "",
           text: "",
           availability: {
-            status: "limited",
+            status: "limited_inspection",
+            contentInspectionStatus: "blocked",
             methodTried: "HEAD+GET",
             httpStatus: 403,
             finalUrl: "https://protected.example",
             timedOut: false,
             errorCode: null,
+            botProtectionDetected: true,
+            contentLength: 0,
+            parserFailure: false,
+            extractionFailureReason: null,
             reason: "Website responded, but some page details could not be inspected."
           }
         },
@@ -70,12 +80,17 @@ describe("availability classification", () => {
           bodySnippet: "",
           text: "",
           availability: {
-            status: "unreachable",
+            status: "unavailable",
+            contentInspectionStatus: "failed",
             methodTried: "HEAD+GET",
             httpStatus: null,
             finalUrl: null,
             timedOut: true,
             errorCode: "timeout",
+            botProtectionDetected: false,
+            contentLength: 0,
+            parserFailure: false,
+            extractionFailureReason: "No HTTP response received.",
             reason: "No response from website after retry."
           }
         },

@@ -428,9 +428,9 @@ export function ResultCard({ result }: ResultCardProps) {
                   can change the real risk.
                 </p>
               ) : null}
-              {result.availability?.status === "limited" ? (
+              {result.availability?.status === "limited_inspection" ? (
                 <p className="max-w-2xl text-sm leading-relaxed text-slate-600">
-                  Website responded, but some page details could not be inspected.
+                  Website responded, but some page details could not be fully inspected during this scan.
                 </p>
               ) : null}
             </header>
@@ -672,6 +672,16 @@ export function ResultCard({ result }: ResultCardProps) {
               <p className="mt-2 text-xs text-slate-600">
                 Availability: {result.availability.status} · {result.availability.reason}
                 {result.availability.httpStatus != null ? ` (HTTP ${result.availability.httpStatus})` : ""}
+              </p>
+            ) : null}
+            {result.availability ? (
+              <p className="mt-1 text-xs text-slate-600">
+                Inspection: {result.availability.contentInspectionStatus} · dns={String(result.availability.dnsResolved)} · tls=
+                {String(result.availability.tlsOk)} · botProtection={String(result.availability.botProtectionDetected)} ·
+                parserFailure={String(result.availability.parserFailure)} · contentLength={result.availability.contentLength}
+                {result.availability.extractionFailureReason
+                  ? ` · extractionReason=${result.availability.extractionFailureReason}`
+                  : ""}
               </p>
             ) : null}
           </div>

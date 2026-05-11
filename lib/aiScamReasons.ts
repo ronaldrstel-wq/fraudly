@@ -19,12 +19,17 @@ export type WebsiteSignals = {
   /** Truncated HTML for offline heuristics (e.g. fake-shop); never exposed to the browser from `/api/check`. */
   htmlSnippet?: string;
   availability?: {
-    status: "reachable" | "limited" | "unreachable";
+    status: "reachable" | "limited_inspection" | "unavailable";
+    contentInspectionStatus: "full" | "partial" | "blocked" | "failed";
     methodTried: "HEAD+GET" | "GET";
     httpStatus: number | null;
     finalUrl: string | null;
     timedOut: boolean;
     errorCode: string | null;
+    botProtectionDetected: boolean;
+    contentLength: number;
+    parserFailure: boolean;
+    extractionFailureReason: string | null;
     reason: string;
   };
 };
@@ -98,7 +103,11 @@ export async function fetchWebsiteSignals(url: string): Promise<WebsiteSignals |
         return { response, timedOut: false, errorCode: null as string | null };
       } catch (error) {
         const timedOut = error instanceof Error && error.name === "AbortError";
-        return { response: null, timedOut, errorCode: timedOut ? "timeout" : "fetch_error" };
+        const typed = error as { code?: unknown; cause?: { code?: unknown } } | null;
+        const rawCode = typed?.code ?? typed?.cause?.code;
+        const code = typeof rawCode === "string" ? rawCode.toLowerCase() : null;
+        const errorCode = timedOut ? "timeout" : code ?? "fetch_error";
+        return { response: null, timedOut, errorCode };
       } finally {
         clearTimeout(timeout);
       }
@@ -120,13 +129,18 @@ export async function fetchWebsiteSignals(url: string): Promise<WebsiteSignals |
         bodySnippet: "",
         text: "",
         availability: {
-          status: "limited",
+          status: "limited_inspection",
+          contentInspectionStatus: "failed",
           methodTried: "HEAD+GET",
           httpStatus: head.response.status,
           finalUrl,
           timedOut,
           errorCode,
-          reason: "Website responded, but page content could not be fully inspected."
+          botProtectionDetected: [401, 403, 405, 429, 503].includes(head.response.status),
+          contentLength: 0,
+          parserFailure: false,
+          extractionFailureReason: "GET request failed after successful response.",
+          reason: "Website responded, but some page details could not be fully inspected during this scan."
         }
       };
     } else if (!get.response && !head.response) {
@@ -136,26 +150,60 @@ export async function fetchWebsiteSignals(url: string): Promise<WebsiteSignals |
         bodySnippet: "",
         text: "",
         availability: {
-          status: "unreachable",
+          status: "unavailable",
+          contentInspectionStatus: "failed",
           methodTried: "HEAD+GET",
           httpStatus: null,
           finalUrl,
           timedOut,
           errorCode,
-          reason: "No response from website after retry."
+          botProtectionDetected: false,
+          contentLength: 0,
+          parserFailure: false,
+          extractionFailureReason: "No HTTP response received.",
+          reason: "Site unavailable: no HTTP response received."
         }
       };
     } else if (get.response) {
       const contentType = get.response.headers.get("content-type") ?? "";
-      const html = contentType.includes("text/html") ? await get.response.text() : "";
-      const title = html ? extractTag(html, /<title[^>]*>([\s\S]*?)<\/title>/i) : "";
-      const metaDescription = html
-        ? extractTag(html, /<meta[^>]*name=["']description["'][^>]*content=["']([\s\S]*?)["'][^>]*>/i)
-        : "";
-      const bodySnippet = html ? extractBodyText(html) : "";
+      let html = "";
+      let parserFailure = false;
+      let extractionFailureReason: string | null = null;
+      try {
+        if (contentType.includes("text/html") || contentType.startsWith("text/")) {
+          html = await get.response.text();
+        }
+      } catch (error) {
+        parserFailure = true;
+        extractionFailureReason = error instanceof Error ? error.message : "HTML parsing failed.";
+      }
+      const normalizedHeaders = `${get.response.headers.get("server") ?? ""} ${get.response.headers.get("cf-ray") ?? ""}`.toLowerCase();
+      const bodyProbe = html.toLowerCase();
+      const botProtectionDetected =
+        [401, 403, 405, 429, 503].includes(get.response.status) ||
+        normalizedHeaders.includes("cloudflare") ||
+        bodyProbe.includes("attention required") ||
+        bodyProbe.includes("captcha") ||
+        bodyProbe.includes("bot verification") ||
+        bodyProbe.includes("just a moment");
+      const title = !parserFailure && html ? extractTag(html, /<title[^>]*>([\s\S]*?)<\/title>/i) : "";
+      const metaDescription =
+        !parserFailure && html
+          ? extractTag(html, /<meta[^>]*name=["']description["'][^>]*content=["']([\s\S]*?)["'][^>]*>/i)
+          : "";
+      const bodySnippet = !parserFailure && html ? extractBodyText(html) : "";
       const text = [title, metaDescription, bodySnippet].filter(Boolean).join("\n\n");
       const htmlSnippet = html.length > 80_000 ? `${html.slice(0, 80_000)}\n<!-- truncated -->` : html;
-      const statusClass = get.response.status >= 200 && get.response.status < 400 ? "reachable" : "limited";
+      const hasInspectableContent = Boolean(title || metaDescription || bodySnippet);
+      const isHttpReachable = get.response.status >= 200 && get.response.status < 400;
+      const statusClass = isHttpReachable && hasInspectableContent && !parserFailure && !botProtectionDetected ? "reachable" : "limited_inspection";
+      const contentInspectionStatus: "full" | "partial" | "blocked" | "failed" = parserFailure
+        ? "failed"
+        : botProtectionDetected
+          ? "blocked"
+          : hasInspectableContent
+            ? "full"
+            : "partial";
       payload = {
         title,
         metaDescription,
@@ -164,15 +212,20 @@ export async function fetchWebsiteSignals(url: string): Promise<WebsiteSignals |
         htmlSnippet,
         availability: {
           status: statusClass,
+          contentInspectionStatus,
           methodTried: "HEAD+GET",
           httpStatus: usedStatus,
           finalUrl,
           timedOut,
           errorCode,
+          botProtectionDetected,
+          contentLength: html.length,
+          parserFailure,
+          extractionFailureReason,
           reason:
             statusClass === "reachable"
               ? "Website responded."
-              : "Website responded, but some page details could not be inspected."
+              : "Website responded, but some page details could not be fully inspected during this scan."
         }
       };
     } else {
@@ -186,13 +239,18 @@ export async function fetchWebsiteSignals(url: string): Promise<WebsiteSignals |
       bodySnippet: "",
       text: "",
       availability: {
-        status: "unreachable",
+        status: "unavailable",
+        contentInspectionStatus: "failed",
         methodTried: "HEAD+GET",
         httpStatus: null,
         finalUrl: null,
         timedOut: false,
         errorCode: "fetch_error",
-        reason: "Website availability check failed unexpectedly."
+        botProtectionDetected: false,
+        contentLength: 0,
+        parserFailure: false,
+        extractionFailureReason: "Website availability check failed unexpectedly.",
+        reason: "Site unavailable: website availability check failed unexpectedly."
       }
     };
   }

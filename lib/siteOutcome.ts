@@ -41,7 +41,7 @@ export function isProbablyInactiveWebsite(args: {
 }): boolean {
   if (!args.dnsResolvable || args.treatAsNonexistent) return false;
   if (!args.websiteSignals?.availability) return false;
-  return args.websiteSignals.availability.status === "unreachable";
+  return args.websiteSignals.availability.status === "unavailable";
 }
 
 export function deriveSiteStatus(args: {

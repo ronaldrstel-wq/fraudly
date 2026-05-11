@@ -375,7 +375,8 @@ export async function runWebsiteAnalysis(
   });
 
   const availability = {
-    status: websiteSignals?.availability?.status ?? "reachable",
+    status: websiteSignals?.availability?.status ?? (dnsResolvable ? "limited_inspection" : "unavailable"),
+    contentInspectionStatus: websiteSignals?.availability?.contentInspectionStatus ?? "partial",
     methodTried: websiteSignals?.availability?.methodTried ?? "HEAD+GET",
     httpStatus: websiteSignals?.availability?.httpStatus ?? null,
     finalUrl: websiteSignals?.availability?.finalUrl ?? redirectChain.finalUrl ?? null,
@@ -383,11 +384,15 @@ export async function runWebsiteAnalysis(
     tlsOk: externalChecks.ssl.httpsEnabled && externalChecks.ssl.validCertificate,
     timedOut: websiteSignals?.availability?.timedOut ?? false,
     errorCode: websiteSignals?.availability?.errorCode ?? null,
+    botProtectionDetected: websiteSignals?.availability?.botProtectionDetected ?? false,
+    contentLength: websiteSignals?.availability?.contentLength ?? websiteText.length,
+    parserFailure: websiteSignals?.availability?.parserFailure ?? false,
+    extractionFailureReason: websiteSignals?.availability?.extractionFailureReason ?? null,
     reason:
       websiteSignals?.availability?.reason ??
       (siteStatus === "inactive"
-        ? "Website unavailable."
-        : "Website responded, but some page details could not be inspected.")
+        ? "Site unavailable: no HTTP response received."
+        : "Website responded, but some page details could not be fully inspected during this scan.")
   } as const;
 
   return {
