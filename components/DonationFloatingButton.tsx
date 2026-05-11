@@ -22,7 +22,7 @@ export function DonationFloatingButton() {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Support Fraudly with a PayPal donation"
-        className="pointer-events-auto block rounded-xl transition-transform duration-200 hover:-translate-y-0.5 focus-visible:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2"
+        className="pointer-events-auto block opacity-95 backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:opacity-100 focus-visible:scale-105 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2"
       >
         <Image
           src="/images/buy-us-a-coffee-paypal.png"
@@ -31,7 +31,7 @@ export function DonationFloatingButton() {
           height={180}
           priority={false}
           sizes="(max-width: 640px) 170px, (max-width: 768px) 220px, 250px"
-          className="h-auto w-full rounded-xl border border-slate-200/85 bg-white/90 shadow-md shadow-slate-400/15 backdrop-blur-[1px] hover:shadow-lg"
+          className="h-auto w-full drop-shadow-xl"
         />
       </Link>
     </div>
