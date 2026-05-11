@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { DailyInMemoryRateLimiter, getClientIp } from "@/lib/rateLimiter";
 import { getReputationEnrichment } from "@/lib/outscraper/reputation";
-import { isCurrentUserAdmin } from "@/lib/auth/isAdmin";
+import { getCurrentUserIsAdmin } from "@/lib/auth/admin";
 
 export const runtime = "nodejs";
 
@@ -20,7 +20,7 @@ type Body = {
 export async function POST(request: Request) {
   let isAdmin = false;
   try {
-    isAdmin = await isCurrentUserAdmin();
+    isAdmin = await getCurrentUserIsAdmin();
   } catch {
     isAdmin = false;
   }

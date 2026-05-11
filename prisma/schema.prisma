@@ -25,6 +25,13 @@ enum ScamAlertStatus {
   archived
 }
 
+enum DomainOverrideVerdict {
+  trusted
+  suspicious
+  high_risk
+  none
+}
+
 model User {
   id                   String             @id @default(cuid())
   authProvider         String             @default("legacy")
@@ -195,4 +202,29 @@ model ScanEvidence {
 
   @@index([url, createdAt(sort: Desc)])
   @@index([evidenceType, createdAt(sort: Desc)])
+}
+
+model DomainAdminOverride {
+  id              String               @id @default(cuid())
+  domain          String               @unique @db.VarChar(2048)
+  overrideVerdict DomainOverrideVerdict @default(none)
+  note            String?              @db.Text
+  createdByUserId String?              @db.VarChar(128)
+  createdByEmail  String?              @db.VarChar(320)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+}
+
+model ScanAdminActionLog {
+  id              String   @id @default(cuid())
+  actionType      String   @db.VarChar(64)
+  domain          String?  @db.VarChar(2048)
+  scanId          String?  @db.VarChar(64)
+  metadata        Json?
+  createdByUserId String?  @db.VarChar(128)
+  createdByEmail  String?  @db.VarChar(320)
+  createdAt       DateTime @default(now())
+
+  @@index([actionType, createdAt(sort: Desc)])
+  @@index([domain, createdAt(sort: Desc)])
 }

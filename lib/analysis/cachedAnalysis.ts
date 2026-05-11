@@ -1,5 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { runWebsiteAnalysis } from "@/lib/analysis/runWebsiteAnalysis";
+import { db } from "@/lib/db";
+import { applyDomainOverrideToResult } from "@/lib/admin/apply-domain-override";
 
 const REVALIDATE_SECONDS = 3600;
 
@@ -14,5 +16,10 @@ const getCachedWebsiteAnalysisInner = unstable_cache(
  * Cached per-domain analysis for SEO/shareable `/check/[domain]` pages.
  */
 export function getCachedWebsiteAnalysis(domainLower: string) {
-  return getCachedWebsiteAnalysisInner(domainLower.toLowerCase());
+  return (async () => {
+    const normalized = domainLower.toLowerCase();
+    const base = await getCachedWebsiteAnalysisInner(normalized);
+    const override = await db.domainAdminOverride.findUnique({ where: { domain: normalized } });
+    return applyDomainOverrideToResult(base, override);
+  })();
 }

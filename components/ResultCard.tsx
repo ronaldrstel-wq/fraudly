@@ -416,6 +416,12 @@ export function ResultCard({ result }: ResultCardProps) {
                 </h2>
               </div>
               <p className="max-w-2xl text-base leading-relaxed text-slate-700 sm:text-[17px]">{shortExplain}</p>
+              {result.adminOverride ? (
+                <p className="max-w-2xl rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs leading-relaxed text-violet-800">
+                  Admin override applied: <span className="font-semibold">{result.adminOverride.verdict}</span>
+                  {result.adminOverride.note ? ` — ${result.adminOverride.note}` : ""}
+                </p>
+              ) : null}
               {result.redirectChain?.crossDomainRedirect ? (
                 <p className="max-w-2xl text-sm leading-relaxed text-slate-600">
                   This website redirects to another domain. Fraudly also checked the final destination because redirects
@@ -891,6 +897,15 @@ export function ResultCard({ result }: ResultCardProps) {
               Matched profile/domain:{" "}
               <span className="font-medium">{reputation.businessName ?? reputation.normalizedDomain}</span>
             </p>
+            {result.adminOverride ? (
+              <p>
+                Admin override:{" "}
+                <span className="font-medium">
+                  {result.adminOverride.verdict}
+                  {result.adminOverride.note ? ` (${result.adminOverride.note})` : ""}
+                </span>
+              </p>
+            ) : null}
             {reputation.reputationDebug ? (
               <p className="text-xs text-slate-600">
                 Debug: enabled={String(reputation.reputationDebug.enabled)}; apiKeyPresent=

@@ -67,6 +67,12 @@ export interface ScamCheckResult {
   redirectChain?: RedirectChainAnalysis;
   /** Optional screenshot / ad / webshop heuristics layered on top of the URL scan. */
   trustEvidence?: TrustEvidenceBundle;
+  /** Optional admin quality override (auditable, separate from raw evidence). */
+  adminOverride?: {
+    verdict: "trusted" | "suspicious" | "high_risk";
+    note?: string | null;
+    appliedAt: string;
+  };
 }
 
 export interface BasicCheckResult {
@@ -356,6 +362,13 @@ export function isScamCheckResult(value: unknown): value is ScamCheckResult {
 
   if (o.trustEvidence !== undefined && o.trustEvidence !== null && !isTrustEvidenceBundle(o.trustEvidence)) {
     return false;
+  }
+  if (o.adminOverride !== undefined && o.adminOverride !== null) {
+    if (typeof o.adminOverride !== "object") return false;
+    const ao = o.adminOverride as Record<string, unknown>;
+    if (ao.verdict !== "trusted" && ao.verdict !== "suspicious" && ao.verdict !== "high_risk") return false;
+    if (ao.note !== undefined && ao.note !== null && typeof ao.note !== "string") return false;
+    if (typeof ao.appliedAt !== "string") return false;
   }
 
   return true;

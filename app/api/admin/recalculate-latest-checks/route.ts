@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { recalculateRecentScans } from "@/lib/admin/recalculate-scans";
-import { isCurrentUserAdmin } from "@/lib/auth/isAdmin";
+import { getCurrentUserIsAdmin } from "@/lib/auth/admin";
 
 export const runtime = "nodejs";
 
@@ -27,9 +27,12 @@ function parseLimit(url: URL): number {
 export async function POST(request: Request) {
   let isAdmin = false;
   try {
-    isAdmin = await isCurrentUserAdmin();
+    isAdmin = await getCurrentUserIsAdmin();
   } catch {
     isAdmin = false;
+  }
+  if (isAdmin) {
+    console.info("[admin/recalculate-latest-checks] admin route access granted");
   }
   if (!isAdmin && !isAuthorized(request)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });

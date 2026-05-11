@@ -13,7 +13,9 @@ import { tryRecordRecentSearch } from "@/lib/recent-search/service";
 import { getBillingUserOrNull } from "@/lib/user-store";
 import { persistScanEvidenceRows } from "@/lib/evidence/persistScanEvidence";
 import type { WebsiteAnalysisClientEvidence } from "@/lib/evidence/types";
-import { getAdminIdentityOrNull, isCurrentUserAdmin } from "@/lib/auth/isAdmin";
+import { getAdminIdentityOrNull, getCurrentUserIsAdmin } from "@/lib/auth/admin";
+import { db } from "@/lib/db";
+import { applyDomainOverrideToResult } from "@/lib/admin/apply-domain-override";
 
 export const runtime = "nodejs";
 
@@ -119,7 +121,7 @@ export async function POST(request: Request) {
     let isAdmin = false;
     try {
       adminIdentity = await getAdminIdentityOrNull();
-      isAdmin = await isCurrentUserAdmin();
+      isAdmin = await getCurrentUserIsAdmin();
     } catch (e) {
       logNonCritical("[api/check] admin lookup failed; continuing without admin bypass:", e);
       adminIdentity = null;
@@ -198,14 +200,22 @@ export async function POST(request: Request) {
       console.info("[api/check] admin bypass", {
         adminUserId: adminIdentity?.userId ?? null,
         bypasses: ["rate_limits", "daily_limits", "deep_scan_limits", "paywall"],
-        domain: domainKey
+        domain: domainKey,
+        scanType: scanKind
       });
     }
 
     const sanitizedEvidence = sanitizeClientEvidence(body.evidence);
-    const fullResult = sanitizedEvidence
+    const baseResult = sanitizedEvidence
       ? await runWebsiteAnalysis(canonicalHref, language, { evidence: sanitizedEvidence })
       : await runWebsiteAnalysis(canonicalHref, language);
+    let override = null;
+    try {
+      override = await db.domainAdminOverride?.findUnique?.({ where: { domain: baseResult.domain } });
+    } catch {
+      override = null;
+    }
+    const fullResult = applyDomainOverrideToResult(baseResult, override);
 
     if (sanitizedEvidence && fullResult.trustEvidence) {
       void persistScanEvidenceRows({
