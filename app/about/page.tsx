@@ -53,6 +53,21 @@ export default function AboutPage() {
 
         <div className="mt-10 space-y-8 sm:mt-12 md:mt-14 md:space-y-10">
           <SectionCard>
+            <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+              Independent Dutch project
+            </div>
+            <h2 className="mt-3 text-lg font-bold text-slate-900 md:text-xl">Independent project</h2>
+            <p className="mt-3 text-pretty text-sm leading-relaxed text-slate-700 md:text-base">
+              Fraudly is an independent project created by Ronald, a Dutch technology professional and Service Manager with
+              experience in AI, digital services, and building user-focused applications.
+            </p>
+            <p className="mt-3 text-pretty text-sm leading-relaxed text-slate-700 md:text-base">
+              The project is built with a strong focus on usability, transparency, privacy, and helping people make safer
+              decisions online.
+            </p>
+          </SectionCard>
+
+          <SectionCard>
             <h2 className="text-lg font-bold text-slate-900 md:text-xl">Why Fraudly exists</h2>
             <p className="mt-3 text-pretty text-sm leading-relaxed text-slate-700 md:text-base">
               Online scams keep evolving—fake storefronts powered by slick ads, copycat banking portals, phishing DMs, and shady
