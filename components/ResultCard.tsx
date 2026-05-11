@@ -196,6 +196,25 @@ function providerStateLabel(reputation: ReputationEnrichment | null, repError: s
   }
 }
 
+function publicReviewUnavailableMessage(
+  reputation: ReputationEnrichment | null,
+  repError: string | null,
+  fallback: string
+): string {
+  if (repError) return fallback;
+  const status = reputation?.reputationStatus;
+  if (
+    status === "disabled" ||
+    status === "not_run" ||
+    status === "provider_error" ||
+    status === "called_no_match" ||
+    status === "cache_hit"
+  ) {
+    return fallback;
+  }
+  return reputation?.providerReason?.trim() ? reputation.providerReason : fallback;
+}
+
 /** Tier‑1 phishing/malware list matches surfaced as structured provider rows (not guesses). */
 function isConfirmedIntelTrustSignal(signal: TrustSignal): boolean {
   if (signal.type !== "danger" && signal.type !== "warning") return false;
@@ -206,7 +225,9 @@ function isConfirmedIntelTrustSignal(signal: TrustSignal): boolean {
 export function ResultCard({ result }: ResultCardProps) {
   const threat = assessCriticalThreat(result);
   const displayTrust = displayTrustScoreForResult(result);
-  const showGauge = shouldShowTrustGauge(result) && typeof displayTrust === "number";
+  const hasUnavailableSite = result.availability?.status === "unavailable" || result.siteStatus === "inactive";
+  const hasLimitedInspection = result.availability?.status === "limited_inspection";
+  const showGauge = shouldShowTrustGauge(result) && typeof displayTrust === "number" && !hasUnavailableSite;
   const showNonexistentHeadline = result.omitTrustScoreGauge === true;
 
   const trustLevel = trustLevelFromScore(displayTrust ?? 0);
@@ -227,7 +248,7 @@ export function ResultCard({ result }: ResultCardProps) {
     displayTrust,
     siteStatus: result.siteStatus
   });
-  const shortExplain = shortScanExplanation({
+  const computedShortExplain = shortScanExplanation({
     threatActive: threat.active,
     threatKind: threat.kind,
     siteStatus: result.siteStatus,
@@ -236,6 +257,9 @@ export function ResultCard({ result }: ResultCardProps) {
     hasActualRiskIndicators:
       result.scoreResult.signals.some((signal) => signal.evidenceTier === "risk_indicator" && signal.impact > 0) || threat.active
   });
+  const shortExplain = hasLimitedInspection
+    ? "The website responded, but some page details could not be fully inspected during this scan."
+    : computedShortExplain;
   const showLimitedStrip = shouldShowLimitedPublicStrip({
     threatActive: threat.active,
     confidenceLevel: result.confidenceLevel,
@@ -533,7 +557,9 @@ export function ResultCard({ result }: ResultCardProps) {
                       <p className="mt-1 text-xs text-slate-600">{formatReviewCount(trustpilotCount ?? undefined)} reviews</p>
                     </>
                   ) : (
-                    <p className="mt-1 text-xs text-slate-600">{reputation?.providerReason ?? "No public profile found in this scan."}</p>
+                    <p className="mt-1 text-xs text-slate-600">
+                      {publicReviewUnavailableMessage(reputation, repError, "No public review profile found in this scan.")}
+                    </p>
                   )}
                 </article>
 
@@ -550,63 +576,13 @@ export function ResultCard({ result }: ResultCardProps) {
                       <p className="mt-1 text-xs text-slate-600">{formatReviewCount(googleCount ?? undefined)} reviews</p>
                     </>
                   ) : (
-                    <p className="mt-1 text-xs text-slate-600">{reputation?.providerReason ?? "No review snapshot available."}</p>
+                    <p className="mt-1 text-xs text-slate-600">
+                      {publicReviewUnavailableMessage(reputation, repError, "No review snapshot available in this scan.")}
+                    </p>
                   )}
                 </article>
               </div>
-
-              <div className="mt-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
-                <p>
-                  Reputation source status:{" "}
-                  <span className="font-medium text-slate-700">
-                    {providerLabel}
-                  </span>
-                </p>
-                <p className="mt-1">
-                  Cache status: <span className="font-medium text-slate-700">{cacheLabel}</span>
-                </p>
-                <p className="mt-1">
-                  Last checked:{" "}
-                  <span className="font-medium text-slate-700">
-                    {reputation?.lastUpdated ? new Date(reputation.lastUpdated).toLocaleString("en") : "During this scan"}
-                  </span>
-                </p>
-                <p className="mt-1">
-                  Scan stage:{" "}
-                  <span className="font-medium text-slate-700">{reputation?.reputationScanStage ?? "standard"}</span>
-                </p>
-                {process.env.NODE_ENV !== "production" ? (
-                  <button
-                    type="button"
-                    className="mt-2 rounded-lg border border-slate-300 px-2 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50"
-                    onClick={() => {
-                      const next = !devBypassCache;
-                      setDevBypassCache(next);
-                      void loadReputationSignals(false, next);
-                    }}
-                  >
-                    {devBypassCache ? "Disable cache bypass" : "Bypass cache and refresh"}
-                  </button>
-                ) : null}
-              </div>
             </section>
-
-            <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                What this scan could check
-              </p>
-              <p className="mt-1 font-semibold text-slate-900">{result.confidenceLevel === "low" ? "Limited public data available" : "Good data availability"}</p>
-              <p className="mt-1 text-xs text-slate-600">
-                Some public reputation data may be limited in a given scan. That affects context completeness, not direct risk.
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-slate-600">{labelForScanCoverage(result.confidenceLevel)}</p>
-              {!threat.active ? <p className="mt-2 text-xs text-slate-600">{result.confidenceRationale}</p> : null}
-              {threat.active ? (
-                <p className="mt-2 text-xs font-medium text-rose-900">
-                  {EN_MESSAGES.scanResult.resultSections.trustScoreThreatNote}
-                </p>
-              ) : null}
-            </div>
 
             <section className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-900">Why we say this</h3>
@@ -953,6 +929,19 @@ export function ResultCard({ result }: ResultCardProps) {
             >
               Run deep scan
             </button>
+            {process.env.NODE_ENV !== "production" ? (
+              <button
+                type="button"
+                className="mt-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                onClick={() => {
+                  const next = !devBypassCache;
+                  setDevBypassCache(next);
+                  void loadReputationSignals(false, next);
+                }}
+              >
+                {devBypassCache ? "Disable cache bypass" : "Bypass cache and refresh"}
+              </button>
+            ) : null}
           </div>
         ) : (
           <p className="mt-2 text-sm text-slate-600">{sec.reputationEmptyHint}</p>
