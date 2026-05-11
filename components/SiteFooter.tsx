@@ -27,6 +27,9 @@ export function SiteFooter() {
           <Link href="/latest-checks" className="fraudly-footer-link">
             Latest checks
           </Link>
+          <Link href="/pulse" className="fraudly-footer-link">
+            Fraudly Pulse
+          </Link>
           <Link href="/scam-alerts" className="fraudly-footer-link">
             Scam alerts
           </Link>
