@@ -198,9 +198,10 @@ export function parseScamAlertsTimeWindow(raw: string | undefined): ScamAlertsTi
   const v = typeof raw === "string" ? raw.trim().toLowerCase() : "";
   if (v === "24h" || v === "last-24h" || v === "last24h") return "24h";
   if (v === "7d" || v === "week" || v === "last-7-days") return "7d";
+  if (v === "today") return "today";
   if (v === "all") return "all";
-  if (v === "today" || v === "") return "today";
-  return "today";
+  /** No `time` param (or empty / unknown): show every published active alert so the index is not empty when older rows exist. */
+  return "all";
 }
 
 export function parseScamAlertsPageParam(raw: string | string[] | undefined): number {
@@ -217,7 +218,7 @@ export function buildScamAlertsQuery(base: {
   time?: ScamAlertsTimeWindow;
 }): string {
   const p = new URLSearchParams();
-  if (base.time && base.time !== "today") p.set("time", base.time);
+  if (base.time && base.time !== "all") p.set("time", base.time);
   if (base.filter && base.filter !== "all") p.set("filter", base.filter);
   if (base.type?.trim()) p.set("type", base.type.trim());
   if (base.page !== undefined && base.page > 1) p.set("page", String(base.page));

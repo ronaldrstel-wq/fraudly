@@ -6,7 +6,7 @@ import { applyScamAlertFeedQuality } from "@/lib/scam-alerts/feedQuality";
 /** Public index filters (query param `filter`). */
 export type ScamAlertsPublicFilter = "all" | "high" | "malware" | "phishing" | "new-today";
 
-/** Time window for `/scam-alerts` (query param `time`). Default: today (UTC). */
+/** Time window for `/scam-alerts` (query param `time`). Default: all (no `publishedAt` lower bound). */
 export type ScamAlertsTimeWindow = "today" | "24h" | "7d" | "all";
 
 export const SCAM_ALERTS_PAGE_SIZE = 24;
@@ -294,7 +294,7 @@ export async function getPublishedScamAlertsPageResult(params: {
 }): Promise<PublishedScamAlertsPageResult> {
   const now = params.now ?? new Date();
   const pageSize = Math.max(1, Math.min(48, params.pageSize ?? SCAM_ALERTS_PAGE_SIZE));
-  const timeWindow = params.timeWindow ?? "today";
+  const timeWindow = params.timeWindow ?? "all";
   const baseWhere = buildPublishedScamAlertsWhere(params.filter, params.exactScamType, now);
   const tw = buildPublishedScamTimeWindowWhere(timeWindow, now);
   const where: Prisma.ScamAlertWhereInput = tw ? { AND: [baseWhere, tw] } : baseWhere;

@@ -490,7 +490,15 @@ export const EN_MESSAGES = {
     explainChipPhishing: "Phishing indicators",
     explainChipSuspiciousDomains: "New suspicious registrations",
     chipHint: "Use filters to zoom in on phishing-style alerts, trending domains, and high-confidence summaries.",
-    summaryNewTodayUtc: "Recently published (UTC)"
+    summaryNewTodayUtc: "Recently published (UTC)",
+    emptyStateZeroTitle: "No active scam alerts right now",
+    emptyStateZeroBody:
+      "Fraudly continuously checks public threat feeds and recent scans. New alerts will appear here when there is enough evidence to publish them.",
+    emptyStateFilteredTitle: "No alerts match this view",
+    emptyStateFilteredBody:
+      "Try a wider time range (for example “All alerts”) or a different severity filter. Totals above still reflect all published alerts that are currently in view.",
+    emptyStateViewAllTimeCta: "View all published alerts",
+    emptyStateCheckWebsiteCta: "Check a website now"
   },
   latestChecks: {
     navLabel: "Latest checks",

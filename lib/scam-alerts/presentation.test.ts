@@ -106,23 +106,24 @@ describe("buildScamAlertsQuery", () => {
     expect(buildScamAlertsQuery({ filter: "malware", page: 3 })).toBe("?filter=malware&page=3");
   });
 
-  it("omits time=today but includes other windows", () => {
-    expect(buildScamAlertsQuery({ time: "today" })).toBe("");
+  it("omits time=all but includes other windows", () => {
+    expect(buildScamAlertsQuery({ time: "all" })).toBe("");
+    expect(buildScamAlertsQuery({ time: "today" })).toBe("?time=today");
     expect(buildScamAlertsQuery({ time: "24h", filter: "high" })).toBe("?time=24h&filter=high");
     expect(buildScamAlertsQuery({ time: "7d" })).toBe("?time=7d");
-    expect(buildScamAlertsQuery({ time: "all", page: 2 })).toBe("?time=all&page=2");
+    expect(buildScamAlertsQuery({ time: "all", page: 2 })).toBe("?page=2");
   });
 });
 
 describe("parseScamAlertsTimeWindow", () => {
-  it("defaults to today", () => {
-    expect(parseScamAlertsTimeWindow(undefined)).toBe("today");
-    expect(parseScamAlertsTimeWindow("")).toBe("today");
+  it("defaults to all for missing or unknown params", () => {
+    expect(parseScamAlertsTimeWindow(undefined)).toBe("all");
+    expect(parseScamAlertsTimeWindow("")).toBe("all");
     expect(parseScamAlertsTimeWindow("today")).toBe("today");
     expect(parseScamAlertsTimeWindow("LAST-24H")).toBe("24h");
     expect(parseScamAlertsTimeWindow("last-7-days")).toBe("7d");
     expect(parseScamAlertsTimeWindow("all")).toBe("all");
-    expect(parseScamAlertsTimeWindow("bogus")).toBe("today");
+    expect(parseScamAlertsTimeWindow("bogus")).toBe("all");
   });
 });
 

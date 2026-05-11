@@ -47,7 +47,7 @@ function scamAlertsCanonicalPath(options: {
     timeWindow = "today";
   }
   const q = buildScamAlertsQuery({
-    time: timeWindow === "today" ? undefined : timeWindow,
+    time: timeWindow === "all" ? undefined : timeWindow,
     filter: filter === "all" ? undefined : filter,
     type: options.type?.trim() || undefined,
     page: options.page > 1 ? options.page : undefined
@@ -155,22 +155,24 @@ export default async function ScamAlertsPage({ searchParams }: PageProps) {
         {alerts.length === 0 ? (
           <section className="mt-10 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
             <h2 className="text-xl font-semibold text-slate-900">
-              {stats.total === 0 ? "No published scam alerts yet." : "No alerts match this filter."}
-            </h2>
-            <p className="mt-2 mx-auto max-w-lg text-sm text-slate-600">
               {stats.total === 0
-                ? "Fraudly publishes alerts when public threat feeds contain high-confidence indicators. Check back soon as feeds update."
-                : timeWindow === "today"
-                  ? "Nothing was published yet today (UTC). Try Last 24h, Last 7 days, or All alerts—or widen severity filters."
-                  : "Try a different time range or severity filter. Totals above still reflect all published alerts."}
+                ? EN_MESSAGES.scamAlertsUi.emptyStateZeroTitle
+                : EN_MESSAGES.scamAlertsUi.emptyStateFilteredTitle}
+            </h2>
+            <p className="mt-2 mx-auto max-w-lg text-sm leading-relaxed text-slate-600">
+              {stats.total === 0 ? EN_MESSAGES.scamAlertsUi.emptyStateZeroBody : EN_MESSAGES.scamAlertsUi.emptyStateFilteredBody}
             </p>
-            {stats.total > 0 && timeWindow === "today" ? (
+            {stats.total > 0 && timeWindow !== "all" ? (
               <p className="mt-3 text-center text-sm">
                 <Link
-                  href={`/scam-alerts${buildScamAlertsQuery({ time: "7d", filter: filter === "all" ? undefined : filter, type: selectedType || undefined })}`}
+                  href={`/scam-alerts${buildScamAlertsQuery({
+                    time: "all",
+                    filter: filter === "all" ? undefined : filter,
+                    type: selectedType || undefined
+                  })}`}
                   className="font-semibold text-blue-700 underline-offset-2 hover:underline"
                 >
-                  View last 7 days
+                  {EN_MESSAGES.scamAlertsUi.emptyStateViewAllTimeCta}
                 </Link>
               </p>
             ) : null}
@@ -178,7 +180,7 @@ export default async function ScamAlertsPage({ searchParams }: PageProps) {
               href="/#link-check"
               className="mt-6 inline-flex rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-5 py-3 text-sm font-semibold text-white shadow-md hover:brightness-110"
             >
-              Check a website now
+              {EN_MESSAGES.scamAlertsUi.emptyStateCheckWebsiteCta}
             </Link>
           </section>
         ) : (

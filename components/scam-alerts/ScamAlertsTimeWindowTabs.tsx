@@ -50,7 +50,9 @@ export function ScamAlertsTimeWindowTabs({ active, filter, selectedType }: Props
           );
         })}
       </nav>
-      <p className="mt-2 text-xs text-slate-500">Default is Today (UTC). Selection is kept in the URL.</p>
+      <p className="mt-2 text-xs text-slate-500">
+        Default shows all published alerts in view. Narrow to Today (UTC) or shorter windows from the URL.
+      </p>
     </div>
   );
 }
