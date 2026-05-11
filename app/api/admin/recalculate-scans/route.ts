@@ -3,10 +3,18 @@ import { recalculateRecentScans } from "@/lib/admin/recalculate-scans";
 
 export const runtime = "nodejs";
 
-function isAuthorized(request: Request): boolean {
+type Body = {
+  limit?: number;
+  sinceDays?: number;
+  dryRun?: boolean;
+  force?: boolean;
+  forceLiveRefresh?: boolean;
+};
+
+function hasValidSecret(request: Request): boolean {
   const adminExpected = process.env.ADMIN_RECALC_KEY?.trim();
   const cronExpected = process.env.CRON_SECRET?.trim();
-  const adminProvided = request.headers.get("x-admin-key")?.trim() ?? request.headers.get("x-admin-recalc-key")?.trim();
+  const adminProvided = request.headers.get("x-admin-recalc-key")?.trim() ?? request.headers.get("x-admin-key")?.trim();
   const cronProvided = request.headers.get("x-cron-secret")?.trim();
   const authBearer = request.headers.get("authorization")?.trim().replace(/^Bearer\s+/i, "");
   const adminValid = Boolean(adminExpected && adminProvided && adminProvided === adminExpected);
@@ -17,26 +25,25 @@ function isAuthorized(request: Request): boolean {
   return adminValid || cronValid;
 }
 
-function parseLimit(url: URL): number {
-  const raw = Number.parseInt(url.searchParams.get("limit") ?? "10", 10);
-  if (!Number.isFinite(raw) || raw < 1) return 10;
-  return Math.min(raw, 100);
-}
-
 export async function POST(request: Request) {
-  if (!isAuthorized(request)) {
+  if (!hasValidSecret(request)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const limit = parseLimit(new URL(request.url));
+  let body: Body = {};
+  try {
+    body = (await request.json()) as Body;
+  } catch {
+    body = {};
+  }
+
   const summary = await recalculateRecentScans({
-    limit,
-    sinceDays: 30,
-    dryRun: false,
-    force: true,
-    forceLiveRefresh: false
+    limit: body.limit,
+    sinceDays: body.sinceDays,
+    dryRun: body.dryRun,
+    force: body.force,
+    forceLiveRefresh: body.forceLiveRefresh
   });
 
   return NextResponse.json(summary);
 }
-
