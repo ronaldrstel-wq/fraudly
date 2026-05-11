@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { ClerkAppProvider } from "@/components/providers/ClerkAppProvider";
 import { CookieConsentProvider } from "@/components/CookieConsentProvider";
 import { logClerkProductionMisconfigWarnings } from "@/lib/clerkConfig";
 import { JsonLd } from "@/components/JsonLd";
@@ -79,7 +80,9 @@ export default function RootLayout({
       <body className={`${inter.className} min-h-screen antialiased`}>
         <PwaServiceWorkerRegister />
         <JsonLd />
-        <CookieConsentProvider>{children}</CookieConsentProvider>
+        <ClerkAppProvider>
+          <CookieConsentProvider>{children}</CookieConsentProvider>
+        </ClerkAppProvider>
       </body>
     </html>
   );
