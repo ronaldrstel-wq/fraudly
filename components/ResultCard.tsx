@@ -24,7 +24,7 @@ import { ThreatBanner } from "@/components/ThreatBanner";
 import { ResultSupportBox } from "@/components/ResultSupportBox";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { shouldShowTrustGauge } from "@/lib/trustGaugeDisplay";
-import { trustLevelFromScore, type TrustLevel } from "@/lib/trustSystem";
+import { trustLevelFromScore, trustPresentationFromScore, type TrustLevel } from "@/lib/trustSystem";
 import { EvidenceSignalsCard } from "@/components/EvidenceSignalsCard";
 import type { ScamCheckResult } from "@/types/scam";
 import type { ConfidenceLevel, SiteStatus } from "@/types/site-outcome";
@@ -182,7 +182,7 @@ export function ResultCard({ result }: ResultCardProps) {
   });
   const humanHeadline = humanRecHeadline(humanKind);
   const humanTone = humanRecHeadlineTone(humanKind);
-  const sensitiveSupportPlacement = humanKind === "highRisk" || humanKind === "avoidWebsite" || humanKind === "dangerousWebsite";
+  const activeTrustLabel = trustPresentationFromScore(displayTrust ?? 0).label;
   const techStatus = technicalStatusText({
     threatActive: threat.active,
     threatKind: threat.kind,
@@ -339,22 +339,13 @@ export function ResultCard({ result }: ResultCardProps) {
               </p>
             </div>
 
-            <section
-              className="rounded-xl border border-slate-200 bg-slate-50/75 px-4 py-3"
-              aria-label={`${EN_MESSAGES.scanResult.technicalStatusHeading}: ${techStatus}`}
-            >
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                {EN_MESSAGES.scanResult.technicalStatusHeading}
-              </p>
-              <p className="mt-1 text-sm font-semibold text-slate-900">{techStatus}</p>
-            </section>
-
             {showGauge && typeof displayTrust === "number" ? (
               <section className="rounded-xl border border-slate-200 bg-white px-4 py-3" aria-label={`Trust score ${displayTrust} out of 100`}>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <p className="text-sm font-semibold text-slate-900">{activeTrustLabel}</p>
+                <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   {EN_MESSAGES.scanResult.trustScoreLabel}
                 </p>
-                <p className="mt-1.5 text-lg font-semibold tabular-nums">
+                <p className="mt-1 text-lg font-semibold tabular-nums">
                   <span className={threat.active ? "text-slate-500" : "text-slate-700"}>{displayTrust}</span>
                   <span className="text-slate-400"> / 100</span>
                 </p>
@@ -365,10 +356,11 @@ export function ResultCard({ result }: ResultCardProps) {
                       style={{ width: `${Math.max(0, Math.min(100, displayTrust))}%` }}
                     />
                   </div>
-                  <div className={`mt-1.5 grid grid-cols-3 text-[11px] font-medium ${meter.marker}`}>
-                    <span className="text-left">{EN_MESSAGES.scanResult.trustMeterAxis.highRisk}</span>
-                    <span className="text-center">{EN_MESSAGES.scanResult.trustMeterAxis.caution}</span>
-                    <span className="text-right">{EN_MESSAGES.scanResult.trustMeterAxis.looksSafe}</span>
+                  <div className="mt-1.5 grid grid-cols-4 text-[10px] font-medium text-slate-500">
+                    <span className="text-left">0</span>
+                    <span className="text-center">49</span>
+                    <span className="text-center">79</span>
+                    <span className="text-right">100</span>
                   </div>
                 </div>
                 <p className="mt-2 max-w-xl text-xs leading-relaxed text-slate-600 sm:text-[13px]">
@@ -395,9 +387,6 @@ export function ResultCard({ result }: ResultCardProps) {
                 <p className="mt-1 text-xs text-slate-500">This snapshot did not produce a numeric trust score.</p>
               </div>
             )}
-
-            {!sensitiveSupportPlacement ? <ResultSupportBox /> : null}
-
             <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 {EN_MESSAGES.siteOutcome.scanCoverageHeading}
@@ -412,8 +401,6 @@ export function ResultCard({ result }: ResultCardProps) {
                 </p>
               ) : null}
             </div>
-
-            {sensitiveSupportPlacement ? <ResultSupportBox /> : null}
           </div>
 
           <div className="flex w-full min-w-0 flex-col gap-3 sm:w-auto sm:max-w-md sm:items-end sm:text-right">
@@ -430,55 +417,6 @@ export function ResultCard({ result }: ResultCardProps) {
         </div>
       </div>
 
-      {result.trustEvidence ? (
-        <div className="mt-6 space-y-4">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">{EN_MESSAGES.scanResult.resultSections.optionalEvidenceHeading}</h2>
-            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-600">
-              {EN_MESSAGES.scanResult.resultSections.optionalEvidenceBody}
-            </p>
-          </div>
-          {result.trustEvidence.screenshotAd ? <EvidenceSignalsCard section={result.trustEvidence.screenshotAd} /> : null}
-          {result.trustEvidence.webshop ? <EvidenceSignalsCard section={result.trustEvidence.webshop} /> : null}
-          {result.trustEvidence.socialAd ? <EvidenceSignalsCard section={result.trustEvidence.socialAd} /> : null}
-        </div>
-      ) : null}
-
-      {result.siteStatus === "inactive" ? (
-        <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-800">
-          <p className="font-semibold text-slate-900">{EN_MESSAGES.specialOutcomes.inactive.headline}</p>
-          <p className="mt-2 leading-relaxed">{EN_MESSAGES.specialOutcomes.inactive.explain}</p>
-          <p className="mt-2 text-xs text-slate-600">{EN_MESSAGES.specialOutcomes.inactive.crawlNote}</p>
-        </div>
-      ) : null}
-
-      {result.domainInfrastructure.treatAsNonExistentHost ? (
-        <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-950">
-          <dl className="space-y-3">
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-wide text-rose-800/90">
-                {EN_MESSAGES.domainInfrastructure.domainStatusHeading}
-              </dt>
-              <dd className="mt-1 text-base font-semibold">{EN_MESSAGES.domainInfrastructure.notRegisteredLabel}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-wide text-rose-800/90">
-                {EN_MESSAGES.domainInfrastructure.riskLevelHeading}
-              </dt>
-              <dd className="mt-1 text-base font-semibold">{EN_MESSAGES.domainInfrastructure.highRiskInvalidLabel}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-wide text-rose-800/90">
-                {EN_MESSAGES.domainInfrastructure.reasonHeading}
-              </dt>
-              <dd className="mt-1 leading-relaxed text-rose-950/95">
-                {EN_MESSAGES.domainInfrastructure.invalidHostExplanation}
-              </dd>
-            </div>
-          </dl>
-        </div>
-      ) : null}
-
       <details className="mt-5 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm sm:px-5">
         <summary className="cursor-pointer list-none py-1 [&::-webkit-details-marker]:hidden">
           <span className="block text-base font-semibold text-slate-900">{EN_MESSAGES.scanResult.detailedFindingsToggle}</span>
@@ -487,6 +425,11 @@ export function ResultCard({ result }: ResultCardProps) {
           </span>
         </summary>
         <div className="mt-4 space-y-4 border-t border-slate-100 pt-4">
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+            <p className="text-sm font-semibold text-slate-900">{EN_MESSAGES.scanResult.technicalStatusHeading}</p>
+            <p className="mt-1 text-xs text-slate-700">{techStatus}</p>
+          </div>
+
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
             <p className="text-sm font-semibold text-slate-900">{sec.confirmedIntelHeading}</p>
             <p className="mt-1 text-xs leading-relaxed text-slate-500">{sec.confirmedIntelHint}</p>
@@ -844,19 +787,70 @@ export function ResultCard({ result }: ResultCardProps) {
           </ul>
         )}
           </details>
+
+          {result.trustEvidence ? (
+            <div className="space-y-4 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">{EN_MESSAGES.scanResult.resultSections.optionalEvidenceHeading}</p>
+                <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-600">
+                  {EN_MESSAGES.scanResult.resultSections.optionalEvidenceBody}
+                </p>
+              </div>
+              {result.trustEvidence.screenshotAd ? <EvidenceSignalsCard section={result.trustEvidence.screenshotAd} /> : null}
+              {result.trustEvidence.webshop ? <EvidenceSignalsCard section={result.trustEvidence.webshop} /> : null}
+              {result.trustEvidence.socialAd ? <EvidenceSignalsCard section={result.trustEvidence.socialAd} /> : null}
+            </div>
+          ) : null}
+
+          {result.siteStatus === "inactive" ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm text-slate-800">
+              <p className="font-semibold text-slate-900">{EN_MESSAGES.specialOutcomes.inactive.headline}</p>
+              <p className="mt-2 leading-relaxed">{EN_MESSAGES.specialOutcomes.inactive.explain}</p>
+              <p className="mt-2 text-xs text-slate-600">{EN_MESSAGES.specialOutcomes.inactive.crawlNote}</p>
+            </div>
+          ) : null}
+
+          {result.domainInfrastructure.treatAsNonExistentHost ? (
+            <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-950">
+              <dl className="space-y-3">
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-rose-800/90">
+                    {EN_MESSAGES.domainInfrastructure.domainStatusHeading}
+                  </dt>
+                  <dd className="mt-1 text-base font-semibold">{EN_MESSAGES.domainInfrastructure.notRegisteredLabel}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-rose-800/90">
+                    {EN_MESSAGES.domainInfrastructure.riskLevelHeading}
+                  </dt>
+                  <dd className="mt-1 text-base font-semibold">{EN_MESSAGES.domainInfrastructure.highRiskInvalidLabel}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-rose-800/90">
+                    {EN_MESSAGES.domainInfrastructure.reasonHeading}
+                  </dt>
+                  <dd className="mt-1 leading-relaxed text-rose-950/95">
+                    {EN_MESSAGES.domainInfrastructure.invalidHostExplanation}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          ) : null}
+
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+            <p className="text-sm font-semibold text-slate-900">{sec.aiFactorsHeading}</p>
+            <p className="mt-1 max-w-prose text-pretty text-xs leading-relaxed text-slate-500">{sec.aiFactorsHint}</p>
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-700">
+              {result.reasons.map((reason, index) => (
+                <li key={`${index}-${reason.slice(0, 48)}`}>{reason}</li>
+              ))}
+            </ul>
+            <p className="mt-3 text-xs text-slate-500">AI model used in this run: {result.aiUsed ? "yes" : "no"}</p>
+          </div>
         </div>
       </details>
 
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">{sec.aiFactorsHeading}</p>
-        <p className="mt-1 max-w-prose text-pretty text-xs leading-relaxed text-slate-500">{sec.aiFactorsHint}</p>
-        <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-700">
-          {result.reasons.map((reason, index) => (
-            <li key={`${index}-${reason.slice(0, 48)}`}>{reason}</li>
-          ))}
-        </ul>
-        <p className="mt-3 text-xs text-slate-500">AI model used in this run: {result.aiUsed ? "yes" : "no"}</p>
-      </div>
+      <ResultSupportBox className="mt-6" />
 
       <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-xs leading-relaxed text-slate-600">
         {EN_MESSAGES.scanResult.footerDisclaimer}

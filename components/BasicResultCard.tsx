@@ -19,7 +19,6 @@ export function BasicResultCard({ result }: { result: BasicCheckResult }) {
   const humanHeadline = humanRecHeadline(humanKind);
   const humanTone = humanRecHeadlineTone(humanKind);
   const shortEx = shortExplainForBasic(result.verdict, result.score);
-  const sensitiveSupportPlacement = humanKind === "highRisk" || humanKind === "avoidWebsite" || humanKind === "dangerousWebsite";
 
   return (
     <article className="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/60 sm:p-7">
@@ -62,13 +61,10 @@ export function BasicResultCard({ result }: { result: BasicCheckResult }) {
         <p className="mt-1 text-xs text-slate-500">{EN_MESSAGES.scanResult.trustScoreExplainer}</p>
       </section>
 
-      {!sensitiveSupportPlacement ? <ResultSupportBox className="mt-5" /> : null}
-
       <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50 p-4">
         <p className="text-sm font-medium text-blue-900">{EN_MESSAGES.basicResult.unlockHint}</p>
       </div>
-
-      {sensitiveSupportPlacement ? <ResultSupportBox className="mt-5" /> : null}
+      <ResultSupportBox className="mt-5" />
     </article>
   );
 }

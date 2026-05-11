@@ -8,8 +8,8 @@ const PAYPAL_DONATION_URL = "https://www.paypal.com/donate/?business=Ronald.r.st
 export function ResultSupportBox({ className = "" }: { className?: string }) {
   return (
     <aside className={`rounded-2xl border border-slate-200 bg-white/80 p-4 text-sm shadow-sm ${className}`.trim()}>
-      <h3 className="text-sm font-semibold text-slate-900">Help keep Fraudly free</h3>
-      <p className="mt-1.5 leading-relaxed text-slate-700">
+      <h3 className="text-sm font-medium text-slate-700">Help keep Fraudly free</h3>
+      <p className="mt-1.5 text-sm leading-relaxed text-slate-600">
         Fraudly uses hosting, security checks, and reputation signals to help people spot suspicious websites.
       </p>
       <p className="mt-1 text-xs text-slate-500">Support is optional, but appreciated.</p>
@@ -25,8 +25,8 @@ export function ResultSupportBox({ className = "" }: { className?: string }) {
           alt="Buy us a coffee with PayPal"
           width={340}
           height={220}
-          sizes="(max-width: 640px) 150px, 170px"
-          className="h-auto w-[150px] drop-shadow-md sm:w-[170px]"
+          sizes="(max-width: 640px) 190px, (max-width: 768px) 220px, 240px"
+          className="h-auto w-[190px] drop-shadow-md sm:w-[220px] md:w-[240px]"
         />
       </Link>
     </aside>
