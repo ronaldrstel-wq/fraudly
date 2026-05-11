@@ -122,7 +122,7 @@ export const EN_MESSAGES = {
     },
     detailedFindingsToggle: "Detailed scan findings",
     detailedFindingsHint:
-      "Technical notes, list matches, reputation snapshots, and model details — open when you want the full picture.",
+      "Technical notes, redirects, list matches, reputation snapshots, and model details — open when you want the full picture.",
     evidenceTierLabels: {
       confirmed_malicious: "Matches from scam intelligence",
       positive_trust: "Trust-positive signals",

@@ -171,6 +171,11 @@ function toSafeHttpUrl(input: string | null | undefined): string | null {
   }
 }
 
+function formatReviewCount(value: number | undefined): string {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+  return new Intl.NumberFormat("en-US").format(Math.max(0, Math.round(value)));
+}
+
 /** Tier‑1 phishing/malware list matches surfaced as structured provider rows (not guesses). */
 function isConfirmedIntelTrustSignal(signal: TrustSignal): boolean {
   if (signal.type !== "danger" && signal.type !== "warning") return false;
@@ -432,6 +437,68 @@ export function ResultCard({ result }: ResultCardProps) {
                 <p className="mt-1 text-xs text-slate-500">This snapshot did not produce a numeric trust score.</p>
               </div>
             )}
+
+            <section className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-900">Reputation &amp; public trust</h3>
+              <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                Public review and reputation signals can help provide context, but they are not a guarantee that a website is safe.
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                Positive review signals can support trust, but reviews can be incomplete or manipulated.
+              </p>
+
+              <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+                <article className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Trustpilot</p>
+                  {reviewSignals.trustpilotFound ? (
+                    <>
+                      <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <span aria-hidden className="mr-1 text-amber-500">
+                          ★
+                        </span>
+                        {reviewSignals.trustpilotRating?.toFixed(1) ?? "—"} / 5
+                      </p>
+                      <p className="mt-1 text-xs text-slate-600">{formatReviewCount(reviewSignals.trustpilotReviewCount)} reviews</p>
+                    </>
+                  ) : (
+                    <p className="mt-1 text-xs text-slate-600">No public profile found in this scan.</p>
+                  )}
+                </article>
+
+                <article className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Google Reviews</p>
+                  {reviewSignals.googleFound ? (
+                    <>
+                      <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <span aria-hidden className="mr-1 text-amber-500">
+                          ★
+                        </span>
+                        {reviewSignals.googleRating?.toFixed(1) ?? "—"} / 5
+                      </p>
+                      <p className="mt-1 text-xs text-slate-600">{formatReviewCount(reviewSignals.googleReviewCount)} reviews</p>
+                    </>
+                  ) : (
+                    <p className="mt-1 text-xs text-slate-600">No review snapshot available.</p>
+                  )}
+                </article>
+              </div>
+
+              <div className="mt-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
+                <p>
+                  Reputation source status:{" "}
+                  <span className="font-medium text-slate-700">
+                    {reviewSignals.sources.length > 0 ? reviewSignals.sources.join(", ") : "No review source responded in this scan."}
+                  </span>
+                </p>
+                <p className="mt-1">
+                  Last checked:{" "}
+                  <span className="font-medium text-slate-700">
+                    {reputation?.lastUpdated ? new Date(reputation.lastUpdated).toLocaleString("en") : "During this scan"}
+                  </span>
+                </p>
+              </div>
+            </section>
+
             <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 {EN_MESSAGES.siteOutcome.scanCoverageHeading}
@@ -773,6 +840,12 @@ export function ResultCard({ result }: ResultCardProps) {
             </ul>
           </details>
         ) : null}
+        {/* TODO(review-raw-snapshots): include provider raw payload snippets once collectors expose structured snapshot JSON. */}
+        <div className="mt-3 rounded-lg border border-dashed border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-600">
+          <p className="font-medium text-slate-700">Raw review snapshots</p>
+          <p className="mt-1">Trustpilot raw snapshot: not available in current payload.</p>
+          <p className="mt-1">Google reviews raw snapshot: not available in current payload.</p>
+        </div>
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
