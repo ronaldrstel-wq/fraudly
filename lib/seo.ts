@@ -2,13 +2,7 @@ import type { Metadata } from "next";
 
 export const SITE_URL = "https://fraudly.app" as const;
 
-/** Hostnames that serve the public, indexable production site (no preview noindex). */
-const PRODUCTION_SITE_HOSTS = new Set(["fraudly.app", "www.fraudly.app"]);
-
-export function isProductionPublicSiteHost(host: string): boolean {
-  const normalized = host.trim().toLowerCase().split(":")[0] ?? "";
-  return PRODUCTION_SITE_HOSTS.has(normalized);
-}
+export { isProductionPublicSiteHost } from "@/lib/seo-host";
 
 export const publicRobots: NonNullable<Metadata["robots"]> = {
   index: true,

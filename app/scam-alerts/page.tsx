@@ -15,7 +15,9 @@ import {
   parseScamAlertsTimeWindow
 } from "@/lib/scam-alerts/presentation";
 import { EN_MESSAGES } from "@/lib/messages.en";
+import { OG_IMAGE } from "@/lib/seo-metadata";
 import { publicRobots, SITE_URL } from "@/lib/seo";
+import { scamAlertsIndexFallbackMetadata } from "@/lib/scam-alerts/safe-metadata";
 import {
   getPublishedScamAlertsPageResult,
   getScamAlertsIndexStats,
@@ -54,28 +56,41 @@ function scamAlertsCanonicalPath(options: {
 }
 
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
-  const params = await searchParams;
-  const page = parseScamAlertsPageParam(params.page);
-  const canonical = scamAlertsCanonicalPath({
-    page,
-    time: typeof params.time === "string" ? params.time : undefined,
-    filter: typeof params.filter === "string" ? params.filter : undefined,
-    type: typeof params.type === "string" ? params.type : undefined
-  });
-  const title = page > 1 ? `Threat alerts · Page ${page} | Fraudly` : "Threat alerts | Fraudly";
+  try {
+    const params = await searchParams;
+    const page = parseScamAlertsPageParam(params.page);
+    const canonical = scamAlertsCanonicalPath({
+      page,
+      time: typeof params.time === "string" ? params.time : undefined,
+      filter: typeof params.filter === "string" ? params.filter : undefined,
+      type: typeof params.type === "string" ? params.type : undefined
+    });
+    const titleAbsolute = page > 1 ? `Threat alerts · Page ${page} | Fraudly` : "Threat alerts | Fraudly";
 
-  return {
-    title,
-    description: PAGE_DESCRIPTION,
-    alternates: { canonical },
-    robots: publicRobots,
-    openGraph: {
-      title,
+    return {
+      title: { absolute: titleAbsolute },
       description: PAGE_DESCRIPTION,
-      url: canonical,
-      type: "website"
-    }
-  };
+      alternates: { canonical },
+      robots: publicRobots,
+      openGraph: {
+        type: "website",
+        siteName: "Fraudly",
+        locale: "en_US",
+        title: titleAbsolute,
+        description: PAGE_DESCRIPTION,
+        url: canonical,
+        images: [OG_IMAGE]
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: titleAbsolute,
+        description: PAGE_DESCRIPTION,
+        images: [OG_IMAGE.url]
+      }
+    };
+  } catch {
+    return scamAlertsIndexFallbackMetadata();
+  }
 }
 
 export default async function ScamAlertsPage({ searchParams }: PageProps) {

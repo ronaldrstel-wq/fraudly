@@ -1,7 +1,7 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import type { NextFetchEvent, NextRequest } from "next/server";
-import { isProductionPublicSiteHost } from "@/lib/seo";
+import { isProductionPublicSiteHost } from "@/lib/seo-host";
 
 /**
  * Clerk session for auth() / currentUser() in route handlers.

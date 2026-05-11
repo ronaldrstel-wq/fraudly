@@ -3,7 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
+import { OG_IMAGE } from "@/lib/seo-metadata";
 import { privateRobots, publicRobots, SITE_URL } from "@/lib/seo";
+import { scamAlertDetailFallbackMetadata } from "@/lib/scam-alerts/safe-metadata";
 import { getPublishedScamAlertBySlug } from "@/lib/scam-alerts/service";
 import { EN_MESSAGES } from "@/lib/messages.en";
 
@@ -12,35 +14,76 @@ type PageProps = { params: Promise<{ slug: string }> };
 export const revalidate = 300;
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const alert = await getPublishedScamAlertBySlug(slug);
-  if (!alert) {
+  try {
+    const raw = await params;
+    const slug = typeof raw?.slug === "string" ? raw.slug.trim() : "";
+    if (!slug) {
+      return {
+        title: { absolute: "Scam alert not found | Fraudly" },
+        description: "This scam alert URL is not valid.",
+        robots: privateRobots
+      };
+    }
+
+    const alert = await getPublishedScamAlertBySlug(slug);
+    if (!alert) {
+      return {
+        title: { absolute: "Scam alert not found | Fraudly" },
+        description: "This scam alert is not available or is no longer published.",
+        alternates: { canonical: `${SITE_URL}/scam-alerts/${encodeURIComponent(slug)}` },
+        robots: privateRobots
+      };
+    }
+
+    const titleAbsolute = `${String(alert.title || "Scam alert").trim() || "Scam alert"} | Fraudly Scam Alert`.slice(0, 200);
+    const description =
+      String(alert.summary ?? "")
+        .trim()
+        .slice(0, 500) || "Published scam alert with context and safety notes on Fraudly.";
+    const canonical = `${SITE_URL}/scam-alerts/${encodeURIComponent(alert.slug)}`;
+
     return {
-      title: "Scam alert not found | Fraudly",
-      robots: privateRobots
+      title: { absolute: titleAbsolute },
+      description,
+      alternates: { canonical },
+      robots: publicRobots,
+      openGraph: {
+        type: "article",
+        siteName: "Fraudly",
+        locale: "en_US",
+        title: titleAbsolute,
+        description,
+        url: canonical,
+        images: [OG_IMAGE]
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: titleAbsolute,
+        description,
+        images: [OG_IMAGE.url]
+      }
     };
+  } catch {
+    return scamAlertDetailFallbackMetadata();
   }
-  return {
-    title: `${alert.title} | Fraudly Scam Alert`,
-    description: alert.summary,
-    alternates: { canonical: `${SITE_URL}/scam-alerts/${alert.slug}` },
-    openGraph: {
-      title: `${alert.title} | Fraudly Scam Alert`,
-      description: alert.summary,
-      url: `${SITE_URL}/scam-alerts/${alert.slug}`,
-      type: "article"
-    },
-    robots: publicRobots
-  };
 }
 
 export default async function ScamAlertDetailPage({ params }: PageProps) {
-  const { slug } = await params;
-  const alert = await getPublishedScamAlertBySlug(slug);
+  const raw = await params;
+  const slug = typeof raw?.slug === "string" ? raw.slug.trim() : "";
+  if (!slug) notFound();
+
+  let alert: Awaited<ReturnType<typeof getPublishedScamAlertBySlug>> = null;
+  try {
+    alert = await getPublishedScamAlertBySlug(slug);
+  } catch {
+    notFound();
+  }
   if (!alert) notFound();
 
-  const detectedUrls = Array.from(new Set(alert.signals.map((s) => s.url).filter((v): v is string => Boolean(v))));
-  const detectedDomains = Array.from(new Set(alert.signals.map((s) => s.domain).filter((v): v is string => Boolean(v))));
+  const signals = Array.isArray(alert.signals) ? alert.signals : [];
+  const detectedUrls = Array.from(new Set(signals.map((s) => s.url).filter((v): v is string => Boolean(v))));
+  const detectedDomains = Array.from(new Set(signals.map((s) => s.domain).filter((v): v is string => Boolean(v))));
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
