@@ -24,7 +24,7 @@ import { ThreatBanner } from "@/components/ThreatBanner";
 import { ResultSupportBox } from "@/components/ResultSupportBox";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { shouldShowTrustGauge } from "@/lib/trustGaugeDisplay";
-import { trustLevelFromScore, trustPresentationFromScore, type TrustLevel } from "@/lib/trustSystem";
+import { trustLevelFromScore, type TrustLevel } from "@/lib/trustSystem";
 import { EvidenceSignalsCard } from "@/components/EvidenceSignalsCard";
 import type { ScamCheckResult } from "@/types/scam";
 import type { ConfidenceLevel, SiteStatus } from "@/types/site-outcome";
@@ -178,19 +178,21 @@ function formatReviewCount(value: number | undefined): string {
 
 function providerStateLabel(reputation: ReputationEnrichment | null, repError: string | null): string {
   if (repError) return "Provider failed";
-  switch (reputation?.providerState) {
-    case "not_configured":
-      return "Provider not configured";
-    case "not_called":
-      return "Provider not called for this scan";
-    case "failed":
-      return "Provider failed";
-    case "no_match":
-      return "Provider returned no match";
-    case "found":
+  switch (reputation?.reputationStatus) {
+    case "not_run":
+      return "Review enrichment was not run for this scan.";
+    case "disabled":
+      return "Review enrichment is not enabled.";
+    case "cache_hit":
+      return "Review data loaded from cache.";
+    case "called_found":
       return "Review data found";
+    case "called_no_match":
+      return "No matching public review profile found.";
+    case "provider_error":
+      return "Review provider was unavailable during this scan.";
     default:
-      return "Provider status unavailable";
+      return "Review enrichment was not run for this scan.";
   }
 }
 
@@ -212,11 +214,13 @@ export function ResultCard({ result }: ResultCardProps) {
     threatActive: threat.active,
     threatKind: threat.kind,
     siteStatus: result.siteStatus,
-    trustLevel
+    trustLevel,
+    hasActualRiskIndicators:
+      result.scoreResult.signals.some((signal) => signal.evidenceTier === "risk_indicator" && signal.impact > 0) || threat.active
   });
   const humanHeadline = humanRecHeadline(humanKind);
   const humanTone = humanRecHeadlineTone(humanKind);
-  const activeTrustLabel = trustPresentationFromScore(displayTrust ?? 0).label;
+  const activeTrustLabel = humanHeadline;
   const techStatus = technicalStatusText({
     threatActive: threat.active,
     threatKind: threat.kind,
@@ -228,7 +232,9 @@ export function ResultCard({ result }: ResultCardProps) {
     threatKind: threat.kind,
     siteStatus: result.siteStatus,
     trustLevel,
-    confidenceLevel: result.confidenceLevel
+    confidenceLevel: result.confidenceLevel,
+    hasActualRiskIndicators:
+      result.scoreResult.signals.some((signal) => signal.evidenceTier === "risk_indicator" && signal.impact > 0) || threat.active
   });
   const showLimitedStrip = shouldShowLimitedPublicStrip({
     threatActive: threat.active,
@@ -248,6 +254,8 @@ export function ResultCard({ result }: ResultCardProps) {
   const confirmedMaliciousSignals = keyRisks.filter(isConfirmedIntelTrustSignal);
   const otherRiskSignals = keyRisks.filter((s) => !isConfirmedIntelTrustSignal(s));
   const supportiveSignals = result.trustSignals.filter((s) => s.type === "positive" || s.type === "info");
+  const topPositiveReasons = supportiveSignals.slice(0, 3);
+  const topRiskReasons = otherRiskSignals.slice(0, 3);
   const [reputation, setReputation] = useState<ReputationEnrichment | null>(null);
   const [repLoading, setRepLoading] = useState(false);
   const [repError, setRepError] = useState<string | null>(null);
@@ -281,7 +289,8 @@ export function ResultCard({ result }: ResultCardProps) {
           deepScan,
           confidenceLevel: result.confidenceLevel,
           missingReviewSignals: !hasPublicReviewData,
-          bypassCache: bypassCacheOverride ?? devBypassCache
+          bypassCache: bypassCacheOverride ?? devBypassCache,
+          forceReputationRefresh: deepScan === true
         })
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -344,6 +353,18 @@ export function ResultCard({ result }: ResultCardProps) {
   const trustpilotFound = reviewSignals.trustpilotFound || trustpilotRating != null || trustpilotCount != null;
   const googleFound = reviewSignals.googleFound || googleRating != null || googleCount != null;
   const providerLabel = providerStateLabel(reputation, repError);
+  const neutralContextNotes = [
+    reputation?.reputationStatus === "cache_hit" ? "Review data loaded from cache." : null,
+    reputation?.reputationStatus === "called_no_match" ? "No matching public review profile found in this scan." : null,
+    reputation?.reputationStatus === "provider_error" ? "Review provider unavailable during this scan." : null,
+    reputation?.reputationStatus === "not_run" ? "Review enrichment was not run for this scan." : null,
+    reputation?.reputationStatus === "disabled" ? "Review enrichment is not enabled." : null,
+    result.confidenceLevel === "low"
+      ? "Some public reputation data was limited. This affects extra context, not direct risk."
+      : null
+  ]
+    .filter((note): note is string => Boolean(note))
+    .slice(0, 3);
   const cacheLabel =
     reputation?.cacheStatus === "hit"
       ? "Result cached from previous scan"
@@ -539,6 +560,10 @@ export function ResultCard({ result }: ResultCardProps) {
                     {reputation?.lastUpdated ? new Date(reputation.lastUpdated).toLocaleString("en") : "During this scan"}
                   </span>
                 </p>
+                <p className="mt-1">
+                  Scan stage:{" "}
+                  <span className="font-medium text-slate-700">{reputation?.reputationScanStage ?? "standard"}</span>
+                </p>
                 {process.env.NODE_ENV !== "production" ? (
                   <button
                     type="button"
@@ -557,10 +582,12 @@ export function ResultCard({ result }: ResultCardProps) {
 
             <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                {EN_MESSAGES.siteOutcome.scanCoverageHeading}
+                What this scan could check
               </p>
-              <p className="mt-1 font-semibold capitalize text-slate-900">{result.confidenceLevel}</p>
-              <p className="mt-1 text-xs text-slate-600">{EN_MESSAGES.siteOutcome.scanCoverageHelper}</p>
+              <p className="mt-1 font-semibold text-slate-900">{result.confidenceLevel === "low" ? "Limited public data available" : "Good data availability"}</p>
+              <p className="mt-1 text-xs text-slate-600">
+                Some public reputation data may be limited in a given scan. That affects context completeness, not direct risk.
+              </p>
               <p className="mt-1 text-xs leading-relaxed text-slate-600">{labelForScanCoverage(result.confidenceLevel)}</p>
               {!threat.active ? <p className="mt-2 text-xs text-slate-600">{result.confidenceRationale}</p> : null}
               {threat.active ? (
@@ -569,6 +596,40 @@ export function ResultCard({ result }: ResultCardProps) {
                 </p>
               ) : null}
             </div>
+
+            <section className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-900">Why we say this</h3>
+              {topPositiveReasons.length > 0 ? (
+                <div className="mt-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Positive signals</p>
+                  <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                    {topPositiveReasons.map((signal, idx) => (
+                      <li key={`positive-${idx}-${signal.title}`}>{signal.title}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {topRiskReasons.length > 0 ? (
+                <div className="mt-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Risk indicators</p>
+                  <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                    {topRiskReasons.map((signal, idx) => (
+                      <li key={`risk-${idx}-${signal.title}`}>{signal.title}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {neutralContextNotes.length > 0 ? (
+                <div className="mt-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Extra context</p>
+                  <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-slate-600">
+                    {neutralContextNotes.map((note, idx) => (
+                      <li key={`neutral-${idx}-${note.slice(0, 24)}`}>{note}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </section>
           </div>
 
           <div className="flex w-full min-w-0 flex-col gap-3 sm:w-auto sm:max-w-md sm:items-end sm:text-right">
@@ -830,6 +891,16 @@ export function ResultCard({ result }: ResultCardProps) {
               Matched profile/domain:{" "}
               <span className="font-medium">{reputation.businessName ?? reputation.normalizedDomain}</span>
             </p>
+            {reputation.reputationDebug ? (
+              <p className="text-xs text-slate-600">
+                Debug: enabled={String(reputation.reputationDebug.enabled)}; apiKeyPresent=
+                {String(reputation.reputationDebug.apiKeyPresent)}; calledProvider=
+                {String(reputation.reputationDebug.calledProvider)}; providerStatus=
+                {reputation.reputationDebug.providerStatus}; skippedReason=
+                {reputation.reputationDebug.skippedReason ?? "none"}; normalizedDomain=
+                {reputation.reputationDebug.normalizedDomain}
+              </p>
+            ) : null}
             {reputation.sentimentSummary ? <p className="text-xs text-slate-600">{reputation.sentimentSummary}</p> : null}
             {reputation.message ? <p className="text-xs text-slate-500">{reputation.message}</p> : null}
             {sanitizedEnrichmentWarnings.length > 0 ? (

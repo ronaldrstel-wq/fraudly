@@ -13,6 +13,7 @@ type Body = {
   confidenceLevel?: "high" | "medium" | "low";
   missingReviewSignals?: boolean;
   bypassCache?: boolean;
+  forceReputationRefresh?: boolean;
 };
 
 export async function POST(request: Request) {
@@ -28,9 +29,14 @@ export async function POST(request: Request) {
   const deepScan = body.deepScan === true;
   const confidenceLevel = body.confidenceLevel === "low" || body.confidenceLevel === "high" ? body.confidenceLevel : "medium";
   const missingReviewSignals = body.missingReviewSignals === true;
-  const bypassCache = process.env.NODE_ENV !== "production" && body.bypassCache === true;
+  const forceReputationRefresh = body.forceReputationRefresh === true;
+  const scanStage = deepScan ? "deep" : "standard";
+  const bypassCache =
+    deepScan === true || (process.env.NODE_ENV !== "production" && (body.bypassCache === true || forceReputationRefresh));
 
   console.info("[enrichment/reputation] route called", {
+    domain,
+    scanStage,
     deepScan,
     hasDomain: Boolean(domain),
     publicIntelEnabled: process.env.ENABLE_PUBLIC_INTEL_ENRICHMENT !== "false",
@@ -38,7 +44,8 @@ export async function POST(request: Request) {
     hasOutscraperKey: Boolean(process.env.OUTSCRAPER_API_KEY),
     confidenceLevel,
     missingReviewSignals,
-    bypassCache
+    bypassCache,
+    forceReputationRefresh
   });
 
   if (!domain) {
@@ -61,6 +68,7 @@ export async function POST(request: Request) {
   });
 
   console.info("[enrichment/reputation] response summary", {
+    scanStage,
     normalizedDomain: enrichment.normalizedDomain,
     source: enrichment.source,
     trustpilotRating: enrichment.trustpilotRating,
@@ -70,7 +78,11 @@ export async function POST(request: Request) {
     providerState: enrichment.providerState,
     providerReason: enrichment.providerReason,
     cacheStatus: enrichment.cacheStatus,
-    fromCache: enrichment.fromCache
+    fromCache: enrichment.fromCache,
+    reputationStatus: enrichment.reputationStatus,
+    reputationScanStage: enrichment.reputationScanStage,
+    reputationSkippedReason: enrichment.reputationSkippedReason,
+    reputationDebug: enrichment.reputationDebug
   });
 
   return NextResponse.json({ enrichment });

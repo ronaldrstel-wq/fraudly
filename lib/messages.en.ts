@@ -117,8 +117,8 @@ export const EN_MESSAGES = {
     /** Trust gauge (0 left → 100 right): axis captions aligned with trust score bands. */
     trustMeterAxis: {
       highRisk: "High risk",
-      caution: "Be careful / Caution",
-      looksSafe: "Looks safe / Trusted"
+      caution: "Some caution advised",
+      looksSafe: "Looks safe"
     },
     detailedFindingsToggle: "Detailed scan findings",
     detailedFindingsHint:
@@ -174,11 +174,11 @@ export const EN_MESSAGES = {
         critical: "⛔"
       },
       headlines: {
-        trusted: "Looks safe / Trusted",
-        looksSafe: "Looks safe / Trusted",
+        trusted: "Looks safe",
+        looksSafe: "No major risk indicators found",
         notEnoughInfo: "Not Enough Information",
-        beCareful: "Be careful / Caution",
-        highRisk: "High risk",
+        beCareful: "Some caution advised",
+        highRisk: "High risk detected",
         avoidWebsite: "Avoid This Website",
         dangerousWebsite: "Dangerous Website",
         invalidDomain: "Domain Not Verified",
@@ -200,10 +200,10 @@ export const EN_MESSAGES = {
     /** Short explanation under the human headline (browser-warning style) */
     shortExplain: {
       trusted: "No major risk indicators were detected.",
-      looksSafe: "This website appears legitimate based on available signals.",
-      notEnoughInfo: "We could not find enough public information to confidently assess this website.",
+      looksSafe: "No major scam or phishing indicators were detected in this scan.",
+      notEnoughInfo: "Some public reputation data was limited. This affects how much extra context we can show, but it is not a risk signal by itself.",
       notEnoughInfoLowCoverage:
-        "We could not find enough public information to confidently assess this website. Low scan coverage does not automatically mean the site is unsafe.",
+        "Some public reputation data was limited. This affects how much extra context we can show, but it is not a risk signal by itself.",
       beCareful:
         "Some risk indicators were detected. Proceed carefully before entering personal or payment information.",
       highRisk: "Several strong risk signals were detected in this scan.",
@@ -229,7 +229,7 @@ export const EN_MESSAGES = {
       "Fraudly summarizes public scam intelligence, reputation snapshots, and technical signals for awareness. It is not legal, financial, or flawless security advice—verify important decisions yourself.",
     limitedStripTitle: "Limited public information available",
     limitedStripBody:
-      "No confirmed malicious indicators were detected, but public scan coverage was limited. Low coverage does not automatically mean a website is unsafe.",
+      "No confirmed malicious indicators were detected. Public data availability was limited in this scan, which affects context completeness but is not a risk signal.",
     /** Tier‑1 threat “why” lines */
     whyThreat: {
       phishingFeed: "This domain was identified in one or more phishing intelligence feeds.",
@@ -382,22 +382,22 @@ export const EN_MESSAGES = {
   },
   siteOutcome: {
     statusHeading: "Threat status",
-    scanCoverageHeading: "Scan coverage",
+    scanCoverageHeading: "Public data availability",
     scanCoverageHelper:
-      "This reflects how much public and technical data was available during the scan. Low scan coverage does not automatically mean a website is unsafe.",
-    scanCoverageHighLabel: "High — multiple checks returned usable data.",
-    scanCoverageMediumLabel: "Medium — some sources succeeded; others were missing or inconclusive.",
-    scanCoverageLowLabel: "Low — limited public data. That only limits how complete the picture is.",
+      "This reflects how much public and technical data was available during the scan. Limited data availability is not a risk signal by itself.",
+    scanCoverageHighLabel: "High — multiple checks returned usable context.",
+    scanCoverageMediumLabel: "Moderate — some sources succeeded while others were limited.",
+    scanCoverageLowLabel: "Limited public data available — this affects context depth, not direct risk.",
     /** @deprecated Use scanCoverage* labels in UI */
-    confidenceHeading: "Scan coverage",
+    confidenceHeading: "Public data availability",
     confidenceHelper:
-      "This reflects how much public and technical data was available during the scan. Low coverage does not automatically mean a website is unsafe.",
-    confidenceHighLabel: "High — multiple checks returned usable data.",
-    confidenceMediumLabel: "Medium — some sources succeeded; others were missing or inconclusive.",
-    confidenceLowLabel: "Low — limited public data. That only limits how complete the picture is.",
+      "This reflects how much public and technical data was available during the scan. Limited data availability is not a risk signal by itself.",
+    confidenceHighLabel: "High — multiple checks returned usable context.",
+    confidenceMediumLabel: "Moderate — some sources succeeded while others were limited.",
+    confidenceLowLabel: "Limited public data available — this affects context depth, not direct risk.",
     trusted: "Trusted",
     unverified: "Strong snapshot",
-    caution: "Further review suggested",
+    caution: "Some caution advised",
     highRisk: "High risk",
     confirmedMalicious: "Confirmed malicious",
     nonexistent: "Nonexistent domain",
@@ -417,9 +417,9 @@ export const EN_MESSAGES = {
       "Treat this as elevated risk until you can verify the site through an independent, official channel.",
     checkedLink: "Checked link",
     riskStatus: "Risk status",
-    safeLabel: "Looks safe / Trusted",
+    safeLabel: "Looks safe",
     safeExplanation: "The basic scan did not highlight major fraud indicators.",
-    suspiciousLabel: "Be careful / Caution",
+    suspiciousLabel: "Some caution advised",
     suspiciousExplanation: "Signals were found that merit extra caution.",
     highRiskLabel: "High risk",
     highRiskExplanation: "Multiple signals indicate an elevated fraud risk.",

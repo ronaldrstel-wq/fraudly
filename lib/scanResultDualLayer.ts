@@ -48,8 +48,9 @@ export function resolveHumanRecKind(args: {
   threatKind: CriticalThreatKind | null;
   siteStatus: SiteStatus;
   trustLevel: TrustLevel;
+  hasActualRiskIndicators?: boolean;
 }): HumanRecKind {
-  const { threatActive, threatKind, siteStatus, trustLevel } = args;
+  const { threatActive, threatKind, siteStatus, trustLevel, hasActualRiskIndicators = true } = args;
 
   if (siteStatus === "nonexistent") return "invalidDomain";
   if (siteStatus === "inactive") return "unreachable";
@@ -70,7 +71,7 @@ export function resolveHumanRecKind(args: {
     case "limitedEvidence":
       return "notEnoughInfo";
     case "suspicious":
-      return "beCareful";
+      return hasActualRiskIndicators ? "beCareful" : "looksSafe";
     case "highRisk":
       return "highRisk";
     default:
@@ -140,8 +141,9 @@ export function shortScanExplanation(args: {
   siteStatus: SiteStatus;
   trustLevel: TrustLevel;
   confidenceLevel: ConfidenceLevel;
+  hasActualRiskIndicators?: boolean;
 }): string {
-  const { threatActive, threatKind, siteStatus, trustLevel, confidenceLevel } = args;
+  const { threatActive, threatKind, siteStatus, trustLevel, confidenceLevel, hasActualRiskIndicators = true } = args;
   const s = EN_MESSAGES.scanResult.shortExplain;
 
   if (siteStatus === "nonexistent") return s.invalidDomain;
@@ -170,7 +172,7 @@ export function shortScanExplanation(args: {
   }
 
   const lowCoverage = confidenceLevel === "low";
-  if (lowCoverage && trustLevel !== "trusted") {
+  if (lowCoverage && trustLevel !== "trusted" && hasActualRiskIndicators) {
     return s.notEnoughInfoLowCoverage;
   }
 
@@ -182,7 +184,7 @@ export function shortScanExplanation(args: {
     case "limitedEvidence":
       return s.notEnoughInfo;
     case "suspicious":
-      return s.beCareful;
+      return hasActualRiskIndicators ? s.beCareful : s.looksSafe;
     case "highRisk":
       return s.highRisk;
     default:

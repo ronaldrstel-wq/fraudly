@@ -69,7 +69,7 @@ describe("scanResultDualLayer", () => {
     expect(tech).toBe("Looks safe / Trusted");
   });
 
-  it("combines low coverage + non-top trust band for longer explanation", () => {
+  it("keeps low-coverage explanation neutral and non-alarming", () => {
     const line = shortScanExplanation({
       threatActive: false,
       threatKind: null,
@@ -77,7 +77,7 @@ describe("scanResultDualLayer", () => {
       trustLevel: "suspicious",
       confidenceLevel: "low"
     });
-    expect(line.toLowerCase()).toContain("low scan coverage");
+    expect(line.toLowerCase()).toContain("not a risk signal by itself");
   });
 
   it("derives consumer headline from trust + verdict snapshot", () => {

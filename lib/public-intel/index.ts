@@ -14,6 +14,8 @@ export type PublicReputationSignals = {
   trustpilotReviewCount: number | null;
   googleScore: number | null;
   googleReviewCount: number | null;
+  matchedQuery: string | null;
+  businessName: string | null;
   redditWarnings: number;
   domainAgeDays: number | null;
   sslStatus: "valid" | "invalid" | "unavailable";
@@ -142,7 +144,10 @@ export async function getPublicIntelEnrichment(domain: string): Promise<PublicIn
   } | undefined)?.data ?? null;
   const scamadviser = (resultsByKey.get("scamadviser") as { data?: { trustScore?: number | null } } | undefined)?.data ?? null;
   const snippets = (resultsByKey.get("googleIndexedReviews") as {
-    data?: { possibleRating?: number | null; possibleReviewCount?: number | null };
+    data?: { possibleRating?: number | null; possibleReviewCount?: number | null; matchedQuery?: string | null };
+  } | undefined)?.data ?? null;
+  const trustpilotMeta = (resultsByKey.get("trustpilot") as {
+    data?: { matchedQuery?: string | null; businessName?: string | null };
   } | undefined)?.data ?? null;
   const dns = (resultsByKey.get("dns") as { data?: { mxConfigured?: boolean; hasSpf?: boolean; hasDmarc?: boolean } } | undefined)?.data ?? null;
   const ssl = (resultsByKey.get("ssl") as { data?: { validCertificate?: boolean } } | undefined)?.data ?? null;
@@ -167,6 +172,8 @@ export async function getPublicIntelEnrichment(domain: string): Promise<PublicIn
       trustpilotReviewCount: trustpilot?.reviewCount ?? null,
       googleScore: snippets?.possibleRating ?? null,
       googleReviewCount: snippets?.possibleReviewCount ?? null,
+      matchedQuery: trustpilotMeta?.matchedQuery ?? snippets?.matchedQuery ?? null,
+      businessName: trustpilotMeta?.businessName ?? null,
       redditWarnings: (reddit?.scamMentions ?? 0) + (reddit?.phishingMentions ?? 0) + (reddit?.complaintMentions ?? 0),
       domainAgeDays: whois?.ageDays ?? null,
       sslStatus: ssl ? (ssl.validCertificate ? "valid" : "invalid") : "unavailable",
