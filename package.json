@@ -12,7 +12,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "recalc:scans": "node --experimental-strip-types scripts/recalculate-recent-scans.ts",
+    "recalc:scans": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/recalculate-recent-scans.ts",
     "perf:build": "npx next build",
     "perf:start": "PERF_BYPASS_AUTH=1 npx next start -p 3010 -H 127.0.0.1",
     "perf:lighthouse:mobile": "mkdir -p performance-reports && lighthouse http://127.0.0.1:3010 --output=json --output=html --output-path=performance-reports/lighthouse-mobile --chrome-flags='--headless=new --no-sandbox' && node scripts/extract-lighthouse-metrics.mjs performance-reports/lighthouse-mobile.report.json",

@@ -1,4 +1,4 @@
-import { recalculateRecentScans } from "../lib/admin/recalculate-scans.ts";
+import { recalculateRecentScans } from "../lib/admin/recalculate-scans";
 
 function parseBool(value: string | undefined, defaultValue: boolean): boolean {
   if (value == null) return defaultValue;
