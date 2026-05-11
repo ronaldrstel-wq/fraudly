@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
-import { SITE_URL } from "@/lib/seo";
+import { privateRobots, publicRobots, SITE_URL } from "@/lib/seo";
 import { getPublishedScamAlertBySlug } from "@/lib/scam-alerts/service";
 import { EN_MESSAGES } from "@/lib/messages.en";
 
@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!alert) {
     return {
       title: "Scam alert not found | Fraudly",
-      robots: { index: false, follow: false }
+      robots: privateRobots
     };
   }
   return {
@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       url: `${SITE_URL}/scam-alerts/${alert.slug}`,
       type: "article"
     },
-    robots: { index: true, follow: true }
+    robots: publicRobots
   };
 }
 

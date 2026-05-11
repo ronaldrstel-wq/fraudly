@@ -1,7 +1,8 @@
 /** @type {import('next-sitemap').IConfig} */
 module.exports = {
   siteUrl: "https://fraudly.app",
-  generateRobotsTxt: true,
+  /** Canonical robots.txt is `app/robots.ts`; avoid overwriting `public/` on build. */
+  generateRobotsTxt: false,
   sitemapSize: 5000,
   changefreq: "weekly",
   priority: 0.7,

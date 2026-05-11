@@ -10,7 +10,7 @@ import {
 } from "@/lib/domainIntelLandingCopy";
 import { parseCheckDomainParam } from "@/lib/domainPage";
 import { OG_IMAGE } from "@/lib/seo-metadata";
-import { defaultKeywords, SITE_URL } from "@/lib/seo";
+import { defaultKeywords, publicRobots, SITE_URL, unindexedFollowRobots } from "@/lib/seo";
 import { DomainIntelLandingJsonLd } from "@/components/seo/DomainIntelLandingJsonLd";
 import { Navbar } from "@/components/Navbar";
 import { ResultCard } from "@/components/ResultCard";
@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { domain: raw } = await params;
   const domain = parseCheckDomainParam(raw);
   if (!domain) {
-    return { title: "Website trust intelligence", robots: { index: false, follow: true } };
+    return { title: "Website trust intelligence", robots: unindexedFollowRobots };
   }
 
   const path = domainPathname(domain);
@@ -73,14 +73,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         description,
         images: [OG_IMAGE.url]
       },
-      robots: { index: true, follow: true }
+      robots: publicRobots
     };
   } catch {
     return {
       title: `Trust intelligence: ${domain}`,
       description: `Public trust breakdown and scam/phishing-oriented signals for ${domain} — contextual, not definitive.`,
       alternates: { canonical },
-      robots: { index: true, follow: true }
+      robots: publicRobots
     };
   }
 }

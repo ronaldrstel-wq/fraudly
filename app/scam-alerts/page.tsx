@@ -15,7 +15,7 @@ import {
   parseScamAlertsTimeWindow
 } from "@/lib/scam-alerts/presentation";
 import { EN_MESSAGES } from "@/lib/messages.en";
-import { SITE_URL } from "@/lib/seo";
+import { publicRobots, SITE_URL } from "@/lib/seo";
 import {
   getPublishedScamAlertsPageResult,
   getScamAlertsIndexStats,
@@ -68,7 +68,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
     title,
     description: PAGE_DESCRIPTION,
     alternates: { canonical },
-    robots: { index: true, follow: true },
+    robots: publicRobots,
     openGraph: {
       title,
       description: PAGE_DESCRIPTION,

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { privateRobots } from "@/lib/seo";
 import Link from "next/link";
 import { ScamAlertStatus } from "@prisma/client";
 import { notFound, redirect } from "next/navigation";
@@ -16,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Admin Scam Alerts",
-  robots: { index: false, follow: false }
+  robots: privateRobots
 };
 
 type PageProps = { searchParams: Promise<{ status?: string }> };

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { defaultKeywords, SITE_URL } from "@/lib/seo";
+import { defaultKeywords, publicRobots, SITE_URL } from "@/lib/seo";
 
 export const OG_IMAGE = {
   url: "/opengraph-image",
@@ -23,6 +23,7 @@ export function buildPageMetadata(opts: {
     title: opts.titleSegment,
     description: opts.description,
     keywords: [...defaultKeywords],
+    robots: publicRobots,
     alternates: { canonical: url },
     openGraph: {
       type: "website",

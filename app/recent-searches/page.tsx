@@ -4,6 +4,7 @@ import { Navbar } from "@/components/Navbar";
 import { RecentSearchesDashboard } from "@/components/RecentSearchesDashboard";
 import { SiteFooter } from "@/components/SiteFooter";
 import { listRecentSearchesForScope } from "@/lib/recent-search/service";
+import { unindexedFollowRobots } from "@/lib/seo";
 import { getBillingUserOrNull } from "@/lib/user-store";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +12,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Recent searches",
   description: "Your private Fraudly fraud-check history.",
-  robots: { index: false, follow: true }
+  robots: unindexedFollowRobots
 };
 
 export default async function RecentSearchesPage() {

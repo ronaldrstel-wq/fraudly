@@ -6,7 +6,7 @@ import { HomeNavbar } from "@/components/home/HomeNavbar";
 import { HomeFaqJsonLd } from "@/components/HomeFaqJsonLd";
 import { HomeClient } from "@/components/HomeClient";
 import { OG_IMAGE } from "@/lib/seo-metadata";
-import { defaultKeywords, SITE_URL } from "@/lib/seo";
+import { defaultKeywords, publicRobots, SITE_URL } from "@/lib/seo";
 
 const homeTitle = "Fraudly — AI-Assisted Scam Website Checker";
 const homeDescription =
@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   title: { absolute: homeTitle },
   description: homeDescription,
   keywords: [...defaultKeywords],
+  robots: publicRobots,
   alternates: { canonical: `${SITE_URL}/` },
   openGraph: {
     type: "website",

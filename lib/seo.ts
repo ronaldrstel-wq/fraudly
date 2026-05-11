@@ -1,4 +1,42 @@
+import type { Metadata } from "next";
+
 export const SITE_URL = "https://fraudly.app" as const;
+
+/** Hostnames that serve the public, indexable production site (no preview noindex). */
+const PRODUCTION_SITE_HOSTS = new Set(["fraudly.app", "www.fraudly.app"]);
+
+export function isProductionPublicSiteHost(host: string): boolean {
+  const normalized = host.trim().toLowerCase().split(":")[0] ?? "";
+  return PRODUCTION_SITE_HOSTS.has(normalized);
+}
+
+export const publicRobots: NonNullable<Metadata["robots"]> = {
+  index: true,
+  follow: true,
+  googleBot: {
+    index: true,
+    follow: true
+  }
+};
+
+export const privateRobots: NonNullable<Metadata["robots"]> = {
+  index: false,
+  follow: false,
+  googleBot: {
+    index: false,
+    follow: false
+  }
+};
+
+/** User-specific or thin URLs: discourage indexing but allow following links. */
+export const unindexedFollowRobots: NonNullable<Metadata["robots"]> = {
+  index: false,
+  follow: true,
+  googleBot: {
+    index: false,
+    follow: true
+  }
+};
 
 export const defaultKeywords = [
   "scam website checker",

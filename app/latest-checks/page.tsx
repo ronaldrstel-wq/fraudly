@@ -10,7 +10,7 @@ import { db } from "@/lib/db";
 import { overviewFeedPrimaryLine } from "@/lib/overviewFeedDisplay";
 import { OG_IMAGE } from "@/lib/seo-metadata";
 import { EN_MESSAGES } from "@/lib/messages.en";
-import { SITE_URL } from "@/lib/seo";
+import { publicRobots, SITE_URL } from "@/lib/seo";
 import { buildOverviewFromPublicCheck } from "@/lib/overviewCardPresentation";
 
 export const revalidate = 120;
@@ -38,7 +38,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
     description:
       "Explore recent community website checks powered by Fraudly trust signals, scam intelligence, reputation data, and AI-assisted analysis—shown as privacy-safe summaries.",
     alternates: { canonical },
-    robots: { index: true, follow: true },
+    robots: publicRobots,
     openGraph: {
       type: "website",
       url: canonical,

@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { getCachedWebsiteAnalysis } from "@/lib/analysis/cachedAnalysis";
 import { parseCheckDomainParam } from "@/lib/domainPage";
 import { OG_IMAGE } from "@/lib/seo-metadata";
-import { SITE_URL } from "@/lib/seo";
+import { publicRobots, SITE_URL, unindexedFollowRobots } from "@/lib/seo";
 import { Navbar } from "@/components/Navbar";
 import { ResultCard } from "@/components/ResultCard";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { domain: raw } = await params;
   const domain = parseCheckDomainParam(raw);
   if (!domain) {
-    return { title: "Website check", robots: { index: false, follow: true } };
+    return { title: "Website check", robots: unindexedFollowRobots };
   }
 
   const path = `/check/${encodeURIComponent(domain)}`;
@@ -66,14 +66,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         description: `Fraudly checked ${domain} for scam signals and website trust indicators.`,
         images: [OG_IMAGE.url]
       },
-      robots: { index: true, follow: true }
+      robots: publicRobots
     };
   } catch {
     return {
       title: `Website check: ${domain}`,
       description: `Run a website trust and scam-signal check for ${domain} with Fraudly.`,
       alternates: { canonical },
-      robots: { index: true, follow: true }
+      robots: publicRobots
     };
   }
 }
