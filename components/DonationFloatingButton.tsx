@@ -16,7 +16,7 @@ export function DonationFloatingButton() {
   }
 
   return (
-    <div className="pointer-events-none fixed bottom-20 right-4 z-40 w-[170px] sm:bottom-6 sm:right-6 sm:w-[220px] md:w-[250px]">
+    <div className="pointer-events-none fixed bottom-20 right-4 z-40 w-[170px] sm:bottom-4 sm:right-6 sm:w-[220px] md:w-[250px]">
       <Link
         href={PAYPAL_DONATION_URL}
         target="_blank"
