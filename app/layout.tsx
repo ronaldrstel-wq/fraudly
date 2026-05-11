@@ -5,7 +5,6 @@ import { CookieConsentProvider } from "@/components/CookieConsentProvider";
 import { logClerkProductionMisconfigWarnings } from "@/lib/clerkConfig";
 import { JsonLd } from "@/components/JsonLd";
 import { PwaServiceWorkerRegister } from "@/components/PwaServiceWorkerRegister";
-import { DonationFloatingButton } from "@/components/DonationFloatingButton";
 import { OG_IMAGE } from "@/lib/seo-metadata";
 import {
   defaultDescription,
@@ -84,7 +83,6 @@ export default function RootLayout({
         <ClerkAppProvider>
           <CookieConsentProvider>
             {children}
-            <DonationFloatingButton />
           </CookieConsentProvider>
         </ClerkAppProvider>
       </body>

@@ -21,6 +21,7 @@ import {
 } from "@/lib/scanResultDualLayer";
 import { shouldShowLimitedPublicStrip } from "@/lib/scanResultNarrative";
 import { ThreatBanner } from "@/components/ThreatBanner";
+import { ResultSupportBox } from "@/components/ResultSupportBox";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { shouldShowTrustGauge } from "@/lib/trustGaugeDisplay";
 import { trustLevelFromScore, type TrustLevel } from "@/lib/trustSystem";
@@ -181,6 +182,7 @@ export function ResultCard({ result }: ResultCardProps) {
   });
   const humanHeadline = humanRecHeadline(humanKind);
   const humanTone = humanRecHeadlineTone(humanKind);
+  const sensitiveSupportPlacement = humanKind === "highRisk" || humanKind === "avoidWebsite" || humanKind === "dangerousWebsite";
   const techStatus = technicalStatusText({
     threatActive: threat.active,
     threatKind: threat.kind,
@@ -394,6 +396,8 @@ export function ResultCard({ result }: ResultCardProps) {
               </div>
             )}
 
+            {!sensitiveSupportPlacement ? <ResultSupportBox /> : null}
+
             <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 {EN_MESSAGES.siteOutcome.scanCoverageHeading}
@@ -408,6 +412,8 @@ export function ResultCard({ result }: ResultCardProps) {
                 </p>
               ) : null}
             </div>
+
+            {sensitiveSupportPlacement ? <ResultSupportBox /> : null}
           </div>
 
           <div className="flex w-full min-w-0 flex-col gap-3 sm:w-auto sm:max-w-md sm:items-end sm:text-right">
