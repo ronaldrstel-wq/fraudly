@@ -49,25 +49,16 @@ export function overviewOneLiner(kind: HumanRecKind): string {
  * Card chrome for list/overview surfaces — matches result-page emotional tiers without redesigning cards.
  */
 export function overviewCardArticleClass(kind: HumanRecKind): string {
-  if (kind === "avoidWebsite" || kind === "dangerousWebsite") {
-    return "border border-red-600/95 bg-gradient-to-br from-red-50/90 to-white shadow-subtle ring-1 ring-red-300/35";
+  if (kind === "avoidWebsite" || kind === "dangerousWebsite" || kind === "highRisk") {
+    return "border border-slate-200 bg-rose-50/45";
   }
-  if (kind === "highRisk") {
-    return "border border-rose-300/90 bg-rose-50/40 shadow-subtle";
+  if (kind === "beCareful" || kind === "notEnoughInfo" || kind === "invalidDomain" || kind === "unreachable") {
+    return "border border-slate-200 bg-amber-50/45";
   }
-  if (kind === "beCareful") {
-    return "border-amber-200 bg-amber-50/35";
+  if (kind === "trusted" || kind === "looksSafe") {
+    return "border border-slate-200 bg-emerald-50/45";
   }
-  if (kind === "notEnoughInfo" || kind === "invalidDomain" || kind === "unreachable") {
-    return "border-slate-200 bg-slate-50/50";
-  }
-  if (kind === "trusted") {
-    return "border-emerald-200/90 bg-emerald-50/40";
-  }
-  if (kind === "looksSafe") {
-    return "border-teal-200/90 bg-teal-50/35";
-  }
-  return "border-slate-200 bg-white";
+  return "border border-slate-200 bg-white";
 }
 
 export type OverviewCardModel = {
