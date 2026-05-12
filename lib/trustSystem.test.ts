@@ -7,27 +7,27 @@ import {
   verdictFromTrustScore
 } from "@/lib/trustSystem";
 
-const looksSafeTrusted = "Looks safe / Trusted";
-const beCarefulCaution = "Be careful / Caution";
-const highRiskLabel = "High risk";
-
 describe("trust bands", () => {
-  it("maps three trust levels by score (80 / 50 thresholds)", () => {
+  it("maps five trust levels by score thresholds", () => {
     expect(trustLevelFromScore(100)).toBe("trusted");
     expect(trustLevelFromScore(80)).toBe("trusted");
-    expect(trustLevelFromScore(79)).toBe("suspicious");
-    expect(trustLevelFromScore(50)).toBe("suspicious");
-    expect(trustLevelFromScore(49)).toBe("highRisk");
+    expect(trustLevelFromScore(79)).toBe("mostlySafe");
+    expect(trustLevelFromScore(65)).toBe("mostlySafe");
+    expect(trustLevelFromScore(64)).toBe("caution");
+    expect(trustLevelFromScore(50)).toBe("caution");
+    expect(trustLevelFromScore(49)).toBe("risky");
+    expect(trustLevelFromScore(30)).toBe("risky");
+    expect(trustLevelFromScore(29)).toBe("highRisk");
     expect(trustLevelFromScore(0)).toBe("highRisk");
   });
 
   it("labels presentation for user-facing trust bands", () => {
-    expect(trustPresentationFromScore(100).label).toBe(looksSafeTrusted);
-    expect(trustPresentationFromScore(80).label).toBe(looksSafeTrusted);
-    expect(trustPresentationFromScore(79).label).toBe(beCarefulCaution);
-    expect(trustPresentationFromScore(50).label).toBe(beCarefulCaution);
-    expect(trustPresentationFromScore(49).label).toBe(highRiskLabel);
-    expect(trustPresentationFromScore(0).label).toBe(highRiskLabel);
+    expect(trustPresentationFromScore(92).label).toBe("Looks safe");
+    expect(trustPresentationFromScore(80).label).toBe("Looks safe");
+    expect(trustPresentationFromScore(73).label).toBe("Looks mostly safe");
+    expect(trustPresentationFromScore(58).label).toBe("Be careful");
+    expect(trustPresentationFromScore(41).label).toBe("Risky");
+    expect(trustPresentationFromScore(18).label).toBe("High risk");
   });
 
   it("inverts risk to trust linearly", () => {

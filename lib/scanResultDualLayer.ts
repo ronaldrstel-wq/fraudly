@@ -1,7 +1,9 @@
 import { EN_MESSAGES } from "@/lib/messages.en";
 import type { CriticalThreatKind } from "@/lib/scanPresentation";
 import { criticalThreatStatusHeadline } from "@/lib/scanPresentation";
-import { clampScore, trustLevelFromScore, trustPresentationFromScore } from "@/lib/trustSystem";
+import { clampScore } from "@/lib/clampScore";
+import { getTrustDescription } from "@/lib/trustScoreUi";
+import { trustLevelFromScore, trustPresentationFromScore } from "@/lib/trustSystem";
 import type { TrustLevel } from "@/lib/trustSystem";
 import type { ScamVerdict } from "@/lib/trustSystem";
 import type { ConfidenceLevel, SiteStatus } from "@/types/site-outcome";
@@ -28,6 +30,8 @@ function siteStatusUserLabel(status: SiteStatus): string {
 export type HumanRecKind =
   | "trusted"
   | "looksSafe"
+  | "looksMostlySafe"
+  | "risky"
   | "notEnoughInfo"
   | "beCareful"
   | "highRisk"
@@ -66,12 +70,12 @@ export function resolveHumanRecKind(args: {
   switch (trustLevel) {
     case "trusted":
       return "trusted";
-    case "likelyLegit":
-      return "looksSafe";
-    case "limitedEvidence":
-      return "notEnoughInfo";
-    case "suspicious":
-      return hasActualRiskIndicators ? "beCareful" : "looksSafe";
+    case "mostlySafe":
+      return "looksMostlySafe";
+    case "caution":
+      return "beCareful";
+    case "risky":
+      return "risky";
     case "highRisk":
       return "highRisk";
     default:
@@ -86,6 +90,10 @@ export function humanRecHeadline(kind: HumanRecKind): string {
       return h.trusted;
     case "looksSafe":
       return h.looksSafe;
+    case "looksMostlySafe":
+      return h.looksMostlySafe;
+    case "risky":
+      return h.risky;
     case "notEnoughInfo":
       return h.notEnoughInfo;
     case "beCareful":
@@ -139,11 +147,12 @@ export function shortScanExplanation(args: {
   threatActive: boolean;
   threatKind: CriticalThreatKind | null;
   siteStatus: SiteStatus;
-  trustLevel: TrustLevel;
+  /** Display trust score 0–100 (same basis as the gauge). */
+  displayTrust: number;
   confidenceLevel: ConfidenceLevel;
   hasActualRiskIndicators?: boolean;
 }): string {
-  const { threatActive, threatKind, siteStatus, trustLevel, confidenceLevel, hasActualRiskIndicators = true } = args;
+  const { threatActive, threatKind, siteStatus, displayTrust, confidenceLevel, hasActualRiskIndicators = true } = args;
   const s = EN_MESSAGES.scanResult.shortExplain;
 
   if (siteStatus === "nonexistent") return s.invalidDomain;
@@ -171,25 +180,13 @@ export function shortScanExplanation(args: {
     return s.confirmedMalicious;
   }
 
+  const t = clampScore(displayTrust);
   const lowCoverage = confidenceLevel === "low";
-  if (lowCoverage && trustLevel !== "trusted" && hasActualRiskIndicators) {
+  if (lowCoverage && trustLevelFromScore(t) !== "trusted" && hasActualRiskIndicators) {
     return s.notEnoughInfoLowCoverage;
   }
 
-  switch (trustLevel) {
-    case "trusted":
-      return s.trusted;
-    case "likelyLegit":
-      return s.looksSafe;
-    case "limitedEvidence":
-      return s.notEnoughInfo;
-    case "suspicious":
-      return hasActualRiskIndicators ? s.beCareful : s.looksSafe;
-    case "highRisk":
-      return s.highRisk;
-    default:
-      return s.notEnoughInfo;
-  }
+  return getTrustDescription(t);
 }
 
 export function humanRecGlyph(kind: HumanRecKind): string {
@@ -197,12 +194,16 @@ export function humanRecGlyph(kind: HumanRecKind): string {
   switch (kind) {
     case "trusted":
     case "looksSafe":
+    case "looksMostlySafe":
       return g.positive;
+    case "risky":
+      return g.warning;
     case "notEnoughInfo":
     case "invalidDomain":
     case "unreachable":
       return g.info;
     case "beCareful":
+      return g.warning;
     case "highRisk":
       return g.warning;
     case "avoidWebsite":
@@ -239,20 +240,10 @@ export function humanRecKindFromTrustVerdict(trustScore: number, verdict: ScamVe
 }
 
 export function shortExplainForBasic(verdict: ScamVerdict, riskScore: number): string {
-  const kind = resolveHumanRecKindForBasicCheck(verdict, riskScore);
   const s = EN_MESSAGES.scanResult.shortExplain;
   if (verdict === "scam") return s.avoidGeneric;
   if (verdict === "suspicious") return s.beCareful;
-  switch (kind) {
-    case "trusted":
-      return s.trusted;
-    case "looksSafe":
-      return s.looksSafe;
-    case "notEnoughInfo":
-      return s.notEnoughInfo;
-    default:
-      return s.looksSafe;
-  }
+  return getTrustDescription(clampScore(100 - riskScore));
 }
 
 export function humanRecHeadlineTone(kind: HumanRecKind): { text: string; icon: string } {
@@ -260,7 +251,10 @@ export function humanRecHeadlineTone(kind: HumanRecKind): { text: string; icon: 
     case "trusted":
       return { text: "text-emerald-800", icon: "text-emerald-600" };
     case "looksSafe":
+    case "looksMostlySafe":
       return { text: "text-teal-900", icon: "text-teal-600" };
+    case "risky":
+      return { text: "text-orange-950", icon: "text-orange-600" };
     case "notEnoughInfo":
       return { text: "text-slate-700", icon: "text-slate-500" };
     case "beCareful":

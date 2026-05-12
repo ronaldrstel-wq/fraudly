@@ -176,8 +176,10 @@ export const EN_MESSAGES = {
       headlines: {
         trusted: "Looks safe",
         looksSafe: "No major risk indicators found",
+        looksMostlySafe: "Looks mostly safe",
         notEnoughInfo: "Not Enough Information",
-        beCareful: "Some caution advised",
+        beCareful: "Be careful",
+        risky: "Risky",
         highRisk: "High risk detected",
         avoidWebsite: "Avoid This Website",
         dangerousWebsite: "Dangerous Website",
@@ -189,8 +191,10 @@ export const EN_MESSAGES = {
     overviewOneLine: {
       trusted: "No major risk indicators detected.",
       looksSafe: "No major phishing indicators detected.",
+      looksMostlySafe: "Mostly positive snapshot — confirm limited checks if you plan to pay or sign in.",
       notEnoughInfo: "Limited public information available.",
       beCareful: "Some risk indicators were detected.",
+      risky: "Elevated concern — verify through a channel you trust before checkout or logins.",
       highRisk: "Elevated risk in this snapshot.",
       avoidWebsite: "Strong risk indicators — verify independently before interacting.",
       dangerousWebsite: "Possible malware or harmful content.",
@@ -242,11 +246,10 @@ export const EN_MESSAGES = {
     },
     whyTrustBand: {
       trusted: "This website showed strong trust signals and no known phishing or malware list matches in this scan.",
-      likelyLegit:
-        "Available signals look broadly legitimate, and we did not see a confirmed malicious list match.",
-      limitedPublicData:
-        "This website did not show confirmed malicious indicators, but only limited public information was available to score it.",
-      suspicious: "Some caution-style signals appeared—slow down before you trust links, logins, or checkout pages.",
+      mostlySafe:
+        "No major scam list matches appeared in this scan, though some automated checks were limited or worth a second look.",
+      caution: "Some caution-style signals appeared—slow down before you trust links, logins, or checkout pages.",
+      risky: "Multiple concerning patterns appeared in this snapshot compared with typical benign sites.",
       highRisk: "Several concerning signals accumulated in this scan relative to typical benign sites."
     },
     why: {
@@ -264,10 +267,10 @@ export const EN_MESSAGES = {
     },
     recommendTrustBand: {
       trusted: "No major risk indicators showed up in this scan—still use normal care with payments and personal data.",
-      likelyLegit: "This website appears broadly legitimate from available signals—verify the organisation if anything feels off.",
-      limitedPublicData:
-        "Not enough public information was available to score this site confidently—double-check the business through independent channels.",
-      suspicious: "Use caution before signing in, paying, or downloading. Prefer contacting the company through a known official route.",
+      mostlySafe:
+        "The snapshot looks broadly reassuring—if anything feels off, confirm the organisation through a channel you already trust.",
+      caution: "Use caution before signing in, paying, or downloading. Prefer contacting the company through a known official route.",
+      risky: "Pause before payments or account changes—verify the business and URL through an independent source you trust.",
       highRisk: "Avoid sharing personal or payment details until you can verify the site through a separate trusted source."
     },
     recommend: {

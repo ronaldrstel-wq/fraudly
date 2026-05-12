@@ -7,7 +7,8 @@ type CardTone = "safe" | "caution" | "highRisk";
 
 function toneForKind(kind: OverviewCardModel["humanKind"]): CardTone {
   if (kind === "avoidWebsite" || kind === "dangerousWebsite" || kind === "highRisk") return "highRisk";
-  if (kind === "beCareful" || kind === "notEnoughInfo" || kind === "invalidDomain" || kind === "unreachable") return "caution";
+  if (kind === "beCareful" || kind === "notEnoughInfo" || kind === "invalidDomain" || kind === "unreachable" || kind === "risky")
+    return "caution";
   return "safe";
 }
 

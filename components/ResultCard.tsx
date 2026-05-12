@@ -83,8 +83,8 @@ function labelForEvidenceTier(tier: ScoreEvidenceTier): string {
 
 function consumerSummaryFor(trustLevel: TrustLevel, threatActive: boolean): string {
   if (threatActive) return EN_MESSAGES.scanResult.consumerSummary.underThreat;
-  if (trustLevel === "trusted" || trustLevel === "likelyLegit") return EN_MESSAGES.scanResult.consumerSummary.positive;
-  if (trustLevel === "limitedEvidence" || trustLevel === "suspicious") return EN_MESSAGES.scanResult.consumerSummary.mixed;
+  if (trustLevel === "trusted" || trustLevel === "mostlySafe") return EN_MESSAGES.scanResult.consumerSummary.positive;
+  if (trustLevel === "caution") return EN_MESSAGES.scanResult.consumerSummary.mixed;
   return EN_MESSAGES.scanResult.consumerSummary.elevated;
 }
 
@@ -107,11 +107,25 @@ function trustMeterTone(score: number, threatActive: boolean): {
       marker: "text-emerald-900"
     };
   }
+  if (score >= 65) {
+    return {
+      track: "bg-teal-100",
+      fill: "bg-gradient-to-r from-teal-400 via-teal-500 to-emerald-500",
+      marker: "text-teal-900"
+    };
+  }
   if (score >= 50) {
     return {
       track: "bg-amber-100",
       fill: "bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500",
       marker: "text-amber-900"
+    };
+  }
+  if (score >= 30) {
+    return {
+      track: "bg-orange-100",
+      fill: "bg-gradient-to-r from-orange-500 via-orange-500 to-rose-500",
+      marker: "text-orange-950"
     };
   }
   return {
@@ -252,7 +266,7 @@ export function ResultCard({ result }: ResultCardProps) {
     threatActive: threat.active,
     threatKind: threat.kind,
     siteStatus: result.siteStatus,
-    trustLevel,
+    displayTrust: displayTrust ?? 0,
     confidenceLevel: result.confidenceLevel,
     hasActualRiskIndicators:
       result.scoreResult.signals.some((signal) => signal.evidenceTier === "risk_indicator" && signal.impact > 0) || threat.active
@@ -263,7 +277,6 @@ export function ResultCard({ result }: ResultCardProps) {
   const showLimitedStrip = shouldShowLimitedPublicStrip({
     threatActive: threat.active,
     confidenceLevel: result.confidenceLevel,
-    trustLevel,
     siteStatus: result.siteStatus
   });
 

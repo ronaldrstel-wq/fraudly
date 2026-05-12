@@ -1,4 +1,4 @@
-import { clampScore } from "@/lib/trustSystem";
+import { clampScore } from "@/lib/clampScore";
 
 /** Inputs needed to decide whether the consumer-facing trust gauge should render. */
 export type TrustGaugeResultInput = {

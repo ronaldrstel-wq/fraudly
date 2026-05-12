@@ -7,7 +7,8 @@ import {
   humanRecHeadlineTone,
   humanRecKindFromTrustVerdict
 } from "@/lib/scanResultDualLayer";
-import { clampScore, trustPresentationFromScore } from "@/lib/trustSystem";
+import { getTrustLabel } from "@/lib/trustScoreUi";
+import { clampScore } from "@/lib/clampScore";
 import type { ScamVerdict } from "@/lib/trustSystem";
 
 /** Trust score (0–100) from stored risk snapshot. */
@@ -26,10 +27,14 @@ export function overviewOneLiner(kind: HumanRecKind): string {
       return o.trusted;
     case "looksSafe":
       return o.looksSafe;
+    case "looksMostlySafe":
+      return o.looksMostlySafe;
     case "notEnoughInfo":
       return o.notEnoughInfo;
     case "beCareful":
       return o.beCareful;
+    case "risky":
+      return o.risky;
     case "highRisk":
       return o.highRisk;
     case "avoidWebsite":
@@ -52,10 +57,13 @@ export function overviewCardArticleClass(kind: HumanRecKind): string {
   if (kind === "avoidWebsite" || kind === "dangerousWebsite" || kind === "highRisk") {
     return "border border-slate-200 bg-rose-50/45";
   }
+  if (kind === "risky") {
+    return "border border-slate-200 bg-orange-50/40";
+  }
   if (kind === "beCareful" || kind === "notEnoughInfo" || kind === "invalidDomain" || kind === "unreachable") {
     return "border border-slate-200 bg-amber-50/45";
   }
-  if (kind === "trusted" || kind === "looksSafe") {
+  if (kind === "trusted" || kind === "looksSafe" || kind === "looksMostlySafe") {
     return "border border-slate-200 bg-emerald-50/45";
   }
   return "border border-slate-200 bg-white";
@@ -81,7 +89,7 @@ export function buildOverviewFromTrustAndVerdict(trustScore: number, verdict: Sc
     headline: humanRecHeadline(humanKind),
     glyph: humanRecGlyph(humanKind),
     tone: humanRecHeadlineTone(humanKind),
-    technicalLabel: trustPresentationFromScore(trustScore).label,
+    technicalLabel: getTrustLabel(trustScore),
     oneLiner: overviewOneLiner(humanKind),
     trustScore: clampScore(trustScore),
     isCritical,

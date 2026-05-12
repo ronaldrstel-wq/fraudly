@@ -45,16 +45,16 @@ export function whyThisResultSummary(args: {
   switch (trustLevel) {
     case "trusted":
       return b.trusted;
-    case "likelyLegit":
-      return b.likelyLegit;
-    case "limitedEvidence":
-      return b.limitedPublicData;
-    case "suspicious":
-      return b.suspicious;
+    case "mostlySafe":
+      return b.mostlySafe;
+    case "caution":
+      return b.caution;
+    case "risky":
+      return b.risky;
     case "highRisk":
       return b.highRisk;
     default:
-      return b.limitedPublicData;
+      return b.mostlySafe;
   }
 }
 
@@ -100,16 +100,16 @@ export function scanRecommendation(args: {
   switch (trustLevel) {
     case "trusted":
       return t.trusted;
-    case "likelyLegit":
-      return t.likelyLegit;
-    case "limitedEvidence":
-      return t.limitedPublicData;
-    case "suspicious":
-      return t.suspicious;
+    case "mostlySafe":
+      return t.mostlySafe;
+    case "caution":
+      return t.caution;
+    case "risky":
+      return t.risky;
     case "highRisk":
       return t.highRisk;
     default:
-      return t.limitedPublicData;
+      return t.mostlySafe;
   }
 }
 
@@ -117,7 +117,6 @@ export function scanRecommendation(args: {
 export function shouldShowLimitedPublicStrip(args: {
   threatActive: boolean;
   confidenceLevel: ConfidenceLevel;
-  trustLevel: TrustLevel;
   siteStatus: SiteStatus;
 }): boolean {
   if (args.threatActive) return false;
