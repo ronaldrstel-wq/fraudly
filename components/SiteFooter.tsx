@@ -15,6 +15,9 @@ export function SiteFooter() {
           <Link href="/features" className="fraudly-footer-link">
             Features
           </Link>
+          <Link href="/support" className="fraudly-footer-link">
+            Support &amp; FAQ
+          </Link>
           <Link href="/how-it-works" className="fraudly-footer-link">
             How it works
           </Link>
