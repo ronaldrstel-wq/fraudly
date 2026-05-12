@@ -8,6 +8,5 @@ export const MAIN_NAV_LINKS = [
   { label: "How it works", href: "/how-it-works" },
   { label: "Features", href: "/features" },
   { label: "Learn", href: "/learn" },
-  { label: "About", href: "/about" },
-  { label: "Support", href: "/support" }
+  { label: "About", href: "/about" }
 ] as const;
