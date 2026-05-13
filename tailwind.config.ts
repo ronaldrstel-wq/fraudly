@@ -14,6 +14,15 @@ const config: Config = {
       transitionTimingFunction: {
         DEFAULT: "cubic-bezier(0.4, 0, 0.2, 1)"
       },
+      keyframes: {
+        pulseTimelineBar: {
+          "0%": { opacity: "0.3" },
+          "100%": { opacity: "1" }
+        }
+      },
+      animation: {
+        "pulse-timeline-bar": "pulseTimelineBar 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards"
+      },
       boxShadow: {
         subtle:
           "0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px -1px rgb(15 23 42 / 0.06)",

@@ -103,49 +103,132 @@ function RankedList({ title, items, empty }: { title: string; items: PulseRankIt
   );
 }
 
+function pulseDayTotal(row: PulseTrendBucket): number {
+  return row.checks + row.suspicious + row.highRisk + row.alerts;
+}
+
 function TrendChart({ buckets }: { buckets: PulseTrendBucket[] }) {
   const last30 = buckets.slice(-30);
   const enough = last30.filter((b) => b.checks > 0).length >= 7;
   if (!enough) {
     return (
       <section className="rounded-2xl border border-slate-200/70 bg-white/95 p-5 shadow-[0_8px_30px_rgba(15,23,42,0.06)]">
-        <h2 className="text-lg font-semibold tracking-tight text-slate-900">Trend graphs</h2>
+        <h2 className="text-lg font-semibold tracking-tight text-slate-900">Activity timeline</h2>
         <p className="mt-3 text-sm text-slate-600">Trend data is building as more checks are completed.</p>
       </section>
     );
   }
-  const maxValue = last30.reduce((m, row) => Math.max(m, row.checks, row.suspicious, row.highRisk, row.alerts), 1);
+
+  const maxDayTotal = Math.max(1, ...last30.map((r) => pulseDayTotal(r)));
+  const maxAlerts = last30.reduce((m, r) => Math.max(m, r.alerts), 0);
+  const todayKey = new Date().toISOString().slice(0, 10);
+
   return (
-    <section className="rounded-2xl border border-slate-200/70 bg-white/95 p-5 shadow-[0_8px_30px_rgba(15,23,42,0.06)]">
-      <h2 className="text-lg font-semibold tracking-tight text-slate-900">Trend graphs</h2>
-      <p className="mt-2 text-xs text-slate-600">
-        Trends are grouped by day and only shown when enough data exists to avoid misleading conclusions.
+    <section className="rounded-2xl border border-slate-200/70 bg-white/95 p-5 shadow-[0_8px_30px_rgba(15,23,42,0.06)] md:p-6">
+      <h2 className="text-lg font-semibold tracking-tight text-slate-900">Activity timeline</h2>
+      <p className="mt-2 max-w-2xl text-xs leading-relaxed text-slate-600">
+        Daily mix of public checks, suspicious or high-risk signals, and published scam alerts. Bars scale to the busiest day
+        in this window; empty days stay minimal.
       </p>
-      <div className="mt-4 grid gap-2">
-        {last30.map((row) => (
-          <div key={row.day} className="grid grid-cols-[86px_1fr] items-center gap-2">
-            <span className="text-[11px] font-medium text-slate-500">{row.day.slice(5)}</span>
-            <div className="flex h-3 overflow-hidden rounded-full bg-slate-100">
-              <div className="bg-blue-500/70" style={{ width: `${Math.round((row.checks / maxValue) * 100)}%` }} />
-              <div className="bg-amber-400/70" style={{ width: `${Math.round((row.suspicious / maxValue) * 100)}%` }} />
-              <div className="bg-rose-500/70" style={{ width: `${Math.round((row.highRisk / maxValue) * 100)}%` }} />
-              <div className="bg-violet-500/70" style={{ width: `${Math.round((row.alerts / maxValue) * 100)}%` }} />
-            </div>
-          </div>
-        ))}
+
+      <div className="mt-5 overflow-x-auto [-webkit-overflow-scrolling:touch]">
+        <div className="min-w-[min(100%,320px)] divide-y divide-slate-100/90 sm:min-w-0">
+          {last30.map((row) => {
+            const dayTotal = pulseDayTotal(row);
+            const hasActivity = dayTotal > 0;
+            const isToday = row.day === todayKey;
+            const barWidthPct = hasActivity ? Math.max(10, Math.round((dayTotal / maxDayTotal) * 100)) : 0;
+            const alertHeavy = row.alerts > 0 && maxAlerts > 0 && row.alerts >= Math.max(2, Math.ceil(maxAlerts * 0.45));
+            const tooltip = `Checks: ${row.checks} · Suspicious: ${row.suspicious} · High-risk: ${row.highRisk} · Alerts: ${row.alerts}`;
+
+            return (
+              <div
+                key={row.day}
+                className={`group grid grid-cols-[minmax(3.25rem,auto)_1fr] items-center gap-x-3 sm:grid-cols-[4.5rem_1fr] ${
+                  isToday ? "bg-gradient-to-r from-blue-50/45 via-transparent to-transparent" : ""
+                } ${hasActivity ? "py-2.5" : "py-1.5"}`}
+              >
+                <div className="flex flex-col">
+                  <span
+                    className={`text-[11px] tabular-nums tracking-tight ${isToday ? "font-semibold text-blue-800" : hasActivity ? "font-medium text-slate-600" : "text-slate-400"}`}
+                    title={row.day}
+                  >
+                    {row.day.slice(5)}
+                  </span>
+                  {isToday ? (
+                    <span className="text-[9px] font-semibold uppercase tracking-wide text-blue-600/90">Today</span>
+                  ) : null}
+                </div>
+
+                {hasActivity ? (
+                  <div className="min-w-0">
+                    <div
+                      title={tooltip}
+                      className={`fraudly-motion relative w-full transition-all duration-200 ease-out group-hover:opacity-95 ${
+                        alertHeavy
+                          ? "rounded-full shadow-[0_0_22px_rgba(139,92,246,0.22)] ring-1 ring-violet-300/40"
+                          : "rounded-full ring-1 ring-slate-200/50"
+                      }`}
+                    >
+                      <div
+                        className="motion-safe:animate-pulse-timeline-bar flex h-3.5 origin-left overflow-hidden rounded-full bg-slate-50/80 shadow-inner shadow-slate-200/40 transition-[height,box-shadow] duration-200 ease-out group-hover:h-4 group-hover:shadow-md sm:h-4 sm:group-hover:h-[1.125rem]"
+                        style={{ width: `${barWidthPct}%` }}
+                      >
+                        {row.checks > 0 ? (
+                          <div
+                            className="bg-gradient-to-b from-blue-500 to-blue-600 transition-[filter] duration-200 group-hover:brightness-105"
+                            style={{ width: `${(row.checks / dayTotal) * 100}%` }}
+                          />
+                        ) : null}
+                        {row.suspicious > 0 ? (
+                          <div
+                            className="bg-gradient-to-b from-amber-400 to-amber-500 transition-[filter] duration-200 group-hover:brightness-105"
+                            style={{ width: `${(row.suspicious / dayTotal) * 100}%` }}
+                          />
+                        ) : null}
+                        {row.highRisk > 0 ? (
+                          <div
+                            className="bg-gradient-to-b from-rose-500 to-rose-600 transition-[filter] duration-200 group-hover:brightness-105"
+                            style={{ width: `${(row.highRisk / dayTotal) * 100}%` }}
+                          />
+                        ) : null}
+                        {row.alerts > 0 ? (
+                          <div
+                            className="bg-gradient-to-b from-violet-500 to-violet-600 transition-[filter] duration-200 group-hover:brightness-105"
+                            style={{ width: `${(row.alerts / dayTotal) * 100}%` }}
+                          />
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className="h-[2px] w-full max-w-[11rem] rounded-full bg-slate-100/60 sm:max-w-[14rem]"
+                    aria-hidden
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
-      <div className="mt-4 flex flex-wrap gap-3 text-[11px] text-slate-600">
-        <span className="inline-flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-blue-500" /> checks
+
+      <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-slate-100 pt-4 text-[11px] text-slate-600">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 shrink-0 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 shadow-sm shadow-blue-500/30" />
+          Checks
         </span>
-        <span className="inline-flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-amber-400" /> suspicious
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 shrink-0 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 shadow-sm shadow-amber-400/25" />
+          Suspicious
         </span>
-        <span className="inline-flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-rose-500" /> high-risk
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 shrink-0 rounded-full bg-gradient-to-br from-rose-500 to-rose-600 shadow-sm shadow-rose-500/25" />
+          High-risk
         </span>
-        <span className="inline-flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-violet-500" /> alerts
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 shrink-0 rounded-full bg-gradient-to-br from-violet-500 to-violet-600 shadow-sm shadow-violet-500/30" />
+          Alerts
         </span>
       </div>
     </section>
