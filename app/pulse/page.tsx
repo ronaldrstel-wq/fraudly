@@ -128,14 +128,15 @@ function TrendChart({ buckets }: { buckets: PulseTrendBucket[] }) {
       <h2 className="text-lg font-semibold tracking-tight text-slate-900">Activity timeline</h2>
       <p className="mt-2 max-w-2xl text-xs leading-relaxed text-slate-600">
         Daily mix of public checks, suspicious or high-risk signals, and published scam alerts. Bars scale to the busiest day
-        in this window; empty days stay minimal.
+        in this window; days with no activity show the date only.
       </p>
 
       <div className="mt-5 overflow-x-auto [-webkit-overflow-scrolling:touch]">
-        <div className="min-w-[min(100%,320px)] divide-y divide-slate-100/90 sm:min-w-0">
+        <div className="min-w-[min(100%,320px)] divide-y divide-slate-100/80 sm:min-w-0">
           {last30.map((row) => {
+            const hasActivity =
+              row.checks > 0 || row.suspicious > 0 || row.highRisk > 0 || row.alerts > 0;
             const dayTotal = pulseDayTotal(row);
-            const hasActivity = dayTotal > 0;
             const isToday = row.day === todayKey;
             const barWidthPct = hasActivity ? Math.max(10, Math.round((dayTotal / maxDayTotal) * 100)) : 0;
             const alertHeavy = row.alerts > 0 && maxAlerts > 0 && row.alerts >= Math.max(2, Math.ceil(maxAlerts * 0.45));
@@ -144,11 +145,11 @@ function TrendChart({ buckets }: { buckets: PulseTrendBucket[] }) {
             return (
               <div
                 key={row.day}
-                className={`group grid grid-cols-[minmax(3.25rem,auto)_1fr] items-center gap-x-3 sm:grid-cols-[4.5rem_1fr] ${
+                className={`group grid grid-cols-[minmax(3.25rem,auto)_1fr] items-center gap-x-2.5 sm:grid-cols-[4.5rem_1fr] ${
                   isToday ? "bg-gradient-to-r from-blue-50/45 via-transparent to-transparent" : ""
-                } ${hasActivity ? "py-2.5" : "py-1.5"}`}
+                } ${hasActivity ? "py-2.5" : "py-1"}`}
               >
-                <div className="flex flex-col">
+                <div className="flex min-h-[1.25rem] flex-col justify-center">
                   <span
                     className={`text-[11px] tabular-nums tracking-tight ${isToday ? "font-semibold text-blue-800" : hasActivity ? "font-medium text-slate-600" : "text-slate-400"}`}
                     title={row.day}
@@ -164,14 +165,14 @@ function TrendChart({ buckets }: { buckets: PulseTrendBucket[] }) {
                   <div className="min-w-0">
                     <div
                       title={tooltip}
-                      className={`fraudly-motion relative w-full transition-all duration-200 ease-out group-hover:opacity-95 ${
+                      className={`fraudly-motion relative w-full transition-opacity duration-200 ease-out group-hover:opacity-95 ${
                         alertHeavy
                           ? "rounded-full shadow-[0_0_22px_rgba(139,92,246,0.22)] ring-1 ring-violet-300/40"
-                          : "rounded-full ring-1 ring-slate-200/50"
+                          : "rounded-full ring-1 ring-slate-200/45"
                       }`}
                     >
                       <div
-                        className="motion-safe:animate-pulse-timeline-bar flex h-3.5 origin-left overflow-hidden rounded-full bg-slate-50/80 shadow-inner shadow-slate-200/40 transition-[height,box-shadow] duration-200 ease-out group-hover:h-4 group-hover:shadow-md sm:h-4 sm:group-hover:h-[1.125rem]"
+                        className="motion-safe:animate-pulse-timeline-bar flex h-3.5 origin-left overflow-hidden rounded-full transition-[height,box-shadow] duration-200 ease-out group-hover:h-4 group-hover:shadow-md sm:h-4 sm:group-hover:h-[1.125rem]"
                         style={{ width: `${barWidthPct}%` }}
                       >
                         {row.checks > 0 ? (
@@ -202,10 +203,7 @@ function TrendChart({ buckets }: { buckets: PulseTrendBucket[] }) {
                     </div>
                   </div>
                 ) : (
-                  <div
-                    className="h-[2px] w-full max-w-[11rem] rounded-full bg-slate-100/60 sm:max-w-[14rem]"
-                    aria-hidden
-                  />
+                  <div className="min-w-0" aria-hidden />
                 )}
               </div>
             );
