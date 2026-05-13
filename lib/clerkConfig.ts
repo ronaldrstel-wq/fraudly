@@ -4,6 +4,8 @@
  * publishable key’s instance — not from app source code.
  */
 
+import { readClerkPublishableKey } from "@/lib/clerkPublishableKey";
+
 const PK_TEST = "pk_test_";
 const PK_LIVE = "pk_live_";
 
@@ -13,7 +15,7 @@ export function logClerkProductionMisconfigWarnings(): void {
   // `next build` sets NODE_ENV=production but Clerk env is often unset locally — skip noisy checks during build.
   if (process.env.NEXT_PHASE === "phase-production-build") return;
 
-  const pk = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim();
+  const pk = readClerkPublishableKey();
   const sk = process.env.CLERK_SECRET_KEY?.trim();
 
   if (!pk) {
