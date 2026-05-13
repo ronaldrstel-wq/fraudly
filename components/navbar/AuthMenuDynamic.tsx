@@ -1,18 +1,14 @@
 "use client";
 
 import dynamic from "next/dynamic";
-
-function AuthMenuSkeleton() {
-  return (
-    <div className="flex min-h-9 items-center gap-2" aria-hidden>
-      <span className="h-9 w-[88px] animate-pulse rounded-xl bg-slate-100" />
-      <span className="h-9 w-[98px] animate-pulse rounded-xl bg-slate-100" />
-    </div>
-  );
-}
+import { SignedOutAuthNavLinks } from "@/components/auth/SignedOutAuthNavLinks";
 
 const AuthMenuLazy = dynamic(() => import("@/components/auth/AuthMenu").then((m) => ({ default: m.AuthMenu })), {
-  loading: () => <AuthMenuSkeleton />,
+  loading: () => (
+    <div className="flex min-h-9 shrink-0 flex-wrap items-center justify-end gap-1 sm:gap-2 md:gap-3">
+      <SignedOutAuthNavLinks />
+    </div>
+  ),
   ssr: false
 });
 

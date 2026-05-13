@@ -1,13 +1,19 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { NavbarShell } from "@/components/navbar/NavbarShell";
+import { EN_MESSAGES } from "@/lib/messages.en";
 
 function NavbarFallback() {
   return (
     <nav className="sticky top-0 z-20 border-b border-slate-200/70 bg-white/90 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-end gap-3 px-4 py-4">
-        <div className="flex min-h-9 shrink-0 items-center gap-2" aria-hidden>
-          <span className="h-9 w-[88px] animate-pulse rounded-xl bg-slate-100" />
-          <span className="h-9 w-[98px] animate-pulse rounded-xl bg-slate-100" />
+        <div className="flex min-h-9 shrink-0 flex-wrap items-center justify-end gap-1 sm:gap-2 md:gap-3">
+          <Link href="/sign-in" className="fraudly-motion btn-secondary px-3 sm:px-4">
+            {EN_MESSAGES.auth.loginCta}
+          </Link>
+          <Link href="/sign-up" className="fraudly-motion btn-primary px-3 sm:px-4">
+            {EN_MESSAGES.auth.signUpCta}
+          </Link>
         </div>
       </div>
     </nav>

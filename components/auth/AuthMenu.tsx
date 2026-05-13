@@ -3,21 +3,22 @@
 import { useAuth, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { SignedOutAuthNavLinks } from "@/components/auth/SignedOutAuthNavLinks";
 import { EN_MESSAGES } from "@/lib/messages.en";
 
-function AuthMenuSkeleton() {
-  return (
-    <div className="flex min-h-9 items-center gap-2" aria-hidden>
-      <span className="h-9 w-[88px] animate-pulse rounded-xl bg-slate-100" />
-      <span className="h-9 w-[98px] animate-pulse rounded-xl bg-slate-100" />
-    </div>
-  );
+function logAuthStatusFailure(context: string, err: unknown) {
+  if (process.env.NODE_ENV === "development") {
+    console.warn(`[auth/status] ${context}:`, err);
+  }
 }
 
 /**
  * Clerk-only nav island: profile menu + sign-out (via UserButton) when signed in;
  * lightweight links when signed out (no extra Clerk button components).
  * Clerk v7+ removed `SignedIn` / `SignedOut` from `@clerk/nextjs` — use `useAuth` instead.
+ *
+ * While Clerk is still loading, we still render Sign in / Create account so the navbar
+ * never looks empty if Clerk keys or scripts are slow or misconfigured.
  */
 export function AuthMenu() {
   const { isLoaded, userId } = useAuth();
@@ -32,9 +33,15 @@ export function AuthMenu() {
     (async () => {
       try {
         const res = await fetch("/api/auth/status", { credentials: "same-origin" });
+        if (!res.ok) {
+          logAuthStatusFailure(`AuthMenu admin check non-OK (${res.status})`, await res.text().catch(() => ""));
+          if (!cancelled) setIsAdmin(false);
+          return;
+        }
         const data = (await res.json().catch(() => null)) as { isAdmin?: boolean } | null;
         if (!cancelled) setIsAdmin(data?.isAdmin === true);
-      } catch {
+      } catch (e) {
+        logAuthStatusFailure("AuthMenu admin fetch failed", e);
         if (!cancelled) setIsAdmin(false);
       }
     })();
@@ -44,7 +51,11 @@ export function AuthMenu() {
   }, [userId]);
 
   if (!isLoaded) {
-    return <AuthMenuSkeleton />;
+    return (
+      <div className="flex min-h-9 shrink-0 flex-wrap items-center justify-end gap-1 sm:gap-2 md:gap-3">
+        <SignedOutAuthNavLinks />
+      </div>
+    );
   }
 
   if (userId) {
@@ -92,13 +103,8 @@ export function AuthMenu() {
   }
 
   return (
-    <>
-      <Link href="/sign-in" className="fraudly-motion btn-secondary px-3 sm:px-4">
-        {EN_MESSAGES.auth.loginCta}
-      </Link>
-      <Link href="/sign-up" className="fraudly-motion btn-primary px-3 sm:px-4">
-        {EN_MESSAGES.auth.signUpCta}
-      </Link>
-    </>
+    <div className="flex min-h-9 shrink-0 flex-wrap items-center justify-end gap-1 sm:gap-2 md:gap-3">
+      <SignedOutAuthNavLinks />
+    </div>
   );
 }
