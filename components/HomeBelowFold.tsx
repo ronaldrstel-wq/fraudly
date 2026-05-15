@@ -1,38 +1,17 @@
 import Link from "next/link";
+import { HomeTrustActivitySection } from "@/components/home/HomeTrustActivitySection";
+import { HomeWhatWeCheckSection } from "@/components/home/HomeWhatWeCheckSection";
 import { HOME_FAQ_ITEMS } from "@/lib/homeFaq";
+import { getHomeTrustStats } from "@/lib/home/getHomeTrustStats";
 import { EN_MESSAGES } from "@/lib/messages.en";
 
-const WA_ICONS = ["🛡️", "✨", "🌐", "🧠", "🔐", "🎭", "📡", "⚙️"] as const;
-
-export function HomeBelowFold() {
-  const { whatAnalyzesTitle, whatAnalyzesIntro, whatAnalyzesCards } = EN_MESSAGES.home;
+export async function HomeBelowFold() {
+  const trustStats = await getHomeTrustStats();
 
   return (
-    <div className="mx-auto mt-14 max-w-6xl space-y-14 [content-visibility:auto] [contain-intrinsic-size:1px_2600px] sm:mt-16 md:mt-20">
-      <section id="what-fraudly-analyzes" aria-labelledby="what-analyzes-heading" className="scroll-mt-16">
-        <div className="text-center">
-          <h2 id="what-analyzes-heading" className="text-xl font-bold text-slate-900 md:text-2xl">
-            {whatAnalyzesTitle}
-          </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-pretty text-sm leading-relaxed text-slate-600 md:text-base">{whatAnalyzesIntro}</p>
-        </div>
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
-          {whatAnalyzesCards.map((card, i) => (
-            <article
-              key={card.title}
-              className="flex h-full flex-col rounded-2xl border border-slate-100 bg-white p-4 shadow-subtle sm:p-5"
-            >
-              <div className="flex items-start gap-2.5">
-                <span className="text-xl leading-none sm:text-2xl" aria-hidden>
-                  {WA_ICONS[i] ?? "•"}
-                </span>
-                <h3 className="text-left text-[15px] font-semibold leading-snug text-slate-900 sm:text-base">{card.title}</h3>
-              </div>
-              <p className="mt-2.5 flex-1 text-left text-sm leading-relaxed text-slate-600">{card.body}</p>
-            </article>
-          ))}
-        </div>
-      </section>
+    <div className="mx-auto mt-14 max-w-6xl space-y-16 [content-visibility:auto] [contain-intrinsic-size:1px_2800px] sm:mt-16 md:mt-20 md:space-y-20">
+      <HomeTrustActivitySection stats={trustStats} />
+      <HomeWhatWeCheckSection />
 
       <section id="trust-safety" aria-labelledby="trust-safety-heading" className="rounded-2xl border border-slate-100 bg-white p-6 shadow-subtle md:p-8">
         <h2 id="trust-safety-heading" className="text-xl font-bold text-slate-900 md:text-2xl">

@@ -47,43 +47,57 @@ export const EN_MESSAGES = {
     heroHowSteps: ["Submit", "Analyze", "AI Review", "Get Results"] as const,
     trustHelperBelowSearch:
       "No installation required · Works instantly · Fraudly analyzes sites with public scam intelligence — not legal advice.",
-    whatAnalyzesTitle: "What Fraudly analyzes",
-    whatAnalyzesIntro:
-      "Each check layers public data, technical signals, and scam intelligence into a readable snapshot—without drowning you in jargon.",
-    whatAnalyzesCards: [
-      {
-        title: "Scam Detection",
-        body: "Looks for common scam patterns, phishing setups, and behavior that often appears on risky sites."
-      },
-      {
-        title: "Reputation Signals",
-        body: "Reviews public trust cues from multiple sources—including review-style reputation where available."
-      },
-      {
-        title: "Domain & Website History",
-        body: "Checks website age, registration context, and consistency with what legitimate sites usually show."
-      },
-      {
-        title: "AI-Assisted Analysis",
-        body: "Uses intelligent heuristics to flag unusual combinations that are hard to eyeball in a hurry."
-      },
-      {
-        title: "Security Checks",
-        body: "Reviews SSL and other technical trust cues, plus settings that often matter for safe browsing."
-      },
-      {
-        title: "Brand Impersonation",
-        body: "Surfaces signs a site may be posing as a trusted brand, bank, or delivery service."
-      },
-      {
-        title: "Public Scam Intelligence",
-        body: "Cross-checks known scam and phishing feeds so serious list-style matches are not missed."
-      },
-      {
-        title: "Deep Scan Technology",
-        body: "Advanced scans can add extra technical and reputation insight when you need a fuller picture."
+    trustActivity: {
+      title: "Fraudly is helping users stay safer online",
+      subtitle: "AI-assisted scans help identify suspicious websites, phishing attempts, and online scams.",
+      footnote: "{count} public checks in the last 30 days — live from Fraudly’s privacy-safe feed.",
+      stats: {
+        websiteChecksLabel: "Website checks",
+        websiteChecksHint: "Public checks in Fraudly’s latest feed.",
+        websiteChecksFallback: "Growing",
+        threatSignalsLabel: "Threat signals analyzed",
+        threatSignalsHint: "Recent checks plus published scam alerts (last 30 days).",
+        threatSignalsFallback: "Building",
+        buildingHint: "Activity data is still building — check back soon.",
+        aiLabel: "AI-assisted analysis",
+        aiValue: "24/7",
+        aiHint: "Always-on heuristics layered with public intelligence.",
+        growingLabel: "Growing daily",
+        growingValue: "New scans every day",
+        growingValueActive: "Active today",
+        growingHint: "Fresh public checks appear as people verify sites.",
+        growingHintActive: "{count} public checks in the last 24 hours."
       }
-    ] as const
+    },
+    whatWeCheckTitle: "What Fraudly analyzes",
+    whatWeCheckIntro:
+      "Fraudly combines trust signals, reputation data, and AI-assisted analysis to help detect suspicious websites.",
+    whatWeCheckCards: [
+      {
+        title: "Website reputation",
+        body: "Public trust cues and review-style reputation signals when they are available—shown with clear limits."
+      },
+      {
+        title: "SSL & security checks",
+        body: "HTTPS availability, certificate context, and technical settings that matter for safe browsing."
+      },
+      {
+        title: "Domain age & trust",
+        body: "Registration timing and domain history cues that often differ between established and rushed scam sites."
+      },
+      {
+        title: "Phishing indicators",
+        body: "Language patterns, urgency tactics, and setup clues commonly seen on phishing and impersonation pages."
+      },
+      {
+        title: "Scam reports",
+        body: "Cross-checks against published scam alerts and public threat intelligence where matches exist."
+      },
+      {
+        title: "AI risk patterns",
+        body: "Heuristics that surface unusual combinations of signals—helpful when something feels off but is hard to name."
+      }
+    ] as const,
   },
   reviewEvidence: {
     noPublicReviewProfile:
