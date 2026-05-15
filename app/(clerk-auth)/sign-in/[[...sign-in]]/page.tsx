@@ -6,8 +6,9 @@ import { privateRobots } from "@/lib/seo";
 export const metadata: Metadata = {
   ...buildPageMetadata({
     path: "/sign-in",
-    titleSegment: "Sign in",
-    description: "Sign in to your Fraudly account to save website checks, sync devices, and manage preferences."
+    titleSegment: "Save your Fraudly scans",
+    description:
+      "Continue with Apple or Google to keep your scan history and sync access across devices. Sign-in is identity only — not App Store or Google Play purchase."
   }),
   robots: privateRobots
 };

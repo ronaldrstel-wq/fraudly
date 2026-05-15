@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import { stripePremiumEntitlementPatch, stripeRevokeEntitlementPatch } from "@/lib/entitlement/apply-stripe";
 import { stripe, stripeKeyMode } from "@/lib/stripe";
 
 export const runtime = "nodejs";
@@ -93,12 +94,14 @@ async function fulfillCheckoutSession(session: Stripe.Checkout.Session): Promise
 
   if (purchaseTypeRaw === "premium_monthly") {
     const customerStr = sessionForWrite.customer ? String(sessionForWrite.customer) : undefined;
+    const entitlement = stripePremiumEntitlementPatch(subscriptionId);
     const result = await runOnce(idempotencyKey, async (tx) => {
       await tx.user.upsert({
         where: { id: userId },
         update: {
           plan: "premium",
           subscriptionStatus: "active",
+          ...entitlement,
           ...(customerStr ? { stripeCustomerId: customerStr } : {}),
           ...(subscriptionId ? { stripeSubscriptionId: subscriptionId } : {})
         },
@@ -108,6 +111,7 @@ async function fulfillCheckoutSession(session: Stripe.Checkout.Session): Promise
           authProviderId: null,
           plan: "premium",
           subscriptionStatus: "active",
+          ...entitlement,
           ...(customerStr ? { stripeCustomerId: customerStr } : {}),
           ...(subscriptionId ? { stripeSubscriptionId: subscriptionId } : {})
         }
@@ -233,6 +237,7 @@ export async function POST(req: Request) {
           return NextResponse.json({ received: true });
         }
 
+        const revoke = stripeRevokeEntitlementPatch();
         const result = await runOnce(event.id, async (tx) => {
           const updated = await tx.user.updateMany({
             where: { stripeCustomerId: customerId },
@@ -240,7 +245,8 @@ export async function POST(req: Request) {
               plan: "free",
               subscriptionStatus: "canceled",
               stripeSubscriptionId: null,
-              monthlyChecksUsed: 0
+              monthlyChecksUsed: 0,
+              ...revoke
             }
           });
           if (updated.count === 0) {

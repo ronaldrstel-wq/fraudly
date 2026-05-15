@@ -1,5 +1,6 @@
 import type { User, UserPlan, SubscriptionStatus } from "@prisma/client";
 import type { BillingSnapshot } from "@/types/scam";
+import { hasActiveVerifiedEntitlement } from "@/lib/entitlement/resolve";
 
 export type BillingUser = User;
 export type { UserPlan, SubscriptionStatus };
@@ -20,23 +21,37 @@ export function toBillingSnapshot(user: User): BillingSnapshot {
   };
 }
 
+/** @deprecated Prefer `hasActiveVerifiedEntitlement` — kept for legacy Stripe plan columns. */
 export function isPremiumActive(user: Pick<User, "plan" | "subscriptionStatus">): boolean {
   return user.plan === "premium" && user.subscriptionStatus === "active";
 }
 
-/** Premium subscription or purchased credits — used for elevated daily / deep-scan caps. */
-export function hasPaidScanEntitlement(user: Pick<User, "plan" | "subscriptionStatus" | "credits">): boolean {
-  return isPremiumActive(user) || user.credits > 0;
+/**
+ * Deep scan / elevated access: verified subscription entitlement OR one-time credits.
+ * Never granted from Apple/Google login identity alone.
+ */
+export function hasPaidScanEntitlement(
+  user: Pick<User, "plan" | "subscriptionStatus" | "credits" | "entitlementActive" | "entitlementSource" | "entitlementExpiresAt">
+): boolean {
+  return hasActiveVerifiedEntitlement(user) || user.credits > 0;
 }
 
-export function canRunBasicCheck(user: Pick<User, "freeChecksUsed" | "plan" | "subscriptionStatus" | "credits">): boolean {
-  return user.freeChecksUsed < FREE_CHECK_LIMIT || isPremiumActive(user) || user.credits > 0;
+export function canRunBasicCheck(
+  user: Pick<
+    User,
+    "freeChecksUsed" | "plan" | "subscriptionStatus" | "credits" | "entitlementActive" | "entitlementSource" | "entitlementExpiresAt"
+  >
+): boolean {
+  return user.freeChecksUsed < FREE_CHECK_LIMIT || hasActiveVerifiedEntitlement(user) || user.credits > 0;
 }
 
 export function canViewFullAnalysis(
-  user: Pick<User, "plan" | "subscriptionStatus" | "credits" | "monthlyChecksUsed">
+  user: Pick<
+    User,
+    "plan" | "subscriptionStatus" | "credits" | "monthlyChecksUsed" | "entitlementActive" | "entitlementSource" | "entitlementExpiresAt"
+  >
 ): boolean {
-  if (isPremiumActive(user)) return user.monthlyChecksUsed < PREMIUM_MONTHLY_LIMIT;
+  if (hasActiveVerifiedEntitlement(user)) return user.monthlyChecksUsed < PREMIUM_MONTHLY_LIMIT;
   return user.credits > 0;
 }
 
@@ -45,12 +60,15 @@ export function canViewFullFromBillingSnapshot(snapshot: BillingSnapshot): boole
     plan: snapshot.plan,
     subscriptionStatus: snapshot.subscriptionStatus,
     credits: snapshot.credits,
-    monthlyChecksUsed: snapshot.monthlyChecksUsed
+    monthlyChecksUsed: snapshot.monthlyChecksUsed,
+    entitlementActive: snapshot.plan === "premium" && snapshot.subscriptionStatus === "active",
+    entitlementSource: snapshot.plan === "premium" && snapshot.subscriptionStatus === "active" ? "stripe" : "none",
+    entitlementExpiresAt: null
   });
 }
 
 export function consumeFullAnalysisAccess(user: User): User {
-  if (isPremiumActive(user)) {
+  if (hasActiveVerifiedEntitlement(user)) {
     return { ...user, monthlyChecksUsed: user.monthlyChecksUsed + 1 };
   }
   if (user.credits > 0) {
@@ -99,7 +117,11 @@ export function applyCheckoutCredits(user: User, sku: CheckoutSku): User {
       ...user,
       plan: "premium",
       subscriptionStatus: "active",
-      monthlyChecksUsed: 0
+      monthlyChecksUsed: 0,
+      entitlementActive: true,
+      entitlementSource: "stripe",
+      entitlementProductId: "premium_monthly",
+      entitlementExpiresAt: null
     };
   }
 
