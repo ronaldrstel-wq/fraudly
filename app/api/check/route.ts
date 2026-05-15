@@ -10,8 +10,6 @@ import { checkDailyLimiter, getClientIp } from "@/lib/rateLimiter";
 import { parseFlexibleWebsiteInput } from "@/lib/check-input/normalizeWebsiteInput";
 import { upsertLatestPublicCheckFromCompletedScan } from "@/lib/latest-public-checks/persist";
 import { tryRecordRecentSearch } from "@/lib/recent-search/service";
-import { detectClientPlatform } from "@/lib/identity/detect-platform";
-import { buildSafeAccessLogContext, logSafeAccessContext } from "@/lib/identity/log-access-context";
 import { getBillingUserOrNull } from "@/lib/user-store";
 import { persistScanEvidenceRows } from "@/lib/evidence/persistScanEvidence";
 import type { WebsiteAnalysisClientEvidence } from "@/lib/evidence/types";
@@ -129,11 +127,9 @@ export async function POST(request: Request) {
       adminIdentity = null;
       isAdmin = false;
     }
-    const clientPlatform = detectClientPlatform(request);
-
     let billingUser: User | null = null;
     try {
-      billingUser = await getBillingUserOrNull(request);
+      billingUser = await getBillingUserOrNull();
     } catch (e) {
       // Auth/user-store hiccups should not block the core check flow.
       logNonCritical("[api/check] billing user lookup failed; continuing as anonymous:", e);
@@ -180,10 +176,6 @@ export async function POST(request: Request) {
 
     const clientIpRaw = getClientIp(request);
     const { ipHash, userAgentHash, abuseKey } = buildPrivacySafeRequestFingerprints(pepper, request, clientIpRaw);
-    if (billingUser) {
-      logSafeAccessContext("api/check", buildSafeAccessLogContext(billingUser, clientPlatform));
-    }
-
     const paid = isAdmin ? true : billingUser ? hasPaidScanEntitlement(billingUser) : false;
 
     if (!isAdmin) {

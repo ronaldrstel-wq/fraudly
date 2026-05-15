@@ -19,34 +19,6 @@ enum SubscriptionStatus {
   past_due
 }
 
-/// How the user authenticated (Clerk OAuth provider) — not purchase platform.
-enum IdentityAuthProvider {
-  apple
-  google
-  email
-  unknown
-}
-
-enum AuthSurface {
-  website
-  ios
-  android
-}
-
-/// Verified purchase channel — only set by Stripe webhook or RevenueCat (never from login provider).
-enum EntitlementSource {
-  none
-  stripe
-  app_store
-  google_play
-}
-
-enum ClientPlatform {
-  web
-  ios
-  android
-}
-
 enum ScamAlertStatus {
   draft
   published
@@ -61,31 +33,20 @@ enum DomainOverrideVerdict {
 }
 
 model User {
-  id                   String               @id @default(cuid())
-  /// Auth system linkage (`clerk` | `legacy`) — not Apple/Google/email identity.
-  authProvider         String               @default("legacy")
-  authProviderId       String?              @unique
-  email                String?              @unique
-  /// Clerk OAuth identity (apple/google/email) — does not imply App Store / Play entitlement.
-  identityProvider     IdentityAuthProvider @default(unknown)
-  lastAuthSurface      AuthSurface          @default(website)
-  entitlementActive    Boolean              @default(false)
-  entitlementSource    EntitlementSource    @default(none)
-  entitlementProductId String?              @db.VarChar(128)
-  entitlementExpiresAt DateTime?
-  lastDetectedPlatform ClientPlatform       @default(web)
-  /// Optional RevenueCat / mobile app user id for cross-surface entitlement sync.
-  revenueCatAppUserId  String?              @unique @db.VarChar(128)
-  plan                 UserPlan             @default(free)
-  credits              Int                  @default(0)
-  freeChecksUsed       Int                  @default(0)
-  monthlyChecksUsed    Int                  @default(0)
-  paidChecksCount      Int                  @default(0)
-  subscriptionStatus   SubscriptionStatus   @default(inactive)
-  stripeCustomerId     String?              @unique
+  id                   String             @id @default(cuid())
+  authProvider         String             @default("legacy")
+  authProviderId       String?            @unique
+  email                String?            @unique
+  plan                 UserPlan           @default(free)
+  credits              Int                @default(0)
+  freeChecksUsed       Int                @default(0)
+  monthlyChecksUsed    Int                @default(0)
+  paidChecksCount      Int                @default(0)
+  subscriptionStatus   SubscriptionStatus @default(inactive)
+  stripeCustomerId     String?            @unique
   stripeSubscriptionId String?
-  createdAt            DateTime             @default(now())
-  updatedAt            DateTime             @updatedAt
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
   recentSearches       RecentSearch[]
 }
 
