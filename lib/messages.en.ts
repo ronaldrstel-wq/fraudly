@@ -6,35 +6,20 @@ export const EN_MESSAGES = {
   /** Homepage / onboarding — second check gate (aligned with analytics event labels in docs). */
   freemium: {
     createFreeAccount: "Create free account",
-    promptTitle: "Save your Fraudly scans",
+    promptTitle: "Create a free account to check more websites",
     promptBody:
-      "Your first website check is free. To run another check, continue with Apple or Google — we’ll create an account if you’re new, or sign you in if you already use Fraudly on web or mobile.",
-    afterResultBanner: "Want to check another website? Continue with Apple or Google to save your scans."
+      "Your first website check is free and gives you the full breakdown. Want to check another website? Create a free account—or log in if you already have one.",
+    afterResultBanner: "Want to check another website? Create a free account."
   },
   auth: {
     loginCta: "Log in",
     signUpCta: "Sign up",
-    /** Single entry for Apple/Google — works for new and returning users. */
-    continueCta: "Continue",
     signOutCta: "Sign out",
     loginForFullAnalysis: "Log in to continue checking websites.",
-    loginForAnotherCheck:
-      "Your first free check is complete. Continue with Apple or Google to check another website.",
+    loginForAnotherCheck: "Your first free check is complete. Create a free account or log in to check another website.",
     loginForUrlCheck: "Log in to run a URL check.",
     loginForCheckout: "Log in to continue.",
-    loginForAccount: "Log in to view your account.",
-    account: {
-      eyebrow: "Fraudly account",
-      title: "Save your Fraudly scans",
-      subtitle: "Continue with Apple or Google to keep your scan history and sync access across devices.",
-      bullets: [
-        "Sign-in saves your account — it does not unlock App Store or Google Play purchases on the web.",
-        "Premium on the website comes from Fraudly checkout or a verified subscription already linked to this account."
-      ] as const,
-      footnote: "Identity (Apple/Google/email) is separate from where you purchased premium.",
-      continueWithApple: "Continue with Apple",
-      continueWithGoogle: "Continue with Google"
-    }
+    loginForAccount: "Log in to view your account."
   },
   home: {
     heroBadge: "AI-assisted website safety check",

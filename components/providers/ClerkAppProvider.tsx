@@ -2,7 +2,6 @@
 
 import { ClerkProvider } from "@clerk/nextjs";
 import type { ReactNode } from "react";
-import { fraudlyClerkLocalization } from "@/lib/clerkLocalization";
 import { readClerkPublishableKey } from "@/lib/clerkPublishableKey";
 
 const publishableKey = readClerkPublishableKey();
@@ -19,12 +18,7 @@ export function ClerkAppProvider({ children }: { children: ReactNode }) {
     return <>{children}</>;
   }
   return (
-    <ClerkProvider
-      publishableKey={publishableKey}
-      signInUrl="/sign-in"
-      signUpUrl="/sign-in"
-      localization={fraudlyClerkLocalization}
-    >
+    <ClerkProvider publishableKey={publishableKey} signInUrl="/sign-in" signUpUrl="/sign-up">
       {children}
     </ClerkProvider>
   );

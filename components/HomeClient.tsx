@@ -369,13 +369,18 @@ export function HomeClient({ children }: { children?: ReactNode }) {
     runCheck();
   }
 
-  const continueLink = (
+  const signInLink = (
+    <Link href="/sign-in" className="btn-secondary inline-flex px-5">
+      {EN_MESSAGES.auth.loginCta}
+    </Link>
+  );
+  const signUpLink = (
     <Link
-      href="/sign-in"
+      href="/sign-up"
       className="btn-primary inline-flex px-5"
       onClick={() => trackEvent("signup_started", { source: "signup_prompt" })}
     >
-      {EN_MESSAGES.auth.continueCta}
+      {EN_MESSAGES.freemium.createFreeAccount}
     </Link>
   );
 
@@ -384,7 +389,16 @@ export function HomeClient({ children }: { children?: ReactNode }) {
       <div className="mx-auto mt-8 w-full max-w-[860px] fraudly-cta-panel">
         <h3 className="text-lg font-bold tracking-tight text-slate-900 md:text-xl">{EN_MESSAGES.freemium.promptTitle}</h3>
         <p className="mt-2 text-sm leading-relaxed text-slate-600">{EN_MESSAGES.freemium.promptBody}</p>
-        <div className="mt-5">{continueLink}</div>
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+          {signUpLink}
+          <Link
+            href="/sign-in"
+            className="btn-secondary inline-flex px-5"
+            onClick={() => trackEvent("login_started", { source: "signup_prompt" })}
+          >
+            {EN_MESSAGES.auth.loginCta}
+          </Link>
+        </div>
       </div>
     ) : null;
 
@@ -413,9 +427,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         {error && (
           <div className="mx-auto mt-5 max-w-3xl rounded-2xl border border-rose-200/85 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-subtle">
             {error}
-            {error.includes("Log in") || error.includes("Continue") ? (
-              <div className="mt-3 flex justify-center">{continueLink}</div>
-            ) : null}
+            {error.includes("Log in") ? <div className="mt-3 flex justify-center">{signInLink}</div> : null}
           </div>
         )}
 
