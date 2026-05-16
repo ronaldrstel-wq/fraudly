@@ -22,7 +22,7 @@ export const EN_MESSAGES = {
     loginForAccount: "Log in to view your account."
   },
   home: {
-    heroBadge: "Website safety check",
+    heroBadge: "Website & Shop Safety Check",
     /** Legacy full headline — homepage hero uses split headline in `Hero.tsx` for styling. */
     headline: "See it. Check it. Trust it.",
     subhead: "Check if a website or webshop is safe before you buy.",
