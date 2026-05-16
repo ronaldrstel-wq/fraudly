@@ -20,7 +20,7 @@ import { getLatestPublicCheckSnapshotForDomain } from "@/lib/latest-public-check
 import { buildOverviewFromTrustAndVerdict } from "@/lib/overviewCardPresentation";
 import { displayTrustScoreForResult } from "@/lib/scanPresentation";
 import { logDisplayScoreDebug } from "@/lib/scoring/displayScore";
-import { formatDomainAgeFromDays } from "@/lib/format/domainAge";
+import { DomainAgeMetricValue } from "@/components/check/DomainAgeMetricValue";
 import { formatSslHighlightValue } from "@/lib/signals/trustHighlightFacts";
 import type { HumanRecKind } from "@/lib/scanResultDualLayer";
 
@@ -245,9 +245,7 @@ export default async function DomainCheckPage({ params }: PageProps) {
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Domain age</dt>
-            <dd className="mt-1 text-lg font-bold leading-snug text-slate-900">
-              {formatDomainAgeFromDays(result.domainIntelligence.ageDays) ?? "—"}
-            </dd>
+            <DomainAgeMetricValue domainIntelligence={result.domainIntelligence} />
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Secure connection</dt>

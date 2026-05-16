@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  DOMAIN_AGE_NOT_VERIFIED_LABEL,
   domainAgeConsumerBucket,
   formatDomainAgeFromDays,
-  formatDomainAgeSignal
+  formatDomainAgeMetric,
+  formatDomainAgeMetricFromSources,
+  formatDomainAgeSignal,
+  resolveDomainAgeDays
 } from "@/lib/format/domainAge";
 
 describe("formatDomainAgeFromDays", () => {
@@ -49,6 +53,51 @@ describe("formatDomainAgeSignal", () => {
 
   it("returns null when age unknown", () => {
     expect(formatDomainAgeSignal(null)).toBeNull();
+  });
+});
+
+describe("resolveDomainAgeDays", () => {
+  it("prefers explicit ageDays", () => {
+    expect(resolveDomainAgeDays({ ageDays: 438 })).toBe(438);
+  });
+
+  it("reads domainAgeDays alias", () => {
+    expect(resolveDomainAgeDays({ domainAgeDays: 90 })).toBe(90);
+  });
+
+  it("derives age from registrationDate when days missing", () => {
+    const registered = new Date();
+    registered.setUTCDate(registered.getUTCDate() - 45);
+    expect(resolveDomainAgeDays({ registrationDate: registered.toISOString() })).toBe(45);
+  });
+
+  it("returns null when no usable fields", () => {
+    expect(resolveDomainAgeDays({})).toBeNull();
+    expect(resolveDomainAgeDays(null)).toBeNull();
+  });
+});
+
+describe("formatDomainAgeMetric", () => {
+  it("shows formatted age when days available", () => {
+    expect(formatDomainAgeMetric({ ageDays: 12 })).toBe("12 days");
+    expect(formatDomainAgeMetric({ ageDays: 438 })).toBe("1 year, 2 months, 13 days");
+  });
+
+  it("shows Not verified when age unavailable", () => {
+    expect(formatDomainAgeMetric({})).toBe(DOMAIN_AGE_NOT_VERIFIED_LABEL);
+    expect(formatDomainAgeMetric(null)).toBe(DOMAIN_AGE_NOT_VERIFIED_LABEL);
+  });
+
+  it("never shows raw day counts in metric output", () => {
+    const label = formatDomainAgeMetric({ ageDays: 8000 });
+    expect(label).not.toMatch(/^\d+$/);
+    expect(label).toMatch(/year/i);
+  });
+
+  it("merges layered sources", () => {
+    expect(
+      formatDomainAgeMetricFromSources({ ageDays: undefined }, { domainAgeDays: 30 })
+    ).toBe("30 days");
   });
 });
 

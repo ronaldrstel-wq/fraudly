@@ -1,7 +1,8 @@
 import {
   domainAgeConsumerBucket,
   formatDomainAgeFromDays,
-  formatDomainAgeSignal
+  formatDomainAgeSignal,
+  resolveDomainAgeDays
 } from "@/lib/format/domainAge";
 import type { SslCheck } from "@/lib/checks/types";
 import type { ScamCheckResult } from "@/types/scam";
@@ -48,9 +49,9 @@ export function sslHighlightBucket(ssl: SslCheck): TrustHighlightBucket {
 
 export function extractTrustHighlightFacts(result: Pick<ScamCheckResult, "domainIntelligence" | "ssl">): TrustHighlightFact[] {
   const facts: TrustHighlightFact[] = [];
-  const ageDays = result.domainIntelligence?.ageDays;
+  const ageDays = resolveDomainAgeDays(result.domainIntelligence);
 
-  if (typeof ageDays === "number" && Number.isFinite(ageDays)) {
+  if (ageDays != null) {
     facts.push({
       id: "domain_age",
       label: "Domain age",

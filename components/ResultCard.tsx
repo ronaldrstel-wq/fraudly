@@ -9,7 +9,7 @@ import {
   normalizeConsumerSignalsForResult
 } from "@/lib/signals/normalizeConsumerSignals";
 import { trustHighlightsForHero } from "@/lib/signals/trustHighlightFacts";
-import { formatDomainAgeFromDays } from "@/lib/format/domainAge";
+import { formatDomainAgeMetricFromSources } from "@/lib/format/domainAge";
 import {
   PUBLIC_REVIEW_NOT_MATCHED_COPY,
   resolveGoogleReviewMatch,
@@ -753,7 +753,7 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
               <li>
                 Domain age:{" "}
                 <span className="font-medium">
-                  {formatDomainAgeFromDays(result.domainIntelligence.ageDays) ?? "unknown"}
+                  {formatDomainAgeMetricFromSources(result.domainIntelligence)}
                 </span>
               </li>
               <li>
@@ -903,7 +903,9 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
                 <li>
                   Domain age:{" "}
                   <span className="font-medium">
-                    {formatDomainAgeFromDays(reputation.publicSignals.domainAgeDays) ?? "unknown"}
+                    {formatDomainAgeMetricFromSources(result.domainIntelligence, {
+                      domainAgeDays: reputation.publicSignals.domainAgeDays
+                    })}
                   </span>
                 </li>
                 <li>

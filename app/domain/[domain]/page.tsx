@@ -17,7 +17,7 @@ import { Navbar } from "@/components/Navbar";
 import { ResultCard } from "@/components/ResultCard";
 import { SiteFooter } from "@/components/SiteFooter";
 import { EN_MESSAGES } from "@/lib/messages.en";
-import { formatDomainAgeFromDays } from "@/lib/format/domainAge";
+import { DomainAgeMetricValue } from "@/components/check/DomainAgeMetricValue";
 import { formatSslHighlightValue } from "@/lib/signals/trustHighlightFacts";
 import { displayTrustScoreForResult } from "@/lib/scanPresentation";
 
@@ -171,9 +171,7 @@ export default async function DomainIntelPage({ params }: PageProps) {
           </div>
           <div className="rounded-2xl border border-slate-200/85 bg-white p-4 shadow-subtle">
             <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Domain age</dt>
-            <dd className="mt-1 text-lg font-bold leading-snug text-slate-900">
-              {formatDomainAgeFromDays(result.domainIntelligence.ageDays) ?? "—"}
-            </dd>
+            <DomainAgeMetricValue domainIntelligence={result.domainIntelligence} />
           </div>
           <div className="rounded-2xl border border-slate-200/85 bg-white p-4 shadow-subtle">
             <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Secure connection</dt>

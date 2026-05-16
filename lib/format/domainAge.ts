@@ -1,6 +1,68 @@
+import type { DomainIntelligence } from "@/lib/checks/types";
+
 function pluralCount(n: number, singular: string, plural: string): string {
   const value = Math.max(0, Math.round(n));
   return value === 1 ? `1 ${singular}` : `${value} ${plural}`;
+}
+
+/** All known RDAP / intel field names that may carry domain age (days or registration timestamp). */
+export type DomainAgeIntelSource = {
+  ageDays?: number | null;
+  domainAgeDays?: number | null;
+  registrationAgeDays?: number | null;
+  registrationDate?: string | null;
+  createdDate?: string | null;
+  registeredAt?: string | null;
+};
+
+export const DOMAIN_AGE_NOT_VERIFIED_LABEL = "Not verified";
+
+function parseRegistrationAgeDays(raw?: string | null): number | null {
+  if (!raw?.trim()) return null;
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return null;
+  const days = Math.floor((Date.now() - parsed.getTime()) / 86400000);
+  return days >= 0 ? days : null;
+}
+
+/** Resolves a single source to whole-day age, preferring explicit day counts over registration dates. */
+export function resolveDomainAgeDays(source?: DomainAgeIntelSource | null): number | null {
+  if (!source) return null;
+
+  for (const value of [source.ageDays, source.domainAgeDays, source.registrationAgeDays]) {
+    if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
+      return Math.round(value);
+    }
+  }
+
+  for (const dateValue of [source.registrationDate, source.createdDate, source.registeredAt]) {
+    const fromDate = parseRegistrationAgeDays(dateValue);
+    if (fromDate != null) return fromDate;
+  }
+
+  return null;
+}
+
+/** First non-null age across layered intel (e.g. scan result + reputation enrichment). */
+export function resolveDomainAgeDaysFromSources(
+  ...sources: Array<DomainAgeIntelSource | DomainIntelligence | null | undefined>
+): number | null {
+  for (const source of sources) {
+    const days = resolveDomainAgeDays(source ?? undefined);
+    if (days != null) return days;
+  }
+  return null;
+}
+
+/** Consumer metric card label — never raw day counts; uses {@link DOMAIN_AGE_NOT_VERIFIED_LABEL} when unknown. */
+export function formatDomainAgeMetric(source?: DomainAgeIntelSource | null): string {
+  return formatDomainAgeFromDays(resolveDomainAgeDays(source)) ?? DOMAIN_AGE_NOT_VERIFIED_LABEL;
+}
+
+export function formatDomainAgeMetricFromSources(
+  ...sources: Array<DomainAgeIntelSource | DomainIntelligence | null | undefined>
+): string {
+  return formatDomainAgeFromDays(resolveDomainAgeDaysFromSources(...sources)) ?? DOMAIN_AGE_NOT_VERIFIED_LABEL;
 }
 
 /** Human-readable age from day count (years, months, days). */
