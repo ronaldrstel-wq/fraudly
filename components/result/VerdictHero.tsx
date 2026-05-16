@@ -1,5 +1,11 @@
 import { EN_MESSAGES } from "@/lib/messages.en";
 
+type TrustHighlightRow = {
+  label: string;
+  value: string;
+  bucket: "positive" | "caution";
+};
+
 type VerdictHeroProps = {
   verdict: string;
   trustScore: number | null;
@@ -8,7 +14,12 @@ type VerdictHeroProps = {
   showMeter?: boolean;
   meter?: { track: string; fill: string };
   topReasons?: string[];
+  trustHighlights?: TrustHighlightRow[];
 };
+
+function highlightValueClass(bucket: TrustHighlightRow["bucket"]): string {
+  return bucket === "positive" ? "text-emerald-900" : "text-amber-950";
+}
 
 function verdictToneClass(verdict: string): string {
   if (verdict === "Likely Safe") return "text-emerald-900";
@@ -29,7 +40,8 @@ export function VerdictHero({
   domain,
   showMeter = false,
   meter,
-  topReasons = []
+  topReasons = [],
+  trustHighlights = []
 }: VerdictHeroProps) {
   const previewReasons = topReasons.filter(Boolean).slice(0, 3);
 
@@ -65,6 +77,17 @@ export function VerdictHero({
             />
           </div>
         </div>
+      ) : null}
+
+      {trustHighlights.length > 0 ? (
+        <dl className="mt-3 grid max-w-xl gap-2.5 sm:grid-cols-2">
+          {trustHighlights.map((row) => (
+            <div key={row.label} className="rounded-lg border border-slate-200/80 bg-white/60 px-3 py-2">
+              <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{row.label}</dt>
+              <dd className={`mt-0.5 text-sm font-medium leading-snug ${highlightValueClass(row.bucket)}`}>{row.value}</dd>
+            </div>
+          ))}
+        </dl>
       ) : null}
 
       <p className="mt-4 max-w-2xl text-pretty text-base leading-relaxed text-slate-700 sm:text-[17px]">{summary}</p>

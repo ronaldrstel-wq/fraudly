@@ -80,6 +80,7 @@ export type CompactOverviewFeedBaseProps = {
   domainLine: string;
   domainFullTitle: string;
   href: string;
+  prefetch?: boolean;
   viewLabel: string;
   timeIso: string;
   timeRelative: string;
@@ -160,7 +161,8 @@ export function CompactOverviewFeedLinkCard(props: CompactOverviewFeedBaseProps 
     timeTitle,
     entityBadge,
     ariaLabel,
-    bgClassName
+    bgClassName,
+    prefetch = true
   } = props;
 
   const tone = toneForKind(m.humanKind);
@@ -175,7 +177,13 @@ export function CompactOverviewFeedLinkCard(props: CompactOverviewFeedBaseProps 
   );
 
   return (
-    <Link href={href} className={`${shell} group ${bgClassName ?? ""}`} aria-labelledby={headlineId} aria-label={ariaLabel}>
+    <Link
+      href={href}
+      prefetch={prefetch}
+      className={`${shell} group ${bgClassName ?? ""}`}
+      aria-labelledby={headlineId}
+      aria-label={ariaLabel}
+    >
       <span
         aria-hidden
         className={`pointer-events-none absolute -left-8 top-1/2 h-28 w-28 -translate-y-1/2 rounded-full bg-gradient-radial blur-2xl md:h-24 md:w-24 ${toneCls.surfaceGlow}`}

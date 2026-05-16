@@ -9,7 +9,7 @@ export async function HomeBelowFold() {
   const trustStats = await getHomeTrustStats();
 
   return (
-    <div className="mx-auto mt-14 max-w-6xl space-y-16 [content-visibility:auto] [contain-intrinsic-size:1px_2800px] sm:mt-16 md:mt-20 md:space-y-20">
+    <div className="mx-auto mt-10 max-w-6xl space-y-14 [content-visibility:auto] [contain-intrinsic-size:1px_2800px] sm:mt-12 md:mt-14 md:space-y-16">
       <HomeTrustActivitySection stats={trustStats} />
       <HomeWhatWeCheckSection />
 

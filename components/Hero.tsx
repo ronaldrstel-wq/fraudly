@@ -8,7 +8,7 @@ import { EN_MESSAGES } from "@/lib/messages.en";
 const URLInput = dynamic(() => import("@/components/URLInput").then((m) => ({ default: m.URLInput })), {
   loading: () => (
     <div
-      className="mx-auto w-full max-w-6xl rounded-3xl border border-slate-200/70 bg-white p-5 shadow-lg shadow-slate-200/60 sm:p-6"
+      className="mx-auto w-full max-w-3xl rounded-3xl border border-slate-200/70 bg-white p-5 shadow-lg shadow-slate-200/60 sm:p-6"
       aria-hidden
     >
       <div className="mb-3 h-4 max-w-md animate-pulse rounded bg-slate-100 sm:w-2/3" />
@@ -74,6 +74,8 @@ interface HeroProps {
   scanProgress: number;
   scanStatus: string;
   scanFailed?: boolean;
+  /** Tighter layout while scanning or showing a result — keeps checker above the fold on laptops. */
+  scanActive?: boolean;
   isAdmin?: boolean;
   authGate?: ReactNode;
   extraBelowInput?: ReactNode;
@@ -88,6 +90,7 @@ export function Hero({
   scanProgress,
   scanStatus,
   scanFailed = false,
+  scanActive = false,
   isAdmin = false,
   authGate,
   extraBelowInput
@@ -109,8 +112,17 @@ export function Hero({
     "Get a trust score and clear, actionable insights."
   ] as const;
 
+  const headlineClass = scanActive
+    ? "text-[34px] sm:text-[40px] md:text-[44px]"
+    : "text-[42px] sm:text-[48px] md:text-[56px] lg:text-[60px] xl:text-[72px]";
+
   return (
-    <section id="link-check" className="relative scroll-mt-20 overflow-hidden pb-16 pt-2 lg:pb-20 lg:pt-3">
+    <section
+      id="link-check"
+      className={`relative scroll-mt-20 overflow-hidden transition-[padding] duration-300 ease-out ${
+        scanActive ? "pb-5 pt-1 lg:pb-6" : "pb-10 pt-2 lg:pb-14 lg:pt-3"
+      }`}
+    >
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_66%_52%_at_23%_15%,rgba(139,92,246,0.09),transparent_65%),radial-gradient(ellipse_58%_50%_at_79%_19%,rgba(56,189,248,0.1),transparent_67%)]"
         aria-hidden
@@ -124,67 +136,40 @@ export function Hero({
         aria-hidden
       />
 
-      <div className="relative mx-auto w-full max-w-[1400px] px-6 md:px-10">
-        <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12 xl:gap-20">
-          <div className="w-full text-center lg:text-left">
-            <div className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-violet-200/80 bg-gradient-to-r from-violet-100/95 via-cyan-100/85 to-blue-50/95 px-3 py-1 text-[11px] font-semibold tracking-wide text-slate-900 shadow-subtle md:mb-7 md:px-4">
-              <SparkleGlyph className="h-3.5 w-3.5 shrink-0 text-violet-600" />
-              {heroBadge}
-            </div>
-
-            <h1 className="mx-auto -mt-1 max-w-[760px] text-balance font-black tracking-[-0.04em] leading-[0.92] lg:-mt-2 lg:mx-0">
-              <span className="block text-slate-950 text-[50px] md:text-[64px] lg:text-[72px] xl:text-[88px]">
-                See it. Check it.
-              </span>
-              <span className="hero-gradient-trust-it block pt-1 text-[50px] md:text-[64px] lg:text-[72px] xl:text-[88px]">
-                Trust it.
-              </span>
-            </h1>
-
-            <p className="mx-auto mt-5 max-w-[620px] text-pretty text-base leading-relaxed text-slate-600 md:text-lg lg:mx-0">
-              {subhead}
-            </p>
-
-            <ul
-              className="mx-auto mt-7 hidden max-w-[760px] flex-wrap justify-center gap-4 sm:flex lg:mx-0 lg:justify-start"
-              aria-label="What Fraudly checks"
-            >
-              {heroTrustFeatures.map((label, i) => (
-                <li
-                  key={label}
-                  className="fraudly-motion inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/95 px-3.5 py-2 text-left text-xs font-semibold text-slate-800 shadow-subtle hover:-translate-y-[1px] hover:shadow-elevated"
-                >
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-100 to-cyan-100 text-blue-800 ring-1 ring-slate-100/80">
-                    {FEATURE_ICONS[i] ?? FEATURE_ICONS[0]}
-                  </span>
-                  <span className="leading-snug">{label}</span>
-                </li>
-              ))}
-            </ul>
+      <div className="relative mx-auto w-full max-w-[1400px] px-4 sm:px-6 md:px-10">
+        <div className={`text-center lg:text-left ${scanActive ? "max-w-3xl" : ""}`}>
+          <div
+            className={`inline-flex items-center gap-1.5 rounded-full border border-violet-200/80 bg-gradient-to-r from-violet-100/95 via-cyan-100/85 to-blue-50/95 px-3 py-1 text-[11px] font-semibold tracking-wide text-slate-900 shadow-subtle md:px-4 ${
+              scanActive ? "mb-3" : "mb-4 md:mb-5"
+            }`}
+          >
+            <SparkleGlyph className="h-3.5 w-3.5 shrink-0 text-violet-600" />
+            {heroBadge}
           </div>
 
-          <div className="relative mx-auto mt-0 hidden w-full max-w-[620px] sm:flex lg:-mt-4 lg:w-full lg:max-w-[620px] lg:translate-x-4 lg:justify-end">
-            <div
-              className="pointer-events-none absolute -inset-8 bg-[radial-gradient(ellipse_at_50%_40%,rgba(56,189,248,0.2),transparent_62%),radial-gradient(ellipse_at_75%_70%,rgba(139,92,246,0.17),transparent_60%)] blur-2xl"
-              aria-hidden
-            />
-            <div className="relative w-full max-w-[620px]">
-              <div className="overflow-hidden rounded-[30px] shadow-[0_36px_70px_-36px_rgba(79,70,229,0.42),0_20px_44px_-32px_rgba(14,165,233,0.34)]">
-                <Image
-                  src="/images/fraudly-hero-trust-visual.png"
-                  alt="Fraudly website trust analysis illustration"
-                  width={1536}
-                  height={1024}
-                  sizes="(max-width: 640px) 88vw, (max-width: 1024px) 52vw, 640px"
-                  className="h-auto w-full object-cover contrast-[1.07] saturate-[1.05]"
-                  priority
-                />
-              </div>
-            </div>
-          </div>
+          <h1
+            className={`mx-auto max-w-[760px] text-balance font-black tracking-[-0.04em] leading-[0.92] lg:mx-0 ${
+              scanActive ? "" : "-mt-1 lg:-mt-2"
+            }`}
+          >
+            <span className={`block text-slate-950 ${headlineClass}`}>See it. Check it.</span>
+            <span className={`hero-gradient-trust-it block pt-0.5 ${headlineClass}`}>Trust it.</span>
+          </h1>
+
+          <p
+            className={`mx-auto max-w-[620px] text-pretty leading-relaxed text-slate-600 lg:mx-0 ${
+              scanActive ? "mt-2 text-sm md:text-base" : "mt-3 text-base md:mt-4 md:text-lg"
+            }`}
+          >
+            {subhead}
+          </p>
         </div>
 
-        <div className="mx-auto mt-8 w-full max-w-2xl md:mt-10 lg:max-w-none">
+        {/* Checker dock: URL + progress stay visually connected and above marketing chrome */}
+        <div
+          id="scan-dock"
+          className={`mx-auto w-full max-w-3xl scroll-mt-24 ${scanActive ? "mt-4 md:mt-5" : "mt-5 md:mt-6 lg:mt-7"}`}
+        >
           <URLInput
             value={url}
             onChange={onUrlChange}
@@ -197,11 +182,42 @@ export function Hero({
             variant="hero"
           />
 
-          <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-slate-500 sm:text-sm">
+          <div
+            className={`grid transition-[grid-template-rows,opacity,margin] duration-300 ease-out ${
+              loading ? "mt-3 grid-rows-[1fr] opacity-100" : "mt-0 grid-rows-[0fr] opacity-0"
+            }`}
+            aria-live="polite"
+            aria-busy={loading}
+          >
+            <div className="min-h-0 overflow-hidden">
+              <WebsiteScanProgress
+                progress={scanProgress}
+                status={scanStatus}
+                failed={scanFailed}
+                className="!mt-0"
+              />
+            </div>
+          </div>
+
+          <div
+            className={`flex items-center justify-center gap-1.5 text-xs text-slate-500 sm:text-sm ${
+              scanActive ? "mt-2" : "mt-3"
+            }`}
+          >
             <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
               <svg className="h-3 w-3" viewBox="0 0 20 20" fill="none" aria-hidden>
-                <path d="M10 2.5l5.5 2.5V9c0 3.3-2 6.3-5.5 7.5C6.5 15.3 4.5 12.3 4.5 9V5l5.5-2.5z" stroke="currentColor" strokeWidth="1.6" />
-                <path d="m7.7 10 1.6 1.6 3-3.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M10 2.5l5.5 2.5V9c0 3.3-2 6.3-5.5 7.5C6.5 15.3 4.5 12.3 4.5 9V5l5.5-2.5z"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                />
+                <path
+                  d="m7.7 10 1.6 1.6 3-3.2"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </span>
             <span>{heroSearchHelper}</span>
@@ -212,47 +228,93 @@ export function Hero({
             ) : null}
           </div>
 
-          <div className="mt-3 hidden justify-center sm:mt-4 sm:flex">
-            <Link
-              href={secondaryCtaHref}
-              className="fraudly-motion inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 underline decoration-slate-300 underline-offset-4 hover:text-slate-900"
-            >
-              {secondaryCta}
-              <svg className="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="none" aria-hidden>
-                <path d="M4 10h11M11 6l4 4-4 4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </Link>
-          </div>
-          {extraBelowInput ? <div className="mt-3.5 max-w-none text-left">{extraBelowInput}</div> : null}
-          {authGate ? <div className="mt-3.5 sm:mt-4">{authGate}</div> : null}
-          {loading ? (
-            <div className="mt-6">
-              <WebsiteScanProgress progress={scanProgress} status={scanStatus} failed={scanFailed} />
+          {!scanActive ? (
+            <div className="mt-2 hidden justify-center sm:mt-3 sm:flex">
+              <Link
+                href={secondaryCtaHref}
+                className="fraudly-motion inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 underline decoration-slate-300 underline-offset-4 hover:text-slate-900"
+              >
+                {secondaryCta}
+                <svg className="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="none" aria-hidden>
+                  <path
+                    d="M4 10h11M11 6l4 4-4 4"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </Link>
             </div>
           ) : null}
+
+          {extraBelowInput && !loading ? (
+            <div className={`max-w-none text-left ${scanActive ? "mt-2.5" : "mt-3.5"}`}>{extraBelowInput}</div>
+          ) : null}
+          {authGate ? <div className="mt-3 sm:mt-4">{authGate}</div> : null}
         </div>
 
-        <details className="mx-auto mt-8 max-w-6xl rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3 shadow-subtle">
-          <summary className="cursor-pointer list-none text-center text-sm font-semibold text-slate-800 [&::-webkit-details-marker]:hidden">
-            How Fraudly works
-          </summary>
-          <ol className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {heroHowSteps.map((step, idx) => (
-              <li
-                key={step}
-                className="relative rounded-2xl border border-slate-200/80 bg-white px-4 py-3.5 shadow-subtle ring-1 ring-white/80"
+        {!scanActive ? (
+          <>
+            <div className="mt-8 grid items-center gap-8 lg:mt-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 xl:gap-16">
+              <ul
+                className="mx-auto flex max-w-[760px] flex-wrap justify-center gap-3 sm:gap-4 lg:mx-0 lg:justify-start"
+                aria-label="What Fraudly checks"
               >
-                <div className="flex items-center gap-2.5">
-                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-100 to-cyan-100 text-xs font-bold text-blue-700 ring-1 ring-slate-100">
-                    {idx + 1}
-                  </span>
-                  <p className="text-sm font-semibold text-slate-900">{step}</p>
+                {heroTrustFeatures.map((label, i) => (
+                  <li
+                    key={label}
+                    className="fraudly-motion inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/95 px-3.5 py-2 text-left text-xs font-semibold text-slate-800 shadow-subtle"
+                  >
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-100 to-cyan-100 text-blue-800 ring-1 ring-slate-100/80">
+                      {FEATURE_ICONS[i] ?? FEATURE_ICONS[0]}
+                    </span>
+                    <span className="leading-snug">{label}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="relative mx-auto hidden w-full max-w-[520px] sm:block lg:max-w-[560px] lg:justify-self-end">
+                <div
+                  className="pointer-events-none absolute -inset-6 bg-[radial-gradient(ellipse_at_50%_40%,rgba(56,189,248,0.18),transparent_62%)] blur-2xl"
+                  aria-hidden
+                />
+                <div className="relative overflow-hidden rounded-[28px] shadow-[0_28px_56px_-32px_rgba(79,70,229,0.38)]">
+                  <Image
+                    src="/images/fraudly-hero-trust-visual.png"
+                    alt="Fraudly website trust analysis illustration"
+                    width={1536}
+                    height={1024}
+                    sizes="(max-width: 1024px) 72vw, 560px"
+                    className="h-auto max-h-[280px] w-full object-cover contrast-[1.05] saturate-[1.03] xl:max-h-[320px]"
+                  />
                 </div>
-                <p className="mt-2 text-xs leading-relaxed text-slate-600">{stepDescriptions[idx]}</p>
-              </li>
-            ))}
-          </ol>
-        </details>
+              </div>
+            </div>
+
+            <details className="mx-auto mt-7 max-w-6xl rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3 shadow-subtle lg:mt-8">
+              <summary className="cursor-pointer list-none text-center text-sm font-semibold text-slate-800 [&::-webkit-details-marker]:hidden">
+                How Fraudly works
+              </summary>
+              <ol className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {heroHowSteps.map((step, idx) => (
+                  <li
+                    key={step}
+                    className="relative rounded-2xl border border-slate-200/80 bg-white px-4 py-3.5 shadow-subtle ring-1 ring-white/80"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-100 to-cyan-100 text-xs font-bold text-blue-700 ring-1 ring-slate-100">
+                        {idx + 1}
+                      </span>
+                      <p className="text-sm font-semibold text-slate-900">{step}</p>
+                    </div>
+                    <p className="mt-2 text-xs leading-relaxed text-slate-600">{stepDescriptions[idx]}</p>
+                  </li>
+                ))}
+              </ol>
+            </details>
+          </>
+        ) : null}
       </div>
     </section>
   );

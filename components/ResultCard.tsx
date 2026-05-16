@@ -3,7 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { ReviewRating } from "@/components/reputation/ReviewRating";
 import { ReviewSummary } from "@/components/ReviewSummary";
-import { consumerSignalSummary } from "@/lib/consumerSignalCopy";
+import {
+  filterConsumerContextNotes,
+  heroPreviewReasonsForResult,
+  normalizeConsumerSignalsForResult
+} from "@/lib/signals/normalizeConsumerSignals";
+import { trustHighlightsForHero } from "@/lib/signals/trustHighlightFacts";
+import { formatDomainAgeFromDays } from "@/lib/format/domainAge";
 import { sanitizeReviewFields } from "@/lib/reputation/reviewRatingNormalize";
 import { standardVerdictLabel } from "@/lib/scoring/displayScore";
 import { inferIntelEvidenceTier, type IntelScoreBreakdownEntry } from "@/lib/checks/scoring";
@@ -310,8 +316,8 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
   const confirmedMaliciousSignals = keyRisks.filter(isConfirmedIntelTrustSignal);
   const otherRiskSignals = keyRisks.filter((s) => !isConfirmedIntelTrustSignal(s));
   const supportiveSignals = result.trustSignals.filter((s) => s.type === "positive" || s.type === "info");
-  const topPositiveReasons = supportiveSignals.slice(0, 3);
-  const topRiskReasons = otherRiskSignals.slice(0, 3);
+  const consumerSafetySignals = useMemo(() => normalizeConsumerSignalsForResult(result), [result]);
+  const heroTrustHighlights = useMemo(() => trustHighlightsForHero(result), [result]);
   const [reputation, setReputation] = useState<ReputationEnrichment | null>(null);
   const [repLoading, setRepLoading] = useState(false);
   const [repError, setRepError] = useState<string | null>(null);
@@ -417,18 +423,17 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
     reviewSignals.trustpilotFound || trustpilotRating != null || trustpilotCount != null;
   const googleFound = reviewSignals.googleFound || googleRating != null || googleCount != null;
   const providerLabel = providerStateLabel(reputation, repError);
-  const neutralContextNotes = [
-    reputation?.reputationStatus === "cache_hit" ? "Review data loaded from cache." : null,
-    reputation?.reputationStatus === "called_no_match" ? "No matching public review profile found in this scan." : null,
-    reputation?.reputationStatus === "provider_error" ? "Review provider unavailable during this scan." : null,
-    reputation?.reputationStatus === "not_run" ? "Review enrichment was not run for this scan." : null,
-    reputation?.reputationStatus === "disabled" ? "Review enrichment is not enabled." : null,
+  const neutralContextNotes = filterConsumerContextNotes([
+    reputation?.reputationStatus === "called_no_match"
+      ? "Limited public reputation information was found."
+      : null,
+    reputation?.reputationStatus === "provider_error"
+      ? "Public review lookup was unavailable during this scan."
+      : null,
     result.confidenceLevel === "low"
       ? "Some public reputation data was limited. This affects extra context, not direct risk."
       : null
-  ]
-    .filter((note): note is string => Boolean(note))
-    .slice(0, 3);
+  ]);
   const cacheLabel =
     reputation?.cacheStatus === "hit"
       ? "Result cached from previous scan"
@@ -458,10 +463,7 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
     : hasLimitedInspection
       ? shortExplain
       : consumerSummaryFor(trustLevel, false);
-  const topReasonLines = [
-    ...topRiskReasons.map((signal) => consumerSignalSummary(signal.title, signal.description)),
-    ...topPositiveReasons.map((signal) => consumerSignalSummary(signal.title, signal.description))
-  ].filter(Boolean);
+  const topReasonLines = heroPreviewReasonsForResult(result);
   const heroTrustScore =
     showNonexistentHeadline || hasUnavailableSite
       ? null
@@ -491,6 +493,7 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
             showMeter={showGauge && typeof heroTrustScore === "number"}
             meter={meter}
             topReasons={topReasonLines}
+            trustHighlights={heroTrustHighlights}
           />
 
           {result.adminOverride ? (
@@ -586,31 +589,33 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
               </div>
             </section>
 
-          {topPositiveReasons.length > 0 || topRiskReasons.length > 0 || neutralContextNotes.length > 0 ? (
+          {consumerSafetySignals.helpful.length > 0 ||
+          consumerSafetySignals.watch.length > 0 ||
+          neutralContextNotes.length > 0 ? (
             <section className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5">
               <h3 className="text-sm font-semibold text-slate-900">{EN_MESSAGES.scanResult.safetySignalsHeading}</h3>
               <p className="mt-1 text-xs leading-relaxed text-slate-600">{EN_MESSAGES.scanResult.safetySignalsIntro}</p>
-              {topPositiveReasons.length > 0 ? (
+              {consumerSafetySignals.helpful.length > 0 ? (
                 <div className="mt-3">
                   <p className="text-xs font-medium text-emerald-800">Helpful signals</p>
                   <ul className="mt-1.5 space-y-1.5 text-sm text-slate-700">
-                    {topPositiveReasons.map((signal, idx) => (
-                      <li key={`positive-${idx}-${signal.title}`} className="flex gap-2">
+                    {consumerSafetySignals.helpful.map((line) => (
+                      <li key={`positive-${line.slice(0, 48)}`} className="flex gap-2">
                         <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-emerald-400" aria-hidden />
-                        <span>{consumerSignalSummary(signal.title, signal.description)}</span>
+                        <span>{line}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
               ) : null}
-              {topRiskReasons.length > 0 ? (
+              {consumerSafetySignals.watch.length > 0 ? (
                 <div className="mt-3">
                   <p className="text-xs font-medium text-amber-900">Things to watch</p>
                   <ul className="mt-1.5 space-y-1.5 text-sm text-slate-700">
-                    {topRiskReasons.map((signal, idx) => (
-                      <li key={`risk-${idx}-${signal.title}`} className="flex gap-2">
+                    {consumerSafetySignals.watch.map((line) => (
+                      <li key={`risk-${line.slice(0, 48)}`} className="flex gap-2">
                         <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-amber-400" aria-hidden />
-                        <span>{consumerSignalSummary(signal.title, signal.description)}</span>
+                        <span>{line}</span>
                       </li>
                     ))}
                   </ul>
@@ -713,7 +718,10 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
                 Registration date: <span className="font-medium">{result.domainIntelligence.registrationDate ?? "unknown"}</span>
               </li>
               <li>
-                Domain age (days): <span className="font-medium">{result.domainIntelligence.ageDays ?? "unknown"}</span>
+                Domain age:{" "}
+                <span className="font-medium">
+                  {formatDomainAgeFromDays(result.domainIntelligence.ageDays) ?? "unknown"}
+                </span>
               </li>
               <li>
                 Registrar: <span className="font-medium">{result.domainIntelligence.registrar ?? "unknown"}</span>

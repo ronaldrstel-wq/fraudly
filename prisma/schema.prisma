@@ -83,6 +83,8 @@ model LatestPublicCheck {
   riskScoreSnapshot  Int
   statusLabel        String   @db.VarChar(128)
   publicResultPath   String   @db.VarChar(2048)
+  /// Full public `ScamCheckResult` JSON for instant `/check/[domain]` paint when linked from latest checks.
+  publicResultPayload Json?
   firstSeenAt        DateTime @default(now())
   lastSeenAt         DateTime @default(now()) @updatedAt
 

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getCachedWebsiteAnalysis } from "@/lib/analysis/cachedAnalysis";
+import { displayTrustScoreForResult } from "@/lib/scanPresentation";
 import { parseCheckDomainParam } from "@/lib/domainPage";
 import {
   buildWebsiteCheckMetaDescription,
@@ -16,19 +18,29 @@ import { ResultCard } from "@/components/ResultCard";
 import { SiteFooter } from "@/components/SiteFooter";
 import { DomainCheckJsonLd } from "@/components/seo/DomainCheckJsonLd";
 import { EN_MESSAGES } from "@/lib/messages.en";
-import { getLatestPublicCheckSnapshotForDomain } from "@/lib/latest-public-checks/snapshot";
-import { buildOverviewFromTrustAndVerdict } from "@/lib/overviewCardPresentation";
-import { displayTrustScoreForResult } from "@/lib/scanPresentation";
+import { getCachedResolveLatestPublicCheckSnapshotForCheckPage } from "@/lib/latest-public-checks/snapshot";
+import { alignedDisplayFromSnapshot } from "@/lib/check/alignedDisplayFromSnapshot";
+import type { CheckResultRouteSource } from "@/lib/check/checkResultHref";
+import { logCheckDetailPerf } from "@/lib/check/checkDetailPerfLog";
 import { logDisplayScoreDebug } from "@/lib/scoring/displayScore";
-import type { HumanRecKind } from "@/lib/scanResultDualLayer";
+import { CheckSummaryDl } from "@/components/check/CheckSummaryDl";
+import { CheckResultLoader } from "@/components/check/CheckResultLoader";
+import { CheckResultCardSkeleton, CheckSummarySkeleton } from "@/components/check/CheckResultSkeleton";
+import type { ScamCheckResult } from "@/types/scam";
 
 export const revalidate = 3600;
 
 type PageProps = {
   params: Promise<{ domain: string }>;
+  searchParams: Promise<{ scanId?: string; from?: string }>;
 };
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+function parseRouteSource(from: string | undefined): CheckResultRouteSource | "unknown" {
+  if (from === "latest-card" || from === "recent" || from === "direct") return from;
+  return "unknown";
+}
+
+export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
   const { domain: raw } = await params;
   const domain = parseCheckDomainParam(raw);
   if (!domain) {
@@ -41,30 +53,47 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const path = `/check/${encodeURIComponent(domain)}`;
   const canonical = `${SITE_URL}${path}`;
+  const scanId = typeof (await searchParams).scanId === "string" ? (await searchParams).scanId : undefined;
+
+  const publicSnapshot = await getCachedResolveLatestPublicCheckSnapshotForCheckPage(domain, scanId);
+
+  if (publicSnapshot) {
+    const trustScore = publicSnapshot.display.trustScore;
+    const reviewSummary = publicSnapshot.storedResult?.reviewSummary;
+    const description = buildWebsiteCheckMetaDescription(domain, trustScore, reviewSummary ?? undefined);
+    warnMetaDescriptionIfNeeded(path, description);
+    const title = SEO_TITLE.checkResult(domain);
+    const sharingTitle = `${title} | Fraudly`;
+    return {
+      title,
+      description,
+      alternates: { canonical },
+      openGraph: {
+        type: "website",
+        siteName: "Fraudly",
+        locale: "en_US",
+        url: canonical,
+        title: sharingTitle,
+        description,
+        images: [OG_IMAGE]
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: sharingTitle,
+        description,
+        images: [OG_IMAGE.url]
+      },
+      robots: publicRobots
+    };
+  }
 
   try {
-    const [result, publicSnapshot] = await Promise.all([
-      getCachedWebsiteAnalysis(domain),
-      getLatestPublicCheckSnapshotForDomain(domain)
-    ]);
-    const liveTrust = displayTrustScoreForResult(result);
-    const trustScore = publicSnapshot?.display.trustScore ?? liveTrust;
-    if (publicSnapshot) {
-      logDisplayScoreDebug({
-        domain,
-        scanId: publicSnapshot.id,
-        storedRiskScore: publicSnapshot.display.riskScore,
-        storedTrustScore: publicSnapshot.display.trustScore,
-        displayedTrustScore: trustScore,
-        displayedLabel: publicSnapshot.display.label,
-        source: "check/[domain]/generateMetadata"
-      });
-    }
-    const title = SEO_TITLE.checkResult(domain);
+    const result = await getCachedWebsiteAnalysis(domain);
+    const trustScore = displayTrustScoreForResult(result);
     const description = buildWebsiteCheckMetaDescription(domain, trustScore, result.reviewSummary);
     warnMetaDescriptionIfNeeded(path, description);
+    const title = SEO_TITLE.checkResult(domain);
     const sharingTitle = `${title} | Fraudly`;
-
     return {
       title,
       description,
@@ -115,79 +144,77 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-export default async function DomainCheckPage({ params }: PageProps) {
+export default async function DomainCheckPage({ params, searchParams }: PageProps) {
+  const pageStart = performance.now();
   const { domain: raw } = await params;
   const domain = parseCheckDomainParam(raw);
   if (!domain) notFound();
 
+  const sp = await searchParams;
+  const scanId = typeof sp.scanId === "string" ? sp.scanId : undefined;
+  const routeSource = parseRouteSource(typeof sp.from === "string" ? sp.from : undefined);
+
+  const snapshotStart = performance.now();
+  const publicSnapshot = await getCachedResolveLatestPublicCheckSnapshotForCheckPage(domain, scanId);
+  const snapshotFetchMs = Math.round(performance.now() - snapshotStart);
+
   const path = `/check/${encodeURIComponent(domain)}`;
-  let result;
-  let publicSnapshot;
-  try {
-    [result, publicSnapshot] = await Promise.all([
-      getCachedWebsiteAnalysis(domain),
-      getLatestPublicCheckSnapshotForDomain(domain)
-    ]);
-  } catch {
-    notFound();
-  }
-
-  const liveTrust = displayTrustScoreForResult(result);
-  const trustScore = publicSnapshot?.display.trustScore ?? liveTrust;
-
-  let alignedDisplay:
-    | {
-        trustScore: number;
-        label: string;
-        humanKind: HumanRecKind;
-        humanHeadline: string;
-        scanId: string;
-        lastSeenAtIso: string;
-      }
-    | undefined;
+  const storedResult: ScamCheckResult | null = publicSnapshot?.storedResult ?? null;
+  const alignedDisplay = publicSnapshot ? alignedDisplayFromSnapshot(publicSnapshot) : undefined;
+  const trustScore = publicSnapshot?.display.trustScore ?? null;
 
   if (publicSnapshot) {
-    const overview = buildOverviewFromTrustAndVerdict(
-      publicSnapshot.display.trustScore,
-      publicSnapshot.display.verdict
-    );
-    alignedDisplay = {
-      trustScore: overview.trustScore,
-      label: overview.verdictLabel,
-      humanKind: overview.humanKind,
-      humanHeadline: overview.headline,
-      scanId: publicSnapshot.id,
-      lastSeenAtIso: publicSnapshot.lastSeenAt.toISOString()
-    };
     logDisplayScoreDebug({
       domain,
       scanId: publicSnapshot.id,
       storedRiskScore: publicSnapshot.display.riskScore,
       storedTrustScore: publicSnapshot.display.trustScore,
-      displayedTrustScore: overview.trustScore,
-      displayedLabel: overview.verdictLabel,
-      source: "check/[domain]/page"
-    });
-  } else if (process.env.NODE_ENV === "development" && liveTrust !== null) {
-    logDisplayScoreDebug({
-      domain,
-      scanId: null,
-      storedRiskScore: result.score,
-      storedTrustScore: liveTrust,
-      displayedTrustScore: liveTrust,
-      displayedLabel: "(live analysis, no public snapshot)",
+      displayedTrustScore: publicSnapshot.display.trustScore,
+      displayedLabel: publicSnapshot.display.label,
       source: "check/[domain]/page"
     });
   }
-  const sslShort = result.ssl.httpsEnabled
-    ? result.ssl.validCertificate
-      ? "HTTPS available — encrypts transit, does not prove legitimacy"
-      : "HTTPS with certificate issues"
-    : "No HTTPS";
+
+  logCheckDetailPerf({
+    routeSource: routeSource === "unknown" && scanId ? "latest-card" : routeSource,
+    domain,
+    scanId: scanId ?? publicSnapshot?.id ?? null,
+    snapshotFetchMs,
+    resultSource: storedResult ? "stored-payload" : "pending",
+    totalPageMs: Math.round(performance.now() - pageStart)
+  });
+
+  const resultBlock = storedResult ? (
+    <>
+      <CheckSummaryDl trustScore={trustScore} result={storedResult} />
+      <div className="mt-8 max-w-4xl">
+        <ResultCard result={storedResult} alignedDisplay={alignedDisplay} />
+      </div>
+    </>
+  ) : (
+    <Suspense
+      fallback={
+        <>
+          <CheckSummarySkeleton trustScore={trustScore ?? undefined} />
+          <CheckResultCardSkeleton />
+        </>
+      }
+    >
+      <CheckResultLoader
+        domain={domain}
+        alignedDisplay={alignedDisplay}
+        routeSource={routeSource === "unknown" && scanId ? "latest-card" : routeSource}
+        scanId={scanId ?? publicSnapshot?.id}
+        snapshotTrustScore={trustScore}
+      />
+    </Suspense>
+  );
+
+  const jsonLdResult = storedResult;
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
-      <DomainCheckJsonLd domain={domain} pathname={path} result={result} />
+      {jsonLdResult ? <DomainCheckJsonLd domain={domain} pathname={path} result={jsonLdResult} /> : null}
       <Navbar />
       <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-10 sm:pt-14 md:pt-16">
         <nav className="text-sm text-slate-600" aria-label="Breadcrumb">
@@ -238,26 +265,7 @@ export default async function DomainCheckPage({ params }: PageProps) {
           </p>
         </section>
 
-        <dl className="mt-8 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Trust-style score</dt>
-            <dd className="mt-1 text-2xl font-bold text-slate-900">
-              {trustScore === null ? EN_MESSAGES.siteOutcome.suppressedTrustMeter : `${trustScore} / 100`}
-            </dd>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Domain age (days)</dt>
-            <dd className="mt-1 text-2xl font-bold text-slate-900">{result.domainIntelligence.ageDays ?? "—"}</dd>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">SSL / HTTPS</dt>
-            <dd className="mt-1 text-base font-semibold text-slate-900">{sslShort}</dd>
-          </div>
-        </dl>
-
-        <div className="mt-8 max-w-4xl">
-          <ResultCard result={result} alignedDisplay={alignedDisplay} />
-        </div>
+        {resultBlock}
 
         <section className="mx-auto mt-10 flex max-w-3xl flex-col gap-3 sm:flex-row sm:flex-wrap" aria-label="Next steps">
           <Link

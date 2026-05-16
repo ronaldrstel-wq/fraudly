@@ -77,6 +77,8 @@ export function HomeClient({ children }: { children?: ReactNode }) {
   const inFlight = useRef(false);
   const mountedRef = useRef(true);
   const progressSimRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const scanOutputRef = useRef<HTMLDivElement>(null);
+  const scanActive = loading || Boolean(result);
   const [optionalEvidence, setOptionalEvidence] = useState<OptionalEvidenceScanValues>({
     file: null,
     previewUrl: null,
@@ -123,6 +125,22 @@ export function HomeClient({ children }: { children?: ReactNode }) {
       return prev === next ? prev : next;
     });
   }, [loading, scanFailed, scanProgress]);
+
+  useEffect(() => {
+    if (!loading) return;
+    const dock = document.getElementById("scan-dock");
+    if (!dock) return;
+    requestAnimationFrame(() => {
+      dock.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  }, [loading]);
+
+  useEffect(() => {
+    if (!result) return;
+    requestAnimationFrame(() => {
+      scanOutputRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  }, [result]);
 
   async function runCheck() {
     if (inFlight.current) return;
@@ -386,7 +404,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
 
   const signupPrompt =
     showSignupPrompt && !isSignedIn ? (
-      <div className="mx-auto mt-8 w-full max-w-[860px] fraudly-cta-panel">
+      <div className="w-full fraudly-cta-panel">
         <h3 className="text-lg font-bold tracking-tight text-slate-900 md:text-xl">{EN_MESSAGES.freemium.promptTitle}</h3>
         <p className="mt-2 text-sm leading-relaxed text-slate-600">{EN_MESSAGES.freemium.promptBody}</p>
         <div className="mt-5 flex flex-col gap-3 sm:flex-row">
@@ -404,7 +422,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
-      <main className="mx-auto w-full max-w-6xl px-4 pb-14 pt-0">
+      <main className="mx-auto w-full max-w-6xl px-4 pb-10 pt-0">
         <Hero
           url={url}
           onUrlChange={setUrl}
@@ -414,6 +432,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
           scanProgress={scanProgress}
           scanStatus={scanStatus}
           scanFailed={scanFailed}
+          scanActive={scanActive}
           isAdmin={isAdmin}
           extraBelowInput={
             <OptionalEvidenceScanSection
@@ -424,8 +443,9 @@ export function HomeClient({ children }: { children?: ReactNode }) {
           }
         />
 
+        <div id="scan-output" ref={scanOutputRef} className="mx-auto mt-3 max-w-3xl space-y-3 sm:mt-4">
         {error && (
-          <div className="mx-auto mt-5 max-w-3xl rounded-2xl border border-rose-200/85 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-subtle">
+          <div className="rounded-2xl border border-rose-200/85 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-subtle">
             {error}
             {error.includes("Log in") ? <div className="mt-3 flex justify-center">{signInLink}</div> : null}
           </div>
@@ -435,7 +455,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
 
         {result && (
           <>
-            <section className="result-in mt-7 grid gap-5 sm:mt-9 lg:grid-cols-[1.7fr_1fr]">
+            <section className="result-in grid gap-4 lg:grid-cols-[1.7fr_1fr] lg:gap-5">
               <div className="min-w-0 space-y-3">
                 <ResultCard result={result} />
                 <p className="text-center text-sm text-slate-600 md:text-left">
@@ -452,19 +472,20 @@ export function HomeClient({ children }: { children?: ReactNode }) {
                 <FeatureCards stacked />
               </div>
             </section>
-            <div className="result-in mx-auto mt-5 max-w-3xl">
+            <div className="result-in">
               <PostScanAppPromo />
             </div>
             {!isSignedIn && (
-              <div className="result-in mx-auto mt-5 max-w-3xl rounded-2xl border border-slate-200/85 bg-slate-50 px-4 py-3 text-sm text-slate-700 shadow-subtle">
+              <div className="result-in rounded-2xl border border-slate-200/85 bg-slate-50 px-4 py-3 text-sm text-slate-700 shadow-subtle">
                 {EN_MESSAGES.freemium.afterResultBanner}
               </div>
             )}
           </>
         )}
+        </div>
 
-        {!result && (
-          <section className="mt-5 [content-visibility:auto] [contain-intrinsic-size:1px_220px] sm:mt-7">
+        {!result && !loading && (
+          <section className="mt-4 [content-visibility:auto] [contain-intrinsic-size:1px_220px] sm:mt-5">
             <FeatureCards />
           </section>
         )}

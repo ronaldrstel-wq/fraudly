@@ -3,16 +3,17 @@ interface WebsiteScanProgressProps {
   progress: number;
   status: string;
   failed?: boolean;
+  className?: string;
 }
 
-export function WebsiteScanProgress({ progress, status, failed = false }: WebsiteScanProgressProps) {
+export function WebsiteScanProgress({ progress, status, failed = false, className = "" }: WebsiteScanProgressProps) {
   const clamped = Math.min(100, Math.max(0, progress));
 
   return (
     <div
       role="region"
       aria-label="Website scan status"
-      className={`fraudly-motion mx-auto mt-4 w-full max-w-3xl rounded-2xl border p-4 text-left shadow-subtle sm:p-5 ${
+      className={`fraudly-motion mx-auto mt-4 w-full max-w-3xl rounded-2xl border p-4 text-left shadow-subtle sm:p-5 ${className} ${
         failed
           ? "border-rose-200 bg-rose-50/95"
           : "border-sky-100 bg-white shadow-sky-100/40"

@@ -12,6 +12,7 @@ import { OG_IMAGE } from "@/lib/seo-metadata";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { SEO_DESCRIPTION, SEO_TITLE, warnMetaDescriptionIfNeeded } from "@/lib/seo-description";
 import { publicRobots, SITE_URL } from "@/lib/seo";
+import { checkResultHref } from "@/lib/check/checkResultHref";
 import { buildOverviewFromPublicCheck } from "@/lib/overviewCardPresentation";
 import { logDisplayScoreDebug } from "@/lib/scoring/displayScore";
 
@@ -153,7 +154,8 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
                     headlineId={`latest-check-headline-${row.id}`}
                     domainLine={primaryLine.primary}
                     domainFullTitle={primaryLine.fullTitle}
-                    href={row.publicResultPath}
+                    href={checkResultHref(row.checkedValue, { scanId: row.id, from: "latest-card" })}
+                    prefetch
                     viewLabel={EN_MESSAGES.latestChecks.viewResultArrow}
                     timeIso={iso}
                     timeRelative={formatPublicCheckRelativeTime(iso)}

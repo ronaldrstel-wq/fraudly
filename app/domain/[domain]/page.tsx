@@ -17,6 +17,8 @@ import { Navbar } from "@/components/Navbar";
 import { ResultCard } from "@/components/ResultCard";
 import { SiteFooter } from "@/components/SiteFooter";
 import { EN_MESSAGES } from "@/lib/messages.en";
+import { formatDomainAgeFromDays } from "@/lib/format/domainAge";
+import { formatSslHighlightValue } from "@/lib/signals/trustHighlightFacts";
 import { displayTrustScoreForResult } from "@/lib/scanPresentation";
 
 export const revalidate = 3600;
@@ -168,12 +170,14 @@ export default async function DomainIntelPage({ params }: PageProps) {
             </dd>
           </div>
           <div className="rounded-2xl border border-slate-200/85 bg-white p-4 shadow-subtle">
-            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Domain age (days)</dt>
-            <dd className="mt-1 text-2xl font-bold text-slate-900">{result.domainIntelligence.ageDays ?? "—"}</dd>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Domain age</dt>
+            <dd className="mt-1 text-lg font-bold leading-snug text-slate-900">
+              {formatDomainAgeFromDays(result.domainIntelligence.ageDays) ?? "—"}
+            </dd>
           </div>
           <div className="rounded-2xl border border-slate-200/85 bg-white p-4 shadow-subtle">
-            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">SSL / HTTPS</dt>
-            <dd className="mt-1 text-base font-semibold text-slate-900">{sslShort}</dd>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Secure connection</dt>
+            <dd className="mt-1 text-base font-semibold text-slate-900">{formatSslHighlightValue(result.ssl)}</dd>
           </div>
         </dl>
 
