@@ -7,7 +7,7 @@ import { getOverviewCardChrome, type OverviewCardChrome } from "@/lib/scoring/tr
 const ACCENT_BAR_POSITION =
   "before:absolute before:inset-y-3 before:left-0 before:w-1 before:rounded-r md:before:inset-y-2";
 
-const FEED_CTA_BASE = "inline-flex items-center gap-1 text-sm font-semibold transition-colors duration-200";
+const FEED_CTA_BASE = "inline-flex items-center gap-1 text-sm transition-colors duration-200";
 
 function FeedViewResultCta({
   viewLabel,
