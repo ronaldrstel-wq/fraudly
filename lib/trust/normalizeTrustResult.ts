@@ -36,27 +36,50 @@ export type NormalizeTrustResultOptions = {
   enrichment?: DomainAgeIntelSource | null;
 };
 
-function formatReviewDisplay(
-  source: "Google Reviews" | "Trustpilot",
+function formatGoogleReviewDisplay(
   rating: number | null,
   reviewCount: number | null,
   displayable: boolean
 ): string | null {
   if (!displayable || rating == null || reviewCount == null) return null;
-  return `${source}: ${formatRatingOutOfFive(rating)} · ${basedOnReviewsLine(reviewCount)}`;
+  return `Google Reviews: ${formatRatingOutOfFive(rating)} · ${basedOnReviewsLine(reviewCount)}`;
 }
 
-function resolveReviewChannel(
-  source: "Google Reviews" | "Trustpilot",
-  match: ReturnType<typeof resolveGoogleReviewMatch>
-): NormalizedReviewChannel {
+function formatTrustpilotReviewDisplay(
+  match: ReturnType<typeof resolveTrustpilotReviewMatch>
+): string | null {
+  if (!match.displayable) return null;
+  if (match.rating != null && match.reviewCount != null) {
+    return `Trustpilot: ${formatRatingOutOfFive(match.rating)} · ${basedOnReviewsLine(match.reviewCount)}`;
+  }
+  if (match.rating != null) {
+    return `Trustpilot: ${formatRatingOutOfFive(match.rating)}`;
+  }
+  if (match.reviewCount != null) {
+    return `Trustpilot: ${basedOnReviewsLine(match.reviewCount)}`;
+  }
+  return null;
+}
+
+function resolveReviewChannel(match: ReturnType<typeof resolveGoogleReviewMatch>): NormalizedReviewChannel {
   return {
     rating: match.rating,
     reviewCount: match.reviewCount,
     profileUrl: null,
     matchedName: null,
     confidence: match.confidence,
-    display: formatReviewDisplay(source, match.rating, match.reviewCount, match.displayable)
+    display: formatGoogleReviewDisplay(match.rating, match.reviewCount, match.displayable)
+  };
+}
+
+function resolveTrustpilotChannel(match: ReturnType<typeof resolveTrustpilotReviewMatch>): NormalizedReviewChannel {
+  return {
+    rating: match.rating,
+    reviewCount: match.reviewCount,
+    profileUrl: null,
+    matchedName: null,
+    confidence: match.confidence,
+    display: formatTrustpilotReviewDisplay(match)
   };
 }
 
@@ -133,8 +156,9 @@ export function normalizeTrustResult(
     reviewFetchDebug: []
   };
 
-  const google = resolveReviewChannel("Google Reviews", resolveGoogleReviewMatch(reviewSignals));
-  const trustpilot = resolveReviewChannel("Trustpilot", resolveTrustpilotReviewMatch(reviewSignals));
+  const google = resolveReviewChannel(resolveGoogleReviewMatch(reviewSignals));
+  const trustpilotMatch = resolveTrustpilotReviewMatch(reviewSignals);
+  const trustpilot = resolveTrustpilotChannel(trustpilotMatch);
 
   const isLikelySafe = verdict === "Likely Safe";
 
@@ -196,7 +220,8 @@ export function normalizeTrustResult(
       google,
       trustpilot,
       neutralFallback: PUBLIC_REVIEW_NOT_MATCHED_COPY,
-      optionalUnavailableNote
+      optionalUnavailableNote,
+      trustpilotMatchNote: reviewSignals.trustpilotMatchNote ?? null
     },
     summary,
     helpfulSignals: consumerSignals.helpful,

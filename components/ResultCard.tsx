@@ -532,12 +532,16 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
             <p className="mt-1 text-xs leading-relaxed text-slate-600">{EN_MESSAGES.scanResult.reputationIntro}</p>
             <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
                 {trustpilotFound ? (
-                  <ReviewRating
-                    source="Trustpilot"
-                    rating={trustpilotRating}
-                    reviewCount={trustpilotCount}
-                    className="rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5"
-                  />
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5">
+                    <ReviewRating
+                      source="Trustpilot"
+                      rating={trustpilotRating}
+                      reviewCount={trustpilotCount}
+                    />
+                    {normalized.reputation.trustpilotMatchNote ? (
+                      <p className="mt-1.5 text-xs text-slate-600">{normalized.reputation.trustpilotMatchNote}</p>
+                    ) : null}
+                  </div>
                 ) : (
                   <article className="rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5">
                     <p className="text-sm font-semibold text-slate-900">Trustpilot</p>

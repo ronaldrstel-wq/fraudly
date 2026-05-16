@@ -1,6 +1,9 @@
 import { normalizeDomain } from "@/lib/cache";
 import { db } from "@/lib/db";
-import { fetchOutscraperReviewSignals } from "@/lib/outscraper/api";
+import { fetchOutscraperReviewSignals, type TrustpilotLookupMeta } from "@/lib/outscraper/api";
+import type { CompanyIdentity } from "@/lib/reputation/companyIdentity";
+import { MAX_TRUSTPILOT_OUTSCRAPER_ATTEMPTS } from "@/lib/reputation/reviewConfig";
+import type { TrustpilotMatchConfidence } from "@/lib/reputation/trustpilotMatch";
 import { logReputationEnrichmentFromResult } from "@/lib/outscraper/reputationLog";
 import { publicIntelConfig } from "@/lib/public-intel/config";
 import { getPublicIntelEnrichment } from "@/lib/public-intel";
@@ -40,6 +43,8 @@ export interface ReputationEnrichment {
   matchedQuery?: string;
   trustpilot?: { rating: number | null; reviewCount: number | null };
   google?: { rating: number | null; reviewCount: number | null };
+  trustpilotLookup?: TrustpilotLookupMeta;
+  trustpilotMatchConfidence?: TrustpilotMatchConfidence | "none";
   publicSignals?: {
     redditWarnings: number;
     domainAgeDays: number | null;
@@ -201,7 +206,21 @@ function toDisabledResponse(
 }
 
 const SUCCESS_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-const EMPTY_OR_FAILED_TTL_MS = 24 * 60 * 60 * 1000;
+const NO_MATCH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const PROVIDER_ERROR_TTL_MS = 24 * 60 * 60 * 1000;
+const LOW_CONFIDENCE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+function resolveCacheTtlMs(value: ReputationEnrichment): number {
+  if (value.providerState === "failed" || value.reputationStatus === "provider_error") {
+    return PROVIDER_ERROR_TTL_MS;
+  }
+  const tpConfidence = value.trustpilotLookup?.confidence ?? value.trustpilotMatchConfidence ?? "none";
+  const hasGoogle = value.googleRating != null && value.googleReviewCount != null;
+  const hasTrustpilot = tpConfidence === "high" || tpConfidence === "medium";
+  if (hasGoogle || hasTrustpilot) return SUCCESS_TTL_MS;
+  if (tpConfidence === "low") return LOW_CONFIDENCE_TTL_MS;
+  return NO_MATCH_TTL_MS;
+}
 
 function serializeForCache(value: ReputationEnrichment): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
@@ -221,7 +240,7 @@ async function readCache(domain: string): Promise<ReputationEnrichment | null> {
 
 async function writeCache(domain: string, value: ReputationEnrichment): Promise<void> {
   const success = value.providerState === "found";
-  const expiresAt = new Date(Date.now() + (success ? SUCCESS_TTL_MS : EMPTY_OR_FAILED_TTL_MS));
+  const expiresAt = new Date(Date.now() + resolveCacheTtlMs(value));
   try {
     await db.reputationEnrichmentCache.upsert({
       where: { normalizedDomain: domain },
@@ -249,11 +268,15 @@ async function writeCache(domain: string, value: ReputationEnrichment): Promise<
 
 export async function getReputationEnrichment(input: {
   domain: string;
+  registrableDomain?: string;
   baseRiskScore: number;
   deepScan: boolean;
   confidenceLevel?: ConfidenceLevel;
   missingReviewSignals?: boolean;
   bypassCache?: boolean;
+  html?: string | null;
+  companyIdentity?: CompanyIdentity | null;
+  countryHint?: string | null;
 }): Promise<ReputationEnrichment> {
   const normalizedDomain = normalizeDomain(input.domain);
   const apiKeyPresent = Boolean(process.env.OUTSCRAPER_API_KEY);
@@ -344,16 +367,29 @@ export async function getReputationEnrichment(input: {
     let trustpilotRating = intel.signals.trustpilotScore;
     let trustpilotReviewCount = intel.signals.trustpilotReviewCount;
     const sourceStatus = { ...intel.signals.sourceStatus };
+    let trustpilotLookup: TrustpilotLookupMeta | undefined;
+    let trustpilotMatchConfidence: TrustpilotMatchConfidence | "none" = "none";
 
     if (outscraperEnabled && apiKeyPresent) {
       sourceStatus.outscraper.attempted = true;
       try {
-        const outscraper = await fetchOutscraperReviewSignals(normalizedDomain);
+        const outscraper = await fetchOutscraperReviewSignals({
+          domain: normalizedDomain,
+          registrableDomain: input.registrableDomain ?? normalizedDomain,
+          html: input.html,
+          companyIdentity: input.companyIdentity,
+          countryHint: input.countryHint,
+          maxTrustpilotAttempts: input.deepScan
+            ? MAX_TRUSTPILOT_OUTSCRAPER_ATTEMPTS
+            : Math.min(3, MAX_TRUSTPILOT_OUTSCRAPER_ATTEMPTS)
+        });
         sourceStatus.outscraper.ok = outscraper.ok;
         if (outscraper.googleRating != null) googleRating = outscraper.googleRating;
         if (outscraper.googleReviewCount != null) googleReviewCount = outscraper.googleReviewCount;
         if (outscraper.trustpilotRating != null) trustpilotRating = outscraper.trustpilotRating;
         if (outscraper.trustpilotReviewCount != null) trustpilotReviewCount = outscraper.trustpilotReviewCount;
+        trustpilotLookup = outscraper.trustpilotLookup;
+        trustpilotMatchConfidence = outscraper.trustpilotLookup.confidence;
         if (outscraper.error) {
           intel.signals.warnings.push(`outscraper: ${outscraper.error}`);
         }
@@ -366,7 +402,11 @@ export async function getReputationEnrichment(input: {
 
     const scored = calculateReputationImpactFromPayload({ impactOnRisk: intel.impactOnRisk });
     const adjustedRisk = clampRisk(input.baseRiskScore + scored.impactOnRisk);
-    const trustpilotFound = trustpilotRating != null || trustpilotReviewCount != null;
+
+    const trustpilotFound =
+      trustpilotMatchConfidence === "high" || trustpilotMatchConfidence === "medium"
+        ? trustpilotRating != null || trustpilotReviewCount != null
+        : false;
     const googleFound = googleRating != null && googleReviewCount != null;
     const providerState: ReputationEnrichment["providerState"] = trustpilotFound || googleFound ? "found" : "no_match";
     const providerReason = providerState === "found" ? "Review data found." : "No matching review profile found.";
@@ -403,6 +443,8 @@ export async function getReputationEnrichment(input: {
         rating: googleRating,
         reviewCount: googleReviewCount
       },
+      trustpilotLookup,
+      trustpilotMatchConfidence,
       publicSignals: {
         redditWarnings: intel.signals.redditWarnings,
         domainAgeDays: intel.signals.domainAgeDays,

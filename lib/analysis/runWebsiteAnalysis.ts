@@ -11,6 +11,7 @@ import { buildIntelScoring, buildTrustSignalsFromEvidence } from "@/lib/checks/s
 import { getReviewSignals } from "@/lib/reviewSignals";
 import { mergeReviewSignalsWithEnrichment } from "@/lib/reviewSignals/mergeEnrichment";
 import { getReputationEnrichment } from "@/lib/outscraper/reputation";
+import { extractCompanyIdentity } from "@/lib/reputation/companyIdentity";
 import { publicIntelConfig } from "@/lib/public-intel/config";
 import { buildScoringIdentityContext } from "@/lib/scoringIdentityContext";
 import { computeRatingConfidence } from "@/lib/scoringConfidence";
@@ -260,12 +261,16 @@ export async function runWebsiteAnalysis(
   const deepScan = scanKind === "full";
   let effectiveReviewSignals = reviewSignals;
   if (publicIntelConfig.enrichmentEnabled) {
+    const companyIdentity = extractCompanyIdentity(websiteSignals?.htmlSnippet ?? null, normalizedDomain);
     const enrichment = await getReputationEnrichment({
       domain: normalizedDomain,
+      registrableDomain: parsedDomain.registrableDomain,
       baseRiskScore: scorePre.finalScore,
       deepScan,
       missingReviewSignals: !(reviewSignals.googleFound || reviewSignals.trustpilotFound),
-      bypassCache: deepScan
+      bypassCache: deepScan,
+      html: websiteSignals?.htmlSnippet ?? null,
+      companyIdentity
     });
     effectiveReviewSignals = mergeReviewSignalsWithEnrichment(reviewSignals, enrichment);
   }

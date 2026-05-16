@@ -19,7 +19,8 @@ describe("mergeReviewSignalsWithEnrichment", () => {
       googleRating: 4.5,
       googleReviewCount: 250,
       trustpilotRating: null,
-      trustpilotReviewCount: null
+      trustpilotReviewCount: null,
+      trustpilotMatchConfidence: "none"
     } as ReputationEnrichment;
 
     const merged = mergeReviewSignalsWithEnrichment(baseSignals, enrichment);
@@ -29,17 +30,33 @@ describe("mergeReviewSignalsWithEnrichment", () => {
     expect(merged.googleReviewCount).toBe(250);
   });
 
-  it("shows Trustpilot when only rating is available", () => {
+  it("shows Trustpilot when only rating is available with medium confidence", () => {
     const enrichment = {
       googleRating: null,
       googleReviewCount: null,
       trustpilotRating: 4.1,
-      trustpilotReviewCount: null
+      trustpilotReviewCount: null,
+      trustpilotMatchConfidence: "medium"
     } as ReputationEnrichment;
 
     const merged = mergeReviewSignalsWithEnrichment(baseSignals, enrichment);
 
     expect(merged.trustpilotFound).toBe(true);
     expect(merged.trustpilotRating).toBe(4.1);
+    expect(merged.trustpilotMatchNote).toContain("moderate confidence");
+  });
+
+  it("does not merge low-confidence Trustpilot enrichment", () => {
+    const enrichment = {
+      googleRating: null,
+      googleReviewCount: null,
+      trustpilotRating: 4.9,
+      trustpilotReviewCount: 50,
+      trustpilotMatchConfidence: "low"
+    } as ReputationEnrichment;
+
+    const merged = mergeReviewSignalsWithEnrichment(baseSignals, enrichment);
+    expect(merged.trustpilotFound).toBe(false);
+    expect(merged.trustpilotRating).toBeUndefined();
   });
 });

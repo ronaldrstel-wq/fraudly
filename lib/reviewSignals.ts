@@ -38,6 +38,10 @@ export type ReviewSignals = {
   publicReviewAvailabilityNotes: string[];
   /** Structured attribution for developer/debug UI buckets (never raw HTTP traces). */
   reviewFetchDebug: ReviewFetchDebugEntry[];
+  /** Outscraper-validated Trustpilot match strength (display + scoring gate). */
+  trustpilotMatchConfidence?: "high" | "medium" | "low" | "none";
+  /** Optional UI note when Trustpilot match is medium confidence. */
+  trustpilotMatchNote?: string;
 };
 
 export function adjustScoreWithReviewSignals(baseScore: number, reviewSignals: ReviewSignals): number {
@@ -49,10 +53,12 @@ export function adjustScoreWithReviewSignals(baseScore: number, reviewSignals: R
     resolveGoogleReviewMatch(reviewSignals).confidence
   );
   if (google) ratings.push(google);
+  const trustpilotMatch = resolveTrustpilotReviewMatch(reviewSignals);
   const trustpilot = reviewRatingForScoring(
     reviewSignals.trustpilotRating ?? null,
     reviewSignals.trustpilotReviewCount ?? null,
-    resolveTrustpilotReviewMatch(reviewSignals).confidence
+    trustpilotMatch.confidence,
+    { enrichmentConfidence: reviewSignals.trustpilotMatchConfidence ?? trustpilotMatch.enrichmentConfidence }
   );
   if (trustpilot) ratings.push(trustpilot);
   for (const item of ratings) {

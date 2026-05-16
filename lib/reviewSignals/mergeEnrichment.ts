@@ -1,10 +1,12 @@
 import type { ReputationEnrichment } from "@/lib/outscraper/reputation";
 import type { ReviewSignals } from "@/lib/reviewSignals";
+import { TRUSTPILOT_MEDIUM_CONFIDENCE_UI_NOTE } from "@/lib/reputation/reviewConfig";
 import {
   resolveGoogleReviewMatch,
   resolveTrustpilotReviewMatch
 } from "@/lib/reputation/reviewMatchConfidence";
 import { sanitizeReviewFields } from "@/lib/reputation/reviewRatingNormalize";
+import type { TrustpilotMatchConfidence } from "@/lib/reputation/trustpilotMatch";
 
 function preferEnrichmentRating(
   current: number | undefined,
@@ -22,9 +24,15 @@ function preferEnrichmentCount(
   return enrichment;
 }
 
+function trustpilotConfidenceFromEnrichment(
+  enrichment: ReputationEnrichment
+): TrustpilotMatchConfidence | "none" {
+  return enrichment.trustpilotMatchConfidence ?? enrichment.trustpilotLookup?.confidence ?? "none";
+}
+
 /**
  * Merges paid/public-intel enrichment into scan-time review signals.
- * Enrichment wins when it supplies displayable rating/count pairs.
+ * Trustpilot values are only merged when Outscraper validation is high or medium.
  */
 export function mergeReviewSignalsWithEnrichment(
   base: ReviewSignals,
@@ -37,33 +45,44 @@ export function mergeReviewSignalsWithEnrichment(
     base.googleReviewCount,
     enrichment.googleReviewCount ?? enrichment.google?.reviewCount
   );
-  const trustpilotRating = preferEnrichmentRating(
-    base.trustpilotRating,
-    enrichment.trustpilotRating ?? enrichment.trustpilot?.rating
-  );
-  const trustpilotReviewCount = preferEnrichmentCount(
-    base.trustpilotReviewCount,
-    enrichment.trustpilotReviewCount ?? enrichment.trustpilot?.reviewCount
-  );
 
-  const googleMatch = resolveGoogleReviewMatch({
+  const tpConfidence = trustpilotConfidenceFromEnrichment(enrichment);
+  const trustpilotAllowed = tpConfidence === "high" || tpConfidence === "medium";
+
+  const trustpilotRating = trustpilotAllowed
+    ? preferEnrichmentRating(base.trustpilotRating, enrichment.trustpilotRating ?? enrichment.trustpilot?.rating)
+    : base.trustpilotRating;
+  const trustpilotReviewCount = trustpilotAllowed
+    ? preferEnrichmentCount(
+        base.trustpilotReviewCount,
+        enrichment.trustpilotReviewCount ?? enrichment.trustpilot?.reviewCount
+      )
+    : base.trustpilotReviewCount;
+
+  const merged: ReviewSignals = {
     ...base,
     googleRating,
-    googleReviewCount
-  });
-  const trustpilotMatch = resolveTrustpilotReviewMatch({
-    ...base,
+    googleReviewCount,
     trustpilotRating,
-    trustpilotReviewCount
-  });
+    trustpilotReviewCount,
+    trustpilotMatchConfidence: trustpilotAllowed ? tpConfidence : base.trustpilotMatchConfidence ?? "none",
+    trustpilotMatchNote:
+      tpConfidence === "medium"
+        ? TRUSTPILOT_MEDIUM_CONFIDENCE_UI_NOTE
+        : base.trustpilotMatchNote
+  };
+
+  const googleMatch = resolveGoogleReviewMatch(merged);
+  const trustpilotMatch = resolveTrustpilotReviewMatch(merged);
 
   const sources = [...base.sources];
-  if (enrichment.source === "public-intel" && !sources.includes("Public reputation enrichment")) {
+  if (!sources.includes("Public reputation enrichment")) {
     sources.push("Public reputation enrichment");
   }
 
   return {
-    ...base,
+    ...merged,
+    sources,
     googleFound: googleMatch.displayable,
     googleRating: googleMatch.displayable ? googleMatch.rating ?? undefined : undefined,
     googleReviewCount: googleMatch.displayable ? googleMatch.reviewCount ?? undefined : undefined,
@@ -78,6 +97,8 @@ export function enrichmentHasDisplayableReviews(enrichment: ReputationEnrichment
   const google = sanitizeReviewFields(enrichment.googleRating, enrichment.googleReviewCount);
   const trustpilot = sanitizeReviewFields(enrichment.trustpilotRating, enrichment.trustpilotReviewCount);
   const googleOk = google.rating != null && google.reviewCount != null;
-  const trustpilotOk = trustpilot.rating != null || trustpilot.reviewCount != null;
+  const tpConf = trustpilotConfidenceFromEnrichment(enrichment);
+  const trustpilotOk =
+    (tpConf === "high" || tpConf === "medium") && (trustpilot.rating != null || trustpilot.reviewCount != null);
   return googleOk || trustpilotOk;
 }

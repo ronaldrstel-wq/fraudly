@@ -52,6 +52,8 @@ export type NormalizedTrustResult = {
     neutralFallback: string;
     /** Optional detail-only note (never a hero warning). */
     optionalUnavailableNote: string | null;
+    /** Shown under Trustpilot when match confidence is medium. */
+    trustpilotMatchNote: string | null;
   };
 
   summary: string;
