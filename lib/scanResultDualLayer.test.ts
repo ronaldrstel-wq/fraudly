@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { assessCriticalThreat } from "@/lib/scanPresentation";
 import {
   humanRecHeadline,
+  humanRecHeadlineTone,
   humanRecKindFromTrustVerdict,
   resolveHumanRecKind,
   resolveHumanRecKindForBasicCheck,
@@ -86,5 +87,11 @@ describe("scanResultDualLayer", () => {
     expect(humanRecHeadline(k)).toMatch(/Looks safe|Trusted/i);
     expect(humanRecKindFromTrustVerdict(73, "safe")).toBe("looksMostlySafe");
     expect(humanRecHeadline(humanRecKindFromTrustVerdict(73, "safe"))).toBe("Looks mostly safe");
+  });
+
+  it("maps headline tone from trust score (teal for 75, emerald for 90)", () => {
+    expect(humanRecHeadlineTone("looksMostlySafe", 75).text).toContain("teal");
+    expect(humanRecHeadlineTone("looksSafe", 90).text).toContain("emerald");
+    expect(humanRecHeadlineTone("beCareful", 59).text).toContain("amber");
   });
 });

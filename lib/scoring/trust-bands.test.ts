@@ -3,6 +3,8 @@ import {
   consumerDisplayBand,
   getOverviewCardChrome,
   getTrustBandFromScore,
+  getTrustColors,
+  getTrustColorsForDisplay,
   getTrustPresentation,
   standardVerdictLabel
 } from "@/lib/scoring/trust-bands";
@@ -64,6 +66,46 @@ describe("trust-bands", () => {
     expect(caution.cardShell).not.toContain("emerald");
     expect(likely.headlineText).not.toEqual(mostly.headlineText);
     expect(mostly.headlineText).not.toEqual(caution.headlineText);
+  });
+
+  it("acceptance: score 75 is visibly teal, score 59 is amber, not grey", () => {
+    const mostly = getOverviewCardChrome(75);
+    const caution = getOverviewCardChrome(59);
+
+    for (const field of [
+      mostly.accentBar,
+      mostly.iconWrap,
+      mostly.icon,
+      mostly.scorePill,
+      mostly.cta,
+      mostly.cardShell,
+      mostly.cardShellHover
+    ] as const) {
+      expect(field).toMatch(/teal/);
+      expect(field).not.toMatch(/slate|gray|grey|emerald|amber/);
+    }
+
+    for (const field of [
+      caution.accentBar,
+      caution.iconWrap,
+      caution.icon,
+      caution.scorePill,
+      caution.cta,
+      caution.cardShell
+    ] as const) {
+      expect(field).toMatch(/amber/);
+      expect(field).not.toMatch(/slate|gray|grey|teal/);
+    }
+
+    expect(getTrustColors(75).metricCard).toContain("teal");
+    expect(getTrustColorsForDisplay(75, "Mostly Safe").headlineText).toContain("teal");
+    expect(getTrustColorsForDisplay(59, "Use Caution").scorePill).toContain("amber");
+  });
+
+  it("uses neutral chrome only when score is missing", () => {
+    const missing = getOverviewCardChrome(null);
+    expect(missing.cardShell).toContain("slate");
+    expect(getOverviewCardChrome(75).cardShell).not.toContain("slate-200/80 bg-white");
   });
 
   it("maps legacy three-band consumerDisplayBand", () => {

@@ -30,7 +30,7 @@ import { ResultSupportBox } from "@/components/ResultSupportBox";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { shouldShowTrustGauge } from "@/lib/trustGaugeDisplay";
 import { trustLevelFromScore, trustMeterColors, type TrustLevel } from "@/lib/trustSystem";
-import { getTrustPresentation } from "@/lib/scoring/trust-bands";
+import { getTrustColorsForDisplay, getTrustPresentation } from "@/lib/scoring/trust-bands";
 import { EvidenceSignalsCard } from "@/components/EvidenceSignalsCard";
 import type { HumanRecKind } from "@/lib/scanResultDualLayer";
 import type { ScamCheckResult } from "@/types/scam";
@@ -447,12 +447,16 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
         ? displayTrust
         : null;
 
+  const resultCardColors = getTrustColorsForDisplay(
+    heroTrustScore,
+    primaryVerdict as ConsumerVerdictLabel
+  );
+  const resultCardShell = threat.active
+    ? "border border-rose-300/80 bg-white shadow-elevated"
+    : `${resultCardColors.border} ${resultCardColors.surfaceGradient}`;
+
   return (
-    <div
-      className={`fraudly-motion w-full rounded-2xl bg-white p-4 shadow-subtle sm:p-5 md:p-6 ${
-        threat.active ? "border border-rose-300/80 shadow-elevated" : "border border-slate-200/80"
-      }`}
-    >
+    <div className={`fraudly-motion w-full rounded-2xl p-4 shadow-subtle sm:p-5 md:p-6 ${resultCardShell}`}>
       <div className="space-y-4 md:space-y-5">
         {threat.active ? (
           <ThreatBanner variant="critical" title={criticalThreatBannerTitle(threat.kind)} body={EN_MESSAGES.threatOverride.bannerBody} />

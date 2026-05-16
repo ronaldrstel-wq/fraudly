@@ -4,6 +4,7 @@ import { criticalThreatStatusHeadline } from "@/lib/scanPresentation";
 import { clampScore } from "@/lib/clampScore";
 import { getTrustDescription } from "@/lib/trustScoreUi";
 import { getTrustBandFromScore } from "@/lib/scoring/trust-bands";
+import { headlineToneFromScore } from "@/lib/scoring/trust-bands";
 import { trustLevelFromScore, trustPresentationFromScore } from "@/lib/trustSystem";
 import type { TrustLevel } from "@/lib/trustSystem";
 import type { ScamVerdict } from "@/lib/trustSystem";
@@ -247,28 +248,37 @@ export function shortExplainForBasic(verdict: ScamVerdict, riskScore: number): s
   return getTrustDescription(clampScore(100 - riskScore));
 }
 
-export function humanRecHeadlineTone(kind: HumanRecKind): { text: string; icon: string } {
+function humanRecKindRepresentativeScore(kind: HumanRecKind): number {
   switch (kind) {
     case "trusted":
-      return { text: "text-emerald-800", icon: "text-emerald-600" };
     case "looksSafe":
+      return 90;
     case "looksMostlySafe":
-      return { text: "text-teal-900", icon: "text-teal-600" };
-    case "risky":
-      return { text: "text-orange-950", icon: "text-orange-600" };
-    case "notEnoughInfo":
-      return { text: "text-slate-700", icon: "text-slate-500" };
+      return 77;
     case "beCareful":
-      return { text: "text-amber-900", icon: "text-amber-600" };
+    case "notEnoughInfo":
+      return 60;
+    case "risky":
+      return 40;
     case "highRisk":
-      return { text: "text-rose-800", icon: "text-rose-600" };
     case "avoidWebsite":
     case "dangerousWebsite":
-      return { text: "text-red-950", icon: "text-red-600" };
+      return 15;
     case "invalidDomain":
     case "unreachable":
-      return { text: "text-slate-700", icon: "text-slate-500" };
     default:
-      return { text: "text-slate-800", icon: "text-slate-500" };
+      return 50;
   }
+}
+
+/** Semantic headline/icon colors — prefers live trust score when provided. */
+export function humanRecHeadlineTone(
+  kind: HumanRecKind,
+  trustScore?: number | null
+): { text: string; icon: string } {
+  const score =
+    typeof trustScore === "number" && Number.isFinite(trustScore)
+      ? Math.max(0, Math.min(100, Math.round(trustScore)))
+      : humanRecKindRepresentativeScore(kind);
+  return headlineToneFromScore(score);
 }

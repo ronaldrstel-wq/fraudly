@@ -43,6 +43,8 @@ export type TrustBandColors = {
   cardShellHover: string;
   metaPanel: string;
   mobileDivider: string;
+  metricCard: string;
+  metricScoreText: string;
 };
 
 export type OverviewCardChrome = {
@@ -110,36 +112,41 @@ const LIKELY_SAFE_COLORS: TrustBandColors = {
     "relative min-h-0 rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 via-white to-white p-4 shadow-subtle transition-all duration-200",
   cardShellHover: "hover:border-emerald-300/90 hover:shadow-elevated hover:from-emerald-50/95",
   metaPanel: "rounded-xl border border-emerald-200/50 bg-gradient-to-b from-emerald-50/70 to-white/90 px-2.5 py-2",
-  mobileDivider: "border-emerald-200/55"
+  mobileDivider: "border-emerald-200/55",
+  metricCard: "rounded-xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/80 to-white p-4 shadow-sm",
+  metricScoreText: "text-emerald-900"
 };
 
 const MOSTLY_SAFE_COLORS: TrustBandColors = {
-  border: "border-teal-200/80",
-  borderLeft: "before:bg-teal-400/80",
-  icon: "text-teal-600",
-  iconWrap: "border-teal-200/70 bg-teal-50/90 shadow-[0_6px_18px_rgba(20,184,166,0.14)]",
+  border: "border-teal-300/90",
+  borderLeft: "before:bg-teal-500/85",
+  icon: "text-teal-700",
+  iconWrap:
+    "border-teal-300/85 bg-teal-100/95 text-teal-700 shadow-[0_6px_18px_rgba(20,184,166,0.18)]",
   scorePill:
-    "border-teal-200/80 bg-gradient-to-b from-teal-50 to-white text-teal-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_14px_rgba(20,184,166,0.10)]",
-  scorePillDim: "text-teal-700/80",
-  surfaceBg: "bg-teal-50/35",
-  surfaceGradient: "border-teal-200/80 bg-gradient-to-b from-teal-50/35 to-white",
-  headlineText: "text-teal-900",
-  meterTrack: "bg-teal-100",
-  meterFill: "bg-gradient-to-r from-teal-400 via-teal-500 to-cyan-500",
-  meterMarker: "text-teal-900",
-  progressBar: "bg-teal-500",
-  softBg: "bg-teal-50/90",
-  softBorder: "border-teal-200/80",
-  toneText: "text-teal-900",
-  cta: "text-teal-700 decoration-teal-500/35 hover:text-teal-800",
-  surfaceGlow: "from-teal-500/10 via-teal-400/0 to-transparent",
-  accentBar: "before:bg-teal-400/80",
-  articleBg: "border border-teal-200/70 bg-teal-50/55",
+    "border-teal-300/90 bg-gradient-to-b from-teal-100 to-teal-50/80 text-teal-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_14px_rgba(20,184,166,0.14)]",
+  scorePillDim: "text-teal-800/85",
+  surfaceBg: "bg-teal-50/55",
+  surfaceGradient: "border-teal-300/90 bg-gradient-to-b from-teal-100/65 to-white",
+  headlineText: "text-teal-950",
+  meterTrack: "bg-teal-200/90",
+  meterFill: "bg-gradient-to-r from-teal-500 via-teal-500 to-cyan-500",
+  meterMarker: "text-teal-950",
+  progressBar: "bg-teal-600",
+  softBg: "bg-teal-100/90",
+  softBorder: "border-teal-300/90",
+  toneText: "text-teal-950",
+  cta: "text-teal-800 decoration-teal-600/40 hover:text-teal-950",
+  surfaceGlow: "from-teal-500/14 via-teal-400/5 to-transparent",
+  accentBar: "before:bg-teal-500/85",
+  articleBg: "border border-teal-300/85 bg-teal-100/60",
   cardShell:
-    "relative min-h-0 rounded-2xl border border-teal-200/80 bg-gradient-to-br from-teal-50/85 via-white to-white p-4 shadow-subtle transition-all duration-200",
-  cardShellHover: "hover:border-teal-300/90 hover:shadow-elevated hover:from-teal-50/95",
-  metaPanel: "rounded-xl border border-teal-200/50 bg-gradient-to-b from-teal-50/65 to-white/90 px-2.5 py-2",
-  mobileDivider: "border-teal-200/55"
+    "relative min-h-0 rounded-2xl border border-teal-300/90 bg-gradient-to-br from-teal-100/80 via-teal-50/45 to-white p-4 shadow-subtle transition-all duration-200",
+  cardShellHover: "hover:border-teal-400/90 hover:shadow-elevated hover:from-teal-100/90",
+  metaPanel: "rounded-xl border border-teal-300/70 bg-gradient-to-b from-teal-100/75 to-white/90 px-2.5 py-2",
+  mobileDivider: "border-teal-300/70",
+  metricCard: "rounded-xl border border-teal-300/85 bg-gradient-to-br from-teal-100/75 to-white p-4 shadow-sm",
+  metricScoreText: "text-teal-950"
 };
 
 const CAUTION_COLORS: TrustBandColors = {
@@ -168,7 +175,9 @@ const CAUTION_COLORS: TrustBandColors = {
     "relative min-h-0 rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/85 via-white to-white p-4 shadow-subtle transition-all duration-200",
   cardShellHover: "hover:border-amber-300/90 hover:shadow-elevated hover:from-amber-50/95",
   metaPanel: "rounded-xl border border-amber-200/50 bg-gradient-to-b from-amber-50/65 to-white/90 px-2.5 py-2",
-  mobileDivider: "border-amber-200/55"
+  mobileDivider: "border-amber-200/55",
+  metricCard: "rounded-xl border border-amber-200/80 bg-gradient-to-br from-amber-50/80 to-white p-4 shadow-sm",
+  metricScoreText: "text-amber-950"
 };
 
 const SUSPICIOUS_COLORS: TrustBandColors = {
@@ -197,7 +206,9 @@ const SUSPICIOUS_COLORS: TrustBandColors = {
     "relative min-h-0 rounded-2xl border border-orange-200/80 bg-gradient-to-br from-orange-50/85 via-white to-white p-4 shadow-subtle transition-all duration-200",
   cardShellHover: "hover:border-orange-300/90 hover:shadow-elevated hover:from-orange-50/95",
   metaPanel: "rounded-xl border border-orange-200/50 bg-gradient-to-b from-orange-50/65 to-white/90 px-2.5 py-2",
-  mobileDivider: "border-orange-200/55"
+  mobileDivider: "border-orange-200/55",
+  metricCard: "rounded-xl border border-orange-200/80 bg-gradient-to-br from-orange-50/80 to-white p-4 shadow-sm",
+  metricScoreText: "text-orange-950"
 };
 
 const DANGER_COLORS: TrustBandColors = {
@@ -226,7 +237,27 @@ const DANGER_COLORS: TrustBandColors = {
     "relative min-h-0 rounded-2xl border border-rose-200/80 bg-gradient-to-br from-rose-50/85 via-white to-white p-4 shadow-subtle transition-all duration-200",
   cardShellHover: "hover:border-rose-300/90 hover:shadow-elevated hover:from-rose-50/95",
   metaPanel: "rounded-xl border border-rose-200/50 bg-gradient-to-b from-rose-50/65 to-white/90 px-2.5 py-2",
-  mobileDivider: "border-rose-200/55"
+  mobileDivider: "border-rose-200/55",
+  metricCard: "rounded-xl border border-rose-200/80 bg-gradient-to-br from-rose-50/80 to-white p-4 shadow-sm",
+  metricScoreText: "text-rose-900"
+};
+
+/** Neutral chrome only when trust score is unknown — never for scored bands. */
+const MISSING_SCORE_CHROME: OverviewCardChrome = {
+  tone: "caution",
+  accentBar: "before:bg-slate-300/80",
+  surfaceGlow: "from-slate-400/5 to-transparent",
+  iconWrap: "border-slate-200/80 bg-slate-50/95",
+  icon: "text-slate-500",
+  scorePill: "border-slate-200/80 bg-slate-50 text-slate-800",
+  scorePillDim: "text-slate-500",
+  cta: "text-slate-700 decoration-slate-400/35 hover:text-slate-900",
+  headlineText: "text-slate-900",
+  cardShell:
+    "relative min-h-0 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-subtle transition-all duration-200",
+  cardShellHover: "hover:border-slate-300/90 hover:shadow-elevated",
+  metaPanel: "rounded-xl border border-slate-200/60 bg-slate-50/80 px-2.5 py-2",
+  mobileDivider: "border-slate-200/60"
 };
 
 const TRUST_BANDS: readonly TrustBandDefinition[] = [
@@ -375,9 +406,25 @@ export function verdictHeadlineClass(verdict: ConsumerVerdictLabel): string {
   return getTrustPresentation(verdictToRepresentativeScore(parsed)).colors.headlineText;
 }
 
-/** Premium semantic chrome for latest-checks, recent searches, pulse list cards. */
-export function getOverviewCardChrome(trustScore: number): OverviewCardChrome {
-  const { tone, colors } = getTrustPresentation(trustScore);
+/** Full semantic palette for a trust score (0–100). */
+export function getTrustColors(trustScore: number): TrustBandColors {
+  return getTrustPresentation(trustScore).colors;
+}
+
+/** Prefer live score; fall back to verdict representative score when score is absent. */
+export function getTrustColorsForDisplay(
+  trustScore: number | null | undefined,
+  verdict?: ConsumerVerdictLabel | string | null
+): TrustBandColors {
+  if (typeof trustScore === "number" && Number.isFinite(trustScore)) {
+    return getTrustColors(clampScore(trustScore));
+  }
+  const parsed =
+    typeof verdict === "string" ? parseConsumerVerdictLabel(verdict) : (verdict as ConsumerVerdictLabel | null);
+  return getTrustColors(parsed ? verdictToRepresentativeScore(parsed) : 50);
+}
+
+function overviewChromeFromColors(tone: SemanticTone, colors: TrustBandColors): OverviewCardChrome {
   return {
     tone,
     accentBar: colors.accentBar,
@@ -395,8 +442,25 @@ export function getOverviewCardChrome(trustScore: number): OverviewCardChrome {
   };
 }
 
+/** Premium semantic chrome for latest-checks, recent searches, pulse list cards. */
+export function getOverviewCardChrome(trustScore: number | null | undefined): OverviewCardChrome {
+  if (trustScore == null || !Number.isFinite(trustScore)) {
+    return MISSING_SCORE_CHROME;
+  }
+  const presentation = getTrustPresentation(clampScore(trustScore));
+  return overviewChromeFromColors(presentation.tone, presentation.colors);
+}
+
+/** Alias — same chrome helper for any trust card surface. */
+export const getTrustCardChrome = getOverviewCardChrome;
+
 export function headlineToneFromSemantic(tone: SemanticTone): { text: string; icon: string } {
-  const colors = getTrustPresentation(toneToRepresentativeScore(tone)).colors;
+  const colors = getTrustColors(toneToRepresentativeScore(tone));
+  return { text: colors.headlineText, icon: colors.icon };
+}
+
+export function headlineToneFromScore(trustScore: number): { text: string; icon: string } {
+  const colors = getTrustColors(trustScore);
   return { text: colors.headlineText, icon: colors.icon };
 }
 

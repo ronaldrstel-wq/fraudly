@@ -1,5 +1,9 @@
 import { EN_MESSAGES } from "@/lib/messages.en";
-import { parseConsumerVerdictLabel, verdictHeadlineClass, verdictSurfaceClass } from "@/lib/scoring/trust-bands";
+import {
+  getTrustColorsForDisplay,
+  parseConsumerVerdictLabel,
+  type ConsumerVerdictLabel
+} from "@/lib/scoring/trust-bands";
 
 type TrustHighlightRow = {
   label: string;
@@ -18,18 +22,13 @@ type VerdictHeroProps = {
   trustHighlights?: TrustHighlightRow[];
 };
 
-function highlightValueClass(bucket: TrustHighlightRow["bucket"]): string {
-  return bucket === "positive" ? "text-emerald-900" : "text-amber-950";
+function highlightValueClass(bucket: TrustHighlightRow["bucket"], colors: ReturnType<typeof getTrustColorsForDisplay>): string {
+  return bucket === "positive" ? colors.headlineText : colors.toneText;
 }
 
-function verdictToneClass(verdict: string): string {
-  const parsed = parseConsumerVerdictLabel(verdict);
-  return verdictHeadlineClass(parsed ?? "Use Caution");
-}
-
-function verdictSurface(verdict: string): string {
-  const parsed = parseConsumerVerdictLabel(verdict);
-  return verdictSurfaceClass(parsed ?? "Use Caution");
+function heroColors(verdict: string, trustScore: number | null) {
+  const parsed = parseConsumerVerdictLabel(verdict) as ConsumerVerdictLabel | null;
+  return getTrustColorsForDisplay(trustScore, parsed ?? verdict);
 }
 
 export function VerdictHero({
@@ -43,10 +42,11 @@ export function VerdictHero({
   trustHighlights = []
 }: VerdictHeroProps) {
   const previewReasons = topReasons.filter(Boolean).slice(0, 3);
+  const colors = heroColors(verdict, trustScore);
 
   return (
     <header
-      className={`rounded-2xl border px-5 py-5 shadow-sm sm:px-6 sm:py-6 ${verdictSurface(verdict)}`}
+      className={`rounded-2xl border px-5 py-5 shadow-sm sm:px-6 sm:py-6 ${colors.surfaceGradient}`}
       aria-labelledby="fraudly-verdict-heading"
     >
       <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
@@ -54,7 +54,7 @@ export function VerdictHero({
       </p>
       <h2
         id="fraudly-verdict-heading"
-        className={`mt-2 text-balance text-4xl font-bold tracking-tight sm:text-[2.65rem] sm:leading-[1.05] ${verdictToneClass(verdict)}`}
+        className={`mt-2 text-balance text-4xl font-bold tracking-tight sm:text-[2.65rem] sm:leading-[1.05] ${colors.headlineText}`}
       >
         {verdict}
       </h2>
@@ -62,8 +62,12 @@ export function VerdictHero({
       {typeof trustScore === "number" ? (
         <p className="mt-3 text-base text-slate-600">
           Trust score:{" "}
-          <span className="text-lg font-semibold tabular-nums text-slate-800">{trustScore}</span>
-          <span className="text-slate-400"> / 100</span>
+          <span
+            className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-lg font-semibold tabular-nums ${colors.scorePill}`}
+          >
+            {trustScore}
+            <span className={`font-medium ${colors.scorePillDim}`}> / 100</span>
+          </span>
         </p>
       ) : null}
 
@@ -81,9 +85,14 @@ export function VerdictHero({
       {trustHighlights.length > 0 ? (
         <dl className="mt-3 grid max-w-xl gap-2.5 sm:grid-cols-2">
           {trustHighlights.map((row) => (
-            <div key={row.label} className="rounded-lg border border-slate-200/80 bg-white/60 px-3 py-2">
+            <div
+              key={row.label}
+              className={`rounded-lg border px-3 py-2 ${colors.softBorder} ${colors.softBg}`}
+            >
               <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{row.label}</dt>
-              <dd className={`mt-0.5 text-sm font-medium leading-snug ${highlightValueClass(row.bucket)}`}>{row.value}</dd>
+              <dd className={`mt-0.5 text-sm font-medium leading-snug ${highlightValueClass(row.bucket, colors)}`}>
+                {row.value}
+              </dd>
             </div>
           ))}
         </dl>
@@ -95,7 +104,7 @@ export function VerdictHero({
         <ul className="mt-4 max-w-2xl space-y-1.5 text-sm leading-relaxed text-slate-700">
           {previewReasons.map((line) => (
             <li key={line.slice(0, 48)} className="flex gap-2">
-              <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-slate-400" aria-hidden />
+              <span className={`mt-2 h-1 w-1 shrink-0 rounded-full ${colors.progressBar}`} aria-hidden />
               <span>{line}</span>
             </li>
           ))}

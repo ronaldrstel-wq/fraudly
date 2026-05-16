@@ -10,6 +10,7 @@ import {
   shortExplainForBasic
 } from "@/lib/scanResultDualLayer";
 import { ResultSupportBox } from "@/components/ResultSupportBox";
+import { getTrustColors } from "@/lib/scoring/trust-bands";
 import { trustPresentationFromScore } from "@/lib/trustSystem";
 
 function toSafeHttpUrl(input: string | null | undefined): string | null {
@@ -26,15 +27,18 @@ function toSafeHttpUrl(input: string | null | undefined): string | null {
 export function BasicResultCard({ result }: { result: BasicCheckResult }) {
   const trustStyle = Math.max(0, Math.min(100, Math.round(100 - result.score)));
   const trust = trustPresentationFromScore(trustStyle);
+  const trustColors = getTrustColors(trustStyle);
   const humanKind = resolveHumanRecKindForBasicCheck(result.verdict, result.score);
   const humanHeadline = humanRecHeadline(humanKind);
-  const humanTone = humanRecHeadlineTone(humanKind);
+  const humanTone = humanRecHeadlineTone(humanKind, trustStyle);
   const shortEx = shortExplainForBasic(result.verdict, result.score);
   const trustedVisitUrl = toSafeHttpUrl(`https://${result.domain}`);
   const showVisitWebsiteCta = trustStyle >= 85 && trust.level === "trusted" && Boolean(trustedVisitUrl);
 
   return (
-    <article className="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/60 sm:p-7">
+    <article
+      className={`w-full rounded-2xl border p-6 shadow-md sm:p-7 ${trustColors.border} ${trustColors.surfaceGradient}`}
+    >
       <div className="flex flex-col gap-4">
         <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">{EN_MESSAGES.basicResult.heading}</h2>
       </div>
@@ -47,7 +51,10 @@ export function BasicResultCard({ result }: { result: BasicCheckResult }) {
 
       <header className="mt-6 space-y-3">
         <div className="flex flex-wrap items-center gap-3">
-          <span className={`select-none text-3xl ${humanTone.icon}`} aria-hidden>
+          <span
+            className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border text-3xl ${trustColors.iconWrap} ${humanTone.icon}`}
+            aria-hidden
+          >
             {humanRecGlyph(humanKind)}
           </span>
           <h3 className={`text-balance text-2xl font-bold tracking-tight sm:text-3xl ${humanTone.text}`}>{humanHeadline}</h3>
@@ -56,20 +63,24 @@ export function BasicResultCard({ result }: { result: BasicCheckResult }) {
       </header>
 
       <section
-        className="mt-5 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3"
+        className={`mt-5 rounded-xl border px-4 py-3 ${trustColors.softBorder} ${trustColors.softBg}`}
         aria-label={`${EN_MESSAGES.scanResult.technicalStatusHeading}: ${trust.label}`}
       >
         <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
           {EN_MESSAGES.scanResult.technicalStatusHeading}
         </p>
-        <p className="mt-1 text-sm font-semibold text-slate-900">{trust.label}</p>
+        <p className={`mt-1 text-sm font-semibold ${trustColors.headlineText}`}>{trust.label}</p>
       </section>
 
       <section className="mt-5 border-t border-slate-100 pt-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{EN_MESSAGES.scanResult.trustScoreLabel}</p>
-        <p className="mt-1 text-lg font-medium tabular-nums text-slate-600">
-          {trustStyle}
-          <span className="text-slate-400"> / 100</span>
+        <p className="mt-2">
+          <span
+            className={`inline-flex items-center rounded-xl border px-2.5 py-1 text-lg font-semibold tabular-nums ${trustColors.scorePill}`}
+          >
+            {trustStyle}
+            <span className={`font-medium ${trustColors.scorePillDim}`}> / 100</span>
+          </span>
         </p>
         <p className="mt-1 text-xs text-slate-500">{EN_MESSAGES.scanResult.trustScoreExplainer}</p>
       </section>

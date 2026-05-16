@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
-import { getFraudlyPulseStats, type PulseKpi, type PulseRankItem, type PulseTrendBucket } from "@/lib/pulse/getFraudlyPulseStats";
+import { getTrustCardChrome } from "@/lib/scoring/trust-bands";
+import { getFraudlyPulseStats, type PulseHighRiskFeedItem, type PulseKpi, type PulseRankItem, type PulseTrendBucket } from "@/lib/pulse/getFraudlyPulseStats";
 import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo-description";
 import { buildPageMetadata } from "@/lib/seo-metadata";
 
@@ -99,6 +100,38 @@ function RankedList({ title, items, empty }: { title: string; items: PulseRankIt
         ))}
       </ul>
     </section>
+  );
+}
+
+const PULSE_ROW_ACCENT = "before:absolute before:inset-y-2 before:left-0 before:w-1 before:rounded-r";
+
+function PulseDetectionRow({ row }: { row: PulseHighRiskFeedItem }) {
+  const chrome = getTrustCardChrome(row.score);
+  return (
+    <li
+      className={`relative pl-3 ${PULSE_ROW_ACCENT} ${chrome.accentBar} ${chrome.cardShell} ${chrome.cardShellHover}`}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className={`break-all text-sm font-semibold ${chrome.headlineText}`}>{row.domain}</p>
+          <p className="mt-1 text-xs text-slate-600">{row.reason}</p>
+        </div>
+        <div className="text-right">
+          <p
+            className={`inline-flex rounded-lg border px-2 py-1 text-xs font-semibold tabular-nums ${chrome.scorePill}`}
+          >
+            {row.score}
+            <span className={`font-medium ${chrome.scorePillDim}`}> / 100</span>
+          </p>
+          <p className="mt-1 text-[11px] text-slate-500">{row.checkedAt.toLocaleString("en-GB")}</p>
+        </div>
+      </div>
+      <div className="mt-2">
+        <Link href={row.href} className={`text-xs font-semibold underline underline-offset-2 ${chrome.cta}`}>
+          View result →
+        </Link>
+      </div>
+    </li>
   );
 }
 
@@ -290,25 +323,7 @@ export default async function FraudlyPulsePage() {
           ) : (
             <ul className="mt-4 space-y-3">
               {stats.recentHighRiskDetections.map((row) => (
-                <li key={row.id} className="rounded-xl border border-slate-200/70 bg-slate-50/70 p-3">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="break-all text-sm font-semibold text-slate-900">{row.domain}</p>
-                      <p className="mt-1 text-xs text-slate-600">{row.reason}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-800">
-                        Trust score {row.score}/100
-                      </p>
-                      <p className="mt-1 text-[11px] text-slate-500">{row.checkedAt.toLocaleString("en-GB")}</p>
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <Link href={row.href} className="text-xs font-semibold text-blue-700 underline underline-offset-2">
-                      View result →
-                    </Link>
-                  </div>
-                </li>
+                <PulseDetectionRow key={row.id} row={row} />
               ))}
             </ul>
           )}
