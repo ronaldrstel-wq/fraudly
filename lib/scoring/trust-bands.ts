@@ -118,35 +118,38 @@ const LIKELY_SAFE_COLORS: TrustBandColors = {
 };
 
 const MOSTLY_SAFE_COLORS: TrustBandColors = {
-  border: "border-teal-300/90",
-  borderLeft: "before:bg-teal-500/85",
-  icon: "text-teal-700",
+  border: "border-teal-400/95",
+  borderLeft: "before:bg-teal-500",
+  icon: "text-teal-600",
   iconWrap:
-    "border-teal-300/85 bg-teal-100/95 text-teal-700 shadow-[0_6px_18px_rgba(20,184,166,0.18)]",
+    "border-teal-400/90 bg-gradient-to-br from-teal-50 to-cyan-50 text-teal-600 shadow-[0_6px_20px_rgba(20,184,166,0.22)] ring-1 ring-teal-400/25",
   scorePill:
-    "border-teal-300/90 bg-gradient-to-b from-teal-100 to-teal-50/80 text-teal-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_14px_rgba(20,184,166,0.14)]",
-  scorePillDim: "text-teal-800/85",
-  surfaceBg: "bg-teal-50/55",
-  surfaceGradient: "border-teal-300/90 bg-gradient-to-b from-teal-100/65 to-white",
-  headlineText: "text-teal-950",
-  meterTrack: "bg-teal-200/90",
+    "border-teal-400/95 bg-gradient-to-b from-teal-50 via-cyan-50/90 to-white text-teal-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_4px_16px_rgba(6,182,212,0.16)]",
+  scorePillDim: "text-teal-700",
+  surfaceBg: "bg-teal-50/80",
+  surfaceGradient: "border-teal-400/90 bg-gradient-to-b from-teal-50/95 via-cyan-50/55 to-white",
+  headlineText: "text-teal-800",
+  meterTrack: "bg-teal-100",
   meterFill: "bg-gradient-to-r from-teal-500 via-teal-500 to-cyan-500",
-  meterMarker: "text-teal-950",
-  progressBar: "bg-teal-600",
-  softBg: "bg-teal-100/90",
-  softBorder: "border-teal-300/90",
-  toneText: "text-teal-950",
-  cta: "text-teal-800 decoration-teal-600/40 hover:text-teal-950",
-  surfaceGlow: "from-teal-500/14 via-teal-400/5 to-transparent",
-  accentBar: "before:bg-teal-500/85",
-  articleBg: "border border-teal-300/85 bg-teal-100/60",
+  meterMarker: "text-teal-800",
+  progressBar: "bg-teal-500",
+  softBg: "bg-teal-50/95",
+  softBorder: "border-teal-400/90",
+  toneText: "text-teal-800",
+  cta: "text-teal-700 decoration-teal-500/55 hover:text-cyan-700",
+  surfaceGlow: "from-teal-500/18 via-cyan-400/10 to-transparent",
+  accentBar: "before:bg-teal-500",
+  articleBg: "border border-teal-400/85 bg-gradient-to-br from-teal-50/90 via-cyan-50/50 to-white",
   cardShell:
-    "relative min-h-0 rounded-2xl border border-teal-300/90 bg-gradient-to-br from-teal-100/80 via-teal-50/45 to-white p-4 shadow-subtle transition-all duration-200",
-  cardShellHover: "hover:border-teal-400/90 hover:shadow-elevated hover:from-teal-100/90",
-  metaPanel: "rounded-xl border border-teal-300/70 bg-gradient-to-b from-teal-100/75 to-white/90 px-2.5 py-2",
-  mobileDivider: "border-teal-300/70",
-  metricCard: "rounded-xl border border-teal-300/85 bg-gradient-to-br from-teal-100/75 to-white p-4 shadow-sm",
-  metricScoreText: "text-teal-950"
+    "relative min-h-0 rounded-2xl border border-teal-400/90 bg-gradient-to-br from-teal-50/95 via-cyan-50/70 to-white p-4 shadow-[0_8px_28px_rgba(20,184,166,0.1)] transition-all duration-200",
+  cardShellHover:
+    "hover:border-teal-500 hover:shadow-[0_12px_32px_rgba(6,182,212,0.14)] hover:from-teal-50 hover:via-cyan-50/85",
+  metaPanel:
+    "rounded-xl border border-teal-400/75 bg-gradient-to-b from-teal-50/95 via-cyan-50/55 to-white/95 px-2.5 py-2",
+  mobileDivider: "border-teal-400/80",
+  metricCard:
+    "rounded-xl border border-teal-400/85 bg-gradient-to-b from-teal-50/95 via-cyan-50/60 to-white p-4 shadow-sm",
+  metricScoreText: "text-teal-800"
 };
 
 const CAUTION_COLORS: TrustBandColors = {
