@@ -21,10 +21,10 @@ function TrustScoreBadge({
   return (
     <span
       aria-label={`${EN_MESSAGES.scanResult.trustScoreLabel}: ${score} out of 100`}
-      className={`inline-flex shrink-0 items-center justify-center rounded-xl px-2 py-0.5 tabular-nums transition-colors duration-200 ${
+      className={`inline-flex shrink-0 items-center justify-center rounded-xl border px-2 py-0.5 tabular-nums transition-colors duration-200 ${
         inMetaPanel
-          ? "h-8 w-[108px] border-2 md:h-8 md:w-[108px]"
-          : "h-8 w-[108px] border text-[12px] font-semibold md:h-7 md:w-[100px] md:text-[11px]"
+          ? "h-8 w-[108px] text-[12px] md:h-7 md:w-[100px] md:text-[11px]"
+          : "h-8 w-[108px] text-[12px] font-semibold md:h-7 md:w-[100px] md:text-[11px]"
       } ${pillCls}`}
     >
       {score}
@@ -97,13 +97,15 @@ function MobileMetaStripe(props: {
 
   return (
     <div
-      className={`flex min-w-0 flex-col gap-2.5 transition-colors duration-200 md:hidden ${chrome.mobileMetaPanel} ${chrome.metaPanelHover}`}
+      className={`flex min-w-0 flex-col gap-2.5 md:hidden ${chrome.mobileMetaPanel}`}
     >
       <div className="flex min-w-0 items-center justify-between gap-3">
         <time className="text-[12px] font-medium tabular-nums text-slate-500" dateTime={timeIso} title={timeTitle}>
           {timeRelative}
         </time>
-        <TrustScoreBadge score={score} chrome={chrome} inMetaPanel />
+        <div className={`rounded-lg px-0.5 py-0.5 transition-colors duration-200 ${chrome.metaScoreWash} ${chrome.metaScoreWashHover}`}>
+          <TrustScoreBadge score={score} chrome={chrome} inMetaPanel />
+        </div>
       </div>
       {children}
     </div>
@@ -146,7 +148,7 @@ function MetaViewResultCta({
   decorative?: boolean;
 }) {
   const label = viewLabel.replace("→", "").trim();
-  const cls = `${chrome.metaCtaButton} ${chrome.metaCtaButtonHover}`;
+  const cls = `${chrome.metaCta} ${chrome.metaCtaHover}`;
   const content = (
     <>
       {label}
@@ -182,15 +184,15 @@ function DesktopMetaStripe(props: {
   const { timeIso, timeRelative, timeTitle, score, chrome, children } = props;
   return (
     <div
-      className={`hidden w-[min(11rem,100%)] min-w-[9.25rem] shrink-0 flex-col items-stretch gap-2 text-right transition-colors duration-200 md:flex ${chrome.metaPanel} ${chrome.metaPanelHover}`}
+      className="hidden w-[min(11rem,100%)] min-w-[9.25rem] shrink-0 flex-col items-end gap-2.5 text-right md:flex"
     >
       <time className="text-[11px] font-medium tabular-nums text-slate-500" dateTime={timeIso} title={timeTitle}>
         {timeRelative}
       </time>
-      <div className="flex justify-end">
+      <div className={`rounded-lg px-0.5 py-0.5 transition-colors duration-200 ${chrome.metaScoreWash} ${chrome.metaScoreWashHover}`}>
         <TrustScoreBadge score={score} chrome={chrome} inMetaPanel />
       </div>
-      {children}
+      <div className="flex justify-end">{children}</div>
     </div>
   );
 }
@@ -230,7 +232,7 @@ export function CompactOverviewFeedLinkCard(props: CompactOverviewFeedBaseProps 
           domainFullTitle={domainFullTitle}
         />
         <DesktopMetaStripe timeIso={timeIso} timeRelative={timeRelative} timeTitle={timeTitle} score={m.trustScore} chrome={chrome}>
-          <div className="flex min-h-[2.5rem] items-end">{ctaPresentation}</div>
+          <div className="flex min-h-[2.5rem] items-end justify-end">{ctaPresentation}</div>
         </DesktopMetaStripe>
         <MobileMetaStripe timeIso={timeIso} timeRelative={timeRelative} timeTitle={timeTitle} score={m.trustScore} chrome={chrome}>
           <div className="flex min-h-11 items-center">{ctaPresentation}</div>
