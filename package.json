@@ -13,6 +13,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "seo:headers": "node scripts/check-seo-headers.mjs",
     "recalc:scans": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/recalculate-recent-scans.ts",
     "perf:build": "npx next build",
     "perf:start": "PERF_BYPASS_AUTH=1 npx next start -p 3010 -H 127.0.0.1",

@@ -3,9 +3,11 @@ import { NextResponse } from "next/server";
 import type { NextFetchEvent, NextRequest } from "next/server";
 import {
   CANONICAL_PRODUCTION_HOST,
-  isProductionPublicSiteHost,
+  isPrivateNoindexPath,
   isWwwFraudlyProductionHost,
-  normalizedRequestHost
+  normalizedRequestHost,
+  shouldSetPreviewNoindexHeader,
+  shouldSetProductionAllHeader
 } from "@/lib/seo-host";
 
 const isRecentSearchesRoute = createRouteMatcher(["/recent-searches(.*)"]);
@@ -23,28 +25,63 @@ const authMiddleware = clerkMiddleware(async (auth, req) => {
   }
 });
 
-function applyPreviewNoindex(response: Response, request: NextRequest): Response {
-  const host = normalizedRequestHost(request.headers.get("x-forwarded-host"), request.nextUrl.hostname);
-  if (!isProductionPublicSiteHost(host)) {
+function crawlerHostInput(request: NextRequest) {
+  return {
+    forwardedHost: request.headers.get("x-forwarded-host"),
+    hostHeader: request.headers.get("host"),
+    urlHostname: request.nextUrl.hostname
+  };
+}
+
+/** HTTP crawler directives — separate from HTML `<meta name="robots">`. */
+function applyCrawlerHeaders(response: Response, request: NextRequest): Response {
+  const hostInput = crawlerHostInput(request);
+  const pathname = request.nextUrl.pathname;
+
+  if (isPrivateNoindexPath(pathname)) {
     response.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return response;
   }
+
+  if (shouldSetPreviewNoindexHeader(hostInput)) {
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return response;
+  }
+
+  if (shouldSetProductionAllHeader(hostInput)) {
+    response.headers.set("X-Robots-Tag", "all");
+  }
+
   return response;
 }
 
 type ClerkMwResult = ReturnType<typeof authMiddleware>;
 
-function withPreviewNoindex(result: ClerkMwResult, request: NextRequest): ClerkMwResult {
+function withCrawlerHeaders(result: ClerkMwResult, request: NextRequest): ClerkMwResult {
   if (result == null) {
-    return applyPreviewNoindex(NextResponse.next(), request);
+    return applyCrawlerHeaders(NextResponse.next(), request);
   }
   if (result instanceof Promise) {
-    return result.then((res) => withPreviewNoindex(res, request));
+    return result.then((res) =>
+      res instanceof Response ? applyCrawlerHeaders(res, request) : applyCrawlerHeaders(NextResponse.next(), request)
+    );
   }
-  return applyPreviewNoindex(result, request);
+  if (result instanceof Response) {
+    return applyCrawlerHeaders(result, request);
+  }
+  return applyCrawlerHeaders(NextResponse.next(), request);
 }
 
 export default function middleware(request: NextRequest, event: NextFetchEvent) {
-  const host = normalizedRequestHost(request.headers.get("x-forwarded-host"), request.nextUrl.hostname);
+  if (request.nextUrl.pathname === "/latest") {
+    const redirect = NextResponse.redirect(new URL("/latest-checks", request.url), 308);
+    return applyCrawlerHeaders(redirect, request);
+  }
+
+  const host = normalizedRequestHost(
+    request.headers.get("x-forwarded-host") ?? request.headers.get("host"),
+    request.nextUrl.hostname
+  );
   if (isWwwFraudlyProductionHost(host)) {
     const url = request.nextUrl.clone();
     url.hostname = CANONICAL_PRODUCTION_HOST;
@@ -54,9 +91,9 @@ export default function middleware(request: NextRequest, event: NextFetchEvent) 
   }
 
   if (process.env.PERF_BYPASS_AUTH === "1") {
-    return applyPreviewNoindex(NextResponse.next(), request);
+    return applyCrawlerHeaders(NextResponse.next(), request);
   }
-  return withPreviewNoindex(authMiddleware(request, event), request);
+  return withCrawlerHeaders(authMiddleware(request, event), request);
 }
 
 export const config = {

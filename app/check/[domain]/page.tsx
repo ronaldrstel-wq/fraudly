@@ -10,7 +10,7 @@ import {
   warnMetaDescriptionIfNeeded
 } from "@/lib/seo-description";
 import { OG_IMAGE } from "@/lib/seo-metadata";
-import { SITE_URL, unindexedFollowRobots } from "@/lib/seo";
+import { publicRobots, SITE_URL, unindexedFollowRobots } from "@/lib/seo";
 import { Navbar } from "@/components/Navbar";
 import { ResultCard } from "@/components/ResultCard";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -65,7 +65,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         description,
         images: [OG_IMAGE.url]
       },
-      robots: unindexedFollowRobots
+      robots: publicRobots
     };
   } catch {
     const fallback = buildWebsiteCheckMetaDescription(domain, null);
@@ -91,7 +91,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         description: fallback,
         images: [OG_IMAGE.url]
       },
-      robots: unindexedFollowRobots
+      robots: publicRobots
     };
   }
 }

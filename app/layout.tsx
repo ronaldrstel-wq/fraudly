@@ -11,7 +11,6 @@ import {
   defaultKeywords,
   defaultOgDescription,
   defaultTitle,
-  publicRobots,
   SITE_URL
 } from "@/lib/seo";
 import "./globals.css";
@@ -57,7 +56,6 @@ export const metadata: Metadata = {
     description: defaultOgDescription,
     images: [OG_IMAGE.url]
   },
-  robots: publicRobots,
   verification: {
     google: "yvX4fwn6V2j7VJX3YXVjh6qnuCuXndcSN2UXBhhve64"
   },
