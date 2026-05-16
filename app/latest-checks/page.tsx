@@ -13,6 +13,7 @@ import { EN_MESSAGES } from "@/lib/messages.en";
 import { SEO_DESCRIPTION, SEO_TITLE, warnMetaDescriptionIfNeeded } from "@/lib/seo-description";
 import { publicRobots, SITE_URL } from "@/lib/seo";
 import { buildOverviewFromPublicCheck } from "@/lib/overviewCardPresentation";
+import { logDisplayScoreDebug } from "@/lib/scoring/displayScore";
 
 export const revalidate = 120;
 
@@ -134,6 +135,15 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
             <ol className="space-y-3 md:space-y-4">
               {rows.map((row) => {
                 const m = buildOverviewFromPublicCheck(row);
+                logDisplayScoreDebug({
+                  domain: row.checkedValue,
+                  scanId: row.id,
+                  storedRiskScore: row.riskScoreSnapshot,
+                  storedTrustScore: m.trustScore,
+                  displayedTrustScore: m.trustScore,
+                  displayedLabel: m.technicalLabel,
+                  source: "latest-checks/page"
+                });
                 const iso = row.lastSeenAt.toISOString();
                 const primaryLine = overviewFeedPrimaryLine(row.checkedValue);
                 return (

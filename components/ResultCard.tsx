@@ -26,12 +26,24 @@ import { EN_MESSAGES } from "@/lib/messages.en";
 import { shouldShowTrustGauge } from "@/lib/trustGaugeDisplay";
 import { trustLevelFromScore, type TrustLevel } from "@/lib/trustSystem";
 import { EvidenceSignalsCard } from "@/components/EvidenceSignalsCard";
+import type { HumanRecKind } from "@/lib/scanResultDualLayer";
 import type { ScamCheckResult } from "@/types/scam";
 import type { ConfidenceLevel, SiteStatus } from "@/types/site-outcome";
 import type { ReputationEnrichment } from "@/lib/outscraper/reputation";
 
+/** When set, consumer score/headline match `/latest-checks` snapshot for this domain. */
+export type ResultCardAlignedDisplay = {
+  trustScore: number;
+  label: string;
+  humanKind: HumanRecKind;
+  humanHeadline: string;
+  scanId: string;
+  lastSeenAtIso: string;
+};
+
 interface ResultCardProps {
   result: ScamCheckResult;
+  alignedDisplay?: ResultCardAlignedDisplay;
 }
 
 function toneForTrustSignal(signal: Pick<TrustSignal, "type">): string {
@@ -236,27 +248,32 @@ function isConfirmedIntelTrustSignal(signal: TrustSignal): boolean {
   return /safe browsing|openphish|urlhaus|politie|\bpolice\b/.test(blob);
 }
 
-export function ResultCard({ result }: ResultCardProps) {
+export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
   const threat = assessCriticalThreat(result);
-  const displayTrust = displayTrustScoreForResult(result);
+  const liveDisplayTrust = displayTrustScoreForResult(result);
+  const displayTrust = alignedDisplay?.trustScore ?? liveDisplayTrust;
   const hasUnavailableSite = result.availability?.status === "unavailable" || result.siteStatus === "inactive";
   const hasLimitedInspection = result.availability?.status === "limited_inspection";
-  const showGauge = shouldShowTrustGauge(result) && typeof displayTrust === "number" && !hasUnavailableSite;
+  const showGauge =
+    shouldShowTrustGauge(result) && typeof displayTrust === "number" && !hasUnavailableSite;
   const showNonexistentHeadline = result.omitTrustScoreGauge === true;
 
   const trustLevel = trustLevelFromScore(displayTrust ?? 0);
-  const humanKind = resolveHumanRecKind({
-    threatActive: threat.active,
-    threatKind: threat.kind,
-    siteStatus: result.siteStatus,
-    trustLevel,
-    hasActualRiskIndicators:
-      result.scoreResult.signals.some((signal) => signal.evidenceTier === "risk_indicator" && signal.impact > 0) || threat.active
-  });
-  const humanHeadline = humanRecHeadline(humanKind);
+  const humanKind =
+    alignedDisplay?.humanKind ??
+    resolveHumanRecKind({
+      threatActive: threat.active,
+      threatKind: threat.kind,
+      siteStatus: result.siteStatus,
+      trustLevel,
+      hasActualRiskIndicators:
+        result.scoreResult.signals.some((signal) => signal.evidenceTier === "risk_indicator" && signal.impact > 0) ||
+        threat.active
+    });
+  const humanHeadline = alignedDisplay?.humanHeadline ?? humanRecHeadline(humanKind);
   const humanTone = humanRecHeadlineTone(humanKind);
   const activeTrustLabel = humanHeadline;
-  const techStatus = technicalStatusText({
+  const techStatus = alignedDisplay?.label ?? technicalStatusText({
     threatActive: threat.active,
     threatKind: threat.kind,
     displayTrust,

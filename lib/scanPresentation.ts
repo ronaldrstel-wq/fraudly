@@ -1,7 +1,8 @@
 import type { ExternalChecksResult } from "@/lib/checks/types";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import type { ScamCheckResult } from "@/types/scam";
-import { clampScore, trustScoreFromRisk } from "@/lib/trustSystem";
+import { trustScoreFromRisk } from "@/lib/scoring/displayScore";
+import { clampScore } from "@/lib/trustSystem";
 import { collectMaliciousSignals, isConfirmedMalicious, type MaliciousSignals } from "@/lib/siteOutcome";
 
 /** Max trust % when Tier‑1 threat intelligence confirms a match (min risk 80). */

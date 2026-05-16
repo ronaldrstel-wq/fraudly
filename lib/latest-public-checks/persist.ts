@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { classifyWebsiteCheckForPublication } from "@/lib/latest-public-checks/filter";
 import { publicStatusLabelForVerdict } from "@/lib/latest-public-checks/status-label";
+import { normalizeRiskScore } from "@/lib/scoring/displayScore";
 import type { ScamCheckResult } from "@/types/scam";
 
 /** Fire-and-forget–safe caller should catch errors; never attaches user/session ids. */
@@ -14,10 +15,8 @@ export async function upsertLatestPublicCheckFromCompletedScan(options: {
 
   const domain = options.result.domain;
   const publicResultPath = `/check/${encodeURIComponent(domain)}`;
-  const risk = Math.round(
-    Number.isFinite(options.result.score)
-      ? Math.min(100, Math.max(0, options.result.score))
-      : 35
+  const risk = normalizeRiskScore(
+    Number.isFinite(options.result.score) ? options.result.score : 35
   );
   const statusLabel = publicStatusLabelForVerdict(options.result.verdict);
 

@@ -32,6 +32,6 @@ describe("overviewCardPresentation", () => {
     const m = buildOverviewFromTrustAndVerdict(82, "safe");
     expect(m.isCritical).toBe(false);
     expect(m.headline).toBe("Looks safe");
-    expect(m.technicalLabel).toBe("Looks safe");
+    expect(m.technicalLabel).toBe("Trusted");
   });
 });

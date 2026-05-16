@@ -7,13 +7,17 @@ import {
   humanRecHeadlineTone,
   humanRecKindFromTrustVerdict
 } from "@/lib/scanResultDualLayer";
-import { getTrustLabel } from "@/lib/trustScoreUi";
+import {
+  consumerDisplayLabel,
+  publicDisplayScoreFromRiskAndVerdict,
+  trustScoreFromRisk
+} from "@/lib/scoring/displayScore";
 import { clampScore } from "@/lib/clampScore";
 import type { ScamVerdict } from "@/lib/trustSystem";
 
-/** Trust score (0–100) from stored risk snapshot. */
+/** Trust score (0–100) from stored risk snapshot — delegates to {@link trustScoreFromRisk}. */
 export function trustScoreFromRiskSnapshot(riskScoreSnapshot: number): number {
-  return clampScore(100 - clampScore(Math.round(riskScoreSnapshot)));
+  return trustScoreFromRisk(riskScoreSnapshot);
 }
 
 export function isCriticalOverviewKind(kind: HumanRecKind): boolean {
@@ -82,25 +86,26 @@ export type OverviewCardModel = {
 };
 
 export function buildOverviewFromTrustAndVerdict(trustScore: number, verdict: ScamVerdict | null): OverviewCardModel {
-  const humanKind = humanRecKindFromTrustVerdict(trustScore, verdict);
+  const normalizedTrust = clampScore(trustScore);
+  const humanKind = humanRecKindFromTrustVerdict(normalizedTrust, verdict);
   const isCritical = isCriticalOverviewKind(humanKind);
   return {
     humanKind,
     headline: humanRecHeadline(humanKind),
     glyph: humanRecGlyph(humanKind),
     tone: humanRecHeadlineTone(humanKind),
-    technicalLabel: getTrustLabel(trustScore),
+    technicalLabel: consumerDisplayLabel(normalizedTrust),
     oneLiner: overviewOneLiner(humanKind),
-    trustScore: clampScore(trustScore),
+    trustScore: normalizedTrust,
     isCritical,
     articleClass: overviewCardArticleClass(humanKind)
   };
 }
 
-/** `/latest-checks` row: risk snapshot + persisted snapshot label → same UX model as full result (technical band from trust score). */
+/** `/latest-checks` row: risk snapshot + persisted snapshot label → same UX model as full result. */
 export function buildOverviewFromPublicCheck(row: { riskScoreSnapshot: number; statusLabel: string }): OverviewCardModel {
-  const trustScore = trustScoreFromRiskSnapshot(row.riskScoreSnapshot);
   const verdict = verdictFromPublicSnapshotLabel(row.statusLabel);
+  const { trustScore } = publicDisplayScoreFromRiskAndVerdict(row.riskScoreSnapshot, verdict);
   return buildOverviewFromTrustAndVerdict(trustScore, verdict);
 }
 

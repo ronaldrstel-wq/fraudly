@@ -16,7 +16,11 @@ import { ResultCard } from "@/components/ResultCard";
 import { SiteFooter } from "@/components/SiteFooter";
 import { DomainCheckJsonLd } from "@/components/seo/DomainCheckJsonLd";
 import { EN_MESSAGES } from "@/lib/messages.en";
+import { getLatestPublicCheckSnapshotForDomain } from "@/lib/latest-public-checks/snapshot";
+import { buildOverviewFromTrustAndVerdict } from "@/lib/overviewCardPresentation";
 import { displayTrustScoreForResult } from "@/lib/scanPresentation";
+import { logDisplayScoreDebug } from "@/lib/scoring/displayScore";
+import type { HumanRecKind } from "@/lib/scanResultDualLayer";
 
 export const revalidate = 3600;
 
@@ -39,8 +43,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const canonical = `${SITE_URL}${path}`;
 
   try {
-    const result = await getCachedWebsiteAnalysis(domain);
-    const trustScore = displayTrustScoreForResult(result);
+    const [result, publicSnapshot] = await Promise.all([
+      getCachedWebsiteAnalysis(domain),
+      getLatestPublicCheckSnapshotForDomain(domain)
+    ]);
+    const liveTrust = displayTrustScoreForResult(result);
+    const trustScore = publicSnapshot?.display.trustScore ?? liveTrust;
+    if (publicSnapshot) {
+      logDisplayScoreDebug({
+        domain,
+        scanId: publicSnapshot.id,
+        storedRiskScore: publicSnapshot.display.riskScore,
+        storedTrustScore: publicSnapshot.display.trustScore,
+        displayedTrustScore: trustScore,
+        displayedLabel: publicSnapshot.display.label,
+        source: "check/[domain]/generateMetadata"
+      });
+    }
     const title = SEO_TITLE.checkResult(domain);
     const description = buildWebsiteCheckMetaDescription(domain, trustScore, result.reviewSummary);
     warnMetaDescriptionIfNeeded(path, description);
@@ -103,13 +122,63 @@ export default async function DomainCheckPage({ params }: PageProps) {
 
   const path = `/check/${encodeURIComponent(domain)}`;
   let result;
+  let publicSnapshot;
   try {
-    result = await getCachedWebsiteAnalysis(domain);
+    [result, publicSnapshot] = await Promise.all([
+      getCachedWebsiteAnalysis(domain),
+      getLatestPublicCheckSnapshotForDomain(domain)
+    ]);
   } catch {
     notFound();
   }
 
-  const trustScore = displayTrustScoreForResult(result);
+  const liveTrust = displayTrustScoreForResult(result);
+  const trustScore = publicSnapshot?.display.trustScore ?? liveTrust;
+
+  let alignedDisplay:
+    | {
+        trustScore: number;
+        label: string;
+        humanKind: HumanRecKind;
+        humanHeadline: string;
+        scanId: string;
+        lastSeenAtIso: string;
+      }
+    | undefined;
+
+  if (publicSnapshot) {
+    const overview = buildOverviewFromTrustAndVerdict(
+      publicSnapshot.display.trustScore,
+      publicSnapshot.display.verdict
+    );
+    alignedDisplay = {
+      trustScore: overview.trustScore,
+      label: overview.technicalLabel,
+      humanKind: overview.humanKind,
+      humanHeadline: overview.headline,
+      scanId: publicSnapshot.id,
+      lastSeenAtIso: publicSnapshot.lastSeenAt.toISOString()
+    };
+    logDisplayScoreDebug({
+      domain,
+      scanId: publicSnapshot.id,
+      storedRiskScore: publicSnapshot.display.riskScore,
+      storedTrustScore: publicSnapshot.display.trustScore,
+      displayedTrustScore: overview.trustScore,
+      displayedLabel: overview.technicalLabel,
+      source: "check/[domain]/page"
+    });
+  } else if (process.env.NODE_ENV === "development" && liveTrust !== null) {
+    logDisplayScoreDebug({
+      domain,
+      scanId: null,
+      storedRiskScore: result.score,
+      storedTrustScore: liveTrust,
+      displayedTrustScore: liveTrust,
+      displayedLabel: "(live analysis, no public snapshot)",
+      source: "check/[domain]/page"
+    });
+  }
   const sslShort = result.ssl.httpsEnabled
     ? result.ssl.validCertificate
       ? "HTTPS available — encrypts transit, does not prove legitimacy"
@@ -187,7 +256,7 @@ export default async function DomainCheckPage({ params }: PageProps) {
         </dl>
 
         <div className="mt-8 max-w-4xl">
-          <ResultCard result={result} />
+          <ResultCard result={result} alignedDisplay={alignedDisplay} />
         </div>
 
         <section className="mx-auto mt-10 flex max-w-3xl flex-col gap-3 sm:flex-row sm:flex-wrap" aria-label="Next steps">
