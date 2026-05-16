@@ -32,6 +32,74 @@ body {
   animation: resultIn 280ms var(--fraudly-ease);
 }
 
+.home-results-reveal {
+  animation: resultIn 360ms var(--fraudly-ease);
+}
+
+/* Homepage scan card: idle → scanning → complete morph */
+.scan-search-card__viewport {
+  isolation: isolate;
+}
+
+.scan-search-card__panel {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: translateY(6px) scale(0.992);
+  pointer-events: none;
+  transition:
+    opacity 320ms var(--fraudly-ease),
+    transform 320ms var(--fraudly-ease);
+}
+
+.scan-search-card__panel--active {
+  position: relative;
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.scan-search-card--scanning {
+  box-shadow:
+    0 24px 48px -28px rgba(79, 70, 229, 0.35),
+    0 12px 28px -20px rgba(14, 165, 233, 0.22);
+}
+
+.scan-search-card--complete {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.scan-search-card__bar {
+  transition: width 420ms cubic-bezier(0.33, 1, 0.32, 1);
+}
+
+.scan-search-card--scanning .scan-search-card__bar {
+  animation: scanBarPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes scanBarPulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scan-search-card__panel,
+  .scan-search-card__bar,
+  .scan-search-card--scanning .scan-search-card__bar,
+  .home-results-reveal,
+  .result-in {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
 @layer components {
   /**
    * Fraudly mini design system — motion, focus, buttons, surfaces.

@@ -2,10 +2,12 @@ import type { ReactNode } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { WebsiteScanProgress } from "@/components/WebsiteScanProgress";
 import { EN_MESSAGES } from "@/lib/messages.en";
+import type { HomeSearchCardState } from "@/lib/scan/homeScanProgress";
 
-const URLInput = dynamic(() => import("@/components/URLInput").then((m) => ({ default: m.URLInput })), {
+const WebsiteScanSearchCard = dynamic(
+  () => import("@/components/home/WebsiteScanSearchCard").then((m) => ({ default: m.WebsiteScanSearchCard })),
+  {
   loading: () => (
     <div
       className="mx-auto w-full max-w-6xl rounded-3xl border border-slate-200/70 bg-white p-5 shadow-lg shadow-slate-200/60 sm:p-6"
@@ -18,7 +20,8 @@ const URLInput = dynamic(() => import("@/components/URLInput").then((m) => ({ de
       </div>
     </div>
   )
-});
+  }
+);
 
 const home = EN_MESSAGES.home;
 
@@ -69,11 +72,12 @@ interface HeroProps {
   url: string;
   onUrlChange: (value: string) => void;
   onSubmit: () => void;
-  loading: boolean;
+  searchState: HomeSearchCardState;
   disabled: boolean;
   scanProgress: number;
   scanStatus: string;
   scanFailed?: boolean;
+  checkedLabel?: string | null;
   isAdmin?: boolean;
   authGate?: ReactNode;
   extraBelowInput?: ReactNode;
@@ -83,11 +87,12 @@ export function Hero({
   url,
   onUrlChange,
   onSubmit,
-  loading,
+  searchState,
   disabled,
   scanProgress,
   scanStatus,
   scanFailed = false,
+  checkedLabel = null,
   isAdmin = false,
   authGate,
   extraBelowInput
@@ -182,16 +187,17 @@ export function Hero({
         </div>
 
         <div className="mx-auto mt-10 w-full md:mt-11">
-          <URLInput
+          <WebsiteScanSearchCard
+            state={searchState}
             value={url}
             onChange={onUrlChange}
             onSubmit={onSubmit}
             disabled={disabled}
-            loading={loading}
-            helperText={EN_MESSAGES.check.urlInputHelper}
             primaryCtaLabel={primaryCta}
-            loadingLabel={EN_MESSAGES.scanProgress.phaseStart}
-            variant="hero"
+            scanProgress={scanProgress}
+            scanStatus={scanStatus}
+            scanFailed={scanFailed}
+            checkedLabel={checkedLabel}
           />
 
           <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-slate-500 sm:text-sm">
@@ -222,11 +228,6 @@ export function Hero({
           </div>
           {extraBelowInput ? <div className="mt-3.5 max-w-none text-left">{extraBelowInput}</div> : null}
           {authGate ? <div className="mt-3.5 sm:mt-4">{authGate}</div> : null}
-          {loading ? (
-            <div className="mt-6">
-              <WebsiteScanProgress progress={scanProgress} status={scanStatus} failed={scanFailed} />
-            </div>
-          ) : null}
         </div>
 
         <div className="mx-auto mt-8 max-w-6xl">

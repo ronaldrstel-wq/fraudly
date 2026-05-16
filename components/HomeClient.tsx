@@ -18,22 +18,18 @@ import {
 import { parseFlexibleWebsiteInput } from "@/lib/check-input/normalizeWebsiteInput";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { GENERIC_CHECK_ERROR } from "@/lib/messages";
+import {
+  animateHomeScanProgressTo100,
+  HOME_SCAN_SIM_INTERVAL_MS,
+  homeScanStatusMessage,
+  nextHomeScanSimulatedProgress,
+  type HomeSearchCardState
+} from "@/lib/scan/homeScanProgress";
 import { normalizeTrustResult } from "@/lib/trust/normalizeTrustResult";
 import { isCheckApiResponse, type ScamCheckResult } from "@/types/scam";
 
-const SIMULATED_PROGRESS_MAX = 89;
-const SCAN_PROGRESS_START = 5;
-const RESULT_DISPLAY_HOLD_MS = 450;
-const PROGRESS_SIM_INTERVAL_MS = 440;
-
-function scanPhaseMessage(progress: number): string {
-  if (progress >= 100) return EN_MESSAGES.scanProgress.complete;
-  if (progress >= 78) return EN_MESSAGES.scanProgress.phaseFinalizing;
-  if (progress >= 55) return EN_MESSAGES.scanProgress.phaseScoring;
-  if (progress >= 32) return EN_MESSAGES.scanProgress.phaseSignals;
-  if (progress >= 15) return EN_MESSAGES.scanProgress.phaseSecurity;
-  return EN_MESSAGES.scanProgress.phaseStart;
-}
+const SCAN_PROGRESS_START = 4;
+const RESULT_DISPLAY_HOLD_MS = 520;
 
 async function yieldOneUiFrame() {
   await new Promise((resolve) => setTimeout(resolve, 50));
@@ -66,9 +62,12 @@ export function HomeClient({ children }: { children?: ReactNode }) {
   const [scanProgress, setScanProgress] = useState(0);
   const [scanStatus, setScanStatus] = useState("");
   const [scanFailed, setScanFailed] = useState(false);
+  const [checkedLabel, setCheckedLabel] = useState<string | null>(null);
+  const [scanPhaseComplete, setScanPhaseComplete] = useState(false);
   const inFlight = useRef(false);
   const mountedRef = useRef(true);
   const progressSimRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const scanProgressRef = useRef(0);
   const clearProgressSimulation = () => {
     if (progressSimRef.current) {
       clearInterval(progressSimRef.current);
@@ -76,11 +75,13 @@ export function HomeClient({ children }: { children?: ReactNode }) {
     }
   };
 
-  const disabled = useMemo(() => url.trim().length === 0 || loading, [url, loading]);
+  const disabled = useMemo(() => url.trim().length === 0 && !loading, [url, loading]);
+  const searchState: HomeSearchCardState = loading ? "scanning" : scanPhaseComplete ? "complete" : "idle";
   const normalizedTrust = useMemo(
     () => (result ? normalizeTrustResult(result, { route: "HomeClient" }) : null),
     [result]
   );
+  const displayCheckedLabel = result?.domain ?? checkedLabel;
 
   useEffect(() => {
     setHasUsedFreeCheck(hasUsedAnonymousFreeCheck());
@@ -98,11 +99,13 @@ export function HomeClient({ children }: { children?: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!loading || scanFailed) return;
-    setScanStatus((prev) => {
-      const next = scanPhaseMessage(scanProgress);
-      return prev === next ? prev : next;
-    });
+    scanProgressRef.current = scanProgress;
+  }, [scanProgress]);
+
+  useEffect(() => {
+    if (!loading) return;
+    const next = homeScanStatusMessage(scanProgress, scanFailed);
+    setScanStatus((prev) => (prev === next ? prev : next));
   }, [loading, scanFailed, scanProgress]);
 
   async function runCheck() {
@@ -135,22 +138,25 @@ export function HomeClient({ children }: { children?: ReactNode }) {
     setError(null);
     setShowSignupPrompt(false);
     setScanFailed(false);
+    setScanPhaseComplete(false);
 
     inFlight.current = true;
     setLoading(true);
     setScanProgress(SCAN_PROGRESS_START);
-    setScanStatus(EN_MESSAGES.scanProgress.phaseStart);
+    scanProgressRef.current = SCAN_PROGRESS_START;
+    setScanStatus(homeScanStatusMessage(SCAN_PROGRESS_START, false));
+    setCheckedLabel(parsedInput.url.hostname);
 
     await yieldOneUiFrame();
 
     progressSimRef.current = setInterval(() => {
       if (!mountedRef.current) return;
       setScanProgress((p) => {
-        if (p >= SIMULATED_PROGRESS_MAX) return p;
-        const bump = 2 + Math.floor(Math.random() * 7);
-        return Math.min(SIMULATED_PROGRESS_MAX, p + bump);
+        const next = nextHomeScanSimulatedProgress(p);
+        scanProgressRef.current = next;
+        return next;
       });
-    }, PROGRESS_SIM_INTERVAL_MS);
+    }, HOME_SCAN_SIM_INTERVAL_MS);
 
     try {
       if (isSignedIn) {
@@ -183,6 +189,9 @@ export function HomeClient({ children }: { children?: ReactNode }) {
       const failStrip = (stripMessage: string) => {
         setScanFailed(true);
         setScanStatus(stripMessage);
+        setScanProgress(0);
+        scanProgressRef.current = 0;
+        setScanPhaseComplete(false);
         setLoading(false);
       };
 
@@ -271,8 +280,12 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         return;
       }
 
-      setScanProgress(100);
+      await animateHomeScanProgressTo100((value) => {
+        setScanProgress(value);
+        scanProgressRef.current = value;
+      }, scanProgressRef.current);
       setScanStatus(EN_MESSAGES.scanProgress.complete);
+      setScanPhaseComplete(true);
       await new Promise((resolve) => setTimeout(resolve, RESULT_DISPLAY_HOLD_MS));
 
       if (!mountedRef.current) return;
@@ -288,6 +301,9 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         trackAnonymousCheckCompleted(payload.result.score);
       }
       setLoading(false);
+      window.setTimeout(() => {
+        if (mountedRef.current) setScanPhaseComplete(false);
+      }, 900);
     } catch (err) {
       clearProgressSimulation();
       setResult(null);
@@ -298,6 +314,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
       setError(process.env.NODE_ENV === "production" ? GENERIC_CHECK_ERROR : `Network error: ${message}`);
       setScanFailed(true);
       setScanStatus(EN_MESSAGES.scanProgress.failedNetwork);
+      setScanPhaseComplete(false);
       setLoading(false);
       trackCheckFailed("network");
     } finally {
@@ -350,11 +367,12 @@ export function HomeClient({ children }: { children?: ReactNode }) {
           url={url}
           onUrlChange={setUrl}
           onSubmit={handleCheck}
-          loading={loading}
+          searchState={searchState}
           disabled={disabled}
           scanProgress={scanProgress}
           scanStatus={scanStatus}
           scanFailed={scanFailed}
+          checkedLabel={displayCheckedLabel}
           isAdmin={isAdmin}
         />
 
@@ -369,7 +387,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
 
         {result && (
           <>
-            <section className="result-in mt-7 grid gap-5 sm:mt-9 lg:grid-cols-[1.7fr_1fr]">
+            <section className="home-results-reveal mt-7 grid gap-5 sm:mt-9 lg:grid-cols-[1.7fr_1fr]">
               <div className="min-w-0 space-y-3">
                 <ResultCard result={result} normalizedTrust={normalizedTrust ?? undefined} />
                 <p className="text-center text-sm text-slate-600 md:text-left">
@@ -386,11 +404,11 @@ export function HomeClient({ children }: { children?: ReactNode }) {
                 <FeatureCards stacked />
               </div>
             </section>
-            <div className="result-in mx-auto mt-5 max-w-3xl">
+            <div className="home-results-reveal mx-auto mt-5 max-w-3xl">
               <PostScanAppPromo />
             </div>
             {!isSignedIn && (
-              <div className="result-in mx-auto mt-5 max-w-3xl rounded-2xl border border-slate-200/85 bg-slate-50 px-4 py-3 text-sm text-slate-700 shadow-subtle">
+              <div className="home-results-reveal mx-auto mt-5 max-w-3xl rounded-2xl border border-slate-200/85 bg-slate-50 px-4 py-3 text-sm text-slate-700 shadow-subtle">
                 {EN_MESSAGES.freemium.afterResultBanner}
               </div>
             )}
