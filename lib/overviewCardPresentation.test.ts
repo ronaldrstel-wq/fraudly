@@ -5,11 +5,14 @@ import {
 } from "@/lib/latest-public-checks/status-label";
 import {
   buildOverviewFromPublicCheck,
+  buildOverviewFromRecentSearch,
   buildOverviewFromTrustAndVerdict,
   humanRecKindFromScamAlertType,
   isCriticalOverviewKind,
+  resolveRecentSearchTrustScore,
   trustScoreFromRiskSnapshot
 } from "@/lib/overviewCardPresentation";
+import { getOverviewCardChrome } from "@/lib/scoring/trust-bands";
 
 describe("overviewCardPresentation", () => {
   it("infers scam snapshot and maps to critical consumer kind", () => {
@@ -40,5 +43,23 @@ describe("overviewCardPresentation", () => {
     const m = buildOverviewFromTrustAndVerdict(75, "safe");
     expect(m.verdictLabel).toBe("Mostly Safe");
     expect(m.presentationTone).toBe("mostly-safe");
+  });
+
+  it("recent search overview uses trust-band chrome from stored snap", () => {
+    const teal = buildOverviewFromRecentSearch({ trustScoreSnap: 75, verdictSnap: "safe" });
+    expect(teal.trustScore).toBe(75);
+    expect(teal.verdictLabel).toBe("Mostly Safe");
+    expect(getOverviewCardChrome(teal.trustScore).cardShell).toContain("teal");
+
+    const amber = buildOverviewFromRecentSearch({ trustScoreSnap: 59, verdictSnap: "suspicious" });
+    expect(getOverviewCardChrome(amber.trustScore).cardShell).toContain("amber");
+
+    const green = buildOverviewFromRecentSearch({ trustScoreSnap: 88, verdictSnap: "safe" });
+    expect(getOverviewCardChrome(green.trustScore).cardShell).toContain("emerald");
+  });
+
+  it("resolveRecentSearchTrustScore prefers snap over legacy verdict", () => {
+    expect(resolveRecentSearchTrustScore({ trustScoreSnap: 75, verdictSnap: "scam" })).toBe(75);
+    expect(resolveRecentSearchTrustScore({ trustScoreSnap: null, verdictSnap: "safe" })).toBe(90);
   });
 });

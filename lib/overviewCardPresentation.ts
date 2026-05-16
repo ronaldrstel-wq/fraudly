@@ -87,7 +87,7 @@ export function buildOverviewFromTrustAndVerdict(trustScore: number, verdict: Sc
     verdictLabel,
     headline: isCritical ? "High Risk" : verdictLabel,
     glyph: humanRecGlyph(humanKind),
-    tone: humanRecHeadlineTone(humanKind),
+    tone: humanRecHeadlineTone(humanKind, normalizedTrust),
     presentationTone,
     oneLiner: overviewOneLiner(humanKind),
     trustScore: normalizedTrust,
@@ -113,6 +113,30 @@ export function buildOverviewFromNormalized(normalized: NormalizedTrustResult): 
     verdictLabel: normalized.verdict,
     headline: base.isCritical ? "High Risk" : normalized.verdict
   };
+}
+
+/** Trust score for a stored recent-search row (snap is authoritative). */
+export function resolveRecentSearchTrustScore(input: {
+  trustScoreSnap: number | null;
+  verdictSnap: string | null;
+}): number {
+  if (input.trustScoreSnap != null && Number.isFinite(input.trustScoreSnap)) {
+    return clampScore(input.trustScoreSnap);
+  }
+  const verdict = input.verdictSnap as ScamVerdict | null;
+  if (verdict === "scam") return 15;
+  if (verdict === "suspicious") return 55;
+  if (verdict === "safe") return 90;
+  return FALLBACK_OVERVIEW_TRUST;
+}
+
+/** Recent searches list — same overview model + colors as latest-checks. */
+export function buildOverviewFromRecentSearch(input: {
+  trustScoreSnap: number | null;
+  verdictSnap: string | null;
+}): OverviewCardModel {
+  const trustScore = resolveRecentSearchTrustScore(input);
+  return buildOverviewFromTrustAndVerdict(trustScore, input.verdictSnap as ScamVerdict | null);
 }
 
 export function buildOverviewFromPublicCheck(row: {

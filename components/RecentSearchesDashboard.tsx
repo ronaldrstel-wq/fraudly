@@ -3,21 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { CompactOverviewFeedArticleCard } from "@/components/overview/CompactOverviewFeedCard";
+import { RecentSearchCard } from "@/components/recent/RecentSearchCard";
 import { CLEAR_ALL_CONFIRM_BODY } from "@/lib/recent-search/constants";
 import type { RecentSearchPublic } from "@/lib/recent-search/service";
-import { formatPublicCheckRelativeTime } from "@/lib/latest-public-checks/relative-time";
 import { EN_MESSAGES } from "@/lib/messages.en";
-import { overviewFeedPrimaryLine } from "@/lib/overviewFeedDisplay";
-import { buildOverviewFromTrustAndVerdict } from "@/lib/overviewCardPresentation";
-import type { ScamVerdict } from "@/lib/trustSystem";
-
-function fallbackScoreFromVerdict(verdict: string | null): number {
-  if (verdict === "safe") return 85;
-  if (verdict === "suspicious") return 55;
-  if (verdict === "scam") return 25;
-  return 50;
-}
 
 export function RecentSearchesDashboard({ initialItems }: { initialItems: RecentSearchPublic[] }) {
   const router = useRouter();
@@ -111,48 +100,13 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
           </p>
         </div>
       ) : (
-        <div className="mt-8 space-y-3 md:space-y-4">
-          {rows.map((row) => {
-            const entity =
-              EN_MESSAGES.recentSearches.entityLabels[row.entityType as keyof typeof EN_MESSAGES.recentSearches.entityLabels] ??
-              row.entityType;
-            const busyRow = pendingId === row.id;
-            const displayScore = row.trustScoreSnap ?? fallbackScoreFromVerdict(row.verdictSnap);
-            const verdict = row.verdictSnap as ScamVerdict | null;
-            const m = buildOverviewFromTrustAndVerdict(displayScore, verdict);
-            const iso = row.createdAt;
-            const primaryLine = overviewFeedPrimaryLine(row.originalQuery.trim());
-            const domainFullTitle =
-              row.normalizedQuery && row.normalizedQuery.trim() !== row.originalQuery.trim()
-                ? `${row.originalQuery.trim()} · ${row.normalizedQuery.trim()}`
-                : primaryLine.fullTitle;
-            return (
-              <CompactOverviewFeedArticleCard
-                key={row.id}
-                model={m}
-                headlineId={`recent-search-headline-${row.id}`}
-                domainLine={primaryLine.primary || row.originalQuery}
-                domainFullTitle={domainFullTitle}
-                href={row.resultPath}
-                viewLabel={EN_MESSAGES.recentSearches.reopenResultArrow}
-                timeIso={iso}
-                timeRelative={formatPublicCheckRelativeTime(iso)}
-                timeTitle={new Date(iso).toUTCString()}
-                entityBadge={entity}
-                trailingActions={
-                  <button
-                    type="button"
-                    disabled={busyRow}
-                    className="btn-secondary min-h-10 px-3 text-[13px] shadow-subtle disabled:opacity-50"
-                    onClick={() => void removeRow(row.id)}
-                  >
-                    {busyRow ? EN_MESSAGES.recentSearches.clearing : EN_MESSAGES.recentSearches.deleteOne}
-                  </button>
-                }
-              />
-            );
-          })}
-        </div>
+        <ol className="mt-8 list-none space-y-3 md:space-y-4">
+          {rows.map((row) => (
+            <li key={row.id}>
+              <RecentSearchCard row={row} busy={pendingId === row.id} onDelete={() => void removeRow(row.id)} />
+            </li>
+          ))}
+        </ol>
       )}
 
       {showClearModal ? (
