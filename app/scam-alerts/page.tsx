@@ -16,6 +16,7 @@ import {
 } from "@/lib/scam-alerts/presentation";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { OG_IMAGE } from "@/lib/seo-metadata";
+import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo-description";
 import { publicRobots, SITE_URL } from "@/lib/seo";
 import { scamAlertsIndexFallbackMetadata } from "@/lib/scam-alerts/safe-metadata";
 import {
@@ -27,8 +28,7 @@ import {
 
 export const revalidate = 300;
 
-const PAGE_DESCRIPTION =
-  "Fraudly aggregates public scam intelligence—phishing, risky domains, and emerging fraud patterns—with calm explanations so you know what to double-check.";
+const PAGE_DESCRIPTION = SEO_DESCRIPTION.scamAlerts;
 
 type PageProps = {
   searchParams: Promise<{ type?: string; filter?: string; page?: string; time?: string }>;
@@ -65,7 +65,8 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
       filter: typeof params.filter === "string" ? params.filter : undefined,
       type: typeof params.type === "string" ? params.type : undefined
     });
-    const titleAbsolute = page > 1 ? `Threat alerts · Page ${page} | Fraudly` : "Threat alerts | Fraudly";
+    const titleAbsolute =
+      page > 1 ? `${SEO_TITLE.scamAlerts} · Page ${page} | Fraudly` : `${SEO_TITLE.scamAlerts} | Fraudly`;
 
     return {
       title: { absolute: titleAbsolute },

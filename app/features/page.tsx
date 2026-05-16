@@ -2,13 +2,13 @@ import Link from "next/link";
 import { FeatureInfoCard } from "@/components/FeatureInfoCard";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo-description";
 import { buildPageMetadata } from "@/lib/seo-metadata";
 
 export const metadata = buildPageMetadata({
   path: "/features",
-  titleSegment: "Fraudly Features — Website Scam & Trust Checks",
-  description:
-    "Learn how Fraudly helps detect scam websites, phishing risks, and suspicious online stores using trust and security analysis."
+  titleSegment: SEO_TITLE.features,
+  description: SEO_DESCRIPTION.features
 });
 
 const features = [

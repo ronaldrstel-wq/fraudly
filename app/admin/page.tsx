@@ -4,12 +4,19 @@ import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { AdminToolsClient } from "@/components/admin/AdminToolsClient";
 import { getAdminIdentityOrNull, getCurrentUserIsAdmin } from "@/lib/auth/admin";
+import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo-description";
+import { buildPageMetadata } from "@/lib/seo-metadata";
 import { privateRobots } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Admin Tools",
+  ...buildPageMetadata({
+    path: "/admin",
+    titleSegment: SEO_TITLE.admin,
+    description: SEO_DESCRIPTION.admin,
+    robots: privateRobots
+  }),
   robots: privateRobots
 };
 

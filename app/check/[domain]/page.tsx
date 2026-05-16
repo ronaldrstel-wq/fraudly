@@ -3,8 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCachedWebsiteAnalysis } from "@/lib/analysis/cachedAnalysis";
 import { parseCheckDomainParam } from "@/lib/domainPage";
+import {
+  buildWebsiteCheckMetaDescription,
+  SEO_DESCRIPTION,
+  SEO_TITLE,
+  warnMetaDescriptionIfNeeded
+} from "@/lib/seo-description";
 import { OG_IMAGE } from "@/lib/seo-metadata";
-import { publicRobots, SITE_URL, unindexedFollowRobots } from "@/lib/seo";
+import { SITE_URL, unindexedFollowRobots } from "@/lib/seo";
 import { Navbar } from "@/components/Navbar";
 import { ResultCard } from "@/components/ResultCard";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -18,21 +24,15 @@ type PageProps = {
   params: Promise<{ domain: string }>;
 };
 
-function safeDescription(domain: string, trustScore: number | null, summary: string): string {
-  const trustPhrase =
-    trustScore === null
-      ? `Fraudly could not grade ${domain} as an active verified website—the trust gauge is withheld.`
-      : `Trust-style score around ${trustScore}/100.`;
-  const base = `See whether ${domain} shows scam indicators, phishing risks, suspicious patterns, or trust signals—with Fraudly’s website trust check. ${trustPhrase}`;
-  const combined = `${base} ${summary}`;
-  return combined.length > 158 ? `${combined.slice(0, 155)}…` : combined;
-}
-
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { domain: raw } = await params;
   const domain = parseCheckDomainParam(raw);
   if (!domain) {
-    return { title: "Website check", robots: unindexedFollowRobots };
+    return {
+      title: SEO_TITLE.checkInvalid,
+      description: SEO_DESCRIPTION.scanResult,
+      robots: unindexedFollowRobots
+    };
   }
 
   const path = `/check/${encodeURIComponent(domain)}`;
@@ -41,8 +41,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   try {
     const result = await getCachedWebsiteAnalysis(domain);
     const trustScore = displayTrustScoreForResult(result);
-    const title = `Is ${domain} Safe? Website Trust Analysis`;
-    const description = safeDescription(domain, trustScore, result.reviewSummary);
+    const title = SEO_TITLE.checkResult(domain);
+    const description = buildWebsiteCheckMetaDescription(domain, trustScore, result.reviewSummary);
+    warnMetaDescriptionIfNeeded(path, description);
+    const sharingTitle = `${title} | Fraudly`;
 
     return {
       title,
@@ -53,27 +55,43 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         siteName: "Fraudly",
         locale: "en_US",
         url: canonical,
-        title: `${title} | Fraudly`,
-        description:
-          trustScore === null
-            ? `Fraudly checked ${domain} for scam signals. Trust-style score withheld — ${EN_MESSAGES.specialOutcomes.nonexistent.headline.toLowerCase()}.`
-            : `Fraudly checked ${domain} for scam signals and website trust indicators. Trust-style score about ${trustScore}/100.`,
+        title: sharingTitle,
+        description,
         images: [OG_IMAGE]
       },
       twitter: {
         card: "summary_large_image",
-        title: `${title} | Fraudly`,
-        description: `Fraudly checked ${domain} for scam signals and website trust indicators.`,
+        title: sharingTitle,
+        description,
         images: [OG_IMAGE.url]
       },
-      robots: publicRobots
+      robots: unindexedFollowRobots
     };
   } catch {
+    const fallback = buildWebsiteCheckMetaDescription(domain, null);
+    warnMetaDescriptionIfNeeded(path, fallback);
+    const title = SEO_TITLE.checkResult(domain);
+    const sharingTitle = `${title} | Fraudly`;
     return {
-      title: `Website check: ${domain}`,
-      description: `Run a website trust and scam-signal check for ${domain} with Fraudly.`,
+      title,
+      description: fallback,
       alternates: { canonical },
-      robots: publicRobots
+      openGraph: {
+        type: "website",
+        siteName: "Fraudly",
+        locale: "en_US",
+        url: canonical,
+        title: sharingTitle,
+        description: fallback,
+        images: [OG_IMAGE]
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: sharingTitle,
+        description: fallback,
+        images: [OG_IMAGE.url]
+      },
+      robots: unindexedFollowRobots
     };
   }
 }

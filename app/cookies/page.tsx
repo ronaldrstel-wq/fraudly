@@ -2,13 +2,13 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo-description";
 import { buildPageMetadata } from "@/lib/seo-metadata";
 
 export const metadata = buildPageMetadata({
   path: "/cookies",
-  titleSegment: "Cookie Policy",
-  description:
-    "Manage cookie preferences and learn how Fraudly uses necessary, analytics, and marketing cookies."
+  titleSegment: SEO_TITLE.cookies,
+  description: SEO_DESCRIPTION.cookies
 });
 
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {

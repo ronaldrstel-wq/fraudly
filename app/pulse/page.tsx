@@ -1,19 +1,18 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { getFraudlyPulseStats, type PulseKpi, type PulseRankItem, type PulseTrendBucket } from "@/lib/pulse/getFraudlyPulseStats";
-import { publicRobots } from "@/lib/seo";
+import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo-description";
+import { buildPageMetadata } from "@/lib/seo-metadata";
 
 export const revalidate = 300;
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Fraudly Pulse | Live fraud trends and website risk insights",
-  description:
-    "Explore live fraud trends, suspicious website patterns, high-risk detections, impersonated brands, and public trust intelligence from Fraudly.",
-  robots: publicRobots
-};
+export const metadata = buildPageMetadata({
+  path: "/pulse",
+  titleSegment: SEO_TITLE.pulse,
+  description: SEO_DESCRIPTION.pulse
+});
 
 function reliabilityChip(level: "reliable" | "limited" | "building") {
   if (level === "reliable") return "border-emerald-200 bg-emerald-50 text-emerald-800";

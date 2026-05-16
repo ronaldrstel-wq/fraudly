@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo-description";
 import { buildPageMetadata } from "@/lib/seo-metadata";
 
 export const metadata = buildPageMetadata({
   path: "/pricing",
-  titleSegment: "Free Account",
-  description: "Create a free Fraudly account to continue checking websites after your first anonymous check."
+  titleSegment: SEO_TITLE.pricing,
+  description: SEO_DESCRIPTION.pricing
 });
 
 export default function PricingPage() {

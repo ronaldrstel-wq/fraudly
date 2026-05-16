@@ -1,38 +1,17 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SupportFaqJsonLd } from "@/components/support/SupportFaqJsonLd";
 import { SUPPORT_FAQ_ITEMS } from "@/lib/support/supportFaq";
-import { OG_IMAGE } from "@/lib/seo-metadata";
-import { defaultKeywords, publicRobots, SITE_URL } from "@/lib/seo";
+import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo-description";
+import { buildPageMetadata } from "@/lib/seo-metadata";
 
-const PAGE_TITLE = "Fraudly Support & FAQ";
-const PAGE_DESCRIPTION =
-  "Get help with Fraudly website safety checks, trust scores, scam detection, phishing analysis, and frequently asked questions.";
-
-export const metadata: Metadata = {
-  title: { absolute: PAGE_TITLE },
-  description: PAGE_DESCRIPTION,
-  keywords: [...defaultKeywords],
-  robots: publicRobots,
-  alternates: { canonical: `${SITE_URL}/support` },
-  openGraph: {
-    type: "website",
-    siteName: "Fraudly",
-    locale: "en_US",
-    url: `${SITE_URL}/support`,
-    title: PAGE_TITLE,
-    description: PAGE_DESCRIPTION,
-    images: [OG_IMAGE]
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: PAGE_TITLE,
-    description: PAGE_DESCRIPTION,
-    images: [OG_IMAGE.url]
-  }
-};
+export const metadata = buildPageMetadata({
+  path: "/support",
+  titleSegment: "Support & FAQ",
+  titleAbsolute: SEO_TITLE.supportAbsolute,
+  description: SEO_DESCRIPTION.support
+});
 
 const SUPPORT_EMAIL = "support@fraudly.app";
 

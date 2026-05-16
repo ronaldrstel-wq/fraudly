@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import { EmbeddedSignUp } from "@/components/auth/EmbeddedSignUp";
+import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo-description";
 import { buildPageMetadata } from "@/lib/seo-metadata";
 import { privateRobots } from "@/lib/seo";
 
 export const metadata: Metadata = {
   ...buildPageMetadata({
     path: "/sign-up",
-    titleSegment: "Create account",
-    description: "Create a free Fraudly account to save scan history and run more website safety checks."
+    titleSegment: SEO_TITLE.signUp,
+    description: SEO_DESCRIPTION.signUp,
+    robots: privateRobots
   }),
   robots: privateRobots
 };

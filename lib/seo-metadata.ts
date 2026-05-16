@@ -1,29 +1,40 @@
 import type { Metadata } from "next";
+import { warnMetaDescriptionIfNeeded } from "@/lib/seo-description";
 import { defaultKeywords, publicRobots, SITE_URL } from "@/lib/seo";
 
 export const OG_IMAGE = {
   url: "/opengraph-image",
   width: 1200,
   height: 630,
-  alt: "Fraudly – scam checker and fraud detection tool"
+  alt: "Fraudly — check if a website or webshop is safe"
 } as const;
 
-/**
- * Page title in browser becomes "{titleSegment} | Fraudly" via root layout template.
- * Open Graph / Twitter use the same full title string for consistent sharing previews.
- */
-export function buildPageMetadata(opts: {
+type BuildPageMetadataOptions = {
   path: string;
   titleSegment: string;
   description: string;
-}): Metadata {
+  /** When set, used as the full document title (no `| Fraudly` suffix from layout). */
+  titleAbsolute?: string;
+  robots?: Metadata["robots"];
+};
+
+/**
+ * Page title in browser becomes "{titleSegment} | Fraudly" unless `titleAbsolute` is set.
+ * Open Graph / Twitter use the sharing title for consistent link previews.
+ */
+export function buildPageMetadata(opts: BuildPageMetadataOptions): Metadata {
+  warnMetaDescriptionIfNeeded(opts.path, opts.description);
   const url = `${SITE_URL}${opts.path}`;
-  const sharingTitle = `${opts.titleSegment} | Fraudly`;
+  const sharingTitle = opts.titleAbsolute ?? `${opts.titleSegment} | Fraudly`;
+  const title: Metadata["title"] = opts.titleAbsolute
+    ? { absolute: opts.titleAbsolute }
+    : opts.titleSegment;
+
   return {
-    title: opts.titleSegment,
+    title,
     description: opts.description,
     keywords: [...defaultKeywords],
-    robots: publicRobots,
+    robots: opts.robots ?? publicRobots,
     alternates: { canonical: url },
     openGraph: {
       type: "website",

@@ -1,12 +1,12 @@
 import { SeoToolPage } from "@/components/SeoToolPage";
+import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo-description";
 import { buildPageMetadata } from "@/lib/seo-metadata";
 import { scamCheckerLanding } from "@/lib/tool-landings";
 
 export const metadata = buildPageMetadata({
   path: "/scam-checker",
-  titleSegment: "Online Scam Checker",
-  description:
-    "Use Fraudly’s free online scam checker to review suspicious websites and links for common fraud signals before you click or pay."
+  titleSegment: SEO_TITLE.scamChecker,
+  description: SEO_DESCRIPTION.scamChecker
 });
 
 export default function ScamCheckerPage() {

@@ -10,6 +10,7 @@ import { db } from "@/lib/db";
 import { overviewFeedPrimaryLine } from "@/lib/overviewFeedDisplay";
 import { OG_IMAGE } from "@/lib/seo-metadata";
 import { EN_MESSAGES } from "@/lib/messages.en";
+import { SEO_DESCRIPTION, SEO_TITLE, warnMetaDescriptionIfNeeded } from "@/lib/seo-description";
 import { publicRobots, SITE_URL } from "@/lib/seo";
 import { buildOverviewFromPublicCheck } from "@/lib/overviewCardPresentation";
 
@@ -28,15 +29,17 @@ function clampPage(raw: string | undefined): number {
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
   const page = clampPage((await searchParams).page);
   const titleSegment =
-    page > 1 ? `Latest Fraud Checks (page ${page})` : EN_MESSAGES.latestChecks.pageTitle;
+    page > 1 ? `${SEO_TITLE.latestChecks} (page ${page})` : SEO_TITLE.latestChecks;
   const sharingTitle = `${titleSegment} | Fraudly`;
   const canonical =
     page > 1 ? `${SITE_URL}/latest-checks?page=${page}` : `${SITE_URL}/latest-checks`;
 
+  const description = SEO_DESCRIPTION.latestChecks;
+  warnMetaDescriptionIfNeeded(page > 1 ? `/latest-checks?page=${page}` : "/latest-checks", description);
+
   return {
     title: titleSegment,
-    description:
-      "Explore recent community website checks powered by Fraudly trust signals, scam intelligence, reputation data, and AI-assisted analysis—shown as privacy-safe summaries.",
+    description,
     alternates: { canonical },
     robots: publicRobots,
     openGraph: {
@@ -45,15 +48,13 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
       siteName: "Fraudly",
       locale: "en_US",
       title: sharingTitle,
-      description:
-        "See recently checked domains and websites with Fraudly fraud risk snapshots (anonymized, public summaries).",
+      description,
       images: [OG_IMAGE]
     },
     twitter: {
       card: "summary_large_image",
       title: sharingTitle,
-      description:
-        "See recently checked domains and websites with Fraudly fraud risk snapshots (anonymized, public summaries).",
+      description,
       images: [OG_IMAGE.url]
     }
   };

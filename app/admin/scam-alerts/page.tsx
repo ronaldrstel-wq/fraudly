@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo-description";
+import { buildPageMetadata } from "@/lib/seo-metadata";
 import { privateRobots } from "@/lib/seo";
 import Link from "next/link";
 import { ScamAlertStatus } from "@prisma/client";
@@ -16,7 +18,12 @@ import {
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Admin Scam Alerts",
+  ...buildPageMetadata({
+    path: "/admin/scam-alerts",
+    titleSegment: SEO_TITLE.adminScamAlerts,
+    description: SEO_DESCRIPTION.adminScamAlerts,
+    robots: privateRobots
+  }),
   robots: privateRobots
 };
 

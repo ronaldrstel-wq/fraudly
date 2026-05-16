@@ -4,14 +4,20 @@ import { Navbar } from "@/components/Navbar";
 import { RecentSearchesDashboard } from "@/components/RecentSearchesDashboard";
 import { SiteFooter } from "@/components/SiteFooter";
 import { listRecentSearchesForScope } from "@/lib/recent-search/service";
+import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo-description";
+import { buildPageMetadata } from "@/lib/seo-metadata";
 import { unindexedFollowRobots } from "@/lib/seo";
 import { getBillingUserOrNull } from "@/lib/user-store";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Recent searches",
-  description: "Your private Fraudly fraud-check history.",
+  ...buildPageMetadata({
+    path: "/recent-searches",
+    titleSegment: SEO_TITLE.recentSearches,
+    description: SEO_DESCRIPTION.recentSearches,
+    robots: unindexedFollowRobots
+  }),
   robots: unindexedFollowRobots
 };
 

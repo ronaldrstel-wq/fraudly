@@ -1,21 +1,17 @@
+import { buildDomainIntelMetaDescription, SEO_TITLE } from "@/lib/seo-description";
+
 /** English copy templates for programmatic `/domain/[domain]` SEO landing (long-tail queries). Not legal advice disclaimers elsewhere on page. */
 
 export function domainLandingTitleSegment(hostname: string): string {
-  return `Is ${hostname} legit? Trust check & scam signals`;
+  return SEO_TITLE.domainIntel(hostname);
 }
 
 export function domainLandingMetaDescription(
   hostname: string,
   trustScore: number | null,
-  summarySnippet: string
+  _summarySnippet: string
 ): string {
-  const lead = `${hostname}: is it legit or a scam? Fraudly summarizes public scam intelligence, phishing-style signals, domain reputation cues, SSL, and a trust-oriented score—not a verdict, but fast context before you enter details or pay.`;
-  const trust = trustScore === null ? "" : ` Trust-style reading about ${trustScore}/100.`;
-  const clipped = summarySnippet.trim();
-  const tail =
-    clipped.length > 0 ? ` ${clipped.length > 120 ? `${clipped.slice(0, 117).trim()}…` : clipped}` : "";
-  const combined = `${lead}${trust}${tail}`;
-  return combined.length > 158 ? `${combined.slice(0, 155)}…` : combined;
+  return buildDomainIntelMetaDescription(hostname, trustScore);
 }
 
 export type DomainLandingFaqItem = {

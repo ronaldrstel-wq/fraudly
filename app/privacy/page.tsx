@@ -2,13 +2,13 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo-description";
 import { buildPageMetadata } from "@/lib/seo-metadata";
 
 export const metadata = buildPageMetadata({
   path: "/privacy",
-  titleSegment: "Privacy Policy",
-  description:
-    "Learn how Fraudly collects, uses, stores, and protects your personal data and cookie preferences."
+  titleSegment: SEO_TITLE.privacy,
+  description: SEO_DESCRIPTION.privacy
 });
 
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {

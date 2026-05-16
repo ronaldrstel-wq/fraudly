@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { OG_IMAGE } from "@/lib/seo-metadata";
+import { prepareMetaDescription, SEO_DESCRIPTION } from "@/lib/seo-description";
 import { privateRobots, publicRobots, SITE_URL } from "@/lib/seo";
 import { scamAlertDetailFallbackMetadata } from "@/lib/scam-alerts/safe-metadata";
 import { getPublishedScamAlertBySlug } from "@/lib/scam-alerts/service";
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     if (!slug) {
       return {
         title: { absolute: "Scam alert not found | Fraudly" },
-        description: "This scam alert URL is not valid.",
+        description: SEO_DESCRIPTION.scamAlertInvalidSlug,
         robots: privateRobots
       };
     }
@@ -29,17 +30,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     if (!alert) {
       return {
         title: { absolute: "Scam alert not found | Fraudly" },
-        description: "This scam alert is not available or is no longer published.",
+        description: SEO_DESCRIPTION.scamAlertNotFound,
         alternates: { canonical: `${SITE_URL}/scam-alerts/${encodeURIComponent(slug)}` },
         robots: privateRobots
       };
     }
 
     const titleAbsolute = `${String(alert.title || "Scam alert").trim() || "Scam alert"} | Fraudly Scam Alert`.slice(0, 200);
-    const description =
-      String(alert.summary ?? "")
-        .trim()
-        .slice(0, 500) || "Published scam alert with context and safety notes on Fraudly.";
+    const description = prepareMetaDescription(
+      String(alert.summary ?? ""),
+      SEO_DESCRIPTION.scamAlertDetailFallback
+    );
     const canonical = `${SITE_URL}/scam-alerts/${encodeURIComponent(alert.slug)}`;
 
     return {

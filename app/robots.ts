@@ -14,7 +14,8 @@ export default function robots(): MetadataRoute.Robots {
         "/settings/",
         "/sign-in/",
         "/sign-up/",
-        "/recent-searches"
+        "/recent-searches",
+        "/check/"
       ]
     },
     sitemap: `${SITE_URL}/sitemap.xml`

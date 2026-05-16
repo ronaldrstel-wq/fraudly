@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import { EmbeddedSignIn } from "@/components/auth/EmbeddedSignIn";
+import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo-description";
 import { buildPageMetadata } from "@/lib/seo-metadata";
 import { privateRobots } from "@/lib/seo";
 
 export const metadata: Metadata = {
   ...buildPageMetadata({
     path: "/sign-in",
-    titleSegment: "Sign in",
-    description: "Sign in to your Fraudly account to save website checks, sync devices, and manage preferences."
+    titleSegment: SEO_TITLE.signIn,
+    description: SEO_DESCRIPTION.signIn,
+    robots: privateRobots
   }),
   robots: privateRobots
 };

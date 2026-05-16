@@ -2,13 +2,13 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo-description";
 import { buildPageMetadata } from "@/lib/seo-metadata";
 
 export const metadata = buildPageMetadata({
   path: "/about",
-  titleSegment: "About Fraudly",
-  description:
-    "Fraudly helps consumers quietly vet websites—mixing phishing intelligence, SSL checks, domain history, review signals, and AI-assisted summaries without the hype."
+  titleSegment: SEO_TITLE.about,
+  description: SEO_DESCRIPTION.about
 });
 
 const pillars = [

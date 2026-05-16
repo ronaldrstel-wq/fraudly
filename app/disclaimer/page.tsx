@@ -2,13 +2,13 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo-description";
 import { buildPageMetadata } from "@/lib/seo-metadata";
 
 export const metadata = buildPageMetadata({
   path: "/disclaimer",
-  titleSegment: "Disclaimer",
-  description:
-    "Read the Fraudly disclaimer about fraud detection, professional advice, third-party services, and limitations of liability."
+  titleSegment: SEO_TITLE.disclaimer,
+  description: SEO_DESCRIPTION.disclaimer
 });
 
 function Section({

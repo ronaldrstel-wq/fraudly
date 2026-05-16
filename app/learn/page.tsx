@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { SeoConsumerLayout } from "@/components/seo/SeoConsumerLayout";
+import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo-description";
 import { buildPageMetadata } from "@/lib/seo-metadata";
 
 export const metadata = buildPageMetadata({
   path: "/learn",
-  titleSegment: "Learn About Scam Websites & Safe Online Shopping",
-  description:
-    "Plain-language guides on fake webshops, phishing links, website trust checks, and how to decide if an online store looks legitimate—without fear-mongering."
+  titleSegment: SEO_TITLE.learn,
+  description: SEO_DESCRIPTION.learn
 });
 
 const topics = [

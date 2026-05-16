@@ -2,13 +2,13 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo-description";
 import { buildPageMetadata } from "@/lib/seo-metadata";
 
 export const metadata = buildPageMetadata({
   path: "/terms",
-  titleSegment: "Terms of Service",
-  description:
-    "Review the terms and conditions for using Fraudly, including user responsibilities, limitations, and service rules."
+  titleSegment: SEO_TITLE.terms,
+  description: SEO_DESCRIPTION.terms
 });
 
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {

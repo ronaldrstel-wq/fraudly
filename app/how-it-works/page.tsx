@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo-description";
 import { buildPageMetadata } from "@/lib/seo-metadata";
 
 export const metadata = buildPageMetadata({
   path: "/how-it-works",
-  titleSegment: "How it works",
-  description:
-    "See how Fraudly turns a URL into trust guidance with security checks, scam intelligence, reputation cues, and AI-assisted heuristics—all in plain English."
+  titleSegment: SEO_TITLE.howItWorks,
+  description: SEO_DESCRIPTION.howItWorks
 });
 
 const steps = [
