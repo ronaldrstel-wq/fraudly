@@ -22,11 +22,10 @@ export const EN_MESSAGES = {
     loginForAccount: "Log in to view your account."
   },
   home: {
-    heroBadge: "AI-assisted website safety check",
+    heroBadge: "Website safety check",
     /** Legacy full headline — homepage hero uses split headline in `Hero.tsx` for styling. */
     headline: "See it. Check it. Trust it.",
-    subhead:
-      "Fraudly analyzes scam intelligence, trust signals, reputation data, and AI-assisted risk patterns so you can spot suspicious websites before you buy, click, or sign in.",
+    subhead: "Check if a website or webshop is safe before you buy.",
     heroTrustFeatures: [
       "Detect scams & phishing",
       "Analyze trust & reputation",
@@ -40,7 +39,7 @@ export const EN_MESSAGES = {
       "Check domain age & security",
       "AI-assisted risk analysis"
     ] as const,
-    primaryCta: "Check Website",
+    primaryCta: "Check website",
     secondaryCta: "How Fraudly Works",
     secondaryCtaHref: "/how-it-works",
     heroSearchHelper: "Fast. Private. Secure. No signup required for your first check.",
@@ -117,14 +116,11 @@ export const EN_MESSAGES = {
     technicalStatusHeading: "Signals behind your score",
     /** Plain-language summary bands (non-technical readers). */
     consumerSummary: {
-      positive:
-        "This website currently shows multiple positive trust indicators, and no major scam signals were detected in this snapshot.",
-      mixed:
-        "This website has mixed trust signals. It may still be legitimate, but some indicators are worth a closer look before you pay or sign in.",
-      elevated:
-        "This website triggered several risk indicators commonly associated with scams, phishing, or misleading websites.",
+      positive: "This website shows several positive trust indicators and no major scam signals in this scan.",
+      mixed: "This website has mixed signals. It may still be legitimate, but take a closer look before you pay or sign in.",
+      elevated: "This website shows several scam or phishing indicators.",
       underThreat:
-        "Authoritative scam or phishing intelligence flagged this website. Treat it as high risk until you can verify through a channel you already trust."
+        "Known scam or phishing reports flag this website. Treat it as high risk until you can verify through a channel you already trust."
     },
     consumerSummaryDisclaimer:
       "Online risks can change over time. Always use your own judgment before purchasing or sharing personal information.",
@@ -134,9 +130,17 @@ export const EN_MESSAGES = {
       caution: "Some caution advised",
       looksSafe: "Looks safe"
     },
-    detailedFindingsToggle: "Detailed scan findings",
+    detailedFindingsToggle: "Show technical details",
     detailedFindingsHint:
-      "Technical notes, redirects, list matches, reputation snapshots, and model details — open when you want the full picture.",
+      "Redirects, list matches, certificates, reputation snapshots, and model notes — for when you want the full picture.",
+    verdictMicroLabel: "Fraudly verdict",
+    whyThisResultHeading: "Why this result?",
+    whyThisResultIntro:
+      "Fraudly combines website security checks, scam intelligence feeds, and public reputation signals into one trust score. The summary above reflects the strongest signals we found in this scan.",
+    safetySignalsHeading: "Safety signals",
+    safetySignalsIntro: "Key checks from this scan, explained in plain language.",
+    reputationHeading: "Reviews & reputation",
+    reputationIntro: "Public review data adds context. It is not proof that a site is safe or unsafe on its own.",
     evidenceTierLabels: {
       confirmed_malicious: "Matches from scam intelligence",
       positive_trust: "Trust-positive signals",

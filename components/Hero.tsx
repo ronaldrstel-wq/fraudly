@@ -145,7 +145,10 @@ export function Hero({
               {subhead}
             </p>
 
-            <ul className="mx-auto mt-7 flex max-w-[760px] flex-wrap justify-center gap-4 lg:mx-0 lg:justify-start" aria-label="What Fraudly checks">
+            <ul
+              className="mx-auto mt-7 hidden max-w-[760px] flex-wrap justify-center gap-4 sm:flex lg:mx-0 lg:justify-start"
+              aria-label="What Fraudly checks"
+            >
               {heroTrustFeatures.map((label, i) => (
                 <li
                   key={label}
@@ -181,7 +184,7 @@ export function Hero({
           </div>
         </div>
 
-        <div className="mx-auto mt-10 w-full md:mt-11">
+        <div className="mx-auto mt-8 w-full max-w-2xl md:mt-10 lg:max-w-none">
           <URLInput
             value={url}
             onChange={onUrlChange}
@@ -209,10 +212,10 @@ export function Hero({
             ) : null}
           </div>
 
-          <div className="mt-4 flex justify-center">
+          <div className="mt-3 hidden justify-center sm:mt-4 sm:flex">
             <Link
               href={secondaryCtaHref}
-              className="fraudly-motion inline-flex items-center gap-1.5 text-sm font-semibold text-violet-700 underline decoration-violet-500/35 underline-offset-4 hover:text-blue-700"
+              className="fraudly-motion inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 underline decoration-slate-300 underline-offset-4 hover:text-slate-900"
             >
               {secondaryCta}
               <svg className="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="none" aria-hidden>
@@ -229,9 +232,11 @@ export function Hero({
           ) : null}
         </div>
 
-        <div className="mx-auto mt-8 max-w-6xl">
-          <p className="mb-3 text-center text-xs font-semibold uppercase tracking-[0.11em] text-violet-600/90">How Fraudly Works</p>
-          <ol className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <details className="mx-auto mt-8 max-w-6xl rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3 shadow-subtle">
+          <summary className="cursor-pointer list-none text-center text-sm font-semibold text-slate-800 [&::-webkit-details-marker]:hidden">
+            How Fraudly works
+          </summary>
+          <ol className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {heroHowSteps.map((step, idx) => (
               <li
                 key={step}
@@ -247,7 +252,7 @@ export function Hero({
               </li>
             ))}
           </ol>
-        </div>
+        </details>
       </div>
     </section>
   );

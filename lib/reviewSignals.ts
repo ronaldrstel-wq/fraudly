@@ -11,6 +11,7 @@ import {
   type ReviewFetchDebugEntry,
   type ReviewFetchDebugSource
 } from "@/lib/reviewSourceNormalization";
+import { sanitizeReviewFields } from "@/lib/reputation/reviewRatingNormalize";
 
 export type ReviewSignals = {
   googleFound: boolean;
@@ -117,10 +118,18 @@ export async function getReviewSignals(domain: string): Promise<ReviewSignals> {
     pushDebug(reviewFetchDebug, gSource, bucket, snippets.warning, publicReviewAvailabilityNotes);
   }
 
-  const trustpilotRating = trustpilot?.data?.rating ?? undefined;
-  const trustpilotReviewCount = trustpilot?.data?.reviewCount ?? undefined;
-  const snippetRating = snippets?.data?.possibleRating ?? undefined;
-  const snippetCount = snippets?.data?.possibleReviewCount ?? undefined;
+  const trustpilotSanitized = sanitizeReviewFields(
+    trustpilot?.data?.rating ?? null,
+    trustpilot?.data?.reviewCount ?? null
+  );
+  const googleSanitized = sanitizeReviewFields(
+    snippets?.data?.possibleRating ?? null,
+    snippets?.data?.possibleReviewCount ?? null
+  );
+  const trustpilotRating = trustpilotSanitized.rating ?? undefined;
+  const trustpilotReviewCount = trustpilotSanitized.reviewCount ?? undefined;
+  const snippetRating = googleSanitized.rating ?? undefined;
+  const snippetCount = googleSanitized.reviewCount ?? undefined;
   const suspiciousReviewSignals: string[] = [];
 
   const combinedRating = trustpilotRating ?? snippetRating;

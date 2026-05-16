@@ -18,7 +18,7 @@ const SOURCE = "Trustpilot (public page)";
 function parseTrustpilot(html: string): TrustpilotIntel {
   const $ = load(html);
   const body = $("body").text();
-  const ratingMatch = body.match(/(\d(?:\.\d)?)\s*out of 5/i);
+  const ratingMatch = body.match(/(\d(?:\.\d+)?)\s*out of 5/i);
   const reviewCountMatch = body.match(/([\d,]+)\s+reviews?/i);
   const claimed = /\bclaimed profile\b/i.test(body) ? true : /\bunclaimed\b/i.test(body) ? false : null;
   const freshest = body.match(/(\d+)\s+(day|days|month|months)\s+ago/i);

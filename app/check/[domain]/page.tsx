@@ -153,7 +153,7 @@ export default async function DomainCheckPage({ params }: PageProps) {
     );
     alignedDisplay = {
       trustScore: overview.trustScore,
-      label: overview.technicalLabel,
+      label: overview.verdictLabel,
       humanKind: overview.humanKind,
       humanHeadline: overview.headline,
       scanId: publicSnapshot.id,
@@ -165,7 +165,7 @@ export default async function DomainCheckPage({ params }: PageProps) {
       storedRiskScore: publicSnapshot.display.riskScore,
       storedTrustScore: publicSnapshot.display.trustScore,
       displayedTrustScore: overview.trustScore,
-      displayedLabel: overview.technicalLabel,
+      displayedLabel: overview.verdictLabel,
       source: "check/[domain]/page"
     });
   } else if (process.env.NODE_ENV === "development" && liveTrust !== null) {

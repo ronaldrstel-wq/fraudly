@@ -141,7 +141,7 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
                   storedRiskScore: row.riskScoreSnapshot,
                   storedTrustScore: m.trustScore,
                   displayedTrustScore: m.trustScore,
-                  displayedLabel: m.technicalLabel,
+                  displayedLabel: m.verdictLabel,
                   source: "latest-checks/page"
                 });
                 const iso = row.lastSeenAt.toISOString();

@@ -37,6 +37,7 @@ export function consumerDisplayBand(trustScore: number): ConsumerDisplayBand {
   return "highRisk";
 }
 
+/** Short band label (internal / secondary). */
 export function consumerDisplayLabel(trustScore: number): string {
   switch (consumerDisplayBand(trustScore)) {
     case "trusted":
@@ -46,6 +47,19 @@ export function consumerDisplayLabel(trustScore: number): string {
     case "highRisk":
     default:
       return "High Risk";
+  }
+}
+
+/** Primary consumer verdict shown on results and latest-check cards. */
+export function standardVerdictLabel(trustScore: number): string {
+  switch (consumerDisplayBand(trustScore)) {
+    case "trusted":
+      return "Likely Safe";
+    case "caution":
+      return "Use Caution";
+    case "highRisk":
+    default:
+      return "High Scam Risk";
   }
 }
 
@@ -59,7 +73,7 @@ export function publicDisplayScoreFromRiskAndVerdict(
     riskScore,
     trustScore,
     band: consumerDisplayBand(trustScore),
-    label: consumerDisplayLabel(trustScore),
+    label: standardVerdictLabel(trustScore),
     verdict
   };
 }

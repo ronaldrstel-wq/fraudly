@@ -1,0 +1,29 @@
+# Fraudly Product North Star
+
+Fraudly is primarily a fast consumer trust checker.
+
+The core experience is:
+
+1. Paste a URL
+2. Get a clear trust verdict
+3. Understand why
+4. Decide whether to trust the site
+
+SEO exists to improve discoverability of real trust-check results.
+
+Fraudly is NOT:
+
+- a content farm
+- an AI article generator
+- a cybersecurity media portal
+- a generic blog platform
+
+Product priorities:
+
+1. Trustworthiness
+2. Clarity
+3. Speed
+4. Consistency
+5. Discoverability
+
+If tradeoffs appear: prioritize checker UX and trust over content quantity or indexed page volume.

@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { ReviewRating } from "@/components/reputation/ReviewRating";
 import { ReviewSummary } from "@/components/ReviewSummary";
+import { consumerSignalSummary } from "@/lib/consumerSignalCopy";
+import { sanitizeReviewFields } from "@/lib/reputation/reviewRatingNormalize";
+import { standardVerdictLabel } from "@/lib/scoring/displayScore";
 import { inferIntelEvidenceTier, type IntelScoreBreakdownEntry } from "@/lib/checks/scoring";
 import type { TrustSignal } from "@/lib/checks/types";
 import { inferScoreEvidenceTier, type ScoreEvidenceTier, type ScoreSignal } from "@/lib/scoringEngine";
@@ -12,15 +16,14 @@ import {
 } from "@/lib/reviewSourceNormalization";
 import { assessCriticalThreat, criticalThreatBannerTitle, displayTrustScoreForResult } from "@/lib/scanPresentation";
 import {
-  humanRecGlyph,
   humanRecHeadline,
-  humanRecHeadlineTone,
   resolveHumanRecKind,
   shortScanExplanation,
   technicalStatusText
 } from "@/lib/scanResultDualLayer";
 import { shouldShowLimitedPublicStrip } from "@/lib/scanResultNarrative";
 import { ThreatBanner } from "@/components/ThreatBanner";
+import { VerdictHero } from "@/components/result/VerdictHero";
 import { ResultSupportBox } from "@/components/ResultSupportBox";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { shouldShowTrustGauge } from "@/lib/trustGaugeDisplay";
@@ -197,11 +200,6 @@ function toSafeHttpUrl(input: string | null | undefined): string | null {
   }
 }
 
-function formatReviewCount(value: number | undefined): string {
-  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
-  return new Intl.NumberFormat("en-US").format(Math.max(0, Math.round(value)));
-}
-
 function providerStateLabel(reputation: ReputationEnrichment | null, repError: string | null): string {
   if (repError) return "Provider failed";
   switch (reputation?.reputationStatus) {
@@ -271,8 +269,12 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
         threat.active
     });
   const humanHeadline = alignedDisplay?.humanHeadline ?? humanRecHeadline(humanKind);
-  const humanTone = humanRecHeadlineTone(humanKind);
-  const activeTrustLabel = humanHeadline;
+  const primaryVerdict =
+    threat.active || humanKind === "avoidWebsite" || humanKind === "dangerousWebsite"
+      ? "High Scam Risk"
+      : typeof displayTrust === "number"
+        ? standardVerdictLabel(displayTrust)
+        : humanHeadline;
   const techStatus = alignedDisplay?.label ?? technicalStatusText({
     threatActive: threat.active,
     threatKind: threat.kind,
@@ -399,12 +401,20 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
     };
   }, [result.domain, result.score, result.confidenceLevel, hasPublicReviewData]);
 
-  const trustpilotRating = reviewSignals.trustpilotRating ?? reputation?.trustpilotRating ?? reputation?.trustpilot?.rating ?? null;
-  const trustpilotCount =
-    reviewSignals.trustpilotReviewCount ?? reputation?.trustpilotReviewCount ?? reputation?.trustpilot?.reviewCount ?? null;
-  const googleRating = reviewSignals.googleRating ?? reputation?.googleRating ?? reputation?.google?.rating ?? null;
-  const googleCount = reviewSignals.googleReviewCount ?? reputation?.googleReviewCount ?? reputation?.google?.reviewCount ?? null;
-  const trustpilotFound = reviewSignals.trustpilotFound || trustpilotRating != null || trustpilotCount != null;
+  const trustpilotSanitized = sanitizeReviewFields(
+    reviewSignals.trustpilotRating ?? reputation?.trustpilotRating ?? reputation?.trustpilot?.rating ?? null,
+    reviewSignals.trustpilotReviewCount ?? reputation?.trustpilotReviewCount ?? reputation?.trustpilot?.reviewCount ?? null
+  );
+  const googleSanitized = sanitizeReviewFields(
+    reviewSignals.googleRating ?? reputation?.googleRating ?? reputation?.google?.rating ?? null,
+    reviewSignals.googleReviewCount ?? reputation?.googleReviewCount ?? reputation?.google?.reviewCount ?? null
+  );
+  const trustpilotRating = trustpilotSanitized.rating;
+  const trustpilotCount = trustpilotSanitized.reviewCount;
+  const googleRating = googleSanitized.rating;
+  const googleCount = googleSanitized.reviewCount;
+  const trustpilotFound =
+    reviewSignals.trustpilotFound || trustpilotRating != null || trustpilotCount != null;
   const googleFound = reviewSignals.googleFound || googleRating != null || googleCount != null;
   const providerLabel = providerStateLabel(reputation, repError);
   const neutralContextNotes = [
@@ -443,12 +453,26 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
   const isSubdomain = Boolean(result.isSubdomain ?? result.domainIntelligence.subdomain);
   const suspiciousSubTerms = result.suspiciousSubdomainTerms ?? result.domainIntelligence.suspiciousSubdomainTerms ?? [];
 
+  const heroSummary = threat.active
+    ? EN_MESSAGES.scanResult.consumerSummary.underThreat
+    : hasLimitedInspection
+      ? shortExplain
+      : consumerSummaryFor(trustLevel, false);
+  const topReasonLines = [
+    ...topRiskReasons.map((signal) => consumerSignalSummary(signal.title, signal.description)),
+    ...topPositiveReasons.map((signal) => consumerSignalSummary(signal.title, signal.description))
+  ].filter(Boolean);
+  const heroTrustScore =
+    showNonexistentHeadline || hasUnavailableSite
+      ? null
+      : typeof displayTrust === "number"
+        ? displayTrust
+        : null;
+
   return (
     <div
       className={`fraudly-motion w-full rounded-2xl bg-white p-4 shadow-subtle sm:p-5 md:p-6 ${
-        threat.active
-          ? "border border-rose-500/95 shadow-elevated ring-1 ring-rose-300/40"
-          : "border border-slate-200/80"
+        threat.active ? "border border-rose-300/80 shadow-elevated" : "border border-slate-200/80"
       }`}
     >
       <div className="space-y-4 md:space-y-5">
@@ -458,47 +482,45 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
           <ThreatBanner variant="neutral" title={EN_MESSAGES.scanResult.limitedStripTitle} body={EN_MESSAGES.scanResult.limitedStripBody} />
         ) : null}
 
-        <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-5">
-          <div className="min-w-0 flex-1 space-y-4 md:space-y-5">
-            <header className="space-y-3">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className={`select-none text-3xl sm:text-4xl ${humanTone.icon}`} aria-hidden>
-                  {humanRecGlyph(humanKind)}
-                </span>
-                <h2 className={`text-balance text-3xl font-bold tracking-tight sm:text-4xl ${humanTone.text}`}>
-                  {humanHeadline}
-                </h2>
-              </div>
-              <p className="max-w-2xl text-base leading-relaxed text-slate-700 sm:text-[17px]">{shortExplain}</p>
-              {result.adminOverride ? (
-                <p className="max-w-2xl rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs leading-relaxed text-violet-800">
-                  Admin override applied: <span className="font-semibold">{result.adminOverride.verdict}</span>
-                  {result.adminOverride.note ? ` — ${result.adminOverride.note}` : ""}
-                </p>
-              ) : null}
-              {result.redirectChain?.crossDomainRedirect ? (
-                <p className="max-w-2xl text-sm leading-relaxed text-slate-600">
-                  This website redirects to another domain. Fraudly also checked the final destination because redirects
-                  can change the real risk.
-                </p>
-              ) : null}
-              {result.availability?.status === "limited_inspection" ? (
-                <p className="max-w-2xl text-sm leading-relaxed text-slate-600">
-                  Website responded, but some page details could not be fully inspected during this scan.
-                </p>
-              ) : null}
-            </header>
+        <div className="space-y-5">
+          <VerdictHero
+            verdict={primaryVerdict}
+            trustScore={heroTrustScore}
+            summary={heroSummary}
+            domain={checkedHostname}
+            showMeter={showGauge && typeof heroTrustScore === "number"}
+            meter={meter}
+            topReasons={topReasonLines}
+          />
 
-            <div className="max-w-2xl rounded-xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm sm:px-5 sm:py-4">
-              <p className="text-sm leading-relaxed text-slate-800 sm:text-[15px] sm:leading-relaxed">
-                {consumerSummaryFor(trustLevel, threat.active)}
-              </p>
-              <p className="mt-2 border-t border-slate-100 pt-2 text-xs leading-relaxed text-slate-500">
-                {EN_MESSAGES.scanResult.consumerSummaryDisclaimer}
-              </p>
+          {result.adminOverride ? (
+            <p className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-2.5 text-xs leading-relaxed text-violet-800">
+              Admin override applied: <span className="font-semibold">{result.adminOverride.verdict}</span>
+              {result.adminOverride.note ? ` — ${result.adminOverride.note}` : ""}
+            </p>
+          ) : null}
+          {result.redirectChain?.crossDomainRedirect ? (
+            <p className="text-sm leading-relaxed text-slate-600">
+              This website redirects to another domain. Fraudly also checked the final destination.
+            </p>
+          ) : null}
+          {hasLimitedInspection && !threat.active ? (
+            <p className="text-sm leading-relaxed text-slate-600">
+              Website responded, but some page details could not be fully inspected during this scan.
+            </p>
+          ) : null}
+
+          {showNonexistentHeadline ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-950">
+              <p className="text-base font-semibold text-amber-950">{EN_MESSAGES.specialOutcomes.nonexistent.headline}</p>
+              <p className="mt-2 leading-relaxed">{EN_MESSAGES.specialOutcomes.nonexistent.subline}</p>
+              <p className="mt-2 text-xs text-amber-900/90">{EN_MESSAGES.siteOutcome.suppressedTrustExplanation}</p>
             </div>
+          ) : heroTrustScore == null && !showNonexistentHeadline ? (
+            <p className="text-sm text-slate-600">Trust score unavailable for this snapshot.</p>
+          ) : null}
 
-            {showVisitWebsiteCta && trustedVisitUrl ? (
+          {showVisitWebsiteCta && trustedVisitUrl ? (
               <div className="max-w-2xl rounded-xl border border-slate-200 bg-white/70 px-4 py-3 sm:px-5">
                 <a
                   href={trustedVisitUrl}
@@ -515,151 +537,94 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
               </div>
             ) : null}
 
-            {showGauge && typeof displayTrust === "number" ? (
-              <section className="rounded-xl border border-slate-200 bg-white px-4 py-3" aria-label={`Trust score ${displayTrust} out of 100`}>
-                <p className="text-sm font-semibold text-slate-900">{activeTrustLabel}</p>
-                <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  {EN_MESSAGES.scanResult.trustScoreLabel}
-                </p>
-                <p className="mt-1 text-lg font-semibold tabular-nums">
-                  <span className={threat.active ? "text-slate-500" : "text-slate-700"}>{displayTrust}</span>
-                  <span className="text-slate-400"> / 100</span>
-                </p>
-                <div className="mt-3">
-                  <div className={`h-2.5 w-full overflow-hidden rounded-full ${meter.track}`}>
-                    <div
-                      className={`h-full rounded-full ${meter.fill} transition-[width] duration-500 ease-out`}
-                      style={{ width: `${Math.max(0, Math.min(100, displayTrust))}%` }}
-                    />
-                  </div>
-                  <div className="mt-1.5 grid grid-cols-4 text-[10px] font-medium text-slate-500">
-                    <span className="text-left">0</span>
-                    <span className="text-center">49</span>
-                    <span className="text-center">79</span>
-                    <span className="text-right">100</span>
-                  </div>
-                </div>
-                <p className="mt-2 max-w-xl text-xs leading-relaxed text-slate-600 sm:text-[13px]">
-                  {EN_MESSAGES.scanResult.trustScoreExplainer}
-                </p>
-                <p className="mt-1.5 max-w-xl text-xs leading-relaxed text-slate-500">
-                  {EN_MESSAGES.scanResult.trustScoreExplainerFootnote}
-                </p>
-                {threat.active ? (
-                  <p className="mt-2 text-xs font-medium text-rose-900">
-                    {EN_MESSAGES.scanResult.resultSections.trustScoreThreatNote}
-                  </p>
-                ) : null}
-              </section>
-            ) : showNonexistentHeadline ? (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-950">
-                <p className="text-base font-semibold text-amber-950">{EN_MESSAGES.specialOutcomes.nonexistent.headline}</p>
-                <p className="mt-2 leading-relaxed">{EN_MESSAGES.specialOutcomes.nonexistent.subline}</p>
-                <p className="mt-2 text-xs text-amber-900/90">{EN_MESSAGES.siteOutcome.suppressedTrustExplanation}</p>
-              </div>
-            ) : (
-              <div className="text-sm text-slate-600">
-                <p className="font-medium text-slate-800">Trust score unavailable</p>
-                <p className="mt-1 text-xs text-slate-500">This snapshot did not produce a numeric trust score.</p>
-              </div>
-            )}
-
-            <section className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-900">Reputation &amp; public trust</h3>
-              <p className="mt-1 text-xs leading-relaxed text-slate-600">
-                Public review and reputation signals can help provide context, but they are not a guarantee that a website is safe.
+          <section className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5">
+            <h3 className="text-sm font-semibold text-slate-900">{EN_MESSAGES.scanResult.whyThisResultHeading}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">{EN_MESSAGES.scanResult.whyThisResultIntro}</p>
+            <p className="mt-3 text-xs leading-relaxed text-slate-500">{EN_MESSAGES.scanResult.consumerSummaryDisclaimer}</p>
+            {registeredDomain !== checkedHostname ? (
+              <p className="mt-2 text-xs text-slate-500">
+                Registered domain: <span className="font-medium text-slate-700">{registeredDomain}</span>
               </p>
-              <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                Positive review signals can support trust, but reviews can be incomplete or manipulated.
-              </p>
+            ) : null}
+          </section>
 
-              <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
-                <article className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Trustpilot</p>
-                  {trustpilotFound ? (
-                    <>
-                      <p className="mt-1 text-sm font-semibold text-slate-900">
-                        <span aria-hidden className="mr-1 text-amber-500">
-                          ★
-                        </span>
-                        {trustpilotRating?.toFixed(1) ?? "—"} / 5
-                      </p>
-                      <p className="mt-1 text-xs text-slate-600">{formatReviewCount(trustpilotCount ?? undefined)} reviews</p>
-                    </>
-                  ) : (
-                    <p className="mt-1 text-xs text-slate-600">
+          <section className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5">
+            <h3 className="text-sm font-semibold text-slate-900">{EN_MESSAGES.scanResult.reputationHeading}</h3>
+            <p className="mt-1 text-xs leading-relaxed text-slate-600">{EN_MESSAGES.scanResult.reputationIntro}</p>
+            <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+                {trustpilotFound ? (
+                  <ReviewRating
+                    source="Trustpilot"
+                    rating={trustpilotRating}
+                    reviewCount={trustpilotCount}
+                    className="rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5"
+                  />
+                ) : (
+                  <article className="rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5">
+                    <p className="text-sm font-semibold text-slate-900">Trustpilot</p>
+                    <p className="mt-1.5 text-xs text-slate-600">
                       {publicReviewUnavailableMessage(reputation, repError, "No public review profile found in this scan.")}
                     </p>
-                  )}
-                </article>
+                  </article>
+                )}
 
-                <article className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Google Reviews</p>
-                  {googleFound ? (
-                    <>
-                      <p className="mt-1 text-sm font-semibold text-slate-900">
-                        <span aria-hidden className="mr-1 text-amber-500">
-                          ★
-                        </span>
-                        {googleRating?.toFixed(1) ?? "—"} / 5
-                      </p>
-                      <p className="mt-1 text-xs text-slate-600">{formatReviewCount(googleCount ?? undefined)} reviews</p>
-                    </>
-                  ) : (
-                    <p className="mt-1 text-xs text-slate-600">
+                {googleFound ? (
+                  <ReviewRating
+                    source="Google Reviews"
+                    rating={googleRating}
+                    reviewCount={googleCount}
+                    className="rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5"
+                  />
+                ) : (
+                  <article className="rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5">
+                    <p className="text-sm font-semibold text-slate-900">Google Reviews</p>
+                    <p className="mt-1.5 text-xs text-slate-600">
                       {publicReviewUnavailableMessage(reputation, repError, "No review snapshot available in this scan.")}
                     </p>
-                  )}
-                </article>
+                  </article>
+                )}
               </div>
             </section>
 
-            <section className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-900">Why we say this</h3>
+          {topPositiveReasons.length > 0 || topRiskReasons.length > 0 || neutralContextNotes.length > 0 ? (
+            <section className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5">
+              <h3 className="text-sm font-semibold text-slate-900">{EN_MESSAGES.scanResult.safetySignalsHeading}</h3>
+              <p className="mt-1 text-xs leading-relaxed text-slate-600">{EN_MESSAGES.scanResult.safetySignalsIntro}</p>
               {topPositiveReasons.length > 0 ? (
-                <div className="mt-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Positive signals</p>
-                  <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                <div className="mt-3">
+                  <p className="text-xs font-medium text-emerald-800">Helpful signals</p>
+                  <ul className="mt-1.5 space-y-1.5 text-sm text-slate-700">
                     {topPositiveReasons.map((signal, idx) => (
-                      <li key={`positive-${idx}-${signal.title}`}>{signal.title}</li>
+                      <li key={`positive-${idx}-${signal.title}`} className="flex gap-2">
+                        <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-emerald-400" aria-hidden />
+                        <span>{consumerSignalSummary(signal.title, signal.description)}</span>
+                      </li>
                     ))}
                   </ul>
                 </div>
               ) : null}
               {topRiskReasons.length > 0 ? (
                 <div className="mt-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Risk indicators</p>
-                  <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                  <p className="text-xs font-medium text-amber-900">Things to watch</p>
+                  <ul className="mt-1.5 space-y-1.5 text-sm text-slate-700">
                     {topRiskReasons.map((signal, idx) => (
-                      <li key={`risk-${idx}-${signal.title}`}>{signal.title}</li>
+                      <li key={`risk-${idx}-${signal.title}`} className="flex gap-2">
+                        <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-amber-400" aria-hidden />
+                        <span>{consumerSignalSummary(signal.title, signal.description)}</span>
+                      </li>
                     ))}
                   </ul>
                 </div>
               ) : null}
               {neutralContextNotes.length > 0 ? (
-                <div className="mt-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Extra context</p>
-                  <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-slate-600">
-                    {neutralContextNotes.map((note, idx) => (
-                      <li key={`neutral-${idx}-${note.slice(0, 24)}`}>{note}</li>
-                    ))}
-                  </ul>
-                </div>
+                <ul className="mt-3 space-y-1 text-xs text-slate-600">
+                  {neutralContextNotes.map((note, idx) => (
+                    <li key={`neutral-${idx}-${note.slice(0, 24)}`}>{note}</li>
+                  ))}
+                </ul>
               ) : null}
             </section>
-          </div>
-
-          <div className="flex w-full min-w-0 flex-col gap-3 sm:w-auto sm:max-w-md sm:items-end sm:text-right">
-            <div className="text-sm text-slate-600 sm:text-right">
-              <p className="font-medium text-slate-900">{EN_MESSAGES.scanResult.resultSections.analyzedDomainHeading}</p>
-              <p className="mt-1 break-all">{checkedHostname}</p>
-              {registeredDomain !== checkedHostname ? (
-                <p className="mt-1 text-xs text-slate-500">
-                  Registered domain: <span className="font-medium text-slate-700">{registeredDomain}</span>
-                </p>
-              ) : null}
-            </div>
-          </div>
+          ) : null}
         </div>
       </div>
 
@@ -671,6 +636,19 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
           </span>
         </summary>
         <div className="mt-4 space-y-4 border-t border-slate-100 pt-4">
+          {typeof heroTrustScore === "number" ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+              <p className="text-sm font-semibold text-slate-900">{EN_MESSAGES.scanResult.trustScoreLabel}</p>
+              <p className="mt-1 text-sm tabular-nums text-slate-800">
+                {heroTrustScore}
+                <span className="text-slate-400"> / 100</span>
+              </p>
+              <p className="mt-2 text-xs leading-relaxed text-slate-600">{EN_MESSAGES.scanResult.trustScoreExplainer}</p>
+              {threat.active ? (
+                <p className="mt-2 text-xs text-rose-900">{EN_MESSAGES.scanResult.resultSections.trustScoreThreatNote}</p>
+              ) : null}
+            </div>
+          ) : null}
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
             <p className="text-sm font-semibold text-slate-900">{EN_MESSAGES.scanResult.technicalStatusHeading}</p>
             <p className="mt-1 text-xs text-slate-700">{techStatus}</p>
@@ -988,10 +966,12 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
                 <p className="font-medium text-slate-900">Indexed review snippets probe</p>
                 <p>
                   Rating estimate:{" "}
-                  <span className="font-medium">{reviewSignals.googleRating?.toFixed(1) ?? "n/a"}</span>
+                  <span className="font-medium">
+                    {googleSanitized.rating != null ? `${googleSanitized.rating.toFixed(1)}/5` : "n/a"}
+                  </span>
                 </p>
                 <p>
-                  Review count estimate: <span className="font-medium">{reviewSignals.googleReviewCount ?? "n/a"}</span>
+                  Review count estimate: <span className="font-medium">{googleSanitized.reviewCount ?? "n/a"}</span>
                 </p>
               </div>
             )}
@@ -1000,10 +980,12 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
                 <p className="font-medium text-slate-900">Trust snapshot probe</p>
                 <p>
                   Rating:{" "}
-                  <span className="font-medium">{reviewSignals.trustpilotRating?.toFixed(1) ?? "n/a"}</span>
+                  <span className="font-medium">
+                    {trustpilotSanitized.rating != null ? `${trustpilotSanitized.rating.toFixed(1)}/5` : "n/a"}
+                  </span>
                 </p>
                 <p>
-                  Review count: <span className="font-medium">{reviewSignals.trustpilotReviewCount ?? "n/a"}</span>
+                  Review count: <span className="font-medium">{trustpilotSanitized.reviewCount ?? "n/a"}</span>
                 </p>
               </div>
             )}

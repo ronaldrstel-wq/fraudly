@@ -26,7 +26,7 @@ export async function collectIndexedReviewSnippets(domain: string): Promise<Publ
         const $ = load(html);
         const pageText = $("body").text();
         const snippets = $("div").filter((_, el) => ($(el).text() || "").toLowerCase().includes(normalized)).length;
-        const ratingMatch = pageText.match(/(\d(?:\.\d)?)\s*(?:\/\s*5|out of 5)/i);
+        const ratingMatch = pageText.match(/(\d(?:\.\d+)?)\s*(?:\/\s*5|out of 5)/i);
         const countMatch = pageText.match(/([\d,]+)\s+reviews?/i);
         if (!ratingMatch && !countMatch && snippets === 0) continue;
         return {

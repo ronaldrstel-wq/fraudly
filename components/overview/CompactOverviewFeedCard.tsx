@@ -114,7 +114,7 @@ function FeedLeading(props: {
         <p id={headlineId} className="text-balance text-[17px] font-semibold leading-tight tracking-tight text-slate-900 md:text-[17px] md:leading-snug">
           {m.headline}
         </p>
-        <p className="text-[13px] font-medium leading-snug text-slate-600 md:text-[12.5px] md:leading-snug">{m.technicalLabel}</p>
+        <p className="text-[13px] font-medium leading-snug text-slate-600 md:text-[12.5px] md:leading-snug">{m.oneLiner}</p>
         <p className="break-all pt-0.5 text-[14px] font-medium text-slate-900 md:pt-0 md:text-[14px]" title={domainFullTitle}>
           {domainLine || "—"}
         </p>

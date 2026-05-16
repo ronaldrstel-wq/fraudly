@@ -8,8 +8,8 @@ import {
   humanRecKindFromTrustVerdict
 } from "@/lib/scanResultDualLayer";
 import {
-  consumerDisplayLabel,
   publicDisplayScoreFromRiskAndVerdict,
+  standardVerdictLabel,
   trustScoreFromRisk
 } from "@/lib/scoring/displayScore";
 import { clampScore } from "@/lib/clampScore";
@@ -75,10 +75,11 @@ export function overviewCardArticleClass(kind: HumanRecKind): string {
 
 export type OverviewCardModel = {
   humanKind: HumanRecKind;
+  /** Standard verdict: Likely Safe | Use Caution | High Scam Risk */
   headline: string;
+  verdictLabel: string;
   glyph: string;
   tone: ReturnType<typeof humanRecHeadlineTone>;
-  technicalLabel: string;
   oneLiner: string;
   trustScore: number;
   isCritical: boolean;
@@ -89,12 +90,13 @@ export function buildOverviewFromTrustAndVerdict(trustScore: number, verdict: Sc
   const normalizedTrust = clampScore(trustScore);
   const humanKind = humanRecKindFromTrustVerdict(normalizedTrust, verdict);
   const isCritical = isCriticalOverviewKind(humanKind);
+  const verdictLabel = standardVerdictLabel(normalizedTrust);
   return {
     humanKind,
-    headline: humanRecHeadline(humanKind),
+    verdictLabel,
+    headline: verdictLabel,
     glyph: humanRecGlyph(humanKind),
     tone: humanRecHeadlineTone(humanKind),
-    technicalLabel: consumerDisplayLabel(normalizedTrust),
     oneLiner: overviewOneLiner(humanKind),
     trustScore: normalizedTrust,
     isCritical,
