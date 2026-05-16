@@ -4,6 +4,7 @@ import type { DomainIntelligence } from "@/lib/checks/types";
 import { fetchJsonWithTimeout, fromCache, toCache } from "@/lib/checks/utils";
 import type { ProviderEvidenceResult, ProviderRun } from "@/lib/checks/providers/types";
 import { wrapEvidence } from "@/lib/checks/providers/shared";
+import { parseRdapDate, registrationDateFromRdapEvents } from "@/lib/checks/providers/domain/rdapRegistration";
 
 const SOURCE = "RDAP (rdap.org)";
 
@@ -15,10 +16,15 @@ type RdapResponse = {
   country?: string;
 };
 
-function parseDate(value?: string): Date | null {
-  if (!value) return null;
-  const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? null : d;
+async function fetchRdapDocument(domain: string, timeoutMs: number): Promise<{ json: RdapResponse; sourceLabel: string }> {
+  try {
+    const json = await fetchJsonWithTimeout<RdapResponse>(`https://rdap.org/domain/${domain}`, timeoutMs);
+    return { json, sourceLabel: SOURCE };
+  } catch (primaryError) {
+    if (!domain.endsWith(".nl")) throw primaryError;
+    const json = await fetchJsonWithTimeout<RdapResponse>(`https://rdap.sidn.nl/domain/${domain}`, timeoutMs);
+    return { json, sourceLabel: "RDAP (SIDN)" };
+  }
 }
 
 export async function runRdapProvider(domain: string): Promise<ProviderRun<DomainIntelligence>> {
@@ -40,11 +46,23 @@ export async function runRdapProvider(domain: string): Promise<ProviderRun<Domai
   if (cached) return { evidence: cached.evidence, result: cached.check };
 
   try {
-    const rdap = await fetchJsonWithTimeout<RdapResponse>(`https://rdap.org/domain/${normalizedDomain}`, timeoutMs);
-    const registrationEvent = rdap.events?.find((event) => event.eventAction === "registration");
+    let { json: rdap, sourceLabel } = await fetchRdapDocument(normalizedDomain, timeoutMs);
+    let registrationDate = registrationDateFromRdapEvents(rdap.events);
+    if (!registrationDate && normalizedDomain.endsWith(".nl")) {
+      try {
+        const sidn = await fetchJsonWithTimeout<RdapResponse>(`https://rdap.sidn.nl/domain/${normalizedDomain}`, timeoutMs);
+        const sidnRegistration = registrationDateFromRdapEvents(sidn.events);
+        if (sidnRegistration) {
+          rdap = sidn;
+          registrationDate = sidnRegistration;
+          sourceLabel = "RDAP (SIDN)";
+        }
+      } catch {
+        // Keep rdap.org payload when SIDN fallback fails.
+      }
+    }
     const expiryEvent = rdap.events?.find((event) => event.eventAction === "expiration");
-    const registrationDate = parseDate(registrationEvent?.eventDate);
-    const expirationDate = parseDate(expiryEvent?.eventDate);
+    const expirationDate = parseRdapDate(expiryEvent?.eventDate);
     const now = new Date();
     const ageDays = registrationDate ? Math.max(0, Math.floor((now.getTime() - registrationDate.getTime()) / 86400000)) : undefined;
     const registrationWindowDays =
@@ -80,7 +98,7 @@ export async function runRdapProvider(domain: string): Promise<ProviderRun<Domai
       expirationDate: expirationDate?.toISOString(),
       hasPrivacyProtection,
       suspiciouslyShortRegistration,
-      source: SOURCE,
+      source: sourceLabel,
       warnings: []
     };
 

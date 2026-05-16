@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { formatDomainAgeFromDays } from "@/lib/format/domainAge";
+import {
+  domainAgeConsumerBucket,
+  formatDomainAgeFromDays,
+  formatDomainAgeSignal
+} from "@/lib/format/domainAge";
 
 describe("formatDomainAgeFromDays", () => {
   it("formats 12 days", () => {
@@ -24,7 +28,41 @@ describe("formatDomainAgeFromDays", () => {
     expect(formatDomainAgeFromDays(Number.NaN)).toBeNull();
   });
 
-  it("clamps negative values", () => {
-    expect(formatDomainAgeFromDays(-5)).toBe("0 days");
+  it("returns null for negative values", () => {
+    expect(formatDomainAgeFromDays(-1)).toBeNull();
+    expect(formatDomainAgeFromDays(-5)).toBeNull();
+  });
+});
+
+describe("formatDomainAgeSignal", () => {
+  it("formats young domain copy", () => {
+    expect(formatDomainAgeSignal(12)).toBe("This domain is only 12 days old.");
+  });
+
+  it("formats mid-age domain copy", () => {
+    expect(formatDomainAgeSignal(45)).toBe("This domain is 1 month, 15 days old.");
+  });
+
+  it("formats established domain copy", () => {
+    expect(formatDomainAgeSignal(438)).toBe("This domain has existed for 1 year, 2 months, 13 days.");
+  });
+
+  it("returns null when age unknown", () => {
+    expect(formatDomainAgeSignal(null)).toBeNull();
+  });
+});
+
+describe("domainAgeConsumerBucket", () => {
+  it("marks young domains as caution", () => {
+    expect(domainAgeConsumerBucket(12)).toBe("caution");
+  });
+
+  it("marks mid-age domains as caution", () => {
+    expect(domainAgeConsumerBucket(90)).toBe("caution");
+  });
+
+  it("marks established domains as positive", () => {
+    expect(domainAgeConsumerBucket(200)).toBe("positive");
+    expect(domainAgeConsumerBucket(438)).toBe("positive");
   });
 });

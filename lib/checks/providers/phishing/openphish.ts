@@ -1,5 +1,7 @@
 import { normalizeDomain } from "@/lib/cache";
+import { feedEntryMatchesHost } from "@/lib/checks/feedHostMatch";
 import { checksConfig } from "@/lib/checks/config";
+import { parseDomainParts } from "@/lib/domain/parseDomain";
 import type { FeedThreatCheck } from "@/lib/checks/types";
 import { fetchTextWithTimeout, fromCache, toCache } from "@/lib/checks/utils";
 import type { ProviderRun } from "@/lib/checks/providers/types";
@@ -42,11 +44,12 @@ export async function runOpenPhishProvider(url: string, domain: string): Promise
       .filter(Boolean)
       .slice(0, 150_000);
 
+    const parsed = parseDomainParts(url);
+    const registrableDomain = parsed.registrableDomain;
     const targetUrl = url.toLowerCase();
-    const matches = entries.filter((entry) => {
-      const lower = entry.toLowerCase();
-      return lower === targetUrl || lower.includes(normalizedDomain);
-    });
+    const matches = entries.filter((entry) =>
+      feedEntryMatchesHost(entry, normalizedDomain, registrableDomain) || entry.toLowerCase() === targetUrl
+    );
 
     const listed = matches.length > 0;
     const result: FeedThreatCheck = {

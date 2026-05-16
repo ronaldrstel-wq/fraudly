@@ -1076,12 +1076,19 @@ export function calculateScamScore(input: {
       finalScore = Math.max(0, Math.min(100, Math.round(100 - trustScore)));
     }
 
+    const establishedBenignBaseline =
+      Boolean(input.intelSurface?.benignTechnicalBaseline) &&
+      !confirmedMalicious &&
+      typeof input.scoringContext.ageDaysKnown === "number" &&
+      input.scoringContext.ageDaysKnown >= 365;
+
     const limitedEvidenceOnly =
       input.scoringContext.limitedPublicReputation &&
       !input.scoringContext.domainPatterns.officialRegistrableExempt &&
       !lexicalStrong &&
       !confirmedMalicious &&
       !(anchorsForContext?.hasAnchoredReputation ?? false) &&
+      !establishedBenignBaseline &&
       (input.scoringContext.rdapFailed ||
         input.scoringContext.domainAgeUnknown ||
         (typeof input.scoringContext.ageDaysKnown === "number" && input.scoringContext.ageDaysKnown < 365));

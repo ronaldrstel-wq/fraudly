@@ -31,6 +31,7 @@ import { requiresCriticalTrustClamp } from "@/lib/scanPresentation";
 import { verdictFromAssessment } from "@/lib/trustSystem";
 import type { ScamCheckResult } from "@/types/scam";
 import type { PendingPageBehaviorSignals } from "@/types/behavioral-signals";
+import { logScanPipelineDebug } from "@/lib/analysis/scanPipelineDebug";
 import { parseDomainParts } from "@/lib/domain/parseDomain";
 import { resolveRedirectChain } from "@/lib/checks/redirectChain";
 import type { ScoreSignal } from "@/lib/scoringEngine";
@@ -394,6 +395,16 @@ export async function runWebsiteAnalysis(
         ? "Site unavailable: no HTTP response received."
         : "Website responded, but some page details could not be fully inspected during this scan.")
   } as const;
+
+  logScanPipelineDebug({
+    submittedUrl: inputUrl,
+    externalChecks,
+    reviewSignals,
+    trustSignals,
+    riskScore: adjustedRisk,
+    trustScore: Math.max(0, Math.min(100, 100 - adjustedRisk)),
+    verdict: adjustedVerdict
+  });
 
   return {
     score: adjustedRisk,

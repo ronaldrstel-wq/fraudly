@@ -1,6 +1,7 @@
 import type { ExternalChecksResult } from "@/lib/checks/types";
 import type { ReviewSignals } from "@/lib/reviewSignals";
 import { analyzeDomainPatterns, type DomainPatternAnalysis } from "@/lib/domainPatternHeuristics";
+import { resolveGoogleReviewMatch, resolveTrustpilotReviewMatch } from "@/lib/reputation/reviewMatchConfidence";
 
 export type ScoringIdentityContext = {
   rdapFailed: boolean;
@@ -21,8 +22,8 @@ export function buildScoringIdentityContext(
   reviewSignals: ReviewSignals
 ): ScoringIdentityContext {
   const di = checks.domainIntelligence;
-  /** Successful RDAP runs clear `warnings`; any warning means unavailable, disabled, or error. */
-  const rdapFailed = di.warnings.length > 0;
+  /** RDAP unavailable only when we have no usable age and provider reported failure/disabled. */
+  const rdapFailed = di.warnings.length > 0 && typeof di.ageDays !== "number";
   const registrationDateUnknown = !di.registrationDate;
   const registrarUnknown = !di.registrar;
   const domainAgeUnknown = typeof di.ageDays !== "number";
@@ -42,7 +43,8 @@ export function buildScoringIdentityContext(
   const robotsLikelyBlocked =
     Array.isArray(reviewSignals.reviewFetchDebug) && reviewSignals.reviewFetchDebug.some((r) => r.bucket === "website_behavior");
 
-  const limitedPublicReputation = !reviewSignals.googleFound && !reviewSignals.trustpilotFound;
+  const limitedPublicReputation =
+    !resolveGoogleReviewMatch(reviewSignals).displayable && !resolveTrustpilotReviewMatch(reviewSignals).displayable;
 
   return {
     rdapFailed,
@@ -69,18 +71,20 @@ export function computeTrustAnchors(
 ): TrustAnchorFlags {
   const tierStrong = (): boolean => {
     if (!reviewSignals) return false;
+    const gMatch = resolveGoogleReviewMatch(reviewSignals);
     const g =
-      reviewSignals.googleFound &&
-      reviewSignals.googleRating != null &&
-      reviewSignals.googleReviewCount != null &&
-      reviewSignals.googleRating >= 4.3 &&
-      reviewSignals.googleReviewCount >= 100;
+      gMatch.displayable &&
+      gMatch.rating != null &&
+      gMatch.reviewCount != null &&
+      gMatch.rating >= 4.3 &&
+      gMatch.reviewCount >= 100;
+    const tpMatch = resolveTrustpilotReviewMatch(reviewSignals);
     const tp =
-      reviewSignals.trustpilotFound &&
-      reviewSignals.trustpilotRating != null &&
-      reviewSignals.trustpilotReviewCount != null &&
-      reviewSignals.trustpilotRating >= 4.3 &&
-      reviewSignals.trustpilotReviewCount >= 100;
+      tpMatch.displayable &&
+      tpMatch.rating != null &&
+      tpMatch.reviewCount != null &&
+      tpMatch.rating >= 4.3 &&
+      tpMatch.reviewCount >= 100;
     return Boolean(g || tp);
   };
 
@@ -91,8 +95,10 @@ export function computeTrustAnchors(
       count: number | undefined,
       found: boolean
     ): boolean => Boolean(found && rating != null && count != null && rating >= 4.0 && count >= 25);
-    return good(reviewSignals.googleRating, reviewSignals.googleReviewCount, reviewSignals.googleFound) ||
-      good(reviewSignals.trustpilotRating, reviewSignals.trustpilotReviewCount, reviewSignals.trustpilotFound);
+    const g = resolveGoogleReviewMatch(reviewSignals);
+    const tp = resolveTrustpilotReviewMatch(reviewSignals);
+    return good(g.rating ?? undefined, g.reviewCount ?? undefined, g.displayable) ||
+      good(tp.rating ?? undefined, tp.reviewCount ?? undefined, tp.displayable);
   };
 
   return {

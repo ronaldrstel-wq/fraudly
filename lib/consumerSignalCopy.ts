@@ -3,10 +3,9 @@
  * Copy depends on target section polarity — never infer risk from positive-only keywords alone.
  */
 
-import {
-  formatDomainAgeConsumerLine,
-  formatSslConsumerLine
-} from "@/lib/signals/trustHighlightFacts";
+import { formatDomainAgeSignal } from "@/lib/format/domainAge";
+import { FEED_HIT_SUMMARY } from "@/lib/signals/feedConsumerSignals";
+import { formatSslConsumerLine } from "@/lib/signals/trustHighlightFacts";
 
 export type ConsumerSignalPolarity = "positive" | "caution";
 
@@ -45,8 +44,8 @@ const POSITIVE_RULES: ReadonlyArray<{ pattern: RegExp; summary: string }> = [
 
 const CAUTION_RULES: ReadonlyArray<{ pattern: RegExp; summary: string }> = [
   {
-    pattern: /\b(openphish|urlhaus|safe browsing|phishing feed|malware feed|police|government warning|scam list|listed in)\b/i,
-    summary: "This website appears in known scam or phishing reports."
+    pattern: /\b(listed in openphish|listed in urlhaus|google safe browsing match|appears in google safe browsing)\b/i,
+    summary: FEED_HIT_SUMMARY
   },
   {
     pattern: /\b(very new domain|young domain|recently registered|short initial registration|only about \d+ days)\b/i,
@@ -87,7 +86,7 @@ function summaryFromDomainAgeBlob(blob: string, polarity: ConsumerSignalPolarity
   const days = Number.parseInt(match[1] ?? "", 10);
   if (!Number.isFinite(days)) return null;
 
-  return formatDomainAgeConsumerLine(days);
+  return formatDomainAgeSignal(days);
 }
 
 function summaryFromSslBlob(blob: string): string | null {

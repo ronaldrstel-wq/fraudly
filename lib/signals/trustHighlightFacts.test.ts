@@ -89,6 +89,24 @@ describe("trustHighlightFacts", () => {
     expect(normalized.helpful.some((l) => /existed for 1 year, 2 months, 13 days/i.test(l))).toBe(true);
     expect(normalized.helpful.some((l) => /valid secure connection/i.test(l))).toBe(true);
     expect(normalized.helpful.filter((l) => /valid secure connection/i.test(l))).toHaveLength(1);
+    expect(normalized.helpful.some((l) => /registration details were verified/i.test(l))).toBe(false);
+    expect(normalized.helpful.join(" ")).not.toMatch(/\b438\s*days\b/i);
+  });
+
+  it("dedupes generic registration copy when age-specific signal exists", () => {
+    const result = minimalResult({
+      domainIntelligence: { source: "RDAP", warnings: [], ageDays: 438 },
+      trustSignals: [
+        {
+          type: "info",
+          title: "Domain registration data",
+          description: "RDAP registration data was checked."
+        }
+      ]
+    });
+    const normalized = normalizeConsumerSignalsForResult(result);
+    expect(normalized.helpful.some((l) => /existed for 1 year, 2 months, 13 days/i.test(l))).toBe(true);
+    expect(normalized.helpful.some((l) => /registration details were verified/i.test(l))).toBe(false);
   });
 
   it("surfaces young domain under Things to watch", () => {

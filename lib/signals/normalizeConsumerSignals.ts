@@ -1,5 +1,11 @@
 import type { TrustSignal } from "@/lib/checks/types";
 import { consumerSignalSummary, isInternalImplementationSignal } from "@/lib/consumerSignalCopy";
+import {
+  assessScamFeedThreatStatus,
+  FEED_CLEAN_SUMMARY,
+  FEED_HIT_SUMMARY,
+  reconcileScamFeedConsumerLines
+} from "@/lib/signals/feedConsumerSignals";
 import { extractTrustHighlightFacts, type TrustHighlightFact } from "@/lib/signals/trustHighlightFacts";
 import type { ScamCheckResult } from "@/types/scam";
 
@@ -27,8 +33,9 @@ function isNegatedListing(blob: string): boolean {
 
 function isConfirmedListing(blob: string): boolean {
   if (isNegatedListing(blob)) return false;
+  if (/\b(no police|no match found|not listed)\b/i.test(blob)) return false;
   return (
-    /\b(listed in|appears on|flagged|reported threat|police reference|malware url|phishing)\b/i.test(blob) ||
+    /\b(listed in openphish|listed in urlhaus|google safe browsing match|appears in google safe browsing)\b/i.test(blob) ||
     (/\b(openphish|urlhaus|safe browsing)\b/i.test(blob) && /\b(listed|match|flagged|threat)\b/i.test(blob))
   );
 }
@@ -104,10 +111,47 @@ function mergeHighlightFacts(highlights: TrustHighlightFact[], signals: TrustSig
     else dedupePush(watch, seen, line);
   }
 
-  return {
-    helpful: helpful.slice(0, MAX_PER_SECTION),
-    watch: watch.slice(0, MAX_PER_SECTION)
+  return applyScamFeedSummaries(
+    {
+      helpful: helpful.slice(0, MAX_PER_SECTION),
+      watch: watch.slice(0, MAX_PER_SECTION)
+    },
+    signals
+  );
+}
+
+function applyScamFeedSummaries(
+  sections: NormalizedConsumerSignals,
+  signals: TrustSignal[]
+): NormalizedConsumerSignals {
+  const status = assessScamFeedThreatStatus(signals);
+  let helpful = [...sections.helpful];
+  let watch = [...sections.watch];
+
+  const stripFeedSummaries = () => {
+    helpful = helpful.filter((line) => !isAggregateFeedLine(line));
+    watch = watch.filter((line) => !isAggregateFeedLine(line));
   };
+
+  if (status === "hit") {
+    stripFeedSummaries();
+    const seenWatch = new Set(watch.map((line) => line.toLowerCase().replace(/\s+/g, " ").trim()));
+    dedupePush(watch, seenWatch, FEED_HIT_SUMMARY);
+  } else if (status === "clean") {
+    stripFeedSummaries();
+    const seenHelpful = new Set(helpful.map((line) => line.toLowerCase().replace(/\s+/g, " ").trim()));
+    dedupePush(helpful, seenHelpful, FEED_CLEAN_SUMMARY);
+  }
+
+  return reconcileScamFeedConsumerLines(helpful, watch);
+}
+
+function isAggregateFeedLine(line: string): boolean {
+  const lower = line.toLowerCase();
+  return (
+    lower.includes("no matches were found on major scam or phishing lists") ||
+    lower.includes("appears in known scam or phishing reports")
+  );
 }
 
 function isDuplicateOfHighlight(line: string, highlights: TrustHighlightFact[]): boolean {
@@ -116,7 +160,12 @@ function isDuplicateOfHighlight(line: string, highlights: TrustHighlightFact[]):
     const factLine = fact.consumerLine.toLowerCase().trim();
     if (normalized === factLine) return true;
     if (fact.id === "ssl" && /secure connection|valid secure/i.test(normalized)) return true;
-    if (fact.id === "domain_age" && /domain|registered|existed|only \d/i.test(normalized)) return true;
+    if (fact.id === "domain_age") {
+      if (/domain|registered|existed|only \d|years? old|months? old|days old/i.test(normalized)) return true;
+      if (/domain registration details were verified|registration details were verified/i.test(normalized)) {
+        return true;
+      }
+    }
     return false;
   });
 }

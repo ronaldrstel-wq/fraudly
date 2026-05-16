@@ -6,7 +6,6 @@ import type { ProviderRun } from "@/lib/checks/providers/types";
 import { wrapEvidence } from "@/lib/checks/providers/shared";
 
 const SOURCE = "Dutch Police (public pages)";
-const CHECK_URL = "https://www.politie.nl/aangifte-of-melding-doen/controleer-handelspartij.html";
 const LIST_URL = "https://www.politie.nl/aangifte-of-melding-doen/bekende-malafide-handelspartijen.html";
 
 function extractDomainCandidates(text: string): string[] {
@@ -45,11 +44,9 @@ export async function runPoliceNlProvider(domain: string): Promise<ProviderRun<P
   if (cached) return { evidence: cached.evidence, result: cached.check };
 
   try {
-    const [checkPage, listPage] = await Promise.all([
-      fetchTextWithTimeout(CHECK_URL, timeoutMs),
-      fetchTextWithTimeout(LIST_URL, timeoutMs)
-    ]);
-    const candidates = [...extractDomainCandidates(checkPage), ...extractDomainCandidates(listPage)];
+    const listPage = await fetchTextWithTimeout(LIST_URL, timeoutMs);
+    /** Only the published malafide-traders list — not the “check your seller” help page (often mentions legitimate shops). */
+    const candidates = extractDomainCandidates(listPage);
     const uniqueCandidates = [...new Set(candidates)];
     const match = uniqueCandidates.find((candidate) => candidate === normalizedDomain);
 

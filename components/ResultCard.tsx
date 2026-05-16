@@ -10,6 +10,11 @@ import {
 } from "@/lib/signals/normalizeConsumerSignals";
 import { trustHighlightsForHero } from "@/lib/signals/trustHighlightFacts";
 import { formatDomainAgeFromDays } from "@/lib/format/domainAge";
+import {
+  PUBLIC_REVIEW_NOT_MATCHED_COPY,
+  resolveGoogleReviewMatch,
+  resolveTrustpilotReviewMatch
+} from "@/lib/reputation/reviewMatchConfidence";
 import { sanitizeReviewFields } from "@/lib/reputation/reviewRatingNormalize";
 import { standardVerdictLabel } from "@/lib/scoring/displayScore";
 import { inferIntelEvidenceTier, type IntelScoreBreakdownEntry } from "@/lib/checks/scoring";
@@ -429,13 +434,22 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
     reviewSignals.googleRating ?? reputation?.googleRating ?? reputation?.google?.rating ?? null,
     reviewSignals.googleReviewCount ?? reputation?.googleReviewCount ?? reputation?.google?.reviewCount ?? null
   );
-  const trustpilotRating = trustpilotSanitized.rating;
-  const trustpilotCount = trustpilotSanitized.reviewCount;
-  const googleRating = googleSanitized.rating;
-  const googleCount = googleSanitized.reviewCount;
-  const trustpilotFound =
-    reviewSignals.trustpilotFound || trustpilotRating != null || trustpilotCount != null;
-  const googleFound = reviewSignals.googleFound || googleRating != null || googleCount != null;
+  const trustpilotMatch = resolveTrustpilotReviewMatch({
+    ...reviewSignals,
+    trustpilotRating: trustpilotSanitized.rating ?? undefined,
+    trustpilotReviewCount: trustpilotSanitized.reviewCount ?? undefined
+  });
+  const googleMatch = resolveGoogleReviewMatch({
+    ...reviewSignals,
+    googleRating: googleSanitized.rating ?? undefined,
+    googleReviewCount: googleSanitized.reviewCount ?? undefined
+  });
+  const trustpilotFound = trustpilotMatch.displayable;
+  const googleFound = googleMatch.displayable;
+  const trustpilotRating = trustpilotMatch.rating;
+  const trustpilotCount = trustpilotMatch.reviewCount;
+  const googleRating = googleMatch.rating;
+  const googleCount = googleMatch.reviewCount;
   const providerLabel = providerStateLabel(reputation, repError);
   const neutralContextNotes = filterConsumerContextNotes([
     reputation?.reputationStatus === "called_no_match"
@@ -581,7 +595,11 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
                   <article className="rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5">
                     <p className="text-sm font-semibold text-slate-900">Trustpilot</p>
                     <p className="mt-1.5 text-xs text-slate-600">
-                      {publicReviewUnavailableMessage(reputation, repError, "No public review profile found in this scan.")}
+                      {publicReviewUnavailableMessage(
+                        reputation,
+                        repError,
+                        PUBLIC_REVIEW_NOT_MATCHED_COPY
+                      )}
                     </p>
                   </article>
                 )}
@@ -597,7 +615,7 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
                   <article className="rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5">
                     <p className="text-sm font-semibold text-slate-900">Google Reviews</p>
                     <p className="mt-1.5 text-xs text-slate-600">
-                      {publicReviewUnavailableMessage(reputation, repError, "No review snapshot available in this scan.")}
+                      {publicReviewUnavailableMessage(reputation, repError, PUBLIC_REVIEW_NOT_MATCHED_COPY)}
                     </p>
                   </article>
                 )}
@@ -883,7 +901,10 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
                   Reddit warnings: <span className="font-medium">{reputation.publicSignals.redditWarnings}</span>
                 </li>
                 <li>
-                  Domain age (days): <span className="font-medium">{reputation.publicSignals.domainAgeDays ?? "unknown"}</span>
+                  Domain age:{" "}
+                  <span className="font-medium">
+                    {formatDomainAgeFromDays(reputation.publicSignals.domainAgeDays) ?? "unknown"}
+                  </span>
                 </li>
                 <li>
                   SSL status: <span className="font-medium">{reputation.publicSignals.sslStatus}</span>

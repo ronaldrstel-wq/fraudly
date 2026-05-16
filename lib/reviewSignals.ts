@@ -1,6 +1,5 @@
 import "server-only";
 import { normalizeDomain } from "@/lib/cache";
-import { EN_MESSAGES } from "@/lib/messages.en";
 import { publicIntelConfig } from "@/lib/public-intel/config";
 import { collectIndexedReviewSnippets } from "@/lib/public-intel/reviews";
 import { collectTrustpilot } from "@/lib/public-intel/trustpilot";
@@ -11,6 +10,12 @@ import {
   type ReviewFetchDebugEntry,
   type ReviewFetchDebugSource
 } from "@/lib/reviewSourceNormalization";
+import {
+  PUBLIC_REVIEW_NOT_MATCHED_COPY,
+  resolveGoogleReviewMatch,
+  resolveTrustpilotReviewMatch,
+  reviewRatingForScoring
+} from "@/lib/reputation/reviewMatchConfidence";
 import { sanitizeReviewFields } from "@/lib/reputation/reviewRatingNormalize";
 
 export type ReviewSignals = {
@@ -38,12 +43,18 @@ export type ReviewSignals = {
 export function adjustScoreWithReviewSignals(baseScore: number, reviewSignals: ReviewSignals): number {
   let score = baseScore;
   const ratings: Array<{ rating: number; count: number }> = [];
-  if (reviewSignals.googleFound && reviewSignals.googleRating != null) {
-    ratings.push({ rating: reviewSignals.googleRating, count: reviewSignals.googleReviewCount ?? 0 });
-  }
-  if (reviewSignals.trustpilotFound && reviewSignals.trustpilotRating != null) {
-    ratings.push({ rating: reviewSignals.trustpilotRating, count: reviewSignals.trustpilotReviewCount ?? 0 });
-  }
+  const google = reviewRatingForScoring(
+    reviewSignals.googleRating ?? null,
+    reviewSignals.googleReviewCount ?? null,
+    resolveGoogleReviewMatch(reviewSignals).confidence
+  );
+  if (google) ratings.push(google);
+  const trustpilot = reviewRatingForScoring(
+    reviewSignals.trustpilotRating ?? null,
+    reviewSignals.trustpilotReviewCount ?? null,
+    resolveTrustpilotReviewMatch(reviewSignals).confidence
+  );
+  if (trustpilot) ratings.push(trustpilot);
   for (const item of ratings) {
     if (item.rating >= 4.3 && item.count >= 100) score -= 15;
     else if (item.rating <= 2.5 && item.count >= 10) score += 20;
@@ -132,24 +143,58 @@ export async function getReviewSignals(domain: string): Promise<ReviewSignals> {
   const snippetCount = googleSanitized.reviewCount ?? undefined;
   const suspiciousReviewSignals: string[] = [];
 
-  const combinedRating = trustpilotRating ?? snippetRating;
-  const combinedCount = trustpilotReviewCount ?? snippetCount;
-  if (combinedRating != null && combinedCount != null) {
-    const reviewSignalSource: ReviewFetchDebugSource = trustpilotRating != null ? tpSource : gSource;
-    reviewFetchDebug.push({ source: reviewSignalSource, bucket: "review_signal" });
-    if (combinedRating <= 2.8 && combinedCount >= 10) suspiciousReviewSignals.push("Public reviews indicate a low trust profile.");
-    if (combinedRating >= 4.3 && combinedCount >= 100) suspiciousReviewSignals.push("Public reviews suggest a generally established profile.");
-  } else {
-    suspiciousReviewSignals.push(EN_MESSAGES.reviewEvidence.noPublicReviewProfile);
+  const googleMatch = resolveGoogleReviewMatch({
+    googleFound: false,
+    googleRating: snippetRating,
+    googleReviewCount: snippetCount,
+    trustpilotFound: false,
+    suspiciousReviewSignals: [],
+    sources,
+    warnings,
+    publicReviewAvailabilityNotes,
+    reviewFetchDebug
+  });
+  const trustpilotMatch = resolveTrustpilotReviewMatch({
+    googleFound: false,
+    trustpilotFound: false,
+    trustpilotRating,
+    trustpilotReviewCount,
+    suspiciousReviewSignals: [],
+    sources,
+    warnings,
+    publicReviewAvailabilityNotes,
+    reviewFetchDebug
+  });
+
+  if (googleMatch.displayable && googleMatch.rating != null && googleMatch.reviewCount != null) {
+    reviewFetchDebug.push({ source: gSource, bucket: "review_signal" });
+    if (googleMatch.rating <= 2.8 && googleMatch.reviewCount >= 10) {
+      suspiciousReviewSignals.push("Public reviews indicate a low trust profile.");
+    }
+    if (googleMatch.rating >= 4.3 && googleMatch.reviewCount >= 100) {
+      suspiciousReviewSignals.push("Public reviews suggest a generally established profile.");
+    }
+  }
+  if (trustpilotMatch.displayable && trustpilotMatch.rating != null && trustpilotMatch.reviewCount != null) {
+    reviewFetchDebug.push({ source: tpSource, bucket: "review_signal" });
+    if (trustpilotMatch.rating <= 2.8 && trustpilotMatch.reviewCount >= 10) {
+      suspiciousReviewSignals.push("Public reviews indicate a low trust profile.");
+    }
+    if (trustpilotMatch.rating >= 4.3 && trustpilotMatch.reviewCount >= 100) {
+      suspiciousReviewSignals.push("Public reviews suggest a generally established profile.");
+    }
+  }
+  if (!googleMatch.displayable && !trustpilotMatch.displayable) {
+    suspiciousReviewSignals.push(PUBLIC_REVIEW_NOT_MATCHED_COPY);
   }
 
   return {
-    googleFound: snippetRating != null || snippetCount != null,
-    googleRating: snippetRating,
-    googleReviewCount: snippetCount,
-    trustpilotFound: trustpilotRating != null || trustpilotReviewCount != null,
-    trustpilotRating,
-    trustpilotReviewCount,
+    googleFound: googleMatch.displayable,
+    googleRating: googleMatch.displayable ? googleMatch.rating ?? undefined : undefined,
+    googleReviewCount: googleMatch.displayable ? googleMatch.reviewCount ?? undefined : undefined,
+    trustpilotFound: trustpilotMatch.displayable,
+    trustpilotRating: trustpilotMatch.displayable ? trustpilotMatch.rating ?? undefined : undefined,
+    trustpilotReviewCount: trustpilotMatch.displayable ? trustpilotMatch.reviewCount ?? undefined : undefined,
     recentReviewSummary: undefined,
     suspiciousReviewSignals,
     sources,

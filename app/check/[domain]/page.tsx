@@ -20,6 +20,8 @@ import { getLatestPublicCheckSnapshotForDomain } from "@/lib/latest-public-check
 import { buildOverviewFromTrustAndVerdict } from "@/lib/overviewCardPresentation";
 import { displayTrustScoreForResult } from "@/lib/scanPresentation";
 import { logDisplayScoreDebug } from "@/lib/scoring/displayScore";
+import { formatDomainAgeFromDays } from "@/lib/format/domainAge";
+import { formatSslHighlightValue } from "@/lib/signals/trustHighlightFacts";
 import type { HumanRecKind } from "@/lib/scanResultDualLayer";
 
 export const revalidate = 3600;
@@ -179,11 +181,7 @@ export default async function DomainCheckPage({ params }: PageProps) {
       source: "check/[domain]/page"
     });
   }
-  const sslShort = result.ssl.httpsEnabled
-    ? result.ssl.validCertificate
-      ? "HTTPS available — encrypts transit, does not prove legitimacy"
-      : "HTTPS with certificate issues"
-    : "No HTTPS";
+  const sslShort = formatSslHighlightValue(result.ssl);
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
@@ -246,11 +244,13 @@ export default async function DomainCheckPage({ params }: PageProps) {
             </dd>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Domain age (days)</dt>
-            <dd className="mt-1 text-2xl font-bold text-slate-900">{result.domainIntelligence.ageDays ?? "—"}</dd>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Domain age</dt>
+            <dd className="mt-1 text-lg font-bold leading-snug text-slate-900">
+              {formatDomainAgeFromDays(result.domainIntelligence.ageDays) ?? "—"}
+            </dd>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">SSL / HTTPS</dt>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Secure connection</dt>
             <dd className="mt-1 text-base font-semibold text-slate-900">{sslShort}</dd>
           </div>
         </dl>

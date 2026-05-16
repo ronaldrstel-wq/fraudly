@@ -1,4 +1,8 @@
-import { formatDomainAgeFromDays } from "@/lib/format/domainAge";
+import {
+  domainAgeConsumerBucket,
+  formatDomainAgeFromDays,
+  formatDomainAgeSignal
+} from "@/lib/format/domainAge";
 import type { SslCheck } from "@/lib/checks/types";
 import type { ScamCheckResult } from "@/types/scam";
 
@@ -11,9 +15,6 @@ export type TrustHighlightFact = {
   consumerLine: string;
   bucket: TrustHighlightBucket;
 };
-
-const YOUNG_DOMAIN_DAYS = 30;
-const ESTABLISHED_DOMAIN_DAYS = 365;
 
 export function formatSslHighlightValue(ssl: SslCheck | null | undefined): string {
   if (!ssl || typeof ssl !== "object") return "Could not be verified";
@@ -32,26 +33,13 @@ export function formatSslConsumerLine(ssl: SslCheck): string {
   return "Secure connection could not be verified.";
 }
 
+/** @deprecated Use {@link formatDomainAgeSignal} — kept for existing imports/tests. */
 export function formatDomainAgeConsumerLine(ageDays?: number | null): string {
-  const formatted = formatDomainAgeFromDays(ageDays);
-  if (formatted == null) return "Domain age could not be verified.";
-
-  const days = Math.max(0, Math.round(ageDays ?? 0));
-  if (days <= YOUNG_DOMAIN_DAYS) {
-    return `This domain is only ${formatted} old.`;
-  }
-  if (days >= ESTABLISHED_DOMAIN_DAYS) {
-    return `This domain has existed for ${formatted}.`;
-  }
-  return `Domain age: ${formatted}.`;
+  return formatDomainAgeSignal(ageDays) ?? "Domain age could not be verified.";
 }
 
 export function domainAgeHighlightBucket(ageDays?: number | null): TrustHighlightBucket {
-  if (ageDays == null || !Number.isFinite(ageDays)) return "caution";
-  const days = Math.max(0, Math.round(ageDays));
-  if (days <= YOUNG_DOMAIN_DAYS) return "caution";
-  if (days >= ESTABLISHED_DOMAIN_DAYS) return "positive";
-  return "caution";
+  return domainAgeConsumerBucket(ageDays);
 }
 
 export function sslHighlightBucket(ssl: SslCheck): TrustHighlightBucket {
@@ -60,15 +48,17 @@ export function sslHighlightBucket(ssl: SslCheck): TrustHighlightBucket {
 
 export function extractTrustHighlightFacts(result: Pick<ScamCheckResult, "domainIntelligence" | "ssl">): TrustHighlightFact[] {
   const facts: TrustHighlightFact[] = [];
-  const ageDays = result.domainIntelligence.ageDays;
+  const ageDays = result.domainIntelligence?.ageDays;
 
-  facts.push({
-    id: "domain_age",
-    label: "Domain age",
-    value: formatDomainAgeFromDays(ageDays) ?? "Could not be verified",
-    consumerLine: formatDomainAgeConsumerLine(ageDays),
-    bucket: domainAgeHighlightBucket(ageDays)
-  });
+  if (typeof ageDays === "number" && Number.isFinite(ageDays)) {
+    facts.push({
+      id: "domain_age",
+      label: "Domain age",
+      value: formatDomainAgeFromDays(ageDays) ?? "Could not be verified",
+      consumerLine: formatDomainAgeSignal(ageDays) ?? "Domain age could not be verified.",
+      bucket: domainAgeHighlightBucket(ageDays)
+    });
+  }
 
   facts.push({
     id: "ssl",

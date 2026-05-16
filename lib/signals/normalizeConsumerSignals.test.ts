@@ -4,8 +4,10 @@ import {
   filterConsumerContextNotes,
   heroPreviewReasons,
   normalizeConsumerSignals,
+  normalizeConsumerSignalsForResult,
   resolveConsumerBucket
 } from "@/lib/signals/normalizeConsumerSignals";
+import type { ScamCheckResult } from "@/types/scam";
 
 function signal(partial: Partial<TrustSignal> & Pick<TrustSignal, "type" | "title">): TrustSignal {
   return {
@@ -96,6 +98,31 @@ describe("normalizeConsumerSignals", () => {
       ]
     });
     expect(preview).toHaveLength(2);
+  });
+});
+
+describe("normalizeConsumerSignalsForResult domain age", () => {
+  it("surfaces young domain under Things to watch with formatted age, not raw days", () => {
+    const result = {
+      domainIntelligence: { source: "RDAP", warnings: [], ageDays: 12 },
+      ssl: { httpsEnabled: true, validCertificate: true, source: "tls", warnings: [] },
+      trustSignals: []
+    } as Pick<ScamCheckResult, "trustSignals" | "domainIntelligence" | "ssl">;
+
+    const { helpful, watch } = normalizeConsumerSignalsForResult(result);
+    expect(watch.some((l) => /only 12 days old/i.test(l))).toBe(true);
+    expect([...helpful, ...watch].join(" ")).not.toMatch(/\b12\s*days\b(?!\s*old)/i);
+  });
+
+  it("surfaces established domain under Helpful signals", () => {
+    const result = {
+      domainIntelligence: { source: "RDAP", warnings: [], ageDays: 438 },
+      ssl: { httpsEnabled: true, validCertificate: true, source: "tls", warnings: [] },
+      trustSignals: []
+    } as Pick<ScamCheckResult, "trustSignals" | "domainIntelligence" | "ssl">;
+
+    const { helpful } = normalizeConsumerSignalsForResult(result);
+    expect(helpful.some((l) => /existed for 1 year, 2 months, 13 days/i.test(l))).toBe(true);
   });
 });
 
