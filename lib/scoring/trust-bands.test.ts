@@ -77,9 +77,8 @@ describe("trust-bands", () => {
       mostly.accentBar,
       mostly.iconWrap,
       mostly.icon,
-      mostly.metaScorePill,
+      mostly.scorePill,
       mostly.metaCta,
-      mostly.metaScoreWash,
       mostly.cardShell,
       mostly.cardShellHover
     ] as const) {
@@ -91,17 +90,17 @@ describe("trust-bands", () => {
       caution.accentBar,
       caution.iconWrap,
       caution.icon,
-      caution.metaScorePill,
+      caution.scorePill,
       caution.metaCta,
-      caution.metaScoreWash,
       caution.cardShell
     ] as const) {
       expect(field).toMatch(/amber/);
       expect(field).not.toMatch(/slate|gray|grey|teal/);
     }
 
-    expect(likely.metaScoreWash).toContain("emerald");
-    expect(likely.metaScorePill).toContain("emerald");
+    expect(likely.scorePill).toContain("emerald");
+    expect(likely.accentBar).toContain("emerald");
+    expect(mostly.metaCta).not.toContain("underline");
     expect(getTrustColors(75).metricCard).toContain("teal");
     expect(getTrustColorsForDisplay(75, "Mostly Safe").headlineText).toContain("teal");
     expect(getTrustColorsForDisplay(59, "Use Caution").scorePill).toContain("amber");

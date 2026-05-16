@@ -7,28 +7,55 @@ import { getOverviewCardChrome, type OverviewCardChrome } from "@/lib/scoring/tr
 const ACCENT_BAR_POSITION =
   "before:absolute before:inset-y-3 before:left-0 before:w-1 before:rounded-r md:before:inset-y-2";
 
-function TrustScoreBadge({
-  score,
+const FEED_CTA_BASE = "inline-flex items-center gap-1 text-sm font-semibold transition-colors duration-200";
+
+function FeedViewResultCta({
+  viewLabel,
   chrome,
-  inMetaPanel = false
+  href,
+  headlineId,
+  decorative = false
 }: {
-  score: number;
+  viewLabel: string;
   chrome: OverviewCardChrome;
-  inMetaPanel?: boolean;
+  href?: string;
+  headlineId?: string;
+  decorative?: boolean;
 }) {
-  const pillCls = inMetaPanel ? chrome.metaScorePill : chrome.scorePill;
-  const dimCls = inMetaPanel ? chrome.metaScorePillDim : chrome.scorePillDim;
+  const label = viewLabel.replace("→", "").trim();
+  const cls = `${FEED_CTA_BASE} ${chrome.metaCta} ${chrome.metaCtaHover}`;
+  const content = (
+    <>
+      {label}
+      <span className="transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden>
+        →
+      </span>
+    </>
+  );
+
+  if (decorative || !href) {
+    return (
+      <span className={cls} aria-hidden>
+        {content}
+      </span>
+    );
+  }
+
+  return (
+    <Link href={href} className={`fraudly-focus ${cls}`} aria-labelledby={headlineId}>
+      {content}
+    </Link>
+  );
+}
+
+function TrustScoreBadge({ score, chrome }: { score: number; chrome: OverviewCardChrome }) {
   return (
     <span
       aria-label={`${EN_MESSAGES.scanResult.trustScoreLabel}: ${score} out of 100`}
-      className={`inline-flex shrink-0 items-center justify-center rounded-xl border px-2 py-0.5 tabular-nums transition-colors duration-200 ${
-        inMetaPanel
-          ? "h-8 w-[108px] text-[12px] md:h-7 md:w-[100px] md:text-[11px]"
-          : "h-8 w-[108px] text-[12px] font-semibold md:h-7 md:w-[100px] md:text-[11px]"
-      } ${pillCls}`}
+      className={`inline-flex h-8 w-[108px] shrink-0 items-center justify-center rounded-xl border px-2 py-0.5 text-[12px] font-semibold tabular-nums transition-colors duration-200 md:h-7 md:w-[100px] md:text-[11px] ${chrome.scorePill}`}
     >
       {score}
-      <span className={`font-medium ${dimCls}`}> / 100</span>
+      <span className={`font-medium ${chrome.scorePillDim}`}> / 100</span>
     </span>
   );
 }
@@ -96,16 +123,12 @@ function MobileMetaStripe(props: {
   const { timeIso, timeRelative, timeTitle, score, chrome, children } = props;
 
   return (
-    <div
-      className={`flex min-w-0 flex-col gap-2.5 md:hidden ${chrome.mobileMetaPanel}`}
-    >
+    <div className={`flex min-w-0 flex-col gap-2 border-t pt-3 md:hidden ${chrome.mobileDivider}`}>
       <div className="flex min-w-0 items-center justify-between gap-3">
         <time className="text-[12px] font-medium tabular-nums text-slate-500" dateTime={timeIso} title={timeTitle}>
           {timeRelative}
         </time>
-        <div className={`rounded-lg px-0.5 py-0.5 transition-colors duration-200 ${chrome.metaScoreWash} ${chrome.metaScoreWashHover}`}>
-          <TrustScoreBadge score={score} chrome={chrome} inMetaPanel />
-        </div>
+        <TrustScoreBadge score={score} chrome={chrome} />
       </div>
       {children}
     </div>
@@ -134,45 +157,6 @@ function OverviewCardShell({
   );
 }
 
-function MetaViewResultCta({
-  viewLabel,
-  chrome,
-  href,
-  headlineId,
-  decorative = false
-}: {
-  viewLabel: string;
-  chrome: OverviewCardChrome;
-  href?: string;
-  headlineId?: string;
-  decorative?: boolean;
-}) {
-  const label = viewLabel.replace("→", "").trim();
-  const cls = `${chrome.metaCta} ${chrome.metaCtaHover}`;
-  const content = (
-    <>
-      {label}
-      <span className="transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden>
-        →
-      </span>
-    </>
-  );
-
-  if (decorative || !href) {
-    return (
-      <span className={cls} aria-hidden>
-        {content}
-      </span>
-    );
-  }
-
-  return (
-    <Link href={href} className={`fraudly-focus ${cls}`} aria-labelledby={headlineId}>
-      {content}
-    </Link>
-  );
-}
-
 function DesktopMetaStripe(props: {
   timeIso: string;
   timeRelative: string;
@@ -184,15 +168,15 @@ function DesktopMetaStripe(props: {
   const { timeIso, timeRelative, timeTitle, score, chrome, children } = props;
   return (
     <div
-      className="hidden w-[min(11rem,100%)] min-w-[9.25rem] shrink-0 flex-col items-end gap-2.5 text-right md:flex"
+      className="hidden w-[min(11rem,100%)] min-w-[9.25rem] shrink-0 flex-col items-stretch gap-1.5 text-right md:flex"
     >
       <time className="text-[11px] font-medium tabular-nums text-slate-500" dateTime={timeIso} title={timeTitle}>
         {timeRelative}
       </time>
-      <div className={`rounded-lg px-0.5 py-0.5 transition-colors duration-200 ${chrome.metaScoreWash} ${chrome.metaScoreWashHover}`}>
-        <TrustScoreBadge score={score} chrome={chrome} inMetaPanel />
+      <div className="flex justify-end">
+        <TrustScoreBadge score={score} chrome={chrome} />
       </div>
-      <div className="flex justify-end">{children}</div>
+      {children}
     </div>
   );
 }
@@ -218,7 +202,7 @@ export function CompactOverviewFeedLinkCard(props: CompactOverviewFeedBaseProps 
   const chrome = getOverviewCardChrome(m.trustScore);
   const shell = `fraudly-motion fraudly-focus group relative block ${ACCENT_BAR_POSITION} ${chrome.accentBar} ${chrome.cardShell} ${chrome.cardShellHover} md:px-4 md:py-3`;
 
-  const ctaPresentation = <MetaViewResultCta viewLabel={viewLabel} chrome={chrome} decorative />;
+  const ctaPresentation = <FeedViewResultCta viewLabel={viewLabel} chrome={chrome} decorative />;
 
   return (
     <Link href={href} prefetch={prefetch} className={`${shell} ${bgClassName ?? ""}`} aria-labelledby={headlineId} aria-label={ariaLabel}>
@@ -259,7 +243,7 @@ export function CompactOverviewFeedArticleCard(props: CompactOverviewFeedBasePro
   } = props;
 
   const chrome = getOverviewCardChrome(m.trustScore);
-  const viewCta = <MetaViewResultCta viewLabel={viewLabel} chrome={chrome} href={href} headlineId={headlineId} />;
+  const viewCta = <FeedViewResultCta viewLabel={viewLabel} chrome={chrome} href={href} headlineId={headlineId} />;
 
   return (
     <article
@@ -275,7 +259,7 @@ export function CompactOverviewFeedArticleCard(props: CompactOverviewFeedBasePro
           domainFullTitle={domainFullTitle}
         />
         <DesktopMetaStripe timeIso={timeIso} timeRelative={timeRelative} timeTitle={timeTitle} score={m.trustScore} chrome={chrome}>
-          <div className="flex min-h-[2.5rem] flex-col gap-1.5">
+          <div className="flex min-h-[2.5rem] flex-col items-end justify-end gap-1.5">
             {viewCta}
             {trailingActions ? (
               <div className="flex w-full flex-wrap justify-end gap-2 md:pt-0">{trailingActions}</div>

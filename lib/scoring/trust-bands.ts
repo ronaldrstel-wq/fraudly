@@ -41,13 +41,8 @@ export type TrustBandColors = {
   /** List/overview card shell (tinted surface + semantic border). */
   cardShell: string;
   cardShellHover: string;
-  metaScoreWash: string;
-  metaScoreWashHover: string;
-  metaScorePill: string;
-  metaScorePillDim: string;
   metaCta: string;
   metaCtaHover: string;
-  mobileMetaPanel: string;
   mobileDivider: string;
   metricCard: string;
   metricScoreText: string;
@@ -65,13 +60,8 @@ export type OverviewCardChrome = {
   headlineText: string;
   cardShell: string;
   cardShellHover: string;
-  metaScoreWash: string;
-  metaScoreWashHover: string;
-  metaScorePill: string;
-  metaScorePillDim: string;
   metaCta: string;
   metaCtaHover: string;
-  mobileMetaPanel: string;
   mobileDivider: string;
 };
 
@@ -104,7 +94,7 @@ const LIKELY_SAFE_COLORS: TrustBandColors = {
   icon: "text-emerald-600",
   iconWrap: "border-emerald-200/70 bg-emerald-50/90 shadow-[0_6px_18px_rgba(16,185,129,0.15)]",
   scorePill:
-    "border-emerald-200/80 bg-gradient-to-b from-emerald-50 to-white text-emerald-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_14px_rgba(16,185,129,0.12)]",
+    "border-emerald-300/75 bg-gradient-to-b from-emerald-50/95 to-white text-emerald-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
   scorePillDim: "text-emerald-700/80",
   surfaceBg: "bg-emerald-50/30",
   surfaceGradient: "border-emerald-200/80 bg-gradient-to-b from-emerald-50/30 to-white",
@@ -123,15 +113,8 @@ const LIKELY_SAFE_COLORS: TrustBandColors = {
   cardShell:
     "relative min-h-0 rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 via-white to-white p-4 shadow-subtle transition-all duration-200",
   cardShellHover: "hover:border-emerald-300/90 hover:shadow-elevated hover:from-emerald-50/95",
-  metaScoreWash: "rounded-lg bg-emerald-500/[0.035]",
-  metaScoreWashHover: "group-hover:bg-emerald-50/45",
-  metaScorePill:
-    "border-emerald-300/90 bg-gradient-to-b from-emerald-50/95 to-white text-emerald-900 font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
-  metaScorePillDim: "text-emerald-700/85",
-  metaCta:
-    "inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-sm font-semibold text-emerald-700 underline decoration-emerald-600/45 underline-offset-[3px] transition-colors duration-200",
-  metaCtaHover: "group-hover:text-emerald-800 group-hover:decoration-emerald-700/55 group-hover:bg-emerald-50/45",
-  mobileMetaPanel: "border-t border-emerald-200/45 pt-3",
+  metaCta: "text-emerald-700",
+  metaCtaHover: "group-hover:text-emerald-800",
   mobileDivider: "border-emerald-200/55",
   metricCard: "rounded-xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/80 to-white p-4 shadow-sm",
   metricScoreText: "text-emerald-900"
@@ -144,7 +127,7 @@ const MOSTLY_SAFE_COLORS: TrustBandColors = {
   iconWrap:
     "border-teal-400/90 bg-gradient-to-br from-teal-50 to-cyan-50 text-teal-600 shadow-[0_6px_20px_rgba(20,184,166,0.22)] ring-1 ring-teal-400/25",
   scorePill:
-    "border-teal-400/95 bg-gradient-to-b from-teal-50 via-cyan-50/90 to-white text-teal-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_4px_16px_rgba(6,182,212,0.16)]",
+    "border-teal-300/85 bg-gradient-to-b from-teal-50/95 via-cyan-50/70 to-white text-teal-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
   scorePillDim: "text-teal-700",
   surfaceBg: "bg-teal-50/80",
   surfaceGradient: "border-teal-400/90 bg-gradient-to-b from-teal-50/95 via-cyan-50/55 to-white",
@@ -161,19 +144,11 @@ const MOSTLY_SAFE_COLORS: TrustBandColors = {
   accentBar: "before:bg-teal-500",
   articleBg: "border border-teal-400/85 bg-gradient-to-br from-teal-50/90 via-cyan-50/50 to-white",
   cardShell:
-    "relative min-h-0 rounded-2xl border border-teal-400/90 bg-gradient-to-br from-teal-50/95 via-cyan-50/70 to-white p-4 shadow-[0_8px_28px_rgba(20,184,166,0.1)] transition-all duration-200",
-  cardShellHover:
-    "hover:border-teal-500 hover:shadow-[0_12px_32px_rgba(6,182,212,0.14)] hover:from-teal-50 hover:via-cyan-50/85",
-  metaScoreWash: "rounded-lg bg-teal-500/[0.04]",
-  metaScoreWashHover: "group-hover:bg-teal-50/50",
-  metaScorePill:
-    "border-teal-400/90 bg-gradient-to-b from-teal-50/95 via-cyan-50/80 to-white text-teal-900 font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
-  metaScorePillDim: "text-teal-700/90",
-  metaCta:
-    "inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-sm font-semibold text-teal-700 underline decoration-teal-500/50 underline-offset-[3px] transition-colors duration-200",
-  metaCtaHover: "group-hover:text-teal-800 group-hover:decoration-teal-600/60 group-hover:bg-teal-50/50",
-  mobileMetaPanel: "border-t border-teal-300/50 pt-3",
-  mobileDivider: "border-teal-400/80",
+    "relative min-h-0 rounded-2xl border border-teal-200/80 bg-gradient-to-br from-teal-50/50 via-white to-white p-4 shadow-subtle transition-all duration-200",
+  cardShellHover: "hover:border-teal-300/90 hover:shadow-elevated hover:from-teal-50/65",
+  metaCta: "text-teal-700",
+  metaCtaHover: "group-hover:text-teal-800",
+  mobileDivider: "border-teal-200/55",
   metricCard:
     "rounded-xl border border-teal-400/85 bg-gradient-to-b from-teal-50/95 via-cyan-50/60 to-white p-4 shadow-sm",
   metricScoreText: "text-teal-800"
@@ -185,7 +160,7 @@ const CAUTION_COLORS: TrustBandColors = {
   icon: "text-amber-600",
   iconWrap: "border-amber-200/70 bg-amber-50/90 shadow-[0_6px_18px_rgba(245,158,11,0.16)]",
   scorePill:
-    "border-amber-200/80 bg-gradient-to-b from-amber-50 to-white text-amber-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_14px_rgba(245,158,11,0.12)]",
+    "border-amber-300/75 bg-gradient-to-b from-amber-50/95 to-white text-amber-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
   scorePillDim: "text-amber-700/80",
   surfaceBg: "bg-amber-50/35",
   surfaceGradient: "border-amber-200/80 bg-gradient-to-b from-amber-50/35 to-white",
@@ -204,15 +179,8 @@ const CAUTION_COLORS: TrustBandColors = {
   cardShell:
     "relative min-h-0 rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/85 via-white to-white p-4 shadow-subtle transition-all duration-200",
   cardShellHover: "hover:border-amber-300/90 hover:shadow-elevated hover:from-amber-50/95",
-  metaScoreWash: "rounded-lg bg-amber-500/[0.04]",
-  metaScoreWashHover: "group-hover:bg-amber-50/50",
-  metaScorePill:
-    "border-amber-300/90 bg-gradient-to-b from-amber-50/95 to-white text-amber-950 font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
-  metaScorePillDim: "text-amber-800/90",
-  metaCta:
-    "inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-sm font-semibold text-amber-800 underline decoration-amber-600/45 underline-offset-[3px] transition-colors duration-200",
-  metaCtaHover: "group-hover:text-amber-900 group-hover:decoration-amber-700/55 group-hover:bg-amber-50/50",
-  mobileMetaPanel: "border-t border-amber-200/50 pt-3",
+  metaCta: "text-amber-800",
+  metaCtaHover: "group-hover:text-amber-900",
   mobileDivider: "border-amber-200/55",
   metricCard: "rounded-xl border border-amber-200/80 bg-gradient-to-br from-amber-50/80 to-white p-4 shadow-sm",
   metricScoreText: "text-amber-950"
@@ -224,7 +192,7 @@ const SUSPICIOUS_COLORS: TrustBandColors = {
   icon: "text-orange-600",
   iconWrap: "border-orange-200/70 bg-orange-50/90 shadow-[0_6px_18px_rgba(249,115,22,0.16)]",
   scorePill:
-    "border-orange-200/80 bg-gradient-to-b from-orange-50 to-white text-orange-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_14px_rgba(249,115,22,0.12)]",
+    "border-orange-300/75 bg-gradient-to-b from-orange-50/95 to-white text-orange-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
   scorePillDim: "text-orange-800/80",
   surfaceBg: "bg-orange-50/40",
   surfaceGradient: "border-orange-200/80 bg-gradient-to-b from-orange-50/40 to-white",
@@ -243,15 +211,8 @@ const SUSPICIOUS_COLORS: TrustBandColors = {
   cardShell:
     "relative min-h-0 rounded-2xl border border-orange-200/80 bg-gradient-to-br from-orange-50/85 via-white to-white p-4 shadow-subtle transition-all duration-200",
   cardShellHover: "hover:border-orange-300/90 hover:shadow-elevated hover:from-orange-50/95",
-  metaScoreWash: "rounded-lg bg-orange-500/[0.04]",
-  metaScoreWashHover: "group-hover:bg-orange-50/50",
-  metaScorePill:
-    "border-orange-300/90 bg-gradient-to-b from-orange-50/95 to-white text-orange-950 font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
-  metaScorePillDim: "text-orange-800/90",
-  metaCta:
-    "inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-sm font-semibold text-orange-800 underline decoration-orange-600/45 underline-offset-[3px] transition-colors duration-200",
-  metaCtaHover: "group-hover:text-orange-900 group-hover:decoration-orange-700/55 group-hover:bg-orange-50/50",
-  mobileMetaPanel: "border-t border-orange-200/50 pt-3",
+  metaCta: "text-orange-800",
+  metaCtaHover: "group-hover:text-orange-900",
   mobileDivider: "border-orange-200/55",
   metricCard: "rounded-xl border border-orange-200/80 bg-gradient-to-br from-orange-50/80 to-white p-4 shadow-sm",
   metricScoreText: "text-orange-950"
@@ -263,7 +224,7 @@ const DANGER_COLORS: TrustBandColors = {
   icon: "text-rose-600",
   iconWrap: "border-rose-200/70 bg-rose-50/90 shadow-[0_6px_18px_rgba(244,63,94,0.18)]",
   scorePill:
-    "border-rose-200/80 bg-gradient-to-b from-rose-50 to-white text-rose-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_14px_rgba(244,63,94,0.14)]",
+    "border-rose-300/75 bg-gradient-to-b from-rose-50/95 to-white text-rose-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
   scorePillDim: "text-rose-700/80",
   surfaceBg: "bg-rose-50/35",
   surfaceGradient: "border-rose-200/80 bg-gradient-to-b from-rose-50/35 to-white",
@@ -282,15 +243,8 @@ const DANGER_COLORS: TrustBandColors = {
   cardShell:
     "relative min-h-0 rounded-2xl border border-rose-200/80 bg-gradient-to-br from-rose-50/85 via-white to-white p-4 shadow-subtle transition-all duration-200",
   cardShellHover: "hover:border-rose-300/90 hover:shadow-elevated hover:from-rose-50/95",
-  metaScoreWash: "rounded-lg bg-rose-500/[0.035]",
-  metaScoreWashHover: "group-hover:bg-rose-50/45",
-  metaScorePill:
-    "border-rose-300/90 bg-gradient-to-b from-rose-50/95 to-white text-rose-900 font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
-  metaScorePillDim: "text-rose-700/90",
-  metaCta:
-    "inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-sm font-semibold text-rose-800 underline decoration-rose-600/45 underline-offset-[3px] transition-colors duration-200",
-  metaCtaHover: "group-hover:text-rose-900 group-hover:decoration-rose-700/55 group-hover:bg-rose-50/45",
-  mobileMetaPanel: "border-t border-rose-200/50 pt-3",
+  metaCta: "text-rose-800",
+  metaCtaHover: "group-hover:text-rose-900",
   mobileDivider: "border-rose-200/55",
   metricCard: "rounded-xl border border-rose-200/80 bg-gradient-to-br from-rose-50/80 to-white p-4 shadow-sm",
   metricScoreText: "text-rose-900"
@@ -310,14 +264,8 @@ const MISSING_SCORE_CHROME: OverviewCardChrome = {
   cardShell:
     "relative min-h-0 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-subtle transition-all duration-200",
   cardShellHover: "hover:border-slate-300/90 hover:shadow-elevated",
-  metaScoreWash: "rounded-lg bg-slate-500/[0.03]",
-  metaScoreWashHover: "group-hover:bg-slate-50/60",
-  metaScorePill: "border-slate-300/85 bg-gradient-to-b from-slate-50/95 to-white text-slate-800 font-semibold",
-  metaScorePillDim: "text-slate-500",
-  metaCta:
-    "inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-sm font-semibold text-slate-700 underline decoration-slate-400/40 underline-offset-[3px] transition-colors duration-200",
-  metaCtaHover: "group-hover:text-slate-900 group-hover:bg-slate-50/70",
-  mobileMetaPanel: "border-t border-slate-200/60 pt-3",
+  metaCta: "text-slate-700",
+  metaCtaHover: "group-hover:text-slate-900",
   mobileDivider: "border-slate-200/60"
 };
 
@@ -498,13 +446,8 @@ function overviewChromeFromColors(tone: SemanticTone, colors: TrustBandColors): 
     headlineText: colors.headlineText,
     cardShell: colors.cardShell,
     cardShellHover: colors.cardShellHover,
-    metaScoreWash: colors.metaScoreWash,
-    metaScoreWashHover: colors.metaScoreWashHover,
-    metaScorePill: colors.metaScorePill,
-    metaScorePillDim: colors.metaScorePillDim,
     metaCta: colors.metaCta,
     metaCtaHover: colors.metaCtaHover,
-    mobileMetaPanel: colors.mobileMetaPanel,
     mobileDivider: colors.mobileDivider
   };
 }
