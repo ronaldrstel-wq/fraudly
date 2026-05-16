@@ -38,6 +38,27 @@ export type TrustBandColors = {
   surfaceGlow: string;
   accentBar: string;
   articleBg: string;
+  /** List/overview card shell (tinted surface + semantic border). */
+  cardShell: string;
+  cardShellHover: string;
+  metaPanel: string;
+  mobileDivider: string;
+};
+
+export type OverviewCardChrome = {
+  tone: SemanticTone;
+  accentBar: string;
+  surfaceGlow: string;
+  iconWrap: string;
+  icon: string;
+  scorePill: string;
+  scorePillDim: string;
+  cta: string;
+  headlineText: string;
+  cardShell: string;
+  cardShellHover: string;
+  metaPanel: string;
+  mobileDivider: string;
 };
 
 export type TrustPresentation = {
@@ -84,7 +105,12 @@ const LIKELY_SAFE_COLORS: TrustBandColors = {
   cta: "text-emerald-700 decoration-emerald-500/35 hover:text-emerald-800",
   surfaceGlow: "from-emerald-500/10 via-emerald-400/0 to-transparent",
   accentBar: "before:bg-emerald-400/80",
-  articleBg: "border border-slate-200 bg-emerald-50/45"
+  articleBg: "border border-emerald-200/70 bg-emerald-50/50",
+  cardShell:
+    "relative min-h-0 rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 via-white to-white p-4 shadow-subtle transition-all duration-200",
+  cardShellHover: "hover:border-emerald-300/90 hover:shadow-elevated hover:from-emerald-50/95",
+  metaPanel: "rounded-xl border border-emerald-200/50 bg-gradient-to-b from-emerald-50/70 to-white/90 px-2.5 py-2",
+  mobileDivider: "border-emerald-200/55"
 };
 
 const MOSTLY_SAFE_COLORS: TrustBandColors = {
@@ -108,7 +134,12 @@ const MOSTLY_SAFE_COLORS: TrustBandColors = {
   cta: "text-teal-700 decoration-teal-500/35 hover:text-teal-800",
   surfaceGlow: "from-teal-500/10 via-teal-400/0 to-transparent",
   accentBar: "before:bg-teal-400/80",
-  articleBg: "border border-slate-200 bg-teal-50/40"
+  articleBg: "border border-teal-200/70 bg-teal-50/55",
+  cardShell:
+    "relative min-h-0 rounded-2xl border border-teal-200/80 bg-gradient-to-br from-teal-50/85 via-white to-white p-4 shadow-subtle transition-all duration-200",
+  cardShellHover: "hover:border-teal-300/90 hover:shadow-elevated hover:from-teal-50/95",
+  metaPanel: "rounded-xl border border-teal-200/50 bg-gradient-to-b from-teal-50/65 to-white/90 px-2.5 py-2",
+  mobileDivider: "border-teal-200/55"
 };
 
 const CAUTION_COLORS: TrustBandColors = {
@@ -132,7 +163,12 @@ const CAUTION_COLORS: TrustBandColors = {
   cta: "text-amber-700 decoration-amber-500/35 hover:text-amber-800",
   surfaceGlow: "from-amber-500/10 via-amber-400/0 to-transparent",
   accentBar: "before:bg-amber-400/80",
-  articleBg: "border border-slate-200 bg-amber-50/45"
+  articleBg: "border border-amber-200/70 bg-amber-50/55",
+  cardShell:
+    "relative min-h-0 rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/85 via-white to-white p-4 shadow-subtle transition-all duration-200",
+  cardShellHover: "hover:border-amber-300/90 hover:shadow-elevated hover:from-amber-50/95",
+  metaPanel: "rounded-xl border border-amber-200/50 bg-gradient-to-b from-amber-50/65 to-white/90 px-2.5 py-2",
+  mobileDivider: "border-amber-200/55"
 };
 
 const SUSPICIOUS_COLORS: TrustBandColors = {
@@ -156,7 +192,12 @@ const SUSPICIOUS_COLORS: TrustBandColors = {
   cta: "text-orange-700 decoration-orange-500/35 hover:text-orange-800",
   surfaceGlow: "from-orange-500/10 via-orange-400/0 to-transparent",
   accentBar: "before:bg-orange-400/80",
-  articleBg: "border border-slate-200 bg-orange-50/40"
+  articleBg: "border border-orange-200/70 bg-orange-50/55",
+  cardShell:
+    "relative min-h-0 rounded-2xl border border-orange-200/80 bg-gradient-to-br from-orange-50/85 via-white to-white p-4 shadow-subtle transition-all duration-200",
+  cardShellHover: "hover:border-orange-300/90 hover:shadow-elevated hover:from-orange-50/95",
+  metaPanel: "rounded-xl border border-orange-200/50 bg-gradient-to-b from-orange-50/65 to-white/90 px-2.5 py-2",
+  mobileDivider: "border-orange-200/55"
 };
 
 const DANGER_COLORS: TrustBandColors = {
@@ -180,7 +221,12 @@ const DANGER_COLORS: TrustBandColors = {
   cta: "text-rose-700 decoration-rose-500/35 hover:text-rose-800",
   surfaceGlow: "from-rose-500/10 via-rose-400/0 to-transparent",
   accentBar: "before:bg-rose-400/80",
-  articleBg: "border border-slate-200 bg-rose-50/45"
+  articleBg: "border border-rose-200/70 bg-rose-50/55",
+  cardShell:
+    "relative min-h-0 rounded-2xl border border-rose-200/80 bg-gradient-to-br from-rose-50/85 via-white to-white p-4 shadow-subtle transition-all duration-200",
+  cardShellHover: "hover:border-rose-300/90 hover:shadow-elevated hover:from-rose-50/95",
+  metaPanel: "rounded-xl border border-rose-200/50 bg-gradient-to-b from-rose-50/65 to-white/90 px-2.5 py-2",
+  mobileDivider: "border-rose-200/55"
 };
 
 const TRUST_BANDS: readonly TrustBandDefinition[] = [
@@ -327,6 +373,47 @@ export function verdictHeadlineClass(verdict: ConsumerVerdictLabel): string {
   const parsed = parseConsumerVerdictLabel(verdict);
   if (!parsed) return getTrustPresentation(50).colors.headlineText;
   return getTrustPresentation(verdictToRepresentativeScore(parsed)).colors.headlineText;
+}
+
+/** Premium semantic chrome for latest-checks, recent searches, pulse list cards. */
+export function getOverviewCardChrome(trustScore: number): OverviewCardChrome {
+  const { tone, colors } = getTrustPresentation(trustScore);
+  return {
+    tone,
+    accentBar: colors.accentBar,
+    surfaceGlow: colors.surfaceGlow,
+    iconWrap: colors.iconWrap,
+    icon: colors.icon,
+    scorePill: colors.scorePill,
+    scorePillDim: colors.scorePillDim,
+    cta: colors.cta,
+    headlineText: colors.headlineText,
+    cardShell: colors.cardShell,
+    cardShellHover: colors.cardShellHover,
+    metaPanel: colors.metaPanel,
+    mobileDivider: colors.mobileDivider
+  };
+}
+
+export function headlineToneFromSemantic(tone: SemanticTone): { text: string; icon: string } {
+  const colors = getTrustPresentation(toneToRepresentativeScore(tone)).colors;
+  return { text: colors.headlineText, icon: colors.icon };
+}
+
+function toneToRepresentativeScore(tone: SemanticTone): number {
+  switch (tone) {
+    case "safe":
+      return 90;
+    case "mostly-safe":
+      return 77;
+    case "caution":
+      return 60;
+    case "suspicious":
+      return 40;
+    case "danger":
+    default:
+      return 15;
+  }
 }
 
 function verdictToRepresentativeScore(verdict: ConsumerVerdictLabel): number {

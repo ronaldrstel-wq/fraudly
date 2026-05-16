@@ -56,42 +56,9 @@ export function overviewOneLiner(kind: HumanRecKind): string {
   }
 }
 
-function articleClassForTone(tone: SemanticTone): string {
-  return getTrustPresentation(toneToRepresentativeScore(tone)).colors.articleBg;
-}
-
-function toneToRepresentativeScore(tone: SemanticTone): number {
-  switch (tone) {
-    case "safe":
-      return 90;
-    case "mostly-safe":
-      return 77;
-    case "caution":
-      return 60;
-    case "suspicious":
-      return 40;
-    case "danger":
-    default:
-      return 15;
-  }
-}
-
-function presentationToneForHumanKind(kind: HumanRecKind, trustScore: number): SemanticTone {
-  if (kind === "avoidWebsite" || kind === "dangerousWebsite" || kind === "highRisk") return "danger";
-  if (kind === "risky") return "suspicious";
-  if (kind === "beCareful" || kind === "notEnoughInfo" || kind === "invalidDomain" || kind === "unreachable") {
-    return "caution";
-  }
-  if (kind === "looksMostlySafe") return "mostly-safe";
-  if (kind === "trusted" || kind === "looksSafe") return getTrustPresentation(trustScore).tone;
-  return getTrustPresentation(trustScore).tone;
-}
-
-/**
- * Card chrome for list/overview surfaces — matches result-page emotional tiers without redesigning cards.
- */
-export function overviewCardArticleClass(kind: HumanRecKind, trustScore: number): string {
-  return articleClassForTone(presentationToneForHumanKind(kind, trustScore));
+/** Tinted article surface — score is the source of truth for semantic color. */
+export function overviewCardArticleClass(_kind: HumanRecKind, trustScore: number): string {
+  return getTrustPresentation(trustScore).colors.articleBg;
 }
 
 export type OverviewCardModel = {

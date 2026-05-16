@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   consumerDisplayBand,
+  getOverviewCardChrome,
   getTrustBandFromScore,
   getTrustPresentation,
   standardVerdictLabel
@@ -43,6 +44,26 @@ describe("trust-bands", () => {
     expect(getTrustPresentation(90).description).toBe("No major risk indicators detected.");
     expect(getTrustPresentation(75).description).toContain("Mostly positive signals");
     expect(getTrustPresentation(60).description).toContain("Some risk indicators");
+  });
+
+  it("exposes distinct premium overview chrome per band", () => {
+    const likely = getOverviewCardChrome(90);
+    const mostly = getOverviewCardChrome(77);
+    const caution = getOverviewCardChrome(60);
+    const suspicious = getOverviewCardChrome(40);
+    const danger = getOverviewCardChrome(15);
+
+    expect(likely.cardShell).toContain("emerald");
+    expect(mostly.cardShell).toContain("teal");
+    expect(caution.cardShell).toContain("amber");
+    expect(suspicious.cardShell).toContain("orange");
+    expect(danger.cardShell).toContain("rose");
+
+    expect(mostly.cardShell).not.toContain("emerald");
+    expect(mostly.scorePill).not.toContain("emerald");
+    expect(caution.cardShell).not.toContain("emerald");
+    expect(likely.headlineText).not.toEqual(mostly.headlineText);
+    expect(mostly.headlineText).not.toEqual(caution.headlineText);
   });
 
   it("maps legacy three-band consumerDisplayBand", () => {
