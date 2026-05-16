@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Prisma } from "@prisma/client";
 import { LatestChecksJsonLd } from "@/components/seo/LatestChecksJsonLd";
 import { CompactOverviewFeedLinkCard } from "@/components/overview/CompactOverviewFeedCard";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { formatPublicCheckRelativeTime } from "@/lib/latest-public-checks/relative-time";
-import { db } from "@/lib/db";
 import { overviewFeedPrimaryLine } from "@/lib/overviewFeedDisplay";
 import { OG_IMAGE } from "@/lib/seo-metadata";
 import { EN_MESSAGES } from "@/lib/messages.en";
@@ -15,6 +13,10 @@ import { publicRobots, SITE_URL } from "@/lib/seo";
 import { checkResultHref } from "@/lib/check/checkResultHref";
 import { buildOverviewFromPublicCheck } from "@/lib/overviewCardPresentation";
 import { logDisplayScoreDebug } from "@/lib/scoring/displayScore";
+import {
+  fetchLatestPublicChecksPage,
+  type LatestPublicCheckListRow
+} from "@/lib/latest-public-checks/listPublicChecks";
 
 export const revalidate = 120;
 
@@ -62,28 +64,72 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   };
 }
 
-function entityBadge(type: string): string {
+function entityBadge(type: string | null | undefined): string {
   const labels = EN_MESSAGES.latestChecks.entityLabels;
+  if (!type) return EN_MESSAGES.latestChecks.entityFallback;
   const k = type as keyof typeof labels;
   return k in labels ? labels[k] : EN_MESSAGES.latestChecks.entityFallback;
 }
 
-async function fetchLatestPublicChecks(skip: number, take: number) {
+function safeLastSeenIso(lastSeenAt: Date): string {
+  if (!(lastSeenAt instanceof Date) || Number.isNaN(lastSeenAt.getTime())) {
+    return new Date(0).toISOString();
+  }
+  return lastSeenAt.toISOString();
+}
+
+function safeCardHref(row: LatestPublicCheckListRow): string {
+  const primary = overviewFeedPrimaryLine(row.checkedValue ?? row.normalizedValue).primary;
+  const domain = primary || row.normalizedValue || "unknown";
   try {
-    return await db.latestPublicCheck.findMany({
-      orderBy: { lastSeenAt: "desc" },
-      skip,
-      take
+    return checkResultHref(domain, { scanId: row.id, from: "latest-card" });
+  } catch {
+    return row.publicResultPath?.startsWith("/check/")
+      ? row.publicResultPath
+      : `/check/${encodeURIComponent(domain)}`;
+  }
+}
+
+function LatestCheckListItem({ row }: { row: LatestPublicCheckListRow }) {
+  try {
+    const m = buildOverviewFromPublicCheck(row);
+    logDisplayScoreDebug({
+      domain: row.checkedValue,
+      scanId: row.id,
+      storedRiskScore: Number.isFinite(row.riskScoreSnapshot) ? row.riskScoreSnapshot : 0,
+      storedTrustScore: m.trustScore,
+      displayedTrustScore: m.trustScore,
+      displayedLabel: m.verdictLabel,
+      source: "latest-checks/page"
     });
+    const iso = safeLastSeenIso(row.lastSeenAt);
+    const primaryLine = overviewFeedPrimaryLine(row.checkedValue ?? row.normalizedValue);
+    const domainLine = primaryLine.primary || row.normalizedValue || EN_MESSAGES.latestChecks.entityFallback;
+
+    return (
+      <CompactOverviewFeedLinkCard
+        model={m}
+        headlineId={`latest-check-headline-${row.id}`}
+        domainLine={domainLine}
+        domainFullTitle={primaryLine.fullTitle || domainLine}
+        href={safeCardHref(row)}
+        prefetch
+        viewLabel={EN_MESSAGES.latestChecks.viewResultArrow}
+        timeIso={iso}
+        timeRelative={formatPublicCheckRelativeTime(iso)}
+        timeTitle={
+          row.lastSeenAt instanceof Date && !Number.isNaN(row.lastSeenAt.getTime())
+            ? row.lastSeenAt.toUTCString()
+            : ""
+        }
+        entityBadge={entityBadge(row.entityType)}
+      />
+    );
   } catch (err) {
-    if (
-      err instanceof Prisma.PrismaClientKnownRequestError &&
-      (err.code === "P2021" || err.code === "P1001")
-    ) {
-      console.warn("[latest-checks] prisma read skipped:", err.code, err.message);
-      return [];
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[latest-checks] skipped row", row.id, err);
     }
-    throw err;
+    return null;
   }
 }
 
@@ -91,10 +137,10 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
   const page = clampPage((await searchParams).page);
   const skip = (page - 1) * PAGE_SIZE;
 
-  const batch = await fetchLatestPublicChecks(skip, PAGE_SIZE + 1);
+  const { rows: batch, loadFailed } = await fetchLatestPublicChecksPage(skip, PAGE_SIZE + 1);
 
-  const hasNext = batch.length > PAGE_SIZE;
-  const rows = hasNext ? batch.slice(0, PAGE_SIZE) : batch;
+  const hasNext = !loadFailed && batch.length > PAGE_SIZE;
+  const rows = loadFailed ? [] : hasNext ? batch.slice(0, PAGE_SIZE) : batch;
   const prevPage = page > 1 ? page - 1 : null;
   const nextPage = hasNext ? page + 1 : null;
 
@@ -109,11 +155,30 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
           <h1 className="mt-2 text-balance text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
             {EN_MESSAGES.latestChecks.pageTitle}
           </h1>
-          <p className="mt-4 max-w-prose text-pretty text-base leading-relaxed text-slate-600">{EN_MESSAGES.latestChecks.intro}</p>
-          <p className="mt-3 max-w-prose text-pretty text-sm leading-relaxed text-slate-600">{EN_MESSAGES.latestChecks.scoreExplainerFootnote}</p>
+          <p className="mt-4 max-w-prose text-pretty text-base leading-relaxed text-slate-600">
+            {EN_MESSAGES.latestChecks.intro}
+          </p>
+          <p className="mt-3 max-w-prose text-pretty text-sm leading-relaxed text-slate-600">
+            {EN_MESSAGES.latestChecks.scoreExplainerFootnote}
+          </p>
         </header>
 
-        {rows.length === 0 ? (
+        {loadFailed ? (
+          <section
+            aria-labelledby="latest-unavailable"
+            className="mt-12 rounded-2xl border border-amber-200/80 bg-amber-50/80 px-6 py-14 text-center shadow-sm md:px-10"
+          >
+            <p id="latest-unavailable" className="mx-auto max-w-xl text-sm leading-relaxed text-amber-950">
+              {EN_MESSAGES.latestChecks.unavailableState}
+            </p>
+            <Link
+              href="/#link-check"
+              className="mt-6 inline-flex rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-5 py-3 text-sm font-semibold text-white shadow-md hover:brightness-110"
+            >
+              {EN_MESSAGES.latestChecks.ctaPrimary}
+            </Link>
+          </section>
+        ) : rows.length === 0 ? (
           <section
             aria-labelledby="latest-empty"
             className="mt-12 rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-14 text-center shadow-sm md:px-10"
@@ -134,43 +199,18 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
               {EN_MESSAGES.latestChecks.listAria}
             </h2>
             <ol className="space-y-3 md:space-y-4">
-              {rows.map((row) => {
-                const m = buildOverviewFromPublicCheck(row);
-                logDisplayScoreDebug({
-                  domain: row.checkedValue,
-                  scanId: row.id,
-                  storedRiskScore: row.riskScoreSnapshot,
-                  storedTrustScore: m.trustScore,
-                  displayedTrustScore: m.trustScore,
-                  displayedLabel: m.verdictLabel,
-                  source: "latest-checks/page"
-                });
-                const iso = row.lastSeenAt.toISOString();
-                const primaryLine = overviewFeedPrimaryLine(row.checkedValue);
-                return (
-                <li key={row.id}>
-                  <CompactOverviewFeedLinkCard
-                    model={m}
-                    headlineId={`latest-check-headline-${row.id}`}
-                    domainLine={primaryLine.primary}
-                    domainFullTitle={primaryLine.fullTitle}
-                    href={checkResultHref(row.checkedValue, { scanId: row.id, from: "latest-card" })}
-                    prefetch
-                    viewLabel={EN_MESSAGES.latestChecks.viewResultArrow}
-                    timeIso={iso}
-                    timeRelative={formatPublicCheckRelativeTime(iso)}
-                    timeTitle={row.lastSeenAt.toUTCString()}
-                    entityBadge={entityBadge(row.entityType)}
-                  />
-                </li>
-                );
-              })}
+              {rows.map((row) => (
+                <li key={row.id}><LatestCheckListItem row={row} /></li>
+              ))}
             </ol>
           </section>
         )}
 
         {(prevPage !== null || nextPage !== null) && rows.length > 0 ? (
-          <nav className="mt-8 flex items-center justify-between gap-4 border-t border-slate-200 pt-5" aria-label="Pagination">
+          <nav
+            className="mt-8 flex items-center justify-between gap-4 border-t border-slate-200 pt-5"
+            aria-label="Pagination"
+          >
             <div className="min-w-0">
               {prevPage !== null ? (
                 <Link

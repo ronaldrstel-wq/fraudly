@@ -104,10 +104,17 @@ export function buildOverviewFromTrustAndVerdict(trustScore: number, verdict: Sc
   };
 }
 
+const FALLBACK_OVERVIEW_TRUST = 50;
+
 /** `/latest-checks` row: risk snapshot + persisted snapshot label → same UX model as full result. */
-export function buildOverviewFromPublicCheck(row: { riskScoreSnapshot: number; statusLabel: string }): OverviewCardModel {
-  const verdict = verdictFromPublicSnapshotLabel(row.statusLabel);
-  const { trustScore } = publicDisplayScoreFromRiskAndVerdict(row.riskScoreSnapshot, verdict);
+export function buildOverviewFromPublicCheck(row: {
+  riskScoreSnapshot?: number | null;
+  statusLabel?: string | null;
+}): OverviewCardModel {
+  const risk = Number.isFinite(row.riskScoreSnapshot) ? Number(row.riskScoreSnapshot) : FALLBACK_OVERVIEW_TRUST;
+  const label = typeof row.statusLabel === "string" ? row.statusLabel : "";
+  const verdict = verdictFromPublicSnapshotLabel(label);
+  const { trustScore } = publicDisplayScoreFromRiskAndVerdict(risk, verdict);
   return buildOverviewFromTrustAndVerdict(trustScore, verdict);
 }
 

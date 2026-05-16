@@ -532,6 +532,8 @@ export const EN_MESSAGES = {
       "Scores are generated automatically using trust, reputation where available, technical checks, scam intelligence feeds, and AI-assisted analysis—not a verdict on goodness or badness by itself.",
     emptyState:
       "No public checks published yet. As soon as privacy-safe summaries are available, they will appear here so you can see what others are looking up.",
+    unavailableState:
+      "Latest checks are temporarily unavailable. You can still check a website above.",
     ctaPrimary: "Run a website check",
     listAria: "Latest public fraud check summaries",
     riskHint: "risk-style score",
