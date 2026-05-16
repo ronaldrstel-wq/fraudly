@@ -6,7 +6,6 @@ import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useHomeAuth } from "@/components/home/HomeAuthContext";
 import { Hero } from "@/components/Hero";
-import type { OptionalEvidenceScanValues } from "@/components/OptionalEvidenceScanSection";
 import { hasUsedAnonymousFreeCheck, markAnonymousFreeCheckUsed } from "@/lib/accessControl";
 import {
   trackAnonymousCheckCompleted,
@@ -19,7 +18,6 @@ import {
 import { parseFlexibleWebsiteInput } from "@/lib/check-input/normalizeWebsiteInput";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { GENERIC_CHECK_ERROR } from "@/lib/messages";
-import type { WebsiteAnalysisClientEvidence } from "@/lib/evidence/types";
 import { isCheckApiResponse, type ScamCheckResult } from "@/types/scam";
 
 const SIMULATED_PROGRESS_MAX = 89;
@@ -52,13 +50,6 @@ const PostScanAppPromo = dynamic(() => import("@/components/PostScanAppPromo").t
   loading: () => <div className="h-32 w-full animate-pulse rounded-2xl bg-slate-100" aria-hidden />
 });
 
-const OptionalEvidenceScanSection = dynamic(
-  () => import("@/components/OptionalEvidenceScanSection").then((m) => ({ default: m.OptionalEvidenceScanSection })),
-  {
-    loading: () => <div className="mt-3.5 h-36 max-w-2xl animate-pulse rounded-2xl bg-slate-100" aria-hidden />
-  }
-);
-
 const SiteFooter = dynamic(() => import("@/components/SiteFooter").then((m) => ({ default: m.SiteFooter })), {
   loading: () => <footer className="min-h-[100px] border-t border-slate-200/80 bg-white/80 py-8" aria-hidden />
 });
@@ -77,15 +68,6 @@ export function HomeClient({ children }: { children?: ReactNode }) {
   const inFlight = useRef(false);
   const mountedRef = useRef(true);
   const progressSimRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const scanOutputRef = useRef<HTMLDivElement>(null);
-  const scanActive = loading || Boolean(result);
-  const [optionalEvidence, setOptionalEvidence] = useState<OptionalEvidenceScanValues>({
-    file: null,
-    previewUrl: null,
-    adText: "",
-    sourcePlatform: ""
-  });
-
   const clearProgressSimulation = () => {
     if (progressSimRef.current) {
       clearInterval(progressSimRef.current);
@@ -111,36 +93,12 @@ export function HomeClient({ children }: { children?: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    return () => {
-      if (optionalEvidence.previewUrl) {
-        URL.revokeObjectURL(optionalEvidence.previewUrl);
-      }
-    };
-  }, [optionalEvidence.previewUrl]);
-
-  useEffect(() => {
     if (!loading || scanFailed) return;
     setScanStatus((prev) => {
       const next = scanPhaseMessage(scanProgress);
       return prev === next ? prev : next;
     });
   }, [loading, scanFailed, scanProgress]);
-
-  useEffect(() => {
-    if (!loading) return;
-    const dock = document.getElementById("scan-dock");
-    if (!dock) return;
-    requestAnimationFrame(() => {
-      dock.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    });
-  }, [loading]);
-
-  useEffect(() => {
-    if (!result) return;
-    requestAnimationFrame(() => {
-      scanOutputRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    });
-  }, [result]);
 
   async function runCheck() {
     if (inFlight.current) return;
@@ -196,45 +154,6 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         trackAnonymousCheckStarted();
       }
 
-      let imageAnalysis: WebsiteAnalysisClientEvidence["imageAnalysis"];
-      if (optionalEvidence.file && optionalEvidence.file.size > 0) {
-        try {
-          const fd = new FormData();
-          fd.append("file", optionalEvidence.file);
-          const imgRes = await fetch("/api/evidence/analyze-image", {
-            method: "POST",
-            body: fd,
-            credentials: "same-origin"
-          });
-          const imgJson = (await imgRes.json().catch(() => null)) as Record<string, unknown> | null;
-          if (imgRes.ok && imgJson && imgJson.ok === true && typeof imgJson.imageHash === "string") {
-            imageAnalysis = {
-              imageHash: String(imgJson.imageHash).toLowerCase(),
-              detectedText: typeof imgJson.detectedText === "string" ? imgJson.detectedText : null,
-              extractedSignals:
-                typeof imgJson.extractedSignals === "object" && imgJson.extractedSignals !== null
-                  ? (imgJson.extractedSignals as Record<string, unknown>)
-                  : null,
-              summary: typeof imgJson.summary === "string" ? imgJson.summary : null,
-              riskDelta: typeof imgJson.riskDelta === "number" ? imgJson.riskDelta : undefined,
-              fallbackMessage: typeof imgJson.fallbackMessage === "string" ? imgJson.fallbackMessage : null,
-              aiUsed: imgJson.aiUsed === true
-            };
-          }
-        } catch {
-          // URL scan continues without image analysis
-        }
-      }
-
-      const evidencePayload: WebsiteAnalysisClientEvidence | undefined =
-        imageAnalysis || optionalEvidence.adText.trim() || optionalEvidence.sourcePlatform.trim()
-          ? {
-              adText: optionalEvidence.adText.trim() || undefined,
-              sourcePlatform: optionalEvidence.sourcePlatform.trim() || undefined,
-              imageAnalysis: imageAnalysis ?? undefined
-            }
-          : undefined;
-
       const response = await fetch("/api/check", {
         method: "POST",
         credentials: "same-origin",
@@ -242,8 +161,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         body: JSON.stringify({
           url: parsedInput.canonicalHref,
           detailLevel: "full",
-          language: "en",
-          ...(evidencePayload ? { evidence: evidencePayload } : {})
+          language: "en"
         })
       });
 
@@ -404,7 +322,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
 
   const signupPrompt =
     showSignupPrompt && !isSignedIn ? (
-      <div className="w-full fraudly-cta-panel">
+      <div className="mx-auto mt-8 w-full max-w-[860px] fraudly-cta-panel">
         <h3 className="text-lg font-bold tracking-tight text-slate-900 md:text-xl">{EN_MESSAGES.freemium.promptTitle}</h3>
         <p className="mt-2 text-sm leading-relaxed text-slate-600">{EN_MESSAGES.freemium.promptBody}</p>
         <div className="mt-5 flex flex-col gap-3 sm:flex-row">
@@ -422,7 +340,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
-      <main className="mx-auto w-full max-w-6xl px-4 pb-10 pt-0">
+      <main className="mx-auto w-full max-w-6xl px-4 pb-14 pt-0">
         <Hero
           url={url}
           onUrlChange={setUrl}
@@ -432,20 +350,11 @@ export function HomeClient({ children }: { children?: ReactNode }) {
           scanProgress={scanProgress}
           scanStatus={scanStatus}
           scanFailed={scanFailed}
-          scanActive={scanActive}
           isAdmin={isAdmin}
-          extraBelowInput={
-            <OptionalEvidenceScanSection
-              values={optionalEvidence}
-              onChange={setOptionalEvidence}
-              disabled={loading}
-            />
-          }
         />
 
-        <div id="scan-output" ref={scanOutputRef} className="mx-auto mt-3 max-w-3xl space-y-3 sm:mt-4">
         {error && (
-          <div className="rounded-2xl border border-rose-200/85 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-subtle">
+          <div className="mx-auto mt-5 max-w-3xl rounded-2xl border border-rose-200/85 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-subtle">
             {error}
             {error.includes("Log in") ? <div className="mt-3 flex justify-center">{signInLink}</div> : null}
           </div>
@@ -455,7 +364,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
 
         {result && (
           <>
-            <section className="result-in grid gap-4 lg:grid-cols-[1.7fr_1fr] lg:gap-5">
+            <section className="result-in mt-7 grid gap-5 sm:mt-9 lg:grid-cols-[1.7fr_1fr]">
               <div className="min-w-0 space-y-3">
                 <ResultCard result={result} />
                 <p className="text-center text-sm text-slate-600 md:text-left">
@@ -472,20 +381,19 @@ export function HomeClient({ children }: { children?: ReactNode }) {
                 <FeatureCards stacked />
               </div>
             </section>
-            <div className="result-in">
+            <div className="result-in mx-auto mt-5 max-w-3xl">
               <PostScanAppPromo />
             </div>
             {!isSignedIn && (
-              <div className="result-in rounded-2xl border border-slate-200/85 bg-slate-50 px-4 py-3 text-sm text-slate-700 shadow-subtle">
+              <div className="result-in mx-auto mt-5 max-w-3xl rounded-2xl border border-slate-200/85 bg-slate-50 px-4 py-3 text-sm text-slate-700 shadow-subtle">
                 {EN_MESSAGES.freemium.afterResultBanner}
               </div>
             )}
           </>
         )}
-        </div>
 
-        {!result && !loading && (
-          <section className="mt-4 [content-visibility:auto] [contain-intrinsic-size:1px_220px] sm:mt-5">
+        {!result && (
+          <section className="mt-5 [content-visibility:auto] [contain-intrinsic-size:1px_220px] sm:mt-7">
             <FeatureCards />
           </section>
         )}

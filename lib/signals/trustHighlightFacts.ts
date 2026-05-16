@@ -15,7 +15,8 @@ export type TrustHighlightFact = {
 const YOUNG_DOMAIN_DAYS = 30;
 const ESTABLISHED_DOMAIN_DAYS = 365;
 
-export function formatSslHighlightValue(ssl: SslCheck): string {
+export function formatSslHighlightValue(ssl: SslCheck | null | undefined): string {
+  if (!ssl || typeof ssl !== "object") return "Could not be verified";
   if (ssl.httpsEnabled && ssl.validCertificate) return "Valid SSL certificate";
   if (ssl.httpsEnabled) return "Certificate issue detected";
   return "Could not be verified";

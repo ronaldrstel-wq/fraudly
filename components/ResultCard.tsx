@@ -252,15 +252,21 @@ function isConfirmedIntelTrustSignal(signal: TrustSignal): boolean {
   return /safe browsing|openphish|urlhaus|politie|\bpolice\b/.test(blob);
 }
 
+const FALLBACK_VERDICT = "Use Caution";
+const FALLBACK_SUMMARY = "Fraudly could not verify all trust signals for this website.";
+
 export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
-  const threat = assessCriticalThreat(result);
-  const liveDisplayTrust = displayTrustScoreForResult(result);
+  const safeResult = result;
+  const scoreSignals = safeResult.scoreResult?.signals ?? [];
+  const trustSignals = safeResult.trustSignals ?? [];
+  const threat = assessCriticalThreat(safeResult);
+  const liveDisplayTrust = displayTrustScoreForResult(safeResult);
   const displayTrust = alignedDisplay?.trustScore ?? liveDisplayTrust;
-  const hasUnavailableSite = result.availability?.status === "unavailable" || result.siteStatus === "inactive";
-  const hasLimitedInspection = result.availability?.status === "limited_inspection";
+  const hasUnavailableSite = safeResult.availability?.status === "unavailable" || safeResult.siteStatus === "inactive";
+  const hasLimitedInspection = safeResult.availability?.status === "limited_inspection";
   const showGauge =
-    shouldShowTrustGauge(result) && typeof displayTrust === "number" && !hasUnavailableSite;
-  const showNonexistentHeadline = result.omitTrustScoreGauge === true;
+    shouldShowTrustGauge(safeResult) && typeof displayTrust === "number" && !hasUnavailableSite;
+  const showNonexistentHeadline = safeResult.omitTrustScoreGauge === true;
 
   const trustLevel = trustLevelFromScore(displayTrust ?? 0);
   const humanKind =
@@ -268,10 +274,10 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
     resolveHumanRecKind({
       threatActive: threat.active,
       threatKind: threat.kind,
-      siteStatus: result.siteStatus,
+      siteStatus: safeResult.siteStatus,
       trustLevel,
       hasActualRiskIndicators:
-        result.scoreResult.signals.some((signal) => signal.evidenceTier === "risk_indicator" && signal.impact > 0) ||
+        scoreSignals.some((signal) => signal.evidenceTier === "risk_indicator" && signal.impact > 0) ||
         threat.active
     });
   const humanHeadline = alignedDisplay?.humanHeadline ?? humanRecHeadline(humanKind);
@@ -280,44 +286,52 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
       ? "High Scam Risk"
       : typeof displayTrust === "number"
         ? standardVerdictLabel(displayTrust)
-        : humanHeadline;
+        : humanHeadline || FALLBACK_VERDICT;
   const techStatus = alignedDisplay?.label ?? technicalStatusText({
     threatActive: threat.active,
     threatKind: threat.kind,
     displayTrust,
-    siteStatus: result.siteStatus
+    siteStatus: safeResult.siteStatus
   });
   const computedShortExplain = shortScanExplanation({
     threatActive: threat.active,
     threatKind: threat.kind,
-    siteStatus: result.siteStatus,
+    siteStatus: safeResult.siteStatus,
     displayTrust: displayTrust ?? 0,
-    confidenceLevel: result.confidenceLevel,
+    confidenceLevel: safeResult.confidenceLevel ?? "medium",
     hasActualRiskIndicators:
-      result.scoreResult.signals.some((signal) => signal.evidenceTier === "risk_indicator" && signal.impact > 0) || threat.active
+      scoreSignals.some((signal) => signal.evidenceTier === "risk_indicator" && signal.impact > 0) || threat.active
   });
   const shortExplain = hasLimitedInspection
     ? "The website responded, but some page details could not be fully inspected during this scan."
     : computedShortExplain;
   const showLimitedStrip = shouldShowLimitedPublicStrip({
     threatActive: threat.active,
-    confidenceLevel: result.confidenceLevel,
-    siteStatus: result.siteStatus
+    confidenceLevel: safeResult.confidenceLevel ?? "medium",
+    siteStatus: safeResult.siteStatus
   });
 
   const sec = EN_MESSAGES.scanResult.resultSections;
 
-  const { reviewSignals } = result;
+  const reviewSignals = safeResult.reviewSignals ?? {
+    googleFound: false,
+    trustpilotFound: false,
+    suspiciousReviewSignals: [],
+    sources: [],
+    warnings: [],
+    publicReviewAvailabilityNotes: [],
+    reviewFetchDebug: []
+  };
   const hasPublicReviewData = reviewSignals.trustpilotFound || reviewSignals.googleFound;
-  const scoreTierBuckets = tierScoreSignals(result.scoreResult.signals);
-  const intelTierBuckets = tierIntel(result.intelScoreBreakdown);
+  const scoreTierBuckets = tierScoreSignals(scoreSignals);
+  const intelTierBuckets = tierIntel(safeResult.intelScoreBreakdown ?? []);
 
-  const keyRisks = result.trustSignals.filter((s) => s.type === "danger" || s.type === "warning");
+  const keyRisks = trustSignals.filter((s) => s.type === "danger" || s.type === "warning");
   const confirmedMaliciousSignals = keyRisks.filter(isConfirmedIntelTrustSignal);
   const otherRiskSignals = keyRisks.filter((s) => !isConfirmedIntelTrustSignal(s));
-  const supportiveSignals = result.trustSignals.filter((s) => s.type === "positive" || s.type === "info");
-  const consumerSafetySignals = useMemo(() => normalizeConsumerSignalsForResult(result), [result]);
-  const heroTrustHighlights = useMemo(() => trustHighlightsForHero(result), [result]);
+  const supportiveSignals = trustSignals.filter((s) => s.type === "positive" || s.type === "info");
+  const consumerSafetySignals = useMemo(() => normalizeConsumerSignalsForResult(safeResult), [safeResult]);
+  const heroTrustHighlights = useMemo(() => trustHighlightsForHero(safeResult), [safeResult]);
   const [reputation, setReputation] = useState<ReputationEnrichment | null>(null);
   const [repLoading, setRepLoading] = useState(false);
   const [repError, setRepError] = useState<string | null>(null);
@@ -458,12 +472,13 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
   const isSubdomain = Boolean(result.isSubdomain ?? result.domainIntelligence.subdomain);
   const suspiciousSubTerms = result.suspiciousSubdomainTerms ?? result.domainIntelligence.suspiciousSubdomainTerms ?? [];
 
-  const heroSummary = threat.active
-    ? EN_MESSAGES.scanResult.consumerSummary.underThreat
-    : hasLimitedInspection
-      ? shortExplain
-      : consumerSummaryFor(trustLevel, false);
-  const topReasonLines = heroPreviewReasonsForResult(result);
+  const heroSummary =
+    (threat.active
+      ? EN_MESSAGES.scanResult.consumerSummary.underThreat
+      : hasLimitedInspection
+        ? shortExplain
+        : consumerSummaryFor(trustLevel, false)) || FALLBACK_SUMMARY;
+  const topReasonLines = heroPreviewReasonsForResult(safeResult);
   const heroTrustScore =
     showNonexistentHeadline || hasUnavailableSite
       ? null

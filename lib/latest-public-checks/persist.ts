@@ -21,31 +21,47 @@ export async function upsertLatestPublicCheckFromCompletedScan(options: {
   );
   const statusLabel = publicStatusLabelForVerdict(options.result.verdict);
   const payload = options.result as unknown as Prisma.InputJsonValue;
+  const baseData = {
+    checkedValue: gate.checkedValueForDisplay.slice(0, 4096),
+    entityType: gate.entityType,
+    riskScoreSnapshot: risk,
+    statusLabel
+  };
 
-  const row = await db.latestPublicCheck.upsert({
-    where: { normalizedValue: gate.normalizedValue },
-    create: {
-      normalizedValue: gate.normalizedValue,
-      checkedValue: gate.checkedValueForDisplay.slice(0, 4096),
-      entityType: gate.entityType,
-      riskScoreSnapshot: risk,
-      statusLabel,
-      publicResultPath: `/check/${encodeURIComponent(domain)}`,
-      publicResultPayload: payload
-    },
-    update: {
-      checkedValue: gate.checkedValueForDisplay.slice(0, 4096),
-      entityType: gate.entityType,
-      riskScoreSnapshot: risk,
-      statusLabel,
-      publicResultPayload: payload
-    },
-    select: { id: true }
-  });
+  let row: { id: string };
+  try {
+    row = await db.latestPublicCheck.upsert({
+      where: { normalizedValue: gate.normalizedValue },
+      create: {
+        normalizedValue: gate.normalizedValue,
+        ...baseData,
+        publicResultPath: `/check/${encodeURIComponent(domain)}`,
+        publicResultPayload: payload
+      },
+      update: { ...baseData, publicResultPayload: payload },
+      select: { id: true }
+    });
+  } catch (err) {
+    if (!(err instanceof Prisma.PrismaClientKnownRequestError)) throw err;
+    row = await db.latestPublicCheck.upsert({
+      where: { normalizedValue: gate.normalizedValue },
+      create: {
+        normalizedValue: gate.normalizedValue,
+        ...baseData,
+        publicResultPath: `/check/${encodeURIComponent(domain)}`
+      },
+      update: baseData,
+      select: { id: true }
+    });
+  }
 
-  const publicResultPath = checkResultHref(domain, { scanId: row.id, from: "latest-card" });
-  await db.latestPublicCheck.update({
-    where: { id: row.id },
-    data: { publicResultPath }
-  });
+  try {
+    const publicResultPath = checkResultHref(domain, { scanId: row.id, from: "latest-card" });
+    await db.latestPublicCheck.update({
+      where: { id: row.id },
+      data: { publicResultPath }
+    });
+  } catch {
+    // Non-fatal if path update fails
+  }
 }

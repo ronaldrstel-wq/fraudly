@@ -12,5 +12,7 @@ export function parseStoredPublicResultPayload(
   if (normalizeDomain(r.domain) !== normalizeDomain(expectedDomainLower)) return null;
   if (!r.ssl || typeof r.ssl !== "object") return null;
   if (!r.domainIntelligence || typeof r.domainIntelligence !== "object") return null;
+  if (!r.scoreResult || !Array.isArray(r.scoreResult.signals)) return null;
+  if (!Array.isArray(r.trustSignals)) return null;
   return r as ScamCheckResult;
 }
