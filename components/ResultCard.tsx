@@ -3,19 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { ReviewRating } from "@/components/reputation/ReviewRating";
 import { ReviewSummary } from "@/components/ReviewSummary";
-import {
-  filterConsumerContextNotes,
-  heroPreviewReasonsForResult,
-  normalizeConsumerSignalsForResult
-} from "@/lib/signals/normalizeConsumerSignals";
-import { trustHighlightsForHero } from "@/lib/signals/trustHighlightFacts";
-import { displayAgeFromNormalized, normalizeDomainAge } from "@/lib/domain/normalizeDomainAge";
-import {
-  PUBLIC_REVIEW_NOT_MATCHED_COPY,
-  resolveGoogleReviewMatch,
-  resolveTrustpilotReviewMatch
-} from "@/lib/reputation/reviewMatchConfidence";
-import { sanitizeReviewFields } from "@/lib/reputation/reviewRatingNormalize";
+import { heroPreviewReasonsForResult } from "@/lib/signals/normalizeConsumerSignals";
+import { normalizeTrustResult, trustHighlightsFromNormalized } from "@/lib/trust/normalizeTrustResult";
+import type { NormalizedTrustResult } from "@/lib/trust/types";
+import type { ConsumerVerdictLabel } from "@/lib/trust/types";
+import { riskScoreFromTrust } from "@/lib/scoring/displayScore";
 import { standardVerdictLabel } from "@/lib/scoring/displayScore";
 import { inferIntelEvidenceTier, type IntelScoreBreakdownEntry } from "@/lib/checks/scoring";
 import type { TrustSignal } from "@/lib/checks/types";
@@ -25,14 +17,13 @@ import {
   reviewWarningsSafeForUi,
   sanitizePublicIntelWarningsForUi
 } from "@/lib/reviewSourceNormalization";
-import { assessCriticalThreat, criticalThreatBannerTitle, displayTrustScoreForResult } from "@/lib/scanPresentation";
+import { assessCriticalThreat, criticalThreatBannerTitle } from "@/lib/scanPresentation";
 import {
   humanRecHeadline,
   resolveHumanRecKind,
   shortScanExplanation,
   technicalStatusText
 } from "@/lib/scanResultDualLayer";
-import { shouldShowLimitedPublicStrip } from "@/lib/scanResultNarrative";
 import { ThreatBanner } from "@/components/ThreatBanner";
 import { VerdictHero } from "@/components/result/VerdictHero";
 import { ResultSupportBox } from "@/components/ResultSupportBox";
@@ -57,6 +48,8 @@ export type ResultCardAlignedDisplay = {
 
 interface ResultCardProps {
   result: ScamCheckResult;
+  /** Canonical consumer trust view — required for consistent score/signals across surfaces. */
+  normalizedTrust?: NormalizedTrustResult;
   alignedDisplay?: ResultCardAlignedDisplay;
 }
 
@@ -260,13 +253,28 @@ function isConfirmedIntelTrustSignal(signal: TrustSignal): boolean {
 const FALLBACK_VERDICT = "Use Caution";
 const FALLBACK_SUMMARY = "Fraudly could not verify all trust signals for this website.";
 
-export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
+export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCardProps) {
   const safeResult = result;
+  const normalized = useMemo(() => {
+    if (normalizedTrust) return normalizedTrust;
+    return normalizeTrustResult(safeResult, {
+      displayLock: alignedDisplay
+        ? {
+            riskScore: riskScoreFromTrust(alignedDisplay.trustScore),
+            trustScore: alignedDisplay.trustScore,
+            verdict: alignedDisplay.label as ConsumerVerdictLabel,
+            scanId: alignedDisplay.scanId,
+            source: "aligned_display"
+          }
+        : null,
+      route: "ResultCard"
+    });
+  }, [safeResult, normalizedTrust, alignedDisplay]);
+
   const scoreSignals = safeResult.scoreResult?.signals ?? [];
   const trustSignals = safeResult.trustSignals ?? [];
   const threat = assessCriticalThreat(safeResult);
-  const liveDisplayTrust = displayTrustScoreForResult(safeResult);
-  const displayTrust = alignedDisplay?.trustScore ?? liveDisplayTrust;
+  const displayTrust = normalized.trustScore;
   const hasUnavailableSite = safeResult.availability?.status === "unavailable" || safeResult.siteStatus === "inactive";
   const hasLimitedInspection = safeResult.availability?.status === "limited_inspection";
   const showGauge =
@@ -289,9 +297,7 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
   const primaryVerdict =
     threat.active || humanKind === "avoidWebsite" || humanKind === "dangerousWebsite"
       ? "High Scam Risk"
-      : typeof displayTrust === "number"
-        ? standardVerdictLabel(displayTrust)
-        : humanHeadline || FALLBACK_VERDICT;
+      : normalized.verdict || humanHeadline || FALLBACK_VERDICT;
   const techStatus = alignedDisplay?.label ?? technicalStatusText({
     threatActive: threat.active,
     threatKind: threat.kind,
@@ -310,11 +316,7 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
   const shortExplain = hasLimitedInspection
     ? "The website responded, but some page details could not be fully inspected during this scan."
     : computedShortExplain;
-  const showLimitedStrip = shouldShowLimitedPublicStrip({
-    threatActive: threat.active,
-    confidenceLevel: safeResult.confidenceLevel ?? "medium",
-    siteStatus: safeResult.siteStatus
-  });
+  const showLimitedStrip = normalized.showLimitedPublicStrip;
 
   const sec = EN_MESSAGES.scanResult.resultSections;
 
@@ -335,8 +337,11 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
   const confirmedMaliciousSignals = keyRisks.filter(isConfirmedIntelTrustSignal);
   const otherRiskSignals = keyRisks.filter((s) => !isConfirmedIntelTrustSignal(s));
   const supportiveSignals = trustSignals.filter((s) => s.type === "positive" || s.type === "info");
-  const consumerSafetySignals = useMemo(() => normalizeConsumerSignalsForResult(safeResult), [safeResult]);
-  const heroTrustHighlights = useMemo(() => trustHighlightsForHero(safeResult), [safeResult]);
+  const consumerSafetySignals = useMemo(
+    () => ({ helpful: normalized.helpfulSignals, watch: normalized.cautionSignals }),
+    [normalized]
+  );
+  const heroTrustHighlights = useMemo(() => trustHighlightsFromNormalized(normalized), [normalized]);
   const [reputation, setReputation] = useState<ReputationEnrichment | null>(null);
   const [repLoading, setRepLoading] = useState(false);
   const [repError, setRepError] = useState<string | null>(null);
@@ -426,42 +431,17 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
     };
   }, [result.domain, result.score, result.confidenceLevel, hasPublicReviewData]);
 
-  const trustpilotSanitized = sanitizeReviewFields(
-    reviewSignals.trustpilotRating ?? reputation?.trustpilotRating ?? reputation?.trustpilot?.rating ?? null,
-    reviewSignals.trustpilotReviewCount ?? reputation?.trustpilotReviewCount ?? reputation?.trustpilot?.reviewCount ?? null
-  );
-  const googleSanitized = sanitizeReviewFields(
-    reviewSignals.googleRating ?? reputation?.googleRating ?? reputation?.google?.rating ?? null,
-    reviewSignals.googleReviewCount ?? reputation?.googleReviewCount ?? reputation?.google?.reviewCount ?? null
-  );
-  const trustpilotMatch = resolveTrustpilotReviewMatch({
-    ...reviewSignals,
-    trustpilotRating: trustpilotSanitized.rating ?? undefined,
-    trustpilotReviewCount: trustpilotSanitized.reviewCount ?? undefined
-  });
-  const googleMatch = resolveGoogleReviewMatch({
-    ...reviewSignals,
-    googleRating: googleSanitized.rating ?? undefined,
-    googleReviewCount: googleSanitized.reviewCount ?? undefined
-  });
-  const trustpilotFound = trustpilotMatch.displayable;
-  const googleFound = googleMatch.displayable;
-  const trustpilotRating = trustpilotMatch.rating;
-  const trustpilotCount = trustpilotMatch.reviewCount;
-  const googleRating = googleMatch.rating;
-  const googleCount = googleMatch.reviewCount;
+  const trustpilotFound = normalized.reputation.trustpilot.display != null;
+  const googleFound = normalized.reputation.google.display != null;
+  const trustpilotRating = normalized.reputation.trustpilot.rating;
+  const trustpilotCount = normalized.reputation.trustpilot.reviewCount;
+  const googleRating = normalized.reputation.google.rating;
+  const googleCount = normalized.reputation.google.reviewCount;
   const providerLabel = providerStateLabel(reputation, repError);
-  const neutralContextNotes = filterConsumerContextNotes([
-    reputation?.reputationStatus === "called_no_match"
-      ? "Limited public reputation information was found."
-      : null,
-    reputation?.reputationStatus === "provider_error"
-      ? "Public review lookup was unavailable during this scan."
-      : null,
-    result.confidenceLevel === "low"
-      ? "Some public reputation data was limited. This affects extra context, not direct risk."
-      : null
-  ]);
+  const neutralContextNotes = useMemo(() => {
+    const note = normalized.reputation.optionalUnavailableNote;
+    return note ? [note] : [];
+  }, [normalized]);
   const cacheLabel =
     reputation?.cacheStatus === "hit"
       ? "Result cached from previous scan"
@@ -476,8 +456,7 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
     toSafeHttpUrl(`https://${result.domain}`);
   const showVisitWebsiteCta =
     trustedBand &&
-    trustLevel === "trusted" &&
-    result.confidenceLevel !== "low" &&
+    normalized.verdict === "Likely Safe" &&
     result.siteStatus !== "inactive" &&
     result.siteStatus !== "nonexistent" &&
     Boolean(trustedVisitUrl);
@@ -491,7 +470,7 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
       ? EN_MESSAGES.scanResult.consumerSummary.underThreat
       : hasLimitedInspection
         ? shortExplain
-        : consumerSummaryFor(trustLevel, false)) || FALLBACK_SUMMARY;
+        : normalized.summary) || FALLBACK_SUMMARY;
   const topReasonLines = heroPreviewReasonsForResult(safeResult);
   const heroTrustScore =
     showNonexistentHeadline || hasUnavailableSite
@@ -598,7 +577,7 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
                       {publicReviewUnavailableMessage(
                         reputation,
                         repError,
-                        PUBLIC_REVIEW_NOT_MATCHED_COPY
+                        normalized.reputation.neutralFallback
                       )}
                     </p>
                   </article>
@@ -615,7 +594,7 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
                   <article className="rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5">
                     <p className="text-sm font-semibold text-slate-900">Google Reviews</p>
                     <p className="mt-1.5 text-xs text-slate-600">
-                      {publicReviewUnavailableMessage(reputation, repError, PUBLIC_REVIEW_NOT_MATCHED_COPY)}
+                      {publicReviewUnavailableMessage(reputation, repError, normalized.reputation.neutralFallback)}
                     </p>
                   </article>
                 )}
@@ -753,7 +732,7 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
               <li>
                 Domain age:{" "}
                 <span className="font-medium">
-                  {displayAgeFromNormalized(normalizeDomainAge(safeResult))}
+                  {normalized.domainAge.display}
                 </span>
               </li>
               <li>
@@ -902,14 +881,7 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
                 </li>
                 <li>
                   Domain age:{" "}
-                  <span className="font-medium">
-                    {displayAgeFromNormalized(
-                      normalizeDomainAge({
-                        ...safeResult,
-                        enrichment: { domainAgeDays: reputation.publicSignals.domainAgeDays }
-                      })
-                    )}
-                  </span>
+                  <span className="font-medium">{normalized.domainAge.display}</span>
                 </li>
                 <li>
                   SSL status: <span className="font-medium">{reputation.publicSignals.sslStatus}</span>
@@ -1010,31 +982,37 @@ export function ResultCard({ result, alignedDisplay }: ResultCardProps) {
             <p className="mt-1 text-xs leading-relaxed text-slate-500">{sec.baselineReviewsHint}</p>
         {hasPublicReviewData ? (
           <div className="mt-2 space-y-2 text-sm text-slate-700">
-            {reviewSignals.googleFound && (
+            {normalized.reputation.google.display != null && (
               <div>
                 <p className="font-medium text-slate-900">Indexed review snippets probe</p>
                 <p>
                   Rating estimate:{" "}
                   <span className="font-medium">
-                    {googleSanitized.rating != null ? `${googleSanitized.rating.toFixed(1)}/5` : "n/a"}
+                    {normalized.reputation.google.rating != null
+                      ? `${normalized.reputation.google.rating.toFixed(1)}/5`
+                      : "n/a"}
                   </span>
                 </p>
                 <p>
-                  Review count estimate: <span className="font-medium">{googleSanitized.reviewCount ?? "n/a"}</span>
+                  Review count estimate:{" "}
+                  <span className="font-medium">{normalized.reputation.google.reviewCount ?? "n/a"}</span>
                 </p>
               </div>
             )}
-            {reviewSignals.trustpilotFound && (
+            {normalized.reputation.trustpilot.display != null && (
               <div>
                 <p className="font-medium text-slate-900">Trust snapshot probe</p>
                 <p>
                   Rating:{" "}
                   <span className="font-medium">
-                    {trustpilotSanitized.rating != null ? `${trustpilotSanitized.rating.toFixed(1)}/5` : "n/a"}
+                    {normalized.reputation.trustpilot.rating != null
+                      ? `${normalized.reputation.trustpilot.rating.toFixed(1)}/5`
+                      : "n/a"}
                   </span>
                 </p>
                 <p>
-                  Review count: <span className="font-medium">{trustpilotSanitized.reviewCount ?? "n/a"}</span>
+                  Review count:{" "}
+                  <span className="font-medium">{normalized.reputation.trustpilot.reviewCount ?? "n/a"}</span>
                 </p>
               </div>
             )}

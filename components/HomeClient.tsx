@@ -18,6 +18,7 @@ import {
 import { parseFlexibleWebsiteInput } from "@/lib/check-input/normalizeWebsiteInput";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { GENERIC_CHECK_ERROR } from "@/lib/messages";
+import { normalizeTrustResult } from "@/lib/trust/normalizeTrustResult";
 import { isCheckApiResponse, type ScamCheckResult } from "@/types/scam";
 
 const SIMULATED_PROGRESS_MAX = 89;
@@ -76,6 +77,10 @@ export function HomeClient({ children }: { children?: ReactNode }) {
   };
 
   const disabled = useMemo(() => url.trim().length === 0 || loading, [url, loading]);
+  const normalizedTrust = useMemo(
+    () => (result ? normalizeTrustResult(result, { route: "HomeClient" }) : null),
+    [result]
+  );
 
   useEffect(() => {
     setHasUsedFreeCheck(hasUsedAnonymousFreeCheck());
@@ -366,7 +371,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
           <>
             <section className="result-in mt-7 grid gap-5 sm:mt-9 lg:grid-cols-[1.7fr_1fr]">
               <div className="min-w-0 space-y-3">
-                <ResultCard result={result} />
+                <ResultCard result={result} normalizedTrust={normalizedTrust ?? undefined} />
                 <p className="text-center text-sm text-slate-600 md:text-left">
                   Share or revisit this snapshot:{" "}
                   <Link

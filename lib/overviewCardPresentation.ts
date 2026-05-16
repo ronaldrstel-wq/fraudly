@@ -14,6 +14,7 @@ import {
 } from "@/lib/scoring/displayScore";
 import { clampScore } from "@/lib/clampScore";
 import type { ScamVerdict } from "@/lib/trustSystem";
+import type { ConsumerVerdictLabel, NormalizedTrustResult } from "@/lib/trust/types";
 
 /** Trust score (0–100) from stored risk snapshot — delegates to {@link trustScoreFromRisk}. */
 export function trustScoreFromRiskSnapshot(riskScoreSnapshot: number): number {
@@ -107,6 +108,18 @@ export function buildOverviewFromTrustAndVerdict(trustScore: number, verdict: Sc
 const FALLBACK_OVERVIEW_TRUST = 50;
 
 /** `/latest-checks` row: risk snapshot + persisted snapshot label → same UX model as full result. */
+function scamVerdictFromConsumerLabel(label: ConsumerVerdictLabel): ScamVerdict | null {
+  if (label === "Likely Safe") return "safe";
+  if (label === "High Scam Risk") return "scam";
+  return "suspicious";
+}
+
+/** Overview cards from canonical normalized trust — same score/verdict as result surfaces. */
+export function buildOverviewFromNormalized(normalized: NormalizedTrustResult): OverviewCardModel {
+  const trustScore = clampScore(normalized.trustScore ?? FALLBACK_OVERVIEW_TRUST);
+  return buildOverviewFromTrustAndVerdict(trustScore, scamVerdictFromConsumerLabel(normalized.verdict));
+}
+
 export function buildOverviewFromPublicCheck(row: {
   riskScoreSnapshot?: number | null;
   statusLabel?: string | null;

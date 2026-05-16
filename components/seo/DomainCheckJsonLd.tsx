@@ -1,11 +1,21 @@
 import { SITE_URL } from "@/lib/seo";
-import { displayTrustScoreForResult } from "@/lib/scanPresentation";
+import type { NormalizedTrustResult } from "@/lib/trust/types";
 import type { ScamCheckResult } from "@/types/scam";
 
-export function DomainCheckJsonLd({ domain, pathname, result }: { domain: string; pathname: string; result: ScamCheckResult }) {
+export function DomainCheckJsonLd({
+  domain,
+  pathname,
+  result,
+  normalized
+}: {
+  domain: string;
+  pathname: string;
+  result: ScamCheckResult;
+  normalized: NormalizedTrustResult;
+}) {
   const url = `${SITE_URL}${pathname}`;
-  const trust = displayTrustScoreForResult(result);
-  const sslLabel = result.ssl.httpsEnabled ? (result.ssl.validCertificate ? "HTTPS with valid certificate" : "HTTPS with certificate issues") : "HTTPS unavailable";
+  const trust = normalized.trustScore;
+  const sslLabel = normalized.ssl.display;
 
   const description =
     trust === null

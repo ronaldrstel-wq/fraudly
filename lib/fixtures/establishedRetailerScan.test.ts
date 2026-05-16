@@ -3,6 +3,7 @@ import { calculateScamScore } from "@/lib/scoringEngine";
 import { buildScoringIdentityContext } from "@/lib/scoringIdentityContext";
 import { standardVerdictLabel } from "@/lib/scoring/displayScore";
 import { normalizeConsumerSignalsForResult } from "@/lib/signals/normalizeConsumerSignals";
+import { normalizeTrustResult } from "@/lib/trust/normalizeTrustResult";
 import { extractTrustHighlightFacts } from "@/lib/signals/trustHighlightFacts";
 import type { ExternalChecksResult } from "@/lib/checks/types";
 import type { ReviewSignals } from "@/lib/reviewSignals";
@@ -119,5 +120,44 @@ describe("established retailer scan fixture", () => {
     expect(highlights.some((h) => h.id === "domain_age" && h.bucket === "positive")).toBe(true);
     expect(highlights.some((h) => h.id === "ssl" && h.bucket === "positive")).toBe(true);
     expect(consumer.helpful.some((l) => l.includes("Domain age could not be verified"))).toBe(false);
+
+    const normalized = normalizeTrustResult({
+      score: score.finalScore,
+      verdict: score.verdict,
+      domain: "example-retailer.nl",
+      reasons: [],
+      ...result,
+      reviewSignals,
+      providerEvidence: checks.providerEvidence,
+      safeBrowsing: checks.safeBrowsing,
+      openPhish: checks.openPhish,
+      urlHaus: checks.urlHaus,
+      police: checks.police,
+      scoreResult: score,
+      intelScoreBreakdown: [],
+      reviewSummary: "",
+      aiUsed: false,
+      supplyChainSignals: {
+        likelyDropshipping: false,
+        likelyChinaShipping: false,
+        likelyLocalProduction: false,
+        confidence: "low",
+        dropshipConfidence: "low",
+        chinaConfidence: "low",
+        localConfidence: "low",
+        reasons: [],
+        scoreAdjustment: 0
+      },
+      domainInfrastructure: { source: "dns", warnings: [] },
+      siteStatus: "active",
+      confidenceLevel: "medium",
+      confidenceRationale: "",
+      behavioralSignalsPending: {}
+    } as unknown as ScamCheckResult);
+
+    expect(normalized.verdict).toBe("Likely Safe");
+    expect(normalized.showLimitedPublicStrip).toBe(false);
+    expect(normalized.domainAge.verified).toBe(true);
+    expect(normalized.reputation.google.display).not.toBeNull();
   });
 });

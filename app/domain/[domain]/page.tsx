@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCachedWebsiteAnalysis } from "@/lib/analysis/cachedAnalysis";
 import {
   domainLandingFaq,
   domainLandingIntro,
@@ -16,10 +15,8 @@ import { DomainIntelLandingJsonLd } from "@/components/seo/DomainIntelLandingJso
 import { Navbar } from "@/components/Navbar";
 import { ResultCard } from "@/components/ResultCard";
 import { SiteFooter } from "@/components/SiteFooter";
-import { EN_MESSAGES } from "@/lib/messages.en";
-import { DomainAgeMetricValue } from "@/components/check/DomainAgeMetricValue";
-import { formatSslHighlightValue } from "@/lib/signals/trustHighlightFacts";
-import { displayTrustScoreForResult } from "@/lib/scanPresentation";
+import { loadTrustViewForDomain } from "@/lib/trust/loadTrustView";
+import { TrustSummaryMetrics } from "@/components/trust/TrustSummaryMetrics";
 
 export const revalidate = 3600;
 
@@ -46,10 +43,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const canonical = `${SITE_URL}${path}`;
 
   try {
-    const result = await getCachedWebsiteAnalysis(domain);
-    const trustScore = displayTrustScoreForResult(result);
+    const { result, normalized } = await loadTrustViewForDomain(domain, "/domain/[domain]/metadata");
     const titleSegment = domainLandingTitleSegment(domain);
-    const description = domainLandingMetaDescription(domain, trustScore, result.reviewSummary);
+    const description = domainLandingMetaDescription(domain, normalized.trustScore, result.reviewSummary);
 
     const extraKeywords = [
       `is ${domain} legit`,
@@ -98,25 +94,19 @@ export default async function DomainIntelPage({ params }: PageProps) {
   if (!domain) notFound();
 
   const path = domainPathname(domain);
-  let result;
+  let view;
   try {
-    result = await getCachedWebsiteAnalysis(domain);
+    view = await loadTrustViewForDomain(domain, "/domain/[domain]");
   } catch {
     notFound();
   }
 
-  const trustScore = displayTrustScoreForResult(result);
+  const { result, normalized } = view;
   const faqs = domainLandingFaq(domain);
   const { lead, supporting } = domainLandingIntro(domain);
   const titleSegment = domainLandingTitleSegment(domain);
-  const ogDescription = domainLandingMetaDescription(domain, trustScore, result.reviewSummary);
+  const ogDescription = domainLandingMetaDescription(domain, normalized.trustScore, result.reviewSummary);
   const checkPath = `/check/${encodeURIComponent(domain)}`;
-
-  const sslShort = result.ssl.httpsEnabled
-    ? result.ssl.validCertificate
-      ? "HTTPS available — encrypts transit, does not prove legitimacy"
-      : "HTTPS with certificate issues"
-    : "No HTTPS";
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
@@ -162,25 +152,7 @@ export default async function DomainIntelPage({ params }: PageProps) {
           </p>
         </section>
 
-        <dl className="mt-8 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200/85 bg-white p-4 shadow-subtle">
-            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Trust-style score</dt>
-            <dd className="mt-1 text-2xl font-bold text-slate-900">
-              {trustScore === null ? EN_MESSAGES.siteOutcome.suppressedTrustMeter : `${trustScore} / 100`}
-            </dd>
-          </div>
-          <div className="rounded-2xl border border-slate-200/85 bg-white p-4 shadow-subtle">
-            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Domain age</dt>
-            <DomainAgeMetricValue
-              {...result}
-              debug={{ route: "/domain/[domain]", domain }}
-            />
-          </div>
-          <div className="rounded-2xl border border-slate-200/85 bg-white p-4 shadow-subtle">
-            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Secure connection</dt>
-            <dd className="mt-1 text-base font-semibold text-slate-900">{formatSslHighlightValue(result.ssl)}</dd>
-          </div>
-        </dl>
+        <TrustSummaryMetrics normalized={normalized} variant="domain" />
 
         <section className="mt-10 scroll-mt-20" aria-labelledby="domain-intel-faq-heading">
           <h2 id="domain-intel-faq-heading" className="text-xl font-bold tracking-tight text-slate-900 md:text-2xl">
@@ -207,7 +179,7 @@ export default async function DomainIntelPage({ params }: PageProps) {
             reachable, and limitations of each data feed.
           </p>
           <div className="mt-6">
-            <ResultCard result={result} />
+            <ResultCard result={result} normalizedTrust={normalized} />
           </div>
         </section>
 

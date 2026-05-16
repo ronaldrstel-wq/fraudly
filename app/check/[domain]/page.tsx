@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCachedWebsiteAnalysis } from "@/lib/analysis/cachedAnalysis";
 import { parseCheckDomainParam } from "@/lib/domainPage";
 import {
   buildWebsiteCheckMetaDescription,
@@ -16,13 +15,12 @@ import { ResultCard } from "@/components/ResultCard";
 import { SiteFooter } from "@/components/SiteFooter";
 import { DomainCheckJsonLd } from "@/components/seo/DomainCheckJsonLd";
 import { EN_MESSAGES } from "@/lib/messages.en";
-import { getLatestPublicCheckSnapshotForDomain } from "@/lib/latest-public-checks/snapshot";
-import { buildOverviewFromTrustAndVerdict } from "@/lib/overviewCardPresentation";
-import { displayTrustScoreForResult } from "@/lib/scanPresentation";
+import { loadTrustViewForDomain } from "@/lib/trust/loadTrustView";
 import { logDisplayScoreDebug } from "@/lib/scoring/displayScore";
-import { DomainAgeMetricValue } from "@/components/check/DomainAgeMetricValue";
-import { formatSslHighlightValue } from "@/lib/signals/trustHighlightFacts";
+import { TrustSummaryMetrics } from "@/components/trust/TrustSummaryMetrics";
 import type { HumanRecKind } from "@/lib/scanResultDualLayer";
+import { humanRecKindFromTrustVerdict } from "@/lib/scanResultDualLayer";
+import { clampScore } from "@/lib/trustSystem";
 
 export const revalidate = 3600;
 
@@ -45,20 +43,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const canonical = `${SITE_URL}${path}`;
 
   try {
-    const [result, publicSnapshot] = await Promise.all([
-      getCachedWebsiteAnalysis(domain),
-      getLatestPublicCheckSnapshotForDomain(domain)
-    ]);
-    const liveTrust = displayTrustScoreForResult(result);
-    const trustScore = publicSnapshot?.display.trustScore ?? liveTrust;
-    if (publicSnapshot) {
+    const { result, snapshot, normalized } = await loadTrustViewForDomain(domain, "check/[domain]/metadata");
+    const trustScore = normalized.trustScore;
+    if (snapshot) {
       logDisplayScoreDebug({
         domain,
-        scanId: publicSnapshot.id,
-        storedRiskScore: publicSnapshot.display.riskScore,
-        storedTrustScore: publicSnapshot.display.trustScore,
+        scanId: snapshot.id,
+        storedRiskScore: snapshot.display.riskScore,
+        storedTrustScore: snapshot.display.trustScore,
         displayedTrustScore: trustScore,
-        displayedLabel: publicSnapshot.display.label,
+        displayedLabel: normalized.verdict,
         source: "check/[domain]/generateMetadata"
       });
     }
@@ -123,69 +117,44 @@ export default async function DomainCheckPage({ params }: PageProps) {
   if (!domain) notFound();
 
   const path = `/check/${encodeURIComponent(domain)}`;
-  let result;
-  let publicSnapshot;
+  let view;
   try {
-    [result, publicSnapshot] = await Promise.all([
-      getCachedWebsiteAnalysis(domain),
-      getLatestPublicCheckSnapshotForDomain(domain)
-    ]);
+    view = await loadTrustViewForDomain(domain, "/check/[domain]");
   } catch {
     notFound();
   }
 
-  const liveTrust = displayTrustScoreForResult(result);
-  const trustScore = publicSnapshot?.display.trustScore ?? liveTrust;
+  const { result, snapshot, normalized } = view;
 
-  let alignedDisplay:
-    | {
-        trustScore: number;
-        label: string;
-        humanKind: HumanRecKind;
-        humanHeadline: string;
-        scanId: string;
-        lastSeenAtIso: string;
-      }
-    | undefined;
-
-  if (publicSnapshot) {
-    const overview = buildOverviewFromTrustAndVerdict(
-      publicSnapshot.display.trustScore,
-      publicSnapshot.display.verdict
-    );
-    alignedDisplay = {
-      trustScore: overview.trustScore,
-      label: overview.verdictLabel,
-      humanKind: overview.humanKind,
-      humanHeadline: overview.headline,
-      scanId: publicSnapshot.id,
-      lastSeenAtIso: publicSnapshot.lastSeenAt.toISOString()
-    };
+  if (snapshot) {
     logDisplayScoreDebug({
       domain,
-      scanId: publicSnapshot.id,
-      storedRiskScore: publicSnapshot.display.riskScore,
-      storedTrustScore: publicSnapshot.display.trustScore,
-      displayedTrustScore: overview.trustScore,
-      displayedLabel: overview.verdictLabel,
-      source: "check/[domain]/page"
-    });
-  } else if (process.env.NODE_ENV === "development" && liveTrust !== null) {
-    logDisplayScoreDebug({
-      domain,
-      scanId: null,
-      storedRiskScore: result.score,
-      storedTrustScore: liveTrust,
-      displayedTrustScore: liveTrust,
-      displayedLabel: "(live analysis, no public snapshot)",
+      scanId: snapshot.id,
+      storedRiskScore: snapshot.display.riskScore,
+      storedTrustScore: snapshot.display.trustScore,
+      displayedTrustScore: normalized.trustScore,
+      displayedLabel: normalized.verdict,
       source: "check/[domain]/page"
     });
   }
-  const sslShort = formatSslHighlightValue(result.ssl);
+
+  const alignedDisplay = snapshot
+    ? {
+        trustScore: normalized.trustScore ?? 50,
+        label: normalized.verdict,
+        humanKind: humanRecKindFromTrustVerdict(
+          clampScore(normalized.trustScore ?? 50),
+          snapshot.display.verdict
+        ) as HumanRecKind,
+        humanHeadline: normalized.verdict,
+        scanId: snapshot.id,
+        lastSeenAtIso: snapshot.lastSeenAt.toISOString()
+      }
+    : undefined;
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
-      <DomainCheckJsonLd domain={domain} pathname={path} result={result} />
+      <DomainCheckJsonLd domain={domain} pathname={path} result={result} normalized={normalized} />
       <Navbar />
       <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-10 sm:pt-14 md:pt-16">
         <nav className="text-sm text-slate-600" aria-label="Breadcrumb">
@@ -236,28 +205,10 @@ export default async function DomainCheckPage({ params }: PageProps) {
           </p>
         </section>
 
-        <dl className="mt-8 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Trust-style score</dt>
-            <dd className="mt-1 text-2xl font-bold text-slate-900">
-              {trustScore === null ? EN_MESSAGES.siteOutcome.suppressedTrustMeter : `${trustScore} / 100`}
-            </dd>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Domain age</dt>
-            <DomainAgeMetricValue
-              {...result}
-              debug={{ route: "/check/[domain]", domain }}
-            />
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Secure connection</dt>
-            <dd className="mt-1 text-base font-semibold text-slate-900">{sslShort}</dd>
-          </div>
-        </dl>
+        <TrustSummaryMetrics normalized={normalized} variant="check" />
 
         <div className="mt-8 max-w-4xl">
-          <ResultCard result={result} alignedDisplay={alignedDisplay} />
+          <ResultCard result={result} normalizedTrust={normalized} alignedDisplay={alignedDisplay} />
         </div>
 
         <section className="mx-auto mt-10 flex max-w-3xl flex-col gap-3 sm:flex-row sm:flex-wrap" aria-label="Next steps">
@@ -268,16 +219,10 @@ export default async function DomainCheckPage({ params }: PageProps) {
             Check another website
           </Link>
           <Link
-            href="/how-it-works"
-            className="inline-flex justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+            href="/latest-checks"
+            className="inline-flex justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50"
           >
-            How Fraudly works
-          </Link>
-          <Link
-            href="/learn"
-            className="inline-flex justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
-          >
-            Learn about scam websites
+            Latest public checks
           </Link>
         </section>
       </main>
