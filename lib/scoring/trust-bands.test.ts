@@ -71,13 +71,15 @@ describe("trust-bands", () => {
   it("acceptance: score 75 is visibly teal, score 59 is amber, not grey", () => {
     const mostly = getOverviewCardChrome(75);
     const caution = getOverviewCardChrome(59);
+    const likely = getOverviewCardChrome(90);
 
     for (const field of [
       mostly.accentBar,
       mostly.iconWrap,
       mostly.icon,
-      mostly.scorePill,
-      mostly.cta,
+      mostly.metaScorePill,
+      mostly.metaCta,
+      mostly.metaPanel,
       mostly.cardShell,
       mostly.cardShellHover
     ] as const) {
@@ -89,14 +91,17 @@ describe("trust-bands", () => {
       caution.accentBar,
       caution.iconWrap,
       caution.icon,
-      caution.scorePill,
-      caution.cta,
+      caution.metaScorePill,
+      caution.metaCta,
+      caution.metaPanel,
       caution.cardShell
     ] as const) {
       expect(field).toMatch(/amber/);
       expect(field).not.toMatch(/slate|gray|grey|teal/);
     }
 
+    expect(likely.metaPanel).toContain("emerald");
+    expect(likely.metaScorePill).toContain("emerald");
     expect(getTrustColors(75).metricCard).toContain("teal");
     expect(getTrustColorsForDisplay(75, "Mostly Safe").headlineText).toContain("teal");
     expect(getTrustColorsForDisplay(59, "Use Caution").scorePill).toContain("amber");

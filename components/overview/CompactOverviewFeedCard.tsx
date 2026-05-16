@@ -7,14 +7,24 @@ import { getOverviewCardChrome, type OverviewCardChrome } from "@/lib/scoring/tr
 const ACCENT_BAR_POSITION =
   "before:absolute before:inset-y-3 before:left-0 before:w-1 before:rounded-r md:before:inset-y-2";
 
-function TrustScoreBadge({ score, chrome }: { score: number; chrome: OverviewCardChrome }) {
+function TrustScoreBadge({
+  score,
+  chrome,
+  inMetaPanel = false
+}: {
+  score: number;
+  chrome: OverviewCardChrome;
+  inMetaPanel?: boolean;
+}) {
+  const pillCls = inMetaPanel ? chrome.metaScorePill : chrome.scorePill;
+  const dimCls = inMetaPanel ? chrome.metaScorePillDim : chrome.scorePillDim;
   return (
     <span
       aria-label={`${EN_MESSAGES.scanResult.trustScoreLabel}: ${score} out of 100`}
-      className={`inline-flex h-8 w-[108px] shrink-0 items-center justify-center rounded-xl border px-2 py-0.5 text-[12px] font-semibold tabular-nums transition-transform duration-200 md:h-7 md:w-[100px] md:text-[11px] ${chrome.scorePill}`}
+      className={`inline-flex h-8 w-[108px] shrink-0 items-center justify-center rounded-xl border px-2 py-0.5 text-[12px] font-semibold tabular-nums transition-colors duration-200 md:h-7 md:w-[100px] md:text-[11px] ${pillCls}`}
     >
       {score}
-      <span className={`font-medium ${chrome.scorePillDim}`}> / 100</span>
+      <span className={`font-medium ${dimCls}`}> / 100</span>
     </span>
   );
 }
@@ -82,12 +92,14 @@ function MobileMetaStripe(props: {
   const { timeIso, timeRelative, timeTitle, score, chrome, children } = props;
 
   return (
-    <div className={`flex min-w-0 flex-col gap-2 border-t pt-3 md:hidden ${chrome.mobileDivider}`}>
+    <div
+      className={`flex min-w-0 flex-col gap-2.5 transition-colors duration-200 md:hidden ${chrome.mobileMetaPanel} ${chrome.metaPanelHover}`}
+    >
       <div className="flex min-w-0 items-center justify-between gap-3">
         <time className="text-[12px] font-medium tabular-nums text-slate-500" dateTime={timeIso} title={timeTitle}>
           {timeRelative}
         </time>
-        <TrustScoreBadge score={score} chrome={chrome} />
+        <TrustScoreBadge score={score} chrome={chrome} inMetaPanel />
       </div>
       {children}
     </div>
@@ -127,13 +139,13 @@ function DesktopMetaStripe(props: {
   const { timeIso, timeRelative, timeTitle, score, chrome, children } = props;
   return (
     <div
-      className={`hidden w-[min(11rem,100%)] min-w-[9.25rem] shrink-0 flex-col items-stretch gap-1.5 text-right shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] md:flex ${chrome.metaPanel}`}
+      className={`hidden w-[min(11rem,100%)] min-w-[9.25rem] shrink-0 flex-col items-stretch gap-2 text-right transition-colors duration-200 md:flex ${chrome.metaPanel} ${chrome.metaPanelHover}`}
     >
       <time className="text-[11px] font-medium tabular-nums text-slate-500" dateTime={timeIso} title={timeTitle}>
         {timeRelative}
       </time>
       <div className="flex justify-end">
-        <TrustScoreBadge score={score} chrome={chrome} />
+        <TrustScoreBadge score={score} chrome={chrome} inMetaPanel />
       </div>
       {children}
     </div>
@@ -162,7 +174,7 @@ export function CompactOverviewFeedLinkCard(props: CompactOverviewFeedBaseProps 
   const shell = `fraudly-motion fraudly-focus group relative block ${ACCENT_BAR_POSITION} ${chrome.accentBar} ${chrome.cardShell} ${chrome.cardShellHover} md:px-4 md:py-3`;
 
   const ctaPresentation = (
-    <span className={`inline-flex items-center gap-1 text-sm font-semibold underline underline-offset-2 ${chrome.cta}`}>
+    <span className={`inline-flex items-center gap-1 text-sm font-semibold underline underline-offset-2 ${chrome.metaCta}`}>
       {viewLabel.replace("→", "").trim()}
       <span className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>
     </span>
@@ -207,7 +219,7 @@ export function CompactOverviewFeedArticleCard(props: CompactOverviewFeedBasePro
   } = props;
 
   const chrome = getOverviewCardChrome(m.trustScore);
-  const viewLinkCls = `fraudly-focus rounded-lg text-sm font-semibold underline underline-offset-2 ${chrome.cta}`;
+  const viewLinkCls = `fraudly-focus rounded-lg text-sm font-semibold underline underline-offset-2 ${chrome.metaCta}`;
 
   return (
     <article
