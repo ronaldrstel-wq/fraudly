@@ -1,3 +1,4 @@
+import { safeAlertDate } from "@/lib/scam-alerts/safeDates";
 import type { PublicScamAlertListItem, ScamAlertsPublicFilter, ScamAlertsTimeWindow } from "@/lib/scam-alerts/service";
 
 export type ListFilterKey = ScamAlertsPublicFilter;
@@ -27,9 +28,9 @@ export function computeSeverityScore(
 ): number {
   let score = Math.max(0, Math.min(100, alert.confidence));
   score += Math.min(10, Math.floor(alert.evidenceCount / 3));
-  const ref = alert.publishedAt ?? alert.lastSeenAt;
-  if (now.getTime() - ref.getTime() < 36 * MS_HOUR) score += 4;
-  const t = alert.scamType.toLowerCase();
+  const ref = safeAlertDate(alert.publishedAt) ?? safeAlertDate(alert.lastSeenAt);
+  if (ref && now.getTime() - ref.getTime() < 36 * MS_HOUR) score += 4;
+  const t = (alert.scamType ?? "").toLowerCase();
   if ((t.includes("phish") || t.includes("malware") || t.includes("trojan")) && score < 92) score += 3;
   return Math.max(0, Math.min(100, Math.round(score)));
 }
@@ -81,7 +82,8 @@ export function deriveAlertSeverity(
 }
 
 export function consumerAlertTitle(alert: Pick<PublicScamAlertListItem, "scamType" | "title">): string {
-  const t = alert.scamType.toLowerCase();
+  const t = (alert.scamType ?? "").toLowerCase();
+  const titleLower = (alert.title ?? "").toLowerCase();
   if (t.includes("malware") || t.includes("trojan") || t.includes("virus")) {
     return "Possible malware website detected";
   }
@@ -97,14 +99,15 @@ export function consumerAlertTitle(alert: Pick<PublicScamAlertListItem, "scamTyp
   if (t.includes("suspicious") || t.includes("domain")) {
     return "Domain flagged by public scam intelligence feeds";
   }
-  if (t.includes("url") || alert.title.toLowerCase().includes("url")) {
+  if (t.includes("url") || titleLower.includes("url")) {
     return "Known malicious URL reported";
   }
   return "Website flagged by public threat intelligence feeds";
 }
 
 export function whyThisMattersLine(alert: Pick<PublicScamAlertListItem, "scamType" | "domain" | "sourceName">): string {
-  const t = alert.scamType.toLowerCase();
+  const t = (alert.scamType ?? "").toLowerCase();
+  const sourceName = alert.sourceName?.trim() || "public threat data";
   const domainBit = alert.domain ? ` (${alert.domain})` : "";
   if (t.includes("malware")) {
     return `This address has appeared in public malware-related lists${domainBit}. Avoid downloading files or entering passwords until you are sure who sent the link.`;
@@ -118,18 +121,22 @@ export function whyThisMattersLine(alert: Pick<PublicScamAlertListItem, "scamTyp
   if (t.includes("brand") || t.includes("impersonat")) {
     return `Public signals suggest this site may be impersonating a known brand. Double-check the web address with the company’s official channels.`;
   }
-  return `Fraudly matched this entry to public threat data from ${alert.sourceName}. Treat unexpected links with caution until you verify the sender.`;
+  return `Fraudly matched this entry to public threat data from ${sourceName}. Treat unexpected links with caution until you verify the sender.`;
 }
 
 /** e.g. "9 May 2026" for alert cards. */
 export function formatPublishedDateLongEn(date: Date): string {
-  return date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  const d = safeAlertDate(date);
+  if (!d) return "Unknown";
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 }
 
 export function formatRelativeTimeEn(date: Date, now: Date = new Date()): { label: string; title: string } {
-  const title = date.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
+  const d = safeAlertDate(date);
+  if (!d) return { label: "Unknown", title: "Unknown" };
+  const title = d.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
   const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-  const diffSec = (date.getTime() - now.getTime()) / 1000;
+  const diffSec = (d.getTime() - now.getTime()) / 1000;
   const absSec = Math.abs(diffSec);
   const sign = diffSec < 0 ? -1 : 1;
 
@@ -151,7 +158,8 @@ export function clusterDomainKey(domain: string | null | undefined): string | nu
 
 function isNewToday(alert: PublicScamAlertListItem, now: Date): boolean {
   const start = utcStartOfDay(now);
-  const ref = alert.publishedAt ?? alert.lastSeenAt;
+  const ref = safeAlertDate(alert.publishedAt) ?? safeAlertDate(alert.lastSeenAt);
+  if (!ref) return false;
   return ref.getTime() >= start.getTime();
 }
 
@@ -162,7 +170,7 @@ export function alertMatchesListFilter(
 ): boolean {
   if (filter === "all") return true;
   const sev = deriveAlertSeverity(alert, now).severity;
-  const t = alert.scamType.toLowerCase();
+  const t = (alert.scamType ?? "").toLowerCase();
   /** Aligns with DB filter `confidence >= 75` for the index. */
   if (filter === "high") return alert.confidence >= 75 || sev === "critical" || sev === "high";
   if (filter === "phishing") return t.includes("phish");

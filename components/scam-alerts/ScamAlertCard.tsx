@@ -8,6 +8,7 @@ import {
   formatRelativeTimeEn,
   whyThisMattersLine
 } from "@/lib/scam-alerts/presentation";
+import { safeAlertDate, safeAlertIso } from "@/lib/scam-alerts/safeDates";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { humanRecGlyph, humanRecHeadline, humanRecHeadlineTone } from "@/lib/scanResultDualLayer";
 import { humanRecKindFromScamAlertType, isCriticalOverviewKind } from "@/lib/overviewCardPresentation";
@@ -21,16 +22,19 @@ type ScamAlertCardProps = {
 
 export function ScamAlertCard({ alert, now, showRelatedHint }: ScamAlertCardProps) {
   const severity = deriveAlertSeverity(alert, now);
-  const humanKind = humanRecKindFromScamAlertType(alert.scamType);
+  const humanKind = humanRecKindFromScamAlertType(alert.scamType ?? "unknown");
   const humanHeadline = humanRecHeadline(humanKind);
   const humanTone = humanRecHeadlineTone(humanKind);
   const feedCritical = isCriticalOverviewKind(humanKind);
   const title = consumerAlertTitle(alert);
   const why = whyThisMattersLine(alert);
-  const publishedAt = alert.publishedAt;
+  const publishedAt = safeAlertDate(alert.publishedAt);
   const publishedLong = publishedAt ? formatPublishedDateLongEn(publishedAt) : null;
   const publishedRelative = publishedAt ? formatRelativeTimeEn(publishedAt, now) : null;
-  const lastSeenRelative = formatRelativeTimeEn(alert.lastSeenAt, now);
+  const lastSeenAt = safeAlertDate(alert.lastSeenAt);
+  const lastSeenRelative = lastSeenAt ? formatRelativeTimeEn(lastSeenAt, now) : { label: "Unknown", title: "Unknown" };
+  const publishedIso = publishedAt ? safeAlertIso(publishedAt) : null;
+  const lastSeenIso = safeAlertIso(lastSeenAt);
   const domainKey = clusterDomainKey(alert.domain);
 
   return (
@@ -74,7 +78,7 @@ export function ScamAlertCard({ alert, now, showRelatedHint }: ScamAlertCardProp
             <span className="truncate">{severity.badge}</span>
           </span>
           <span className="max-w-full truncate rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-600">
-            {alert.scamType}
+            {alert.scamType?.trim() || "Unknown"}
           </span>
         </div>
       </div>
@@ -107,7 +111,7 @@ export function ScamAlertCard({ alert, now, showRelatedHint }: ScamAlertCardProp
         {publishedAt && publishedLong ? (
           <p className="break-words">
             <span className="font-medium text-slate-500">Published</span>{" "}
-            <time className="font-semibold text-slate-800" dateTime={publishedAt.toISOString()} title={publishedRelative?.title}>
+            <time className="font-semibold text-slate-800" dateTime={publishedIso ?? undefined} title={publishedRelative?.title}>
               {publishedLong}
             </time>
             {publishedRelative ? (
@@ -124,7 +128,7 @@ export function ScamAlertCard({ alert, now, showRelatedHint }: ScamAlertCardProp
         )}
         <p className="break-words text-slate-500">
           <span className="font-medium text-slate-500">Updated</span>{" "}
-          <time dateTime={alert.lastSeenAt.toISOString()} title={lastSeenRelative.title}>
+          <time dateTime={lastSeenIso ?? undefined} title={lastSeenRelative.title}>
             {lastSeenRelative.label}
           </time>
         </p>
@@ -174,18 +178,18 @@ export function ScamAlertCard({ alert, now, showRelatedHint }: ScamAlertCardProp
           <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:gap-2">
             <dt className="shrink-0 font-semibold text-slate-800">Published (exact)</dt>
             <dd className="min-w-0 whitespace-pre-wrap break-all">
-              {alert.publishedAt ? (
-                <time dateTime={alert.publishedAt.toISOString()} title={alert.publishedAt.toISOString()}>
-                  {alert.publishedAt.toLocaleString("en-GB", { dateStyle: "full", timeStyle: "medium" })}
+              {publishedAt ? (
+                <time dateTime={publishedIso ?? undefined} title={publishedIso ?? undefined}>
+                  {publishedAt.toLocaleString("en-GB", { dateStyle: "full", timeStyle: "medium" })}
                 </time>
               ) : (
-                "—"
+                "Unknown"
               )}
             </dd>
           </div>
           <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:gap-2">
             <dt className="shrink-0 font-semibold text-slate-800">Raw type</dt>
-            <dd className="min-w-0 break-all">{alert.scamType}</dd>
+            <dd className="min-w-0 break-all">{alert.scamType?.trim() || "Unknown"}</dd>
           </div>
           <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:gap-2">
             <dt className="shrink-0 font-semibold text-slate-800">Original title</dt>
@@ -196,7 +200,7 @@ export function ScamAlertCard({ alert, now, showRelatedHint }: ScamAlertCardProp
 
       <div className="mt-auto border-t border-transparent pt-3">
         <Link
-          href={`/scam-alerts/${alert.slug}`}
+          href={`/scam-alerts/${encodeURIComponent(alert.slug)}`}
           className="inline-flex min-h-11 items-center text-sm font-semibold text-blue-700 transition-colors hover:text-blue-900"
         >
           Read full alert →

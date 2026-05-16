@@ -1,4 +1,11 @@
+import { safeAlertDate } from "@/lib/scam-alerts/safeDates";
 import type { PublicScamAlertListItem } from "@/lib/scam-alerts/service";
+
+function alertSortTimestamp(row: PublicScamAlertListItem): number {
+  const d =
+    safeAlertDate(row.publishedAt) ?? safeAlertDate(row.lastSeenAt) ?? safeAlertDate(row.firstSeenAt);
+  return d?.getTime() ?? 0;
+}
 
 /** Same normalization as `clusterDomainKey` in presentation (kept local to avoid import cycles). */
 function clusterDomainKey(domain: string | null | undefined): string | null {
@@ -19,11 +26,7 @@ function rootDomainFromHost(host: string): string {
  * (root domain, source) pair to reduce noisy feed repeats.
  */
 export function applyScamAlertFeedQuality(alerts: PublicScamAlertListItem[]): PublicScamAlertListItem[] {
-  const sorted = [...alerts].sort((a, b) => {
-    const ta = (a.publishedAt ?? a.lastSeenAt).getTime();
-    const tb = (b.publishedAt ?? b.lastSeenAt).getTime();
-    return tb - ta;
-  });
+  const sorted = [...alerts].sort((a, b) => alertSortTimestamp(b) - alertSortTimestamp(a));
 
   const seenHost = new Set<string>();
   const afterHostDedupe: PublicScamAlertListItem[] = [];

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { Prisma, ScamAlertStatus } from "@prisma/client";
 import { db } from "@/lib/db";
+import { isPublicScamAlertsReadSkipped } from "@/lib/scam-alerts/dbErrors";
 import { applyScamAlertFeedQuality } from "@/lib/scam-alerts/feedQuality";
 
 /** Public index filters (query param `filter`). */
@@ -121,10 +122,6 @@ export function buildPublishedActiveScamAlertWhere(now: Date): Prisma.ScamAlertW
   };
 }
 
-function isDbUnavailable(err: unknown): boolean {
-  return err instanceof Prisma.PrismaClientKnownRequestError && (err.code === "P2021" || err.code === "P1001");
-}
-
 function clampConfidence(v: number): number {
   return Math.max(1, Math.min(100, Math.round(v)));
 }
@@ -190,7 +187,7 @@ export async function listPublishedScamAlerts(params?: { scamType?: string; take
       take
     });
   } catch (err) {
-    if (isDbUnavailable(err)) return [];
+    if (isPublicScamAlertsReadSkipped(err)) return [];
     throw err;
   }
 }
@@ -315,7 +312,7 @@ export async function getPublishedScamAlertsPageResult(params: {
 
     return { alerts, total, page, pageSize, maxPage };
   } catch (err) {
-    if (isDbUnavailable(err)) {
+    if (isPublicScamAlertsReadSkipped(err)) {
       return { alerts: [], total: 0, page: 1, pageSize, maxPage: 1 };
     }
     throw err;
@@ -360,7 +357,7 @@ export async function getScamAlertsIndexStats(now: Date = new Date()): Promise<S
       topScamType
     };
   } catch (err) {
-    if (isDbUnavailable(err)) {
+    if (isPublicScamAlertsReadSkipped(err)) {
       return { total: 0, elevatedConfidenceCount: 0, newTodayCount: 0, topScamType: null };
     }
     throw err;
@@ -375,9 +372,9 @@ export async function listPublishedScamTypes(now: Date = new Date()): Promise<st
       distinct: ["scamType"],
       orderBy: { scamType: "asc" }
     });
-    return rows.map((r) => r.scamType);
+    return rows.map((r) => r.scamType).filter((t): t is string => typeof t === "string" && t.trim().length > 0);
   } catch (err) {
-    if (isDbUnavailable(err)) return [];
+    if (isPublicScamAlertsReadSkipped(err)) return [];
     throw err;
   }
 }
@@ -394,7 +391,7 @@ export async function getPublishedScamAlertBySlug(slug: string, now: Date = new 
       }
     });
   } catch (err) {
-    if (isDbUnavailable(err)) return null;
+    if (isPublicScamAlertsReadSkipped(err)) return null;
     throw err;
   }
 }

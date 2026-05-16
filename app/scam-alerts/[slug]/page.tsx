@@ -7,6 +7,7 @@ import { OG_IMAGE } from "@/lib/seo-metadata";
 import { prepareMetaDescription, SEO_DESCRIPTION } from "@/lib/seo-description";
 import { privateRobots, publicRobots, SITE_URL } from "@/lib/seo";
 import { scamAlertDetailFallbackMetadata } from "@/lib/scam-alerts/safe-metadata";
+import { formatAlertDateTimeEn } from "@/lib/scam-alerts/safeDates";
 import { getPublishedScamAlertBySlug } from "@/lib/scam-alerts/service";
 import { EN_MESSAGES } from "@/lib/messages.en";
 
@@ -95,7 +96,7 @@ export default async function ScamAlertDetailPage({ params }: PageProps) {
         </Link>
 
         <article className="mt-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-slate-500">{alert.scamType}</p>
+          <p className="text-xs uppercase tracking-wide text-slate-500">{alert.scamType?.trim() || "Unknown"}</p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight">{alert.title}</h1>
           <p className="mt-3 text-base text-slate-700">{alert.summary}</p>
 
@@ -118,11 +119,11 @@ export default async function ScamAlertDetailPage({ params }: PageProps) {
             </div>
             <div>
               <dt className="font-semibold text-slate-900">Published</dt>
-              <dd>{(alert.publishedAt ?? alert.lastSeenAt).toLocaleString("en")}</dd>
+              <dd>{formatAlertDateTimeEn(alert.publishedAt ?? alert.lastSeenAt)}</dd>
             </div>
             <div>
               <dt className="font-semibold text-slate-900">Last seen</dt>
-              <dd>{alert.lastSeenAt.toLocaleString("en")}</dd>
+              <dd>{formatAlertDateTimeEn(alert.lastSeenAt)}</dd>
             </div>
           </dl>
 

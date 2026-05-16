@@ -55,4 +55,23 @@ describe("applyScamAlertFeedQuality", () => {
     expect(out).toHaveLength(3);
     expect(out.map((o) => o.id)).toEqual(["x4", "x3", "x2"]);
   });
+
+  it("sorts without throwing when dates are invalid", () => {
+    const bad = row({
+      id: "bad",
+      domain: "bad.example",
+      sourceName: "S",
+      publishedAt: new Date("not-a-date"),
+      lastSeenAt: new Date("not-a-date")
+    });
+    const good = row({
+      id: "good",
+      domain: "good.example",
+      sourceName: "S",
+      publishedAt: new Date("2026-05-10T12:00:00.000Z")
+    });
+    expect(() => applyScamAlertFeedQuality([bad, good])).not.toThrow();
+    const out = applyScamAlertFeedQuality([bad, good]);
+    expect(out.some((r) => r.id === "good")).toBe(true);
+  });
 });

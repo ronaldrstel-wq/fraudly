@@ -106,18 +106,40 @@ export default async function ScamAlertsPage({ searchParams }: PageProps) {
   }
   const requestedPage = parseScamAlertsPageParam(params.page);
 
-  const [types, pageResult, stats] = await Promise.all([
-    listPublishedScamTypes(now),
-    getPublishedScamAlertsPageResult({
-      filter,
-      exactScamType: selectedType || undefined,
-      page: requestedPage,
-      pageSize: SCAM_ALERTS_PAGE_SIZE,
-      now,
-      timeWindow
-    }),
-    getScamAlertsIndexStats(now)
-  ]);
+  const emptyPageResult = {
+    alerts: [] as Awaited<ReturnType<typeof getPublishedScamAlertsPageResult>>["alerts"],
+    total: 0,
+    page: 1,
+    pageSize: SCAM_ALERTS_PAGE_SIZE,
+    maxPage: 1
+  };
+  const emptyStats = {
+    total: 0,
+    elevatedConfidenceCount: 0,
+    newTodayCount: 0,
+    topScamType: null as string | null
+  };
+
+  let types: string[] = [];
+  let pageResult = emptyPageResult;
+  let stats = emptyStats;
+
+  try {
+    [types, pageResult, stats] = await Promise.all([
+      listPublishedScamTypes(now),
+      getPublishedScamAlertsPageResult({
+        filter,
+        exactScamType: selectedType || undefined,
+        page: requestedPage,
+        pageSize: SCAM_ALERTS_PAGE_SIZE,
+        now,
+        timeWindow
+      }),
+      getScamAlertsIndexStats(now)
+    ]);
+  } catch (err) {
+    console.error("[scam-alerts] page load failed", err);
+  }
 
   const { alerts, total, page, pageSize, maxPage } = pageResult;
   const rangeStart = total === 0 ? 0 : (page - 1) * pageSize + 1;
