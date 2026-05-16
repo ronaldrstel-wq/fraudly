@@ -206,9 +206,11 @@ export async function POST(request: Request) {
     }
 
     const sanitizedEvidence = sanitizeClientEvidence(body.evidence);
-    const baseResult = sanitizedEvidence
-      ? await runWebsiteAnalysis(canonicalHref, language, { evidence: sanitizedEvidence })
-      : await runWebsiteAnalysis(canonicalHref, language);
+    const analysisOptions = {
+      scanKind: (scanKind === "deep" ? "full" : "basic") as "basic" | "full",
+      ...(sanitizedEvidence ? { evidence: sanitizedEvidence } : {})
+    };
+    const baseResult = await runWebsiteAnalysis(canonicalHref, language, analysisOptions);
     let override = null;
     try {
       override = await db.domainAdminOverride?.findUnique?.({ where: { domain: baseResult.domain } });

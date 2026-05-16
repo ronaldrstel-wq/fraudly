@@ -47,8 +47,30 @@ export function resolveGoogleReviewMatch(signals: ReviewSignals): ResolvedGoogle
 }
 
 export function resolveTrustpilotReviewMatch(signals: ReviewSignals): ResolvedTrustpilotReview {
-  const resolved = resolveRatingPair(signals.trustpilotRating, signals.trustpilotReviewCount);
-  return { ...resolved, displayable: resolved.displayable };
+  const sanitized = sanitizeReviewFields(signals.trustpilotRating, signals.trustpilotReviewCount);
+  const rating = sanitized.rating;
+  const reviewCount = sanitized.reviewCount;
+
+  if (rating != null && reviewCount != null && reviewCount >= MIN_COUNT_FOR_DISPLAY) {
+    return { confidence: "high", rating, reviewCount, displayable: true };
+  }
+  if (rating != null) {
+    return {
+      confidence: reviewCount != null && reviewCount >= MIN_COUNT_FOR_DISPLAY ? "high" : "low",
+      rating,
+      reviewCount,
+      displayable: true
+    };
+  }
+  if (reviewCount != null) {
+    return {
+      confidence: reviewCount >= MIN_COUNT_FOR_DISPLAY ? "low" : "low",
+      rating: null,
+      reviewCount,
+      displayable: true
+    };
+  }
+  return { confidence: "none", rating: null, reviewCount: null, displayable: false };
 }
 
 /** Ratings used for scoring adjustments — requires high confidence and minimum volume. */
@@ -63,5 +85,4 @@ export function reviewRatingForScoring(
   return { rating, count: reviewCount };
 }
 
-export const PUBLIC_REVIEW_NOT_MATCHED_COPY =
-  "Public review data was not confidently matched for this domain.";
+export const PUBLIC_REVIEW_NOT_MATCHED_COPY = "No public review data found";

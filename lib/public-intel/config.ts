@@ -4,6 +4,13 @@ function readBool(name: string, defaultValue: boolean): boolean {
   return raw.trim().toLowerCase() === "true";
 }
 
+function readOutscraperEnabled(): boolean {
+  const explicit = process.env.ENABLE_OUTSCRAPER_ENRICHMENT?.trim().toLowerCase();
+  if (explicit === "true") return true;
+  if (explicit === "false") return false;
+  return Boolean(process.env.OUTSCRAPER_API_KEY?.trim());
+}
+
 export type PublicIntelSourceKey =
   | "trustpilot"
   | "reddit"
@@ -26,7 +33,7 @@ export const publicIntelConfig = {
     googleIndexedReviews: readBool("ENABLE_PUBLIC_INTEL_GOOGLE_INDEXED_REVIEWS", true)
   },
   paidSources: {
-    outscraper: readBool("ENABLE_OUTSCRAPER_ENRICHMENT", false),
+    outscraper: readOutscraperEnabled(),
     googlePlacesReviews: readBool("ENABLE_GOOGLE_PLACES_REVIEWS", false),
     trustpilotPrivateApi: readBool("ENABLE_TRUSTPILOT_PRIVATE_API", false)
   }

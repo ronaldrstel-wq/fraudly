@@ -1,5 +1,7 @@
 import { normalizeDomain } from "@/lib/cache";
 import { db } from "@/lib/db";
+import { fetchOutscraperReviewSignals } from "@/lib/outscraper/api";
+import { logReputationEnrichmentFromResult } from "@/lib/outscraper/reputationLog";
 import { publicIntelConfig } from "@/lib/public-intel/config";
 import { getPublicIntelEnrichment } from "@/lib/public-intel";
 import { sanitizePublicIntelWarningsForUi } from "@/lib/reviewSourceNormalization";
@@ -254,7 +256,6 @@ export async function getReputationEnrichment(input: {
   bypassCache?: boolean;
 }): Promise<ReputationEnrichment> {
   const normalizedDomain = normalizeDomain(input.domain);
-  const dev = process.env.NODE_ENV !== "production";
   const apiKeyPresent = Boolean(process.env.OUTSCRAPER_API_KEY);
   const outscraperEnabled = publicIntelConfig.paidSources.outscraper;
   const triggerReason = resolveTriggerReason({
@@ -287,14 +288,10 @@ export async function getReputationEnrichment(input: {
         reputationScanStage: scanStage,
         reputationSkippedReason: "served_from_cache"
       };
-      if (dev) {
-        console.info("[reputation] cache hit", {
-          scanStage,
-          normalizedDomain,
-          providerState: fromCache.providerState,
-          source: fromCache.source
-        });
-      }
+      logReputationEnrichmentFromResult(input.domain, fromCache, {
+        scanStage,
+        enrichmentAttempted: true
+      });
       return fromCache;
     }
   }
@@ -311,36 +308,6 @@ export async function getReputationEnrichment(input: {
     out.reputationScanStage = scanStage;
     out.reputationSkippedReason = "public_intel_disabled";
     await writeCache(normalizedDomain, out);
-    return out;
-  }
-
-  if (!outscraperEnabled || !apiKeyPresent) {
-    const skippedReason = !outscraperEnabled ? "outscraper_feature_disabled" : "outscraper_api_key_missing";
-    const out = toDisabledResponse(
-      normalizedDomain,
-      input.baseRiskScore,
-      "Review provider unavailable.",
-      {
-        cacheStatus: input.bypassCache ? "bypassed" : "miss",
-        providerState: "not_configured",
-        skippedReason,
-        providerStatus: "provider_unavailable",
-        triggerReason
-      }
-    );
-    out.reputationStatus = "disabled";
-    out.reputationScanStage = scanStage;
-    out.reputationSkippedReason = skippedReason;
-    if (dev) {
-      console.info("[reputation] provider unavailable", {
-        scanStage,
-        domain: input.domain,
-        normalizedDomain,
-        outscraperEnabled,
-        apiKeyPresent,
-        skippedReason
-      });
-    }
     return out;
   }
 
@@ -367,46 +334,49 @@ export async function getReputationEnrichment(input: {
     out.reputationStatus = "not_run";
     out.reputationScanStage = scanStage;
     out.reputationSkippedReason = "trigger_conditions_not_met";
-    if (dev) {
-      console.info("[reputation] skipped provider call", {
-        scanStage,
-        domain: input.domain,
-        normalizedDomain,
-        triggerReason,
-        skippedReason: "trigger_conditions_not_met"
-      });
-    }
     return out;
   }
 
   try {
-    if (dev) {
-      console.info("[reputation] provider call", {
-        scanStage,
-        domain: input.domain,
-        normalizedDomain,
-        deepScan: input.deepScan,
-        hasOutscraperKey: apiKeyPresent,
-        outscraperEnabled,
-        cacheBypassed: Boolean(input.bypassCache),
-        triggerReason,
-        apiEndpointCalled: "getPublicIntelEnrichment"
-      });
-    }
     const intel = await getPublicIntelEnrichment(normalizedDomain);
+    let googleRating = intel.signals.googleScore;
+    let googleReviewCount = intel.signals.googleReviewCount;
+    let trustpilotRating = intel.signals.trustpilotScore;
+    let trustpilotReviewCount = intel.signals.trustpilotReviewCount;
+    const sourceStatus = { ...intel.signals.sourceStatus };
+
+    if (outscraperEnabled && apiKeyPresent) {
+      sourceStatus.outscraper.attempted = true;
+      try {
+        const outscraper = await fetchOutscraperReviewSignals(normalizedDomain);
+        sourceStatus.outscraper.ok = outscraper.ok;
+        if (outscraper.googleRating != null) googleRating = outscraper.googleRating;
+        if (outscraper.googleReviewCount != null) googleReviewCount = outscraper.googleReviewCount;
+        if (outscraper.trustpilotRating != null) trustpilotRating = outscraper.trustpilotRating;
+        if (outscraper.trustpilotReviewCount != null) trustpilotReviewCount = outscraper.trustpilotReviewCount;
+        if (outscraper.error) {
+          intel.signals.warnings.push(`outscraper: ${outscraper.error}`);
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        sourceStatus.outscraper.warning = message;
+        intel.signals.warnings.push(`outscraper: ${message}`);
+      }
+    }
+
     const scored = calculateReputationImpactFromPayload({ impactOnRisk: intel.impactOnRisk });
     const adjustedRisk = clampRisk(input.baseRiskScore + scored.impactOnRisk);
-    const trustpilotFound = intel.signals.trustpilotScore != null || intel.signals.trustpilotReviewCount != null;
-    const googleFound = intel.signals.googleScore != null || intel.signals.googleReviewCount != null;
+    const trustpilotFound = trustpilotRating != null || trustpilotReviewCount != null;
+    const googleFound = googleRating != null && googleReviewCount != null;
     const providerState: ReputationEnrichment["providerState"] = trustpilotFound || googleFound ? "found" : "no_match";
     const providerReason = providerState === "found" ? "Review data found." : "No matching review profile found.";
     const out: ReputationEnrichment = {
       normalizedDomain,
       signalStatus: scored.signalStatus,
-      trustpilotRating: intel.signals.trustpilotScore,
-      trustpilotReviewCount: intel.signals.trustpilotReviewCount,
-      googleRating: intel.signals.googleScore,
-      googleReviewCount: intel.signals.googleReviewCount,
+      trustpilotRating,
+      trustpilotReviewCount,
+      googleRating,
+      googleReviewCount,
       latestReviewDate: null,
       sentimentSummary: null,
       businessName: intel.signals.businessName,
@@ -426,12 +396,12 @@ export async function getReputationEnrichment(input: {
       reputationSkippedReason: null,
       matchedQuery: intel.signals.matchedQuery ?? normalizedDomain,
       trustpilot: {
-        rating: intel.signals.trustpilotScore,
-        reviewCount: intel.signals.trustpilotReviewCount
+        rating: trustpilotRating,
+        reviewCount: trustpilotReviewCount
       },
       google: {
-        rating: intel.signals.googleScore,
-        reviewCount: intel.signals.googleReviewCount
+        rating: googleRating,
+        reviewCount: googleReviewCount
       },
       publicSignals: {
         redditWarnings: intel.signals.redditWarnings,
@@ -440,7 +410,7 @@ export async function getReputationEnrichment(input: {
         mailSecurity: intel.signals.mailSecurity,
         confidence: intel.signals.confidence,
         warnings: sanitizePublicIntelWarningsForUi(intel.signals.warnings),
-        sourceStatus: intel.signals.sourceStatus
+        sourceStatus
       },
       reputationDebug: {
         enabled: outscraperEnabled,
@@ -454,23 +424,10 @@ export async function getReputationEnrichment(input: {
         triggerReason
       }
     };
-    if (dev) {
-      console.info("[reputation] provider response", {
-        scanStage,
-        domain: input.domain,
-        normalizedDomain,
-        providerState,
-        providerReason,
-        trustpilot: {
-          rating: out.trustpilotRating,
-          reviewCount: out.trustpilotReviewCount
-        },
-        googleReviews: {
-          rating: out.googleRating,
-          reviewCount: out.googleReviewCount
-        }
-      });
-    }
+    logReputationEnrichmentFromResult(input.domain, out, {
+      scanStage,
+      enrichmentAttempted: true
+    });
     await writeCache(normalizedDomain, out);
     return out;
   } catch (error) {
@@ -487,12 +444,5 @@ export async function getReputationEnrichment(input: {
     out.reputationSkippedReason = message;
     await writeCache(normalizedDomain, out);
     return out;
-  } finally {
-    if (dev) {
-      console.info("[reputation] completed", {
-        scanStage,
-        normalizedDomain
-      });
-    }
   }
 }

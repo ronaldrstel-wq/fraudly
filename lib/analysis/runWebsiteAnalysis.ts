@@ -9,6 +9,9 @@ import { runAllChecks } from "@/lib/checks";
 import { buildDomainInfrastructure, probeApexDnsResolution } from "@/lib/domainInfrastructure";
 import { buildIntelScoring, buildTrustSignalsFromEvidence } from "@/lib/checks/scoring";
 import { getReviewSignals } from "@/lib/reviewSignals";
+import { mergeReviewSignalsWithEnrichment } from "@/lib/reviewSignals/mergeEnrichment";
+import { getReputationEnrichment } from "@/lib/outscraper/reputation";
+import { publicIntelConfig } from "@/lib/public-intel/config";
 import { buildScoringIdentityContext } from "@/lib/scoringIdentityContext";
 import { computeRatingConfidence } from "@/lib/scoringConfidence";
 import {
@@ -47,7 +50,7 @@ const EMPTY_BEHAVIOR: PendingPageBehaviorSignals = {};
 export async function runWebsiteAnalysis(
   inputUrl: string,
   language: "en" | "nl" = "en",
-  options?: { evidence?: WebsiteAnalysisClientEvidence | null }
+  options?: { evidence?: WebsiteAnalysisClientEvidence | null; scanKind?: "basic" | "full" }
 ): Promise<ScamCheckResult> {
   const redirectChain = await resolveRedirectChain(inputUrl);
   const analysisUrl = redirectChain.finalUrl;
@@ -252,6 +255,32 @@ export async function runWebsiteAnalysis(
     ...scoreInputBase,
     aiRiskSignals: undefined
   });
+
+  const scanKind = options?.scanKind ?? "full";
+  const deepScan = scanKind === "full";
+  let effectiveReviewSignals = reviewSignals;
+  if (publicIntelConfig.enrichmentEnabled) {
+    const enrichment = await getReputationEnrichment({
+      domain: normalizedDomain,
+      baseRiskScore: scorePre.finalScore,
+      deepScan,
+      missingReviewSignals: !(reviewSignals.googleFound || reviewSignals.trustpilotFound),
+      bypassCache: deepScan
+    });
+    effectiveReviewSignals = mergeReviewSignalsWithEnrichment(reviewSignals, enrichment);
+  }
+
+  const scoringContextFinal = buildScoringIdentityContext(
+    normalizedDomain,
+    externalChecks,
+    effectiveReviewSignals
+  );
+  const scoreInputFinal = {
+    ...scoreInputBase,
+    reviewSignals: effectiveReviewSignals,
+    scoringContext: scoringContextFinal
+  };
+
   const scoringSignalsJson = formatScoreSignalsForPrompt(scorePre.signals);
   const heuristicBase = [...heuristicReasons, ...supplyChainSignals.reasons];
   const scoreLinesPre = [
@@ -278,7 +307,7 @@ export async function runWebsiteAnalysis(
   );
 
   let reviewSummary =
-    reviewSignals.trustpilotFound || reviewSignals.googleFound
+    effectiveReviewSignals.trustpilotFound || effectiveReviewSignals.googleFound
       ? "Public review data was included in this analysis."
       : EN_MESSAGES.reviewEvidence.noPublicReviewProfile;
   let aiUsed = false;
@@ -292,7 +321,7 @@ export async function runWebsiteAnalysis(
     aiPayload = await fetchAiScamReasons(
       inputUrl,
       websiteSignals,
-      reviewSignals,
+      effectiveReviewSignals,
       heuristicForOpenAi,
       scoringSignalsJson,
       trustIntelJson,
@@ -311,7 +340,7 @@ export async function runWebsiteAnalysis(
   }
 
   const scoreResult = calculateScamScore({
-    ...scoreInputBase,
+    ...scoreInputFinal,
     aiRiskSignals: aiPayload?.risk ? { level: aiPayload.risk } : undefined
   });
 
@@ -360,9 +389,9 @@ export async function runWebsiteAnalysis(
   });
 
   const { level: confidenceLevel, rationale: confidenceRationale } = computeRatingConfidence({
-    ctx: scoringContext,
+    ctx: scoringContextFinal,
     checks: externalChecks,
-    reviewSignals,
+    reviewSignals: effectiveReviewSignals,
     websiteTextLength: websiteText.length
   });
 
@@ -371,8 +400,8 @@ export async function runWebsiteAnalysis(
     malicious,
     treatAsNonexistent: false,
     inactiveWebsite,
-    ctx: scoringContext,
-    reviewSignals,
+    ctx: scoringContextFinal,
+    reviewSignals: effectiveReviewSignals,
     tier1Threat: criticalThreatClamp
   });
 
@@ -400,7 +429,7 @@ export async function runWebsiteAnalysis(
   logScanPipelineDebug({
     submittedUrl: inputUrl,
     externalChecks,
-    reviewSignals,
+    reviewSignals: effectiveReviewSignals,
     trustSignals,
     riskScore: adjustedRisk,
     trustScore: Math.max(0, Math.min(100, 100 - adjustedRisk)),
@@ -426,7 +455,7 @@ export async function runWebsiteAnalysis(
     urlHaus: externalChecks.urlHaus,
     ssl: externalChecks.ssl,
     police: externalChecks.police,
-    reviewSignals,
+    reviewSignals: effectiveReviewSignals,
     reviewSummary,
     aiUsed,
     supplyChainSignals,

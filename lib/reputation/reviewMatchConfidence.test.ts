@@ -28,4 +28,14 @@ describe("reviewMatchConfidence", () => {
     expect(match.displayable).toBe(true);
     expect(match.confidence).toBe("high");
   });
+
+  it("shows Trustpilot when only rating is present", () => {
+    const match = resolveTrustpilotReviewMatch({
+      ...base,
+      trustpilotRating: 3.9,
+      trustpilotReviewCount: undefined
+    });
+    expect(match.displayable).toBe(true);
+    expect(match.rating).toBe(3.9);
+  });
 });

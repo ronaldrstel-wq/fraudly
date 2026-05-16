@@ -100,7 +100,7 @@ describe("/api/check rate guard wiring", () => {
     expect(res.status).toBe(200);
     expect(reserveScanQuotaOrReject).toHaveBeenCalled();
     expect(runWebsiteAnalysis).toHaveBeenCalledTimes(1);
-    expect(runWebsiteAnalysis).toHaveBeenCalledWith("https://example.org/", "en");
+    expect(runWebsiteAnalysis).toHaveBeenCalledWith("https://example.org/", "en", { scanKind: "full" });
   });
 
   it("still allows the first anonymous check before signup gating engages", async () => {
@@ -117,7 +117,7 @@ describe("/api/check rate guard wiring", () => {
         scanType: "deep"
       })
     );
-    expect(runWebsiteAnalysis).toHaveBeenCalledTimes(1);
+    expect(runWebsiteAnalysis).toHaveBeenCalledWith("https://shop.example.net/", "en", { scanKind: "full" });
   });
 
   it("stops quota enforcement before signup errors for anonymous repeats", async () => {
@@ -142,5 +142,6 @@ describe("/api/check rate guard wiring", () => {
         scanType: "basic"
       })
     );
+    expect(runWebsiteAnalysis).toHaveBeenCalledWith("https://news.example.gov/", "en", { scanKind: "basic" });
   });
 });
