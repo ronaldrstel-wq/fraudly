@@ -78,7 +78,7 @@ describe("trust-bands", () => {
       mostly.iconWrap,
       mostly.icon,
       mostly.metaScorePill,
-      mostly.metaCta,
+      mostly.metaCtaButton,
       mostly.metaPanel,
       mostly.cardShell,
       mostly.cardShellHover
@@ -92,7 +92,7 @@ describe("trust-bands", () => {
       caution.iconWrap,
       caution.icon,
       caution.metaScorePill,
-      caution.metaCta,
+      caution.metaCtaButton,
       caution.metaPanel,
       caution.cardShell
     ] as const) {

@@ -21,7 +21,11 @@ function TrustScoreBadge({
   return (
     <span
       aria-label={`${EN_MESSAGES.scanResult.trustScoreLabel}: ${score} out of 100`}
-      className={`inline-flex h-8 w-[108px] shrink-0 items-center justify-center rounded-xl border px-2 py-0.5 text-[12px] font-semibold tabular-nums transition-colors duration-200 md:h-7 md:w-[100px] md:text-[11px] ${pillCls}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-xl px-2 py-0.5 tabular-nums transition-colors duration-200 ${
+        inMetaPanel
+          ? "h-8 w-[108px] border-2 md:h-8 md:w-[108px]"
+          : "h-8 w-[108px] border text-[12px] font-semibold md:h-7 md:w-[100px] md:text-[11px]"
+      } ${pillCls}`}
     >
       {score}
       <span className={`font-medium ${dimCls}`}> / 100</span>
@@ -128,6 +132,45 @@ function OverviewCardShell({
   );
 }
 
+function MetaViewResultCta({
+  viewLabel,
+  chrome,
+  href,
+  headlineId,
+  decorative = false
+}: {
+  viewLabel: string;
+  chrome: OverviewCardChrome;
+  href?: string;
+  headlineId?: string;
+  decorative?: boolean;
+}) {
+  const label = viewLabel.replace("→", "").trim();
+  const cls = `${chrome.metaCtaButton} ${chrome.metaCtaButtonHover}`;
+  const content = (
+    <>
+      {label}
+      <span className="transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden>
+        →
+      </span>
+    </>
+  );
+
+  if (decorative || !href) {
+    return (
+      <span className={cls} aria-hidden>
+        {content}
+      </span>
+    );
+  }
+
+  return (
+    <Link href={href} className={`fraudly-focus ${cls}`} aria-labelledby={headlineId}>
+      {content}
+    </Link>
+  );
+}
+
 function DesktopMetaStripe(props: {
   timeIso: string;
   timeRelative: string;
@@ -173,12 +216,7 @@ export function CompactOverviewFeedLinkCard(props: CompactOverviewFeedBaseProps 
   const chrome = getOverviewCardChrome(m.trustScore);
   const shell = `fraudly-motion fraudly-focus group relative block ${ACCENT_BAR_POSITION} ${chrome.accentBar} ${chrome.cardShell} ${chrome.cardShellHover} md:px-4 md:py-3`;
 
-  const ctaPresentation = (
-    <span className={`inline-flex items-center gap-1 text-sm font-semibold underline underline-offset-2 ${chrome.metaCta}`}>
-      {viewLabel.replace("→", "").trim()}
-      <span className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>
-    </span>
-  );
+  const ctaPresentation = <MetaViewResultCta viewLabel={viewLabel} chrome={chrome} decorative />;
 
   return (
     <Link href={href} prefetch={prefetch} className={`${shell} ${bgClassName ?? ""}`} aria-labelledby={headlineId} aria-label={ariaLabel}>
@@ -192,7 +230,7 @@ export function CompactOverviewFeedLinkCard(props: CompactOverviewFeedBaseProps 
           domainFullTitle={domainFullTitle}
         />
         <DesktopMetaStripe timeIso={timeIso} timeRelative={timeRelative} timeTitle={timeTitle} score={m.trustScore} chrome={chrome}>
-          <div className="flex min-h-[2.5rem] items-end justify-end">{ctaPresentation}</div>
+          <div className="flex min-h-[2.5rem] items-end">{ctaPresentation}</div>
         </DesktopMetaStripe>
         <MobileMetaStripe timeIso={timeIso} timeRelative={timeRelative} timeTitle={timeTitle} score={m.trustScore} chrome={chrome}>
           <div className="flex min-h-11 items-center">{ctaPresentation}</div>
@@ -219,7 +257,7 @@ export function CompactOverviewFeedArticleCard(props: CompactOverviewFeedBasePro
   } = props;
 
   const chrome = getOverviewCardChrome(m.trustScore);
-  const viewLinkCls = `fraudly-focus rounded-lg text-sm font-semibold underline underline-offset-2 ${chrome.metaCta}`;
+  const viewCta = <MetaViewResultCta viewLabel={viewLabel} chrome={chrome} href={href} headlineId={headlineId} />;
 
   return (
     <article
@@ -235,13 +273,8 @@ export function CompactOverviewFeedArticleCard(props: CompactOverviewFeedBasePro
           domainFullTitle={domainFullTitle}
         />
         <DesktopMetaStripe timeIso={timeIso} timeRelative={timeRelative} timeTitle={timeTitle} score={m.trustScore} chrome={chrome}>
-          <div className="flex min-h-[2.5rem] flex-col items-end justify-end gap-1.5">
-            <Link href={href} className={`inline-flex items-end ${viewLinkCls}`} aria-labelledby={headlineId}>
-              <span className="inline-flex items-center gap-1">
-                {viewLabel.replace("→", "").trim()}
-                <span className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>
-              </span>
-            </Link>
+          <div className="flex min-h-[2.5rem] flex-col gap-1.5">
+            {viewCta}
             {trailingActions ? (
               <div className="flex w-full flex-wrap justify-end gap-2 md:pt-0">{trailingActions}</div>
             ) : null}
@@ -249,12 +282,7 @@ export function CompactOverviewFeedArticleCard(props: CompactOverviewFeedBasePro
         </DesktopMetaStripe>
         <MobileMetaStripe timeIso={timeIso} timeRelative={timeRelative} timeTitle={timeTitle} score={m.trustScore} chrome={chrome}>
           <div className="flex min-h-[2.75rem] flex-wrap items-center gap-2">
-            <Link href={href} className={`inline-flex min-h-11 items-center ${viewLinkCls}`} aria-labelledby={headlineId}>
-              <span className="inline-flex items-center gap-1">
-                {viewLabel.replace("→", "").trim()}
-                <span className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>
-              </span>
-            </Link>
+            {viewCta}
             {trailingActions}
           </div>
         </MobileMetaStripe>
