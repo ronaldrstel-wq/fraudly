@@ -40,7 +40,7 @@ export const SEO_TITLE = {
 
 /** Canonical static descriptions for public routes (120–155 chars where possible). */
 export const SEO_DESCRIPTION = {
-  home: "Check if a website or webshop is safe with Fraudly. Scam checker with phishing detection, fake webshop alerts and website trust checks before you pay.",
+  home: "Check if a website, webshop or link is safe with Fraudly. Detect scams, phishing and suspicious domains instantly.",
   about:
     "Learn how Fraudly's website trust check helps you avoid scams, phishing and fake webshops—online fraud protection through clear domain and store analysis.",
   pricing:
