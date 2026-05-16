@@ -1,9 +1,16 @@
 import { clampScore } from "@/lib/clampScore";
 import { verdictFromPublicSnapshotLabel } from "@/lib/latest-public-checks/status-label";
 import type { ScamVerdict } from "@/types/scam";
+import {
+  consumerDisplayBand,
+  consumerDisplayLabel,
+  getTrustPresentation,
+  standardVerdictLabel,
+  type ConsumerDisplayBand
+} from "@/lib/scoring/trust-bands";
 
-/** Consumer-facing band (aligned with Fraudly public copy). */
-export type ConsumerDisplayBand = "trusted" | "caution" | "highRisk";
+export type { ConsumerDisplayBand } from "@/lib/scoring/trust-bands";
+export { consumerDisplayBand, consumerDisplayLabel, standardVerdictLabel } from "@/lib/scoring/trust-bands";
 
 export type PublicDisplayScore = {
   /** Stored / computed risk (0–100, higher = riskier). */
@@ -11,7 +18,7 @@ export type PublicDisplayScore = {
   /** Display trust (0–100, higher = safer). Always `100 - riskScore` after normalization. */
   trustScore: number;
   band: ConsumerDisplayBand;
-  /** Trusted | Caution | High Risk */
+  /** Consumer verdict label */
   label: string;
   verdict: ScamVerdict | null;
 };
@@ -28,39 +35,6 @@ export function trustScoreFromRisk(risk: number): number {
 
 export function riskScoreFromTrust(trust: number): number {
   return clampScore(100 - clampScore(trust));
-}
-
-export function consumerDisplayBand(trustScore: number): ConsumerDisplayBand {
-  const t = clampScore(trustScore);
-  if (t >= 80) return "trusted";
-  if (t >= 50) return "caution";
-  return "highRisk";
-}
-
-/** Short band label (internal / secondary). */
-export function consumerDisplayLabel(trustScore: number): string {
-  switch (consumerDisplayBand(trustScore)) {
-    case "trusted":
-      return "Trusted";
-    case "caution":
-      return "Caution";
-    case "highRisk":
-    default:
-      return "High Risk";
-  }
-}
-
-/** Primary consumer verdict shown on results and latest-check cards. */
-export function standardVerdictLabel(trustScore: number): string {
-  switch (consumerDisplayBand(trustScore)) {
-    case "trusted":
-      return "Likely Safe";
-    case "caution":
-      return "Use Caution";
-    case "highRisk":
-    default:
-      return "High Scam Risk";
-  }
 }
 
 export function publicDisplayScoreFromRiskAndVerdict(
@@ -108,6 +82,7 @@ export function logDisplayScoreDebug(ctx: DisplayScoreDebugContext): void {
     storedTrustScore: ctx.storedTrustScore ?? null,
     displayedTrustScore: ctx.displayedTrustScore,
     displayedLabel: ctx.displayedLabel,
-    source: ctx.source
+    source: ctx.source,
+    band: ctx.displayedTrustScore != null ? getTrustPresentation(ctx.displayedTrustScore).band : null
   });
 }

@@ -12,6 +12,7 @@ import {
   standardVerdictLabel,
   trustScoreFromRisk
 } from "@/lib/scoring/displayScore";
+import { getTrustPresentation, type SemanticTone } from "@/lib/scoring/trust-bands";
 import { clampScore } from "@/lib/clampScore";
 import type { ScamVerdict } from "@/lib/trustSystem";
 import type { ConsumerVerdictLabel, NormalizedTrustResult } from "@/lib/trust/types";
@@ -55,32 +56,51 @@ export function overviewOneLiner(kind: HumanRecKind): string {
   }
 }
 
+function articleClassForTone(tone: SemanticTone): string {
+  return getTrustPresentation(toneToRepresentativeScore(tone)).colors.articleBg;
+}
+
+function toneToRepresentativeScore(tone: SemanticTone): number {
+  switch (tone) {
+    case "safe":
+      return 90;
+    case "mostly-safe":
+      return 77;
+    case "caution":
+      return 60;
+    case "suspicious":
+      return 40;
+    case "danger":
+    default:
+      return 15;
+  }
+}
+
+function presentationToneForHumanKind(kind: HumanRecKind, trustScore: number): SemanticTone {
+  if (kind === "avoidWebsite" || kind === "dangerousWebsite" || kind === "highRisk") return "danger";
+  if (kind === "risky") return "suspicious";
+  if (kind === "beCareful" || kind === "notEnoughInfo" || kind === "invalidDomain" || kind === "unreachable") {
+    return "caution";
+  }
+  if (kind === "looksMostlySafe") return "mostly-safe";
+  if (kind === "trusted" || kind === "looksSafe") return getTrustPresentation(trustScore).tone;
+  return getTrustPresentation(trustScore).tone;
+}
+
 /**
  * Card chrome for list/overview surfaces — matches result-page emotional tiers without redesigning cards.
  */
-export function overviewCardArticleClass(kind: HumanRecKind): string {
-  if (kind === "avoidWebsite" || kind === "dangerousWebsite" || kind === "highRisk") {
-    return "border border-slate-200 bg-rose-50/45";
-  }
-  if (kind === "risky") {
-    return "border border-slate-200 bg-orange-50/40";
-  }
-  if (kind === "beCareful" || kind === "notEnoughInfo" || kind === "invalidDomain" || kind === "unreachable") {
-    return "border border-slate-200 bg-amber-50/45";
-  }
-  if (kind === "trusted" || kind === "looksSafe" || kind === "looksMostlySafe") {
-    return "border border-slate-200 bg-emerald-50/45";
-  }
-  return "border border-slate-200 bg-white";
+export function overviewCardArticleClass(kind: HumanRecKind, trustScore: number): string {
+  return articleClassForTone(presentationToneForHumanKind(kind, trustScore));
 }
 
 export type OverviewCardModel = {
   humanKind: HumanRecKind;
-  /** Standard verdict: Likely Safe | Use Caution | High Scam Risk */
   headline: string;
   verdictLabel: string;
   glyph: string;
   tone: ReturnType<typeof humanRecHeadlineTone>;
+  presentationTone: SemanticTone;
   oneLiner: string;
   trustScore: number;
   isCritical: boolean;
@@ -92,32 +112,40 @@ export function buildOverviewFromTrustAndVerdict(trustScore: number, verdict: Sc
   const humanKind = humanRecKindFromTrustVerdict(normalizedTrust, verdict);
   const isCritical = isCriticalOverviewKind(humanKind);
   const verdictLabel = standardVerdictLabel(normalizedTrust);
+  const presentation = getTrustPresentation(normalizedTrust);
+  const presentationTone = isCritical ? "danger" : presentation.tone;
+
   return {
     humanKind,
     verdictLabel,
-    headline: verdictLabel,
+    headline: isCritical ? "High Risk" : verdictLabel,
     glyph: humanRecGlyph(humanKind),
     tone: humanRecHeadlineTone(humanKind),
+    presentationTone,
     oneLiner: overviewOneLiner(humanKind),
     trustScore: normalizedTrust,
     isCritical,
-    articleClass: overviewCardArticleClass(humanKind)
+    articleClass: overviewCardArticleClass(humanKind, normalizedTrust)
   };
 }
 
 const FALLBACK_OVERVIEW_TRUST = 50;
 
-/** `/latest-checks` row: risk snapshot + persisted snapshot label → same UX model as full result. */
 function scamVerdictFromConsumerLabel(label: ConsumerVerdictLabel): ScamVerdict | null {
-  if (label === "Likely Safe") return "safe";
-  if (label === "High Scam Risk") return "scam";
+  if (label === "Likely Safe" || label === "Mostly Safe") return "safe";
+  if (label === "High Risk") return "scam";
   return "suspicious";
 }
 
 /** Overview cards from canonical normalized trust — same score/verdict as result surfaces. */
 export function buildOverviewFromNormalized(normalized: NormalizedTrustResult): OverviewCardModel {
   const trustScore = clampScore(normalized.trustScore ?? FALLBACK_OVERVIEW_TRUST);
-  return buildOverviewFromTrustAndVerdict(trustScore, scamVerdictFromConsumerLabel(normalized.verdict));
+  const base = buildOverviewFromTrustAndVerdict(trustScore, scamVerdictFromConsumerLabel(normalized.verdict));
+  return {
+    ...base,
+    verdictLabel: normalized.verdict,
+    headline: base.isCritical ? "High Risk" : normalized.verdict
+  };
 }
 
 export function buildOverviewFromPublicCheck(row: {

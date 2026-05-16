@@ -22,10 +22,10 @@ describe("displayScore", () => {
     expect(d.label).toBe("Use Caution");
   });
 
-  it("maps risk 75 → trust 25 → High Scam Risk", () => {
+  it("maps risk 75 → trust 25 → High Risk", () => {
     const d = publicDisplayScoreFromRiskAndVerdict(75, "scam");
     expect(d.trustScore).toBe(25);
-    expect(d.label).toBe("High Scam Risk");
+    expect(d.label).toBe("High Risk");
   });
 
   it("does not treat trust 90 as risk (no accidental inversion)", () => {
@@ -42,15 +42,18 @@ describe("displayScore", () => {
   });
 
   it("derives consumer labels from trust bands only", () => {
-    expect(consumerDisplayLabel(80)).toBe("Trusted");
-    expect(consumerDisplayLabel(79)).toBe("Caution");
-    expect(consumerDisplayLabel(50)).toBe("Caution");
-    expect(consumerDisplayLabel(49)).toBe("High Risk");
+    expect(consumerDisplayLabel(85)).toBe("Trusted");
+    expect(consumerDisplayLabel(75)).toBe("Trusted");
+    expect(consumerDisplayLabel(60)).toBe("Caution");
+    expect(consumerDisplayLabel(40)).toBe("Caution");
+    expect(consumerDisplayLabel(20)).toBe("High Risk");
   });
 
   it("maps standard verdict labels for consumer surfaces", () => {
     expect(standardVerdictLabel(90)).toBe("Likely Safe");
-    expect(standardVerdictLabel(65)).toBe("Use Caution");
-    expect(standardVerdictLabel(24)).toBe("High Scam Risk");
+    expect(standardVerdictLabel(75)).toBe("Mostly Safe");
+    expect(standardVerdictLabel(60)).toBe("Use Caution");
+    expect(standardVerdictLabel(40)).toBe("Suspicious");
+    expect(standardVerdictLabel(24)).toBe("High Risk");
   });
 });

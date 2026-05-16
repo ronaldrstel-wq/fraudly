@@ -1,0 +1,55 @@
+import { describe, expect, it } from "vitest";
+import {
+  consumerDisplayBand,
+  getTrustBandFromScore,
+  getTrustPresentation,
+  standardVerdictLabel
+} from "@/lib/scoring/trust-bands";
+
+describe("trust-bands", () => {
+  it("maps score thresholds to five bands", () => {
+    expect(getTrustBandFromScore(100)).toBe("likely-safe");
+    expect(getTrustBandFromScore(85)).toBe("likely-safe");
+    expect(getTrustBandFromScore(84)).toBe("mostly-safe");
+    expect(getTrustBandFromScore(70)).toBe("mostly-safe");
+    expect(getTrustBandFromScore(69)).toBe("caution");
+    expect(getTrustBandFromScore(50)).toBe("caution");
+    expect(getTrustBandFromScore(49)).toBe("suspicious");
+    expect(getTrustBandFromScore(30)).toBe("suspicious");
+    expect(getTrustBandFromScore(29)).toBe("high-risk");
+  });
+
+  it("assigns verdict labels aligned with bands", () => {
+    expect(standardVerdictLabel(90)).toBe("Likely Safe");
+    expect(standardVerdictLabel(75)).toBe("Mostly Safe");
+    expect(standardVerdictLabel(74)).toBe("Mostly Safe");
+    expect(standardVerdictLabel(60)).toBe("Use Caution");
+    expect(standardVerdictLabel(40)).toBe("Suspicious");
+    expect(standardVerdictLabel(20)).toBe("High Risk");
+  });
+
+  it("does not use safe (green) tone for caution-range scores", () => {
+    expect(getTrustPresentation(74).tone).toBe("mostly-safe");
+    expect(getTrustPresentation(60).tone).toBe("caution");
+    expect(getTrustPresentation(74).colors.progressBar).not.toContain("emerald");
+  });
+
+  it("only uses safe tone at 85+", () => {
+    expect(getTrustPresentation(85).tone).toBe("safe");
+    expect(getTrustPresentation(84).tone).not.toBe("safe");
+  });
+
+  it("uses required band descriptions", () => {
+    expect(getTrustPresentation(90).description).toBe("No major risk indicators detected.");
+    expect(getTrustPresentation(75).description).toContain("Mostly positive signals");
+    expect(getTrustPresentation(60).description).toContain("Some risk indicators");
+  });
+
+  it("maps legacy three-band consumerDisplayBand", () => {
+    expect(consumerDisplayBand(90)).toBe("trusted");
+    expect(consumerDisplayBand(75)).toBe("trusted");
+    expect(consumerDisplayBand(60)).toBe("caution");
+    expect(consumerDisplayBand(40)).toBe("caution");
+    expect(consumerDisplayBand(20)).toBe("highRisk");
+  });
+});

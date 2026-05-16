@@ -1,14 +1,20 @@
 import { clampScore } from "@/lib/clampScore";
-import { getTrustLabel } from "@/lib/trustScoreUi";
+import {
+  getTrustBandFromScore,
+  getTrustPresentation,
+  type SemanticTone,
+  type TrustBandId
+} from "@/lib/scoring/trust-bands";
 
 export type TrustLevel = "trusted" | "mostlySafe" | "caution" | "risky" | "highRisk";
 export type ScamVerdict = "safe" | "suspicious" | "scam";
 
 export type TrustPresentation = {
   level: TrustLevel;
-  /** Same string as {@link getTrustLabel} for this score (website-wide). */
+  /** Consumer-facing headline (matches canonical verdict band). */
   label: string;
   icon: "check" | "info" | "alert" | "risk";
+  tone: SemanticTone;
   toneText: string;
   toneSoftBg: string;
   toneSoftBorder: string;
@@ -24,85 +30,59 @@ export type VerdictAssessmentInput = {
 };
 
 export { clampScore } from "@/lib/clampScore";
+export {
+  getTrustPresentation,
+  getTrustBandFromScore,
+  standardVerdictLabel,
+  trustMeterColors
+} from "@/lib/scoring/trust-bands";
 
 export function trustScoreFromRisk(riskScore: number): number {
   return clampScore(100 - riskScore);
 }
 
-/**
- * Trust-style projection (0–100 trust, higher = safer) — five website-facing bands aligned with the iOS app:
- * 80–100 trusted, 65–79 mostly safe, 50–64 caution, 30–49 risky, 0–29 high risk.
- */
+function trustLevelFromBand(band: TrustBandId): TrustLevel {
+  switch (band) {
+    case "likely-safe":
+      return "trusted";
+    case "mostly-safe":
+      return "mostlySafe";
+    case "caution":
+      return "caution";
+    case "suspicious":
+      return "risky";
+    case "high-risk":
+    default:
+      return "highRisk";
+  }
+}
+
+/** Trust-style projection (0–100 trust, higher = safer) — five website-facing bands. */
 export function trustLevelFromScore(trustScore: number): TrustLevel {
-  const t = clampScore(trustScore);
-  if (t >= 80) return "trusted";
-  if (t >= 65) return "mostlySafe";
-  if (t >= 50) return "caution";
-  if (t >= 30) return "risky";
-  return "highRisk";
+  return trustLevelFromBand(getTrustBandFromScore(trustScore));
+}
+
+function iconForTone(tone: SemanticTone): TrustPresentation["icon"] {
+  if (tone === "safe") return "check";
+  if (tone === "mostly-safe") return "info";
+  if (tone === "caution" || tone === "suspicious") return "alert";
+  return "risk";
 }
 
 export function trustPresentationFromScore(score: number): TrustPresentation {
   const trustScore = clampScore(score);
-  const level = trustLevelFromScore(trustScore);
-  const label = getTrustLabel(trustScore);
-
-  if (level === "trusted") {
-    return {
-      level,
-      label,
-      icon: "check",
-      toneText: "text-emerald-800",
-      toneSoftBg: "bg-emerald-50/90",
-      toneSoftBorder: "border-emerald-200/80",
-      progressBar: "bg-emerald-500"
-    };
-  }
-
-  if (level === "mostlySafe") {
-    return {
-      level,
-      label,
-      icon: "check",
-      toneText: "text-teal-900",
-      toneSoftBg: "bg-teal-50/90",
-      toneSoftBorder: "border-teal-200/80",
-      progressBar: "bg-teal-500"
-    };
-  }
-
-  if (level === "caution") {
-    return {
-      level,
-      label,
-      icon: "alert",
-      toneText: "text-amber-900",
-      toneSoftBg: "bg-amber-50/90",
-      toneSoftBorder: "border-amber-300/80",
-      progressBar: "bg-amber-500"
-    };
-  }
-
-  if (level === "risky") {
-    return {
-      level,
-      label,
-      icon: "alert",
-      toneText: "text-orange-950",
-      toneSoftBg: "bg-orange-50/90",
-      toneSoftBorder: "border-orange-300/80",
-      progressBar: "bg-orange-500"
-    };
-  }
+  const presentation = getTrustPresentation(trustScore);
+  const level = trustLevelFromBand(presentation.band);
 
   return {
     level,
-    label,
-    icon: "risk",
-    toneText: "text-rose-900",
-    toneSoftBg: "bg-rose-50/90",
-    toneSoftBorder: "border-rose-300/80",
-    progressBar: "bg-rose-600"
+    label: presentation.headline,
+    icon: iconForTone(presentation.tone),
+    tone: presentation.tone,
+    toneText: presentation.colors.toneText,
+    toneSoftBg: presentation.colors.softBg,
+    toneSoftBorder: presentation.colors.softBorder,
+    progressBar: presentation.colors.progressBar
   };
 }
 

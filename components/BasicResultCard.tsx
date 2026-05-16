@@ -31,7 +31,7 @@ export function BasicResultCard({ result }: { result: BasicCheckResult }) {
   const humanTone = humanRecHeadlineTone(humanKind);
   const shortEx = shortExplainForBasic(result.verdict, result.score);
   const trustedVisitUrl = toSafeHttpUrl(`https://${result.domain}`);
-  const showVisitWebsiteCta = trustStyle >= 80 && trust.level === "trusted" && Boolean(trustedVisitUrl);
+  const showVisitWebsiteCta = trustStyle >= 85 && trust.level === "trusted" && Boolean(trustedVisitUrl);
 
   return (
     <article className="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/60 sm:p-7">

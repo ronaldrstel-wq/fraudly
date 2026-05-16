@@ -10,10 +10,10 @@ import {
 describe("trust bands", () => {
   it("maps five trust levels by score thresholds", () => {
     expect(trustLevelFromScore(100)).toBe("trusted");
-    expect(trustLevelFromScore(80)).toBe("trusted");
-    expect(trustLevelFromScore(79)).toBe("mostlySafe");
-    expect(trustLevelFromScore(65)).toBe("mostlySafe");
-    expect(trustLevelFromScore(64)).toBe("caution");
+    expect(trustLevelFromScore(85)).toBe("trusted");
+    expect(trustLevelFromScore(84)).toBe("mostlySafe");
+    expect(trustLevelFromScore(70)).toBe("mostlySafe");
+    expect(trustLevelFromScore(69)).toBe("caution");
     expect(trustLevelFromScore(50)).toBe("caution");
     expect(trustLevelFromScore(49)).toBe("risky");
     expect(trustLevelFromScore(30)).toBe("risky");
@@ -22,12 +22,17 @@ describe("trust bands", () => {
   });
 
   it("labels presentation for user-facing trust bands", () => {
-    expect(trustPresentationFromScore(92).label).toBe("Looks safe");
-    expect(trustPresentationFromScore(80).label).toBe("Looks safe");
-    expect(trustPresentationFromScore(73).label).toBe("Looks mostly safe");
-    expect(trustPresentationFromScore(58).label).toBe("Be careful");
-    expect(trustPresentationFromScore(41).label).toBe("Risky");
-    expect(trustPresentationFromScore(18).label).toBe("High risk");
+    expect(trustPresentationFromScore(92).label).toBe("Likely Safe");
+    expect(trustPresentationFromScore(85).label).toBe("Likely Safe");
+    expect(trustPresentationFromScore(75).label).toBe("Mostly Safe");
+    expect(trustPresentationFromScore(60).label).toBe("Use Caution");
+    expect(trustPresentationFromScore(40).label).toBe("Suspicious");
+    expect(trustPresentationFromScore(18).label).toBe("High Risk");
+  });
+
+  it("uses non-green tone for mostly-safe scores", () => {
+    expect(trustPresentationFromScore(75).tone).toBe("mostly-safe");
+    expect(trustPresentationFromScore(75).progressBar).toContain("teal");
   });
 
   it("inverts risk to trust linearly", () => {

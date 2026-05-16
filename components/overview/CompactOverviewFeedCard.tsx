@@ -2,17 +2,26 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import type { OverviewCardModel } from "@/lib/overviewCardPresentation";
+import type { SemanticTone } from "@/lib/scoring/trust-bands";
+import { getTrustPresentation } from "@/lib/scoring/trust-bands";
 
-type CardTone = "safe" | "caution" | "highRisk";
-
-function toneForKind(kind: OverviewCardModel["humanKind"]): CardTone {
-  if (kind === "avoidWebsite" || kind === "dangerousWebsite" || kind === "highRisk") return "highRisk";
-  if (kind === "beCareful" || kind === "notEnoughInfo" || kind === "invalidDomain" || kind === "unreachable" || kind === "risky")
-    return "caution";
-  return "safe";
+function toneToScore(tone: SemanticTone): number {
+  switch (tone) {
+    case "safe":
+      return 90;
+    case "mostly-safe":
+      return 77;
+    case "caution":
+      return 60;
+    case "suspicious":
+      return 40;
+    case "danger":
+    default:
+      return 15;
+  }
 }
 
-function toneClasses(tone: CardTone): {
+function toneClasses(tone: SemanticTone): {
   surfaceGlow: string;
   accentBar: string;
   iconWrap: string;
@@ -22,46 +31,20 @@ function toneClasses(tone: CardTone): {
   cta: string;
   ctaArrow: string;
 } {
-  if (tone === "highRisk") {
-    return {
-      surfaceGlow: "from-rose-500/10 via-rose-400/0 to-transparent",
-      accentBar: "before:bg-rose-400/80",
-      iconWrap: "border-rose-200/70 bg-rose-50/90 shadow-[0_6px_18px_rgba(244,63,94,0.18)]",
-      icon: "text-rose-600",
-      scoreBadge:
-        "border-rose-200/80 bg-gradient-to-b from-rose-50 to-white text-rose-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_14px_rgba(244,63,94,0.14)]",
-      scoreDim: "text-rose-700/80",
-      cta: "text-rose-700 decoration-rose-500/35 hover:text-rose-800",
-      ctaArrow: "group-hover:translate-x-0.5"
-    };
-  }
-  if (tone === "caution") {
-    return {
-      surfaceGlow: "from-amber-500/10 via-amber-400/0 to-transparent",
-      accentBar: "before:bg-amber-400/80",
-      iconWrap: "border-amber-200/70 bg-amber-50/90 shadow-[0_6px_18px_rgba(245,158,11,0.16)]",
-      icon: "text-amber-600",
-      scoreBadge:
-        "border-amber-200/80 bg-gradient-to-b from-amber-50 to-white text-amber-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_14px_rgba(245,158,11,0.12)]",
-      scoreDim: "text-amber-700/80",
-      cta: "text-amber-700 decoration-amber-500/35 hover:text-amber-800",
-      ctaArrow: "group-hover:translate-x-0.5"
-    };
-  }
+  const colors = getTrustPresentation(toneToScore(tone)).colors;
   return {
-    surfaceGlow: "from-emerald-500/10 via-emerald-400/0 to-transparent",
-    accentBar: "before:bg-emerald-400/80",
-    iconWrap: "border-emerald-200/70 bg-emerald-50/90 shadow-[0_6px_18px_rgba(16,185,129,0.15)]",
-    icon: "text-emerald-600",
-    scoreBadge:
-      "border-emerald-200/80 bg-gradient-to-b from-emerald-50 to-white text-emerald-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_14px_rgba(16,185,129,0.12)]",
-    scoreDim: "text-emerald-700/80",
-    cta: "text-emerald-700 decoration-emerald-500/35 hover:text-emerald-800",
+    surfaceGlow: colors.surfaceGlow,
+    accentBar: colors.accentBar,
+    iconWrap: colors.iconWrap,
+    icon: colors.icon,
+    scoreBadge: colors.scorePill,
+    scoreDim: colors.scorePillDim,
+    cta: colors.cta,
     ctaArrow: "group-hover:translate-x-0.5"
   };
 }
 
-function TrustScoreBadge({ score, tone }: { score: number; tone: CardTone }) {
+function TrustScoreBadge({ score, tone }: { score: number; tone: SemanticTone }) {
   const toneCls = toneClasses(tone);
   return (
     <span
@@ -91,7 +74,7 @@ export type CompactOverviewFeedBaseProps = {
 
 function FeedLeading(props: {
   m: OverviewCardModel;
-  tone: CardTone;
+  tone: SemanticTone;
   headlineId: string;
   entityBadge?: string;
   domainLine: string;
@@ -129,7 +112,7 @@ function MobileMetaStripe(props: {
   timeRelative: string;
   timeTitle: string;
   score: number;
-  tone: CardTone;
+  tone: SemanticTone;
   children: ReactNode;
 }) {
   const { timeIso, timeRelative, timeTitle, score, tone, children } = props;
@@ -165,7 +148,7 @@ export function CompactOverviewFeedLinkCard(props: CompactOverviewFeedBaseProps 
     prefetch = true
   } = props;
 
-  const tone = toneForKind(m.humanKind);
+  const tone = m.presentationTone;
   const toneCls = toneClasses(tone);
   const shell = `${m.articleClass} ${toneCls.accentBar} fraudly-motion relative block min-h-0 rounded-2xl p-4 shadow-subtle before:absolute before:inset-y-3 before:left-0 before:w-1 before:rounded-r md:px-4 md:py-3 md:before:inset-y-2 hover:border-slate-300/90 hover:shadow-elevated fraudly-focus`;
 
@@ -231,7 +214,7 @@ export function CompactOverviewFeedArticleCard(props: CompactOverviewFeedBasePro
     timeTitle,
     entityBadge
   } = props;
-  const tone = toneForKind(m.humanKind);
+  const tone = m.presentationTone;
   const toneCls = toneClasses(tone);
 
   const viewLinkCls = `fraudly-focus rounded-lg text-sm font-semibold underline underline-offset-2 ${toneCls.cta}`;

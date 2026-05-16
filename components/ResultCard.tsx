@@ -29,7 +29,8 @@ import { VerdictHero } from "@/components/result/VerdictHero";
 import { ResultSupportBox } from "@/components/ResultSupportBox";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { shouldShowTrustGauge } from "@/lib/trustGaugeDisplay";
-import { trustLevelFromScore, type TrustLevel } from "@/lib/trustSystem";
+import { trustLevelFromScore, trustMeterColors, type TrustLevel } from "@/lib/trustSystem";
+import { getTrustPresentation } from "@/lib/scoring/trust-bands";
 import { EvidenceSignalsCard } from "@/components/EvidenceSignalsCard";
 import type { HumanRecKind } from "@/lib/scanResultDualLayer";
 import type { ScamCheckResult } from "@/types/scam";
@@ -112,45 +113,12 @@ function trustMeterTone(score: number, threatActive: boolean): {
   fill: string;
   marker: string;
 } {
-  if (threatActive) {
-    return {
-      track: "bg-rose-100",
-      fill: "bg-gradient-to-r from-rose-500 via-rose-500 to-rose-600",
-      marker: "text-rose-900"
-    };
-  }
-  if (score >= 80) {
-    return {
-      track: "bg-emerald-100",
-      fill: "bg-gradient-to-r from-emerald-500 via-emerald-500 to-teal-500",
-      marker: "text-emerald-900"
-    };
-  }
-  if (score >= 65) {
-    return {
-      track: "bg-teal-100",
-      fill: "bg-gradient-to-r from-teal-400 via-teal-500 to-emerald-500",
-      marker: "text-teal-900"
-    };
-  }
-  if (score >= 50) {
-    return {
-      track: "bg-amber-100",
-      fill: "bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500",
-      marker: "text-amber-900"
-    };
-  }
-  if (score >= 30) {
-    return {
-      track: "bg-orange-100",
-      fill: "bg-gradient-to-r from-orange-500 via-orange-500 to-rose-500",
-      marker: "text-orange-950"
-    };
-  }
+  const meter = trustMeterColors(score, threatActive);
+  const presentation = getTrustPresentation(score);
   return {
-    track: "bg-rose-100",
-    fill: "bg-gradient-to-r from-rose-500 via-rose-500 to-rose-600",
-    marker: "text-rose-900"
+    track: meter.meterTrack,
+    fill: meter.meterFill,
+    marker: presentation.colors.meterMarker
   };
 }
 
@@ -296,7 +264,7 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
   const humanHeadline = alignedDisplay?.humanHeadline ?? humanRecHeadline(humanKind);
   const primaryVerdict =
     threat.active || humanKind === "avoidWebsite" || humanKind === "dangerousWebsite"
-      ? "High Scam Risk"
+      ? "High Risk"
       : normalized.verdict || humanHeadline || FALLBACK_VERDICT;
   const techStatus = alignedDisplay?.label ?? technicalStatusText({
     threatActive: threat.active,
@@ -450,7 +418,7 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
         : "Fresh lookup attempted";
 
   const meter = trustMeterTone(displayTrust ?? 0, threat.active);
-  const trustedBand = typeof displayTrust === "number" && displayTrust >= 80;
+  const trustedBand = typeof displayTrust === "number" && displayTrust >= 85;
   const trustedVisitUrl =
     toSafeHttpUrl(result.redirectChain?.finalUrl) ??
     toSafeHttpUrl(`https://${result.domain}`);

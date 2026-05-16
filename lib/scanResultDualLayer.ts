@@ -3,6 +3,7 @@ import type { CriticalThreatKind } from "@/lib/scanPresentation";
 import { criticalThreatStatusHeadline } from "@/lib/scanPresentation";
 import { clampScore } from "@/lib/clampScore";
 import { getTrustDescription } from "@/lib/trustScoreUi";
+import { getTrustBandFromScore } from "@/lib/scoring/trust-bands";
 import { trustLevelFromScore, trustPresentationFromScore } from "@/lib/trustSystem";
 import type { TrustLevel } from "@/lib/trustSystem";
 import type { ScamVerdict } from "@/lib/trustSystem";
@@ -182,7 +183,7 @@ export function shortScanExplanation(args: {
 
   const t = clampScore(displayTrust);
   const lowCoverage = confidenceLevel === "low";
-  if (lowCoverage && trustLevelFromScore(t) !== "trusted" && hasActualRiskIndicators) {
+  if (lowCoverage && getTrustBandFromScore(t) !== "likely-safe" && hasActualRiskIndicators) {
     return s.notEnoughInfoLowCoverage;
   }
 

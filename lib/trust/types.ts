@@ -1,7 +1,8 @@
 import type { ReviewMatchConfidence } from "@/lib/reputation/reviewMatchConfidence";
+import type { ConsumerVerdictLabel } from "@/lib/scoring/trust-bands";
 import type { ScamFeedThreatStatus } from "@/lib/signals/feedConsumerSignals";
 
-export type ConsumerVerdictLabel = "Likely Safe" | "Use Caution" | "High Scam Risk";
+export type { ConsumerVerdictLabel } from "@/lib/scoring/trust-bands";
 
 export type NormalizedReviewChannel = {
   rating: number | null;

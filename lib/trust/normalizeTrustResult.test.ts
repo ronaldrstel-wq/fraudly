@@ -9,7 +9,7 @@ import type { ScamCheckResult } from "@/types/scam";
 
 function establishedFixture(overrides: Partial<ScamCheckResult> = {}): ScamCheckResult {
   return {
-    score: 18,
+    score: 12,
     verdict: "safe",
     domain: "example-retailer.nl",
     reasons: [],
@@ -58,7 +58,7 @@ function establishedFixture(overrides: Partial<ScamCheckResult> = {}): ScamCheck
       reasons: [],
       scoreAdjustment: 0
     },
-    scoreResult: { baseScore: 50, finalScore: 18, verdict: "safe", signals: [], topPositive: [], topNegative: [] },
+    scoreResult: { baseScore: 50, finalScore: 12, verdict: "safe", signals: [], topPositive: [], topNegative: [] },
     domainInfrastructure: { source: "dns", warnings: [] },
     siteStatus: "active",
     confidenceLevel: "low",
@@ -85,20 +85,20 @@ describe("normalizeTrustResult", () => {
     const raw = establishedFixture();
     const locked = normalizeTrustResult(raw, {
       displayLock: {
-        riskScore: 17,
-        trustScore: 83,
+        riskScore: 14,
+        trustScore: 86,
         verdict: "Likely Safe",
         scanId: "scan_1",
         source: "public_snapshot"
       }
     });
     const live = normalizeTrustResult(raw);
-    expect(locked.trustScore).toBe(83);
+    expect(locked.trustScore).toBe(86);
     expect(locked.verdict).toBe("Likely Safe");
     expect(live.trustScore).toBe(displayTrustScoreForResult(raw));
     expect(locked.domainAge.display).toBe(live.domainAge.display);
     const overview = buildOverviewFromNormalized(locked);
-    expect(overview.trustScore).toBe(83);
+    expect(overview.trustScore).toBe(86);
     expect(overview.verdictLabel).toBe("Likely Safe");
   });
 

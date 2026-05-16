@@ -66,7 +66,7 @@ describe("scanResultDualLayer", () => {
       displayTrust: 85,
       siteStatus: "unverified"
     });
-    expect(tech).toBe("Looks safe");
+    expect(tech).toBe("Likely Safe");
   });
 
   it("keeps low-coverage explanation neutral and non-alarming", () => {

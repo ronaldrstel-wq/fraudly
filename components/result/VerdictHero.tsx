@@ -1,4 +1,5 @@
 import { EN_MESSAGES } from "@/lib/messages.en";
+import { parseConsumerVerdictLabel, verdictHeadlineClass, verdictSurfaceClass } from "@/lib/scoring/trust-bands";
 
 type TrustHighlightRow = {
   label: string;
@@ -22,15 +23,13 @@ function highlightValueClass(bucket: TrustHighlightRow["bucket"]): string {
 }
 
 function verdictToneClass(verdict: string): string {
-  if (verdict === "Likely Safe") return "text-emerald-900";
-  if (verdict === "Use Caution") return "text-amber-950";
-  return "text-rose-900";
+  const parsed = parseConsumerVerdictLabel(verdict);
+  return verdictHeadlineClass(parsed ?? "Use Caution");
 }
 
-function verdictSurfaceClass(verdict: string): string {
-  if (verdict === "Likely Safe") return "border-emerald-200/80 bg-gradient-to-b from-emerald-50/30 to-white";
-  if (verdict === "Use Caution") return "border-amber-200/80 bg-gradient-to-b from-amber-50/35 to-white";
-  return "border-rose-200/80 bg-gradient-to-b from-rose-50/35 to-white";
+function verdictSurface(verdict: string): string {
+  const parsed = parseConsumerVerdictLabel(verdict);
+  return verdictSurfaceClass(parsed ?? "Use Caution");
 }
 
 export function VerdictHero({
@@ -47,7 +46,7 @@ export function VerdictHero({
 
   return (
     <header
-      className={`rounded-2xl border px-5 py-5 shadow-sm sm:px-6 sm:py-6 ${verdictSurfaceClass(verdict)}`}
+      className={`rounded-2xl border px-5 py-5 shadow-sm sm:px-6 sm:py-6 ${verdictSurface(verdict)}`}
       aria-labelledby="fraudly-verdict-heading"
     >
       <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">

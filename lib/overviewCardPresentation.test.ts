@@ -16,7 +16,7 @@ describe("overviewCardPresentation", () => {
     expect(verdictFromPublicSnapshotLabel(PUBLIC_SNAPSHOT_LABEL_STRONG_RISK)).toBe("scam");
     const m = buildOverviewFromPublicCheck({ riskScoreSnapshot: 88, statusLabel: PUBLIC_SNAPSHOT_LABEL_STRONG_RISK });
     expect(m.isCritical).toBe(true);
-    expect(m.headline).toBe("High Scam Risk");
+    expect(m.headline).toBe("High Risk");
   });
 
   it("computes trust from risk snapshot", () => {
@@ -29,9 +29,16 @@ describe("overviewCardPresentation", () => {
   });
 
   it("uses non-critical band for benign snapshot", () => {
-    const m = buildOverviewFromTrustAndVerdict(82, "safe");
+    const m = buildOverviewFromTrustAndVerdict(86, "safe");
     expect(m.isCritical).toBe(false);
     expect(m.headline).toBe("Likely Safe");
     expect(m.verdictLabel).toBe("Likely Safe");
+    expect(m.presentationTone).toBe("safe");
+  });
+
+  it("uses mostly-safe presentation for mid-high trust", () => {
+    const m = buildOverviewFromTrustAndVerdict(75, "safe");
+    expect(m.verdictLabel).toBe("Mostly Safe");
+    expect(m.presentationTone).toBe("mostly-safe");
   });
 });
