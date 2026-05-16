@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { runWebsiteAnalysis } from "@/lib/analysis/runWebsiteAnalysis";
 import { db } from "@/lib/db";
 import { applyDomainOverrideToResult } from "@/lib/admin/apply-domain-override";
+import { enrichScamCheckResultDomainAge } from "@/lib/domain/normalizeDomainAge";
 
 const REVALIDATE_SECONDS = 3600;
 
@@ -20,6 +21,6 @@ export function getCachedWebsiteAnalysis(domainLower: string) {
     const normalized = domainLower.toLowerCase();
     const base = await getCachedWebsiteAnalysisInner(normalized);
     const override = await db.domainAdminOverride.findUnique({ where: { domain: normalized } });
-    return applyDomainOverrideToResult(base, override);
+    return enrichScamCheckResultDomainAge(applyDomainOverrideToResult(base, override));
   })();
 }

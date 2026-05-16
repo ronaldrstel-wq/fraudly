@@ -20,7 +20,10 @@ export function CheckSummaryDl({
       </div>
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Domain age</dt>
-        <DomainAgeMetricValue domainIntelligence={result.domainIntelligence} />
+        <DomainAgeMetricValue
+          {...result}
+          debug={{ route: "CheckSummaryDl", domain: result.domain }}
+        />
       </div>
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Secure connection</dt>

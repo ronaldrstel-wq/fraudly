@@ -7,6 +7,7 @@ import {
   publicDisplayScoreFromLatestRow,
   type PublicDisplayScore
 } from "@/lib/scoring/displayScore";
+import { enrichScamCheckResultDomainAge } from "@/lib/domain/normalizeDomainAge";
 import type { ScamCheckResult } from "@/types/scam";
 
 export type LatestPublicCheckSnapshot = {
@@ -59,9 +60,10 @@ function rowToSnapshot(row: SnapshotRowBase, domainLower: string): LatestPublicC
     source: "latest-public-check-snapshot"
   });
 
-  const storedResult = row.publicResultPayload
+  const parsedPayload = row.publicResultPayload
     ? parseStoredPublicResultPayload(row.publicResultPayload, domainLower)
     : null;
+  const storedResult = parsedPayload ? enrichScamCheckResultDomainAge(parsedPayload) : null;
 
   return {
     id: row.id,

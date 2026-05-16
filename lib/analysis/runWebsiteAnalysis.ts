@@ -32,6 +32,7 @@ import { verdictFromAssessment } from "@/lib/trustSystem";
 import type { ScamCheckResult } from "@/types/scam";
 import type { PendingPageBehaviorSignals } from "@/types/behavioral-signals";
 import { logScanPipelineDebug } from "@/lib/analysis/scanPipelineDebug";
+import { enrichScamCheckResultDomainAge } from "@/lib/domain/normalizeDomainAge";
 import { parseDomainParts } from "@/lib/domain/parseDomain";
 import { resolveRedirectChain } from "@/lib/checks/redirectChain";
 import type { ScoreSignal } from "@/lib/scoringEngine";
@@ -406,7 +407,7 @@ export async function runWebsiteAnalysis(
     verdict: adjustedVerdict
   });
 
-  return {
+  return enrichScamCheckResultDomainAge({
     score: adjustedRisk,
     verdict: adjustedVerdict,
     domain: normalizedDomain,
@@ -438,5 +439,5 @@ export async function runWebsiteAnalysis(
     behavioralSignalsPending: EMPTY_BEHAVIOR,
     redirectChain,
     ...(trustEvidence ? { trustEvidence } : {})
-  };
+  });
 }

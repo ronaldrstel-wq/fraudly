@@ -171,7 +171,10 @@ export default async function DomainIntelPage({ params }: PageProps) {
           </div>
           <div className="rounded-2xl border border-slate-200/85 bg-white p-4 shadow-subtle">
             <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Domain age</dt>
-            <DomainAgeMetricValue domainIntelligence={result.domainIntelligence} />
+            <DomainAgeMetricValue
+              {...result}
+              debug={{ route: "/domain/[domain]", domain }}
+            />
           </div>
           <div className="rounded-2xl border border-slate-200/85 bg-white p-4 shadow-subtle">
             <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Secure connection</dt>

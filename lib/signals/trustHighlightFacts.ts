@@ -1,9 +1,8 @@
 import {
   domainAgeConsumerBucket,
-  formatDomainAgeFromDays,
-  formatDomainAgeSignal,
-  resolveDomainAgeDays
+  formatDomainAgeSignal
 } from "@/lib/format/domainAge";
+import { normalizeDomainAge } from "@/lib/domain/normalizeDomainAge";
 import type { SslCheck } from "@/lib/checks/types";
 import type { ScamCheckResult } from "@/types/scam";
 
@@ -47,15 +46,18 @@ export function sslHighlightBucket(ssl: SslCheck): TrustHighlightBucket {
   return ssl.httpsEnabled && ssl.validCertificate ? "positive" : "caution";
 }
 
-export function extractTrustHighlightFacts(result: Pick<ScamCheckResult, "domainIntelligence" | "ssl">): TrustHighlightFact[] {
+export function extractTrustHighlightFacts(
+  result: Pick<ScamCheckResult, "domainIntelligence" | "ssl"> &
+    Partial<Pick<ScamCheckResult, "providerEvidence" | "trustSignals" | "scoreResult">>
+): TrustHighlightFact[] {
   const facts: TrustHighlightFact[] = [];
-  const ageDays = resolveDomainAgeDays(result.domainIntelligence);
+  const { ageDays, displayAge } = normalizeDomainAge(result);
 
-  if (ageDays != null) {
+  if (ageDays != null && displayAge) {
     facts.push({
       id: "domain_age",
       label: "Domain age",
-      value: formatDomainAgeFromDays(ageDays) ?? "Could not be verified",
+      value: displayAge,
       consumerLine: formatDomainAgeSignal(ageDays) ?? "Domain age could not be verified.",
       bucket: domainAgeHighlightBucket(ageDays)
     });

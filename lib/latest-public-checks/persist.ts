@@ -2,6 +2,7 @@ import { checkResultHref } from "@/lib/check/checkResultHref";
 import { db } from "@/lib/db";
 import { classifyWebsiteCheckForPublication } from "@/lib/latest-public-checks/filter";
 import { publicStatusLabelForVerdict } from "@/lib/latest-public-checks/status-label";
+import { enrichScamCheckResultDomainAge } from "@/lib/domain/normalizeDomainAge";
 import { normalizeRiskScore } from "@/lib/scoring/displayScore";
 import type { ScamCheckResult } from "@/types/scam";
 import { Prisma } from "@prisma/client";
@@ -15,12 +16,13 @@ export async function upsertLatestPublicCheckFromCompletedScan(options: {
   const gate = classifyWebsiteCheckForPublication(options.parsedUrl, options.originalInput);
   if (!gate.publish) return;
 
-  const domain = options.result.domain;
+  const result = enrichScamCheckResultDomainAge(options.result);
+  const domain = result.domain;
   const risk = normalizeRiskScore(
     Number.isFinite(options.result.score) ? options.result.score : 35
   );
-  const statusLabel = publicStatusLabelForVerdict(options.result.verdict);
-  const payload = options.result as unknown as Prisma.InputJsonValue;
+  const statusLabel = publicStatusLabelForVerdict(result.verdict);
+  const payload = result as unknown as Prisma.InputJsonValue;
   const baseData = {
     checkedValue: gate.checkedValueForDisplay.slice(0, 4096),
     entityType: gate.entityType,
