@@ -4,12 +4,12 @@ import { EN_MESSAGES } from "@/lib/messages.en";
 import type { OverviewCardModel } from "@/lib/overviewCardPresentation";
 import { getOverviewFeedCardVisual, type OverviewFeedCardVisual } from "@/lib/scoring/trust-bands";
 
-const CARD_PAD = "px-5 py-6 sm:px-6 sm:py-6 md:min-h-[152px]";
+const CARD_PAD = "px-4 py-4 sm:px-5 sm:py-4 md:min-h-[128px]";
 
 function FeedVerdictIcon({ visual }: { visual: OverviewFeedCardVisual }) {
   const ink = visual.iconInk;
   const svgProps = {
-    className: `h-7 w-7 shrink-0 ${ink}`,
+    className: `h-6 w-6 shrink-0 ${ink}`,
     fill: "none",
     viewBox: "0 0 24 24",
     strokeWidth: 2,
@@ -133,7 +133,7 @@ function TrustScoreBlock({
           <span className="font-bold">{score}</span>
           <span className={slashClass}>/100</span>
         </div>
-        <span className="mt-1 text-[10px] font-medium leading-none text-slate-500">
+        <span className="mt-0.5 text-[9px] font-medium uppercase tracking-wide leading-none text-slate-500">
           {EN_MESSAGES.latestChecks.trustScorePillLabel}
         </span>
       </div>
@@ -169,12 +169,7 @@ function FeedMetaViewCta({
   headlineId?: string;
   decorative?: boolean;
 }) {
-  const cls = [
-    "fraudly-focus",
-    visual.metaViewBtn,
-    visual.ctaText,
-    decorative ? visual.ctaTextHover : `${visual.ctaTextHover} hover:brightness-[0.98]`
-  ].join(" ");
+  const cls = ["fraudly-focus", visual.metaViewBtn, decorative ? "" : "hover:border-slate-300"].join(" ");
   const content = (
     <>
       View
@@ -227,23 +222,23 @@ function FeedMetaBox({
   trailingActions?: ReactNode;
 }) {
   return (
-    <div className="flex w-full shrink-0 flex-col gap-2 md:ml-auto md:w-[288px] md:min-w-[288px] md:max-w-[288px]">
+    <div className="flex w-full shrink-0 flex-col gap-1.5 md:ml-auto md:w-[288px] md:min-w-[288px] md:max-w-[288px]">
       <div
-        className={`flex min-h-[80px] w-full items-center gap-4 rounded-[18px] px-4 py-3.5 ${visual.metaBox}`}
+        className={`grid h-[72px] w-full grid-cols-[4.25rem_minmax(88px,1fr)_auto] items-center gap-x-2.5 rounded-2xl px-3 py-2.5 ${visual.metaBox}`}
       >
         <time
-          className="w-[4.75rem] shrink-0 text-left text-xs font-medium leading-tight tabular-nums text-slate-600 whitespace-nowrap"
+          className="self-center text-left text-[11px] font-medium leading-tight tabular-nums text-slate-500 whitespace-nowrap"
           dateTime={timeIso}
           title={timeTitle}
         >
           {timeRelative}
         </time>
 
-        <div className="flex min-w-0 flex-1 items-center justify-center px-1">
+        <div className="flex items-center justify-center">
           <TrustScoreBlock score={trustScore} visual={visual} variant="meta" />
         </div>
 
-        <div className="shrink-0 pl-1">
+        <div className="flex shrink-0 items-center justify-end">
           <FeedMetaViewCta
             viewLabel={viewLabel}
             visual={visual}
@@ -308,23 +303,21 @@ function FeedCardBody(props: {
     entityBadge ?? EN_MESSAGES.latestChecks.entityLabels.domain.toUpperCase();
 
   return (
-    <div className={`flex w-full min-w-0 flex-col gap-4 ${CARD_PAD} md:flex-row md:items-center md:gap-6`}>
-      <div className="flex min-w-0 flex-1 basis-0 items-center gap-4 sm:gap-5">
+    <div className={`flex w-full min-w-0 flex-col gap-3 ${CARD_PAD} md:flex-row md:items-center md:gap-4`}>
+      <div className="flex min-w-0 flex-1 basis-0 items-center gap-3.5 sm:gap-4">
         <div className={`${visual.iconCircle} leading-none [&_svg]:block`} aria-hidden>
           <FeedVerdictIcon visual={visual} />
         </div>
 
-        <div className="min-w-0 flex-1 space-y-1 overflow-hidden sm:space-y-1.5">
+        <div className="min-w-0 flex-1 space-y-0.5 overflow-hidden sm:space-y-1">
           <h2 id={headlineId} className={`text-balance ${visual.headline}`}>
             {m.headline}
           </h2>
-          <p className={`text-[10px] font-semibold uppercase tracking-[0.14em] ${visual.ctaText} opacity-80`}>
-            {domainLabel}
-          </p>
-          <p className="line-clamp-2 text-sm leading-snug text-slate-700/90">{m.oneLiner}</p>
-          <p className="truncate text-base font-semibold leading-snug text-slate-800" title={domainFullTitle}>
+          <p className="truncate text-[17px] font-bold leading-snug text-slate-900" title={domainFullTitle}>
             {domainLine || "—"}
           </p>
+          <p className="line-clamp-2 text-sm leading-snug text-slate-600/95">{m.oneLiner}</p>
+          <p className="sr-only">{domainLabel}</p>
         </div>
       </div>
 

@@ -187,7 +187,7 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
             <h2 id="latest-list-heading" className="sr-only">
               {EN_MESSAGES.latestChecks.listAria}
             </h2>
-            <ol className="space-y-4 md:space-y-5">
+            <ol className="space-y-3 md:space-y-3.5">
               {rows.map((row) => (
                 <li key={row.id}><LatestCheckListItem row={row} /></li>
               ))}
