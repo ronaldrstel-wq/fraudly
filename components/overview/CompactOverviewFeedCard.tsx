@@ -106,9 +106,17 @@ function FeedViewResultCta({
   );
 }
 
-function TrustScoreBlock({ score, visual }: { score: number; visual: OverviewFeedCardVisual }) {
+function TrustScoreBlock({
+  score,
+  visual,
+  compact = false
+}: {
+  score: number;
+  visual: OverviewFeedCardVisual;
+  compact?: boolean;
+}) {
   return (
-    <div className="flex w-full flex-col items-center gap-1">
+    <div className="flex shrink-0 flex-col items-center gap-0.5">
       <div
         className={visual.scorePill}
         aria-label={`${EN_MESSAGES.latestChecks.trustScorePillLabel}: ${score} out of 100`}
@@ -116,7 +124,58 @@ function TrustScoreBlock({ score, visual }: { score: number; visual: OverviewFee
         <span>{score}</span>
         <span className={visual.scoreSlash}>/100</span>
       </div>
-      <span className="text-[11px] font-medium text-slate-500">{EN_MESSAGES.latestChecks.trustScorePillLabel}</span>
+      <span className={`font-medium text-slate-500 ${compact ? "text-[10px]" : "text-[11px]"}`}>
+        {EN_MESSAGES.latestChecks.trustScorePillLabel}
+      </span>
+    </div>
+  );
+}
+
+function FeedMetaBox({
+  visual,
+  timeIso,
+  timeRelative,
+  timeTitle,
+  trustScore,
+  viewLabel,
+  href,
+  headlineId,
+  decorativeCta,
+  trailingActions
+}: {
+  visual: OverviewFeedCardVisual;
+  timeIso: string;
+  timeRelative: string;
+  timeTitle: string;
+  trustScore: number;
+  viewLabel: string;
+  href?: string;
+  headlineId: string;
+  decorativeCta?: boolean;
+  trailingActions?: ReactNode;
+}) {
+  return (
+    <div className="flex w-full shrink-0 flex-col gap-2 md:ml-auto md:w-[260px]">
+      <div className={`flex items-center justify-between gap-3 rounded-[18px] px-4 py-3.5 ${visual.metaBox}`}>
+        <time
+          className="max-w-[4.25rem] shrink-0 text-[11px] font-medium leading-snug tabular-nums text-slate-500"
+          dateTime={timeIso}
+          title={timeTitle}
+        >
+          {timeRelative}
+        </time>
+
+        <TrustScoreBlock score={trustScore} visual={visual} compact />
+
+        <FeedViewResultCta
+          viewLabel={viewLabel}
+          visual={visual}
+          href={href}
+          headlineId={headlineId}
+          decorative={decorativeCta}
+        />
+      </div>
+      {trailingActions ? <div className="flex flex-wrap justify-end gap-2">{trailingActions}</div> : null}
     </div>
   );
 }
@@ -171,17 +230,13 @@ function FeedCardBody(props: {
     entityBadge ?? EN_MESSAGES.latestChecks.entityLabels.domain.toUpperCase();
 
   return (
-    <div
-      className={`grid grid-cols-1 gap-4 ${CARD_PAD} md:grid-cols-[56px_minmax(0,1fr)_90px_120px_140px] md:items-center md:gap-x-6 md:gap-y-4`}
-    >
-      <div className="flex items-center justify-center md:col-start-1">
+    <div className={`flex flex-col gap-4 ${CARD_PAD} md:flex-row md:items-center md:gap-5`}>
+      <div className="flex min-w-0 flex-1 items-start gap-4 sm:gap-5">
         <div className={visual.iconCircle}>
           <FeedVerdictIcon visual={visual} />
         </div>
-      </div>
 
-      <div className="min-w-0 md:col-start-2">
-        <div className="space-y-1 overflow-hidden sm:space-y-1.5">
+        <div className="min-w-0 flex-1 space-y-1 overflow-hidden sm:space-y-1.5">
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">{domainLabel}</p>
           <h2 id={headlineId} className={`text-balance ${visual.headline}`}>
             {m.headline}
@@ -193,28 +248,18 @@ function FeedCardBody(props: {
         </div>
       </div>
 
-      <time
-        className="text-xs font-medium tabular-nums text-slate-500 md:col-start-3 md:w-[90px] md:text-right"
-        dateTime={timeIso}
-        title={timeTitle}
-      >
-        {timeRelative}
-      </time>
-
-      <div className="md:col-start-4 md:w-[120px]">
-        <TrustScoreBlock score={m.trustScore} visual={visual} />
-      </div>
-
-      <div className="flex flex-col items-start gap-2 md:col-start-5 md:w-[140px]">
-        <FeedViewResultCta
-          viewLabel={viewLabel}
-          visual={visual}
-          href={href}
-          headlineId={headlineId}
-          decorative={decorativeCta}
-        />
-        {trailingActions}
-      </div>
+      <FeedMetaBox
+        visual={visual}
+        timeIso={timeIso}
+        timeRelative={timeRelative}
+        timeTitle={timeTitle}
+        trustScore={m.trustScore}
+        viewLabel={viewLabel}
+        href={href}
+        headlineId={headlineId}
+        decorativeCta={decorativeCta}
+        trailingActions={trailingActions}
+      />
     </div>
   );
 }

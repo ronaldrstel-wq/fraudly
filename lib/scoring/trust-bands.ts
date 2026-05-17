@@ -562,6 +562,8 @@ export type OverviewFeedCardVisual = {
   /** Text “View result →” link on feed rows */
   ctaText: string;
   ctaTextHover: string;
+  /** Right-side grouped meta box (time, score, CTA) */
+  metaBox: string;
 };
 
 const FEED_MOTION = "transition-all duration-200 ease-out";
@@ -583,7 +585,8 @@ const FEED_TRUSTED: OverviewFeedCardVisual = {
   cta: "inline-flex items-center justify-center gap-1 rounded-xl bg-gradient-to-b from-emerald-600 to-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_18px_-4px_rgba(16,185,129,0.45)]",
   ctaHover: "group-hover:from-emerald-700 group-hover:to-emerald-800 group-hover:shadow-[0_8px_22px_-4px_rgba(16,185,129,0.5)]",
   ctaText: "text-emerald-700",
-  ctaTextHover: "group-hover:text-emerald-900"
+  ctaTextHover: "group-hover:text-emerald-900",
+  metaBox: "border border-emerald-200/75 bg-emerald-50/90"
 };
 
 const FEED_MOSTLY_SAFE: OverviewFeedCardVisual = {
@@ -610,7 +613,8 @@ const FEED_CAUTION: OverviewFeedCardVisual = {
   cta: "inline-flex items-center justify-center gap-1 rounded-xl bg-gradient-to-b from-amber-500 to-orange-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_18px_-4px_rgba(245,158,11,0.4)]",
   ctaHover: "group-hover:from-amber-600 group-hover:to-orange-700 group-hover:shadow-[0_8px_22px_-4px_rgba(245,158,11,0.48)]",
   ctaText: "text-amber-800",
-  ctaTextHover: "group-hover:text-amber-950"
+  ctaTextHover: "group-hover:text-amber-950",
+  metaBox: "border border-amber-200/75 bg-amber-50/90"
 };
 
 const FEED_SUSPICIOUS: OverviewFeedCardVisual = {
@@ -621,7 +625,8 @@ const FEED_SUSPICIOUS: OverviewFeedCardVisual = {
   headline: "text-[1.65rem] font-bold leading-tight tracking-tight text-orange-700 sm:text-[1.75rem]",
   iconInk: "text-orange-600",
   ctaText: "text-orange-700",
-  ctaTextHover: "group-hover:text-orange-900"
+  ctaTextHover: "group-hover:text-orange-900",
+  metaBox: "border border-orange-200/75 bg-orange-50/90"
 };
 
 const FEED_DANGER: OverviewFeedCardVisual = {
@@ -641,7 +646,8 @@ const FEED_DANGER: OverviewFeedCardVisual = {
   cta: "inline-flex items-center justify-center gap-1 rounded-xl bg-gradient-to-b from-rose-600 to-rose-700 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_18px_-4px_rgba(244,63,94,0.42)]",
   ctaHover: "group-hover:from-rose-700 group-hover:to-rose-800 group-hover:shadow-[0_8px_22px_-4px_rgba(244,63,94,0.48)]",
   ctaText: "text-rose-700",
-  ctaTextHover: "group-hover:text-rose-900"
+  ctaTextHover: "group-hover:text-rose-900",
+  metaBox: "border border-rose-200/75 bg-rose-50/90"
 };
 
 const FEED_UNKNOWN: OverviewFeedCardVisual = {
@@ -661,7 +667,8 @@ const FEED_UNKNOWN: OverviewFeedCardVisual = {
   cta: "inline-flex items-center justify-center gap-1 rounded-xl bg-gradient-to-b from-slate-600 to-slate-700 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_18px_-4px_rgba(71,85,105,0.35)]",
   ctaHover: "group-hover:from-slate-700 group-hover:to-slate-800 group-hover:shadow-[0_8px_22px_-4px_rgba(71,85,105,0.42)]",
   ctaText: "text-blue-600",
-  ctaTextHover: "group-hover:text-blue-800"
+  ctaTextHover: "group-hover:text-blue-800",
+  metaBox: "border border-blue-200/70 bg-blue-50/85"
 };
 
 export function getOverviewFeedCardVisual(trustScore: number | null | undefined): OverviewFeedCardVisual {
