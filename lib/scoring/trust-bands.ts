@@ -580,23 +580,23 @@ const FEED_META_VIEW_BTN =
 const FEED_META_SCORE_SLASH = "text-[11px] font-normal text-slate-500";
 const FEED_HEADLINE =
   "text-[1.85rem] font-black leading-[1.05] tracking-[-0.025em] sm:text-[2rem]";
-const FEED_STRIPE_SAFE = "border-l-4 border-l-emerald-600 rounded-l-[22px]";
-const FEED_STRIPE_CAUTION = "border-l-4 border-l-amber-600 rounded-l-[22px]";
-const FEED_STRIPE_SUSPICIOUS = "border-l-4 border-l-orange-600 rounded-l-[22px]";
-const FEED_STRIPE_DANGER = "border-l-4 border-l-rose-600 rounded-l-[22px]";
-const FEED_STRIPE_INFO = "border-l-4 border-l-blue-600 rounded-l-[22px]";
+const FEED_STRIPE_SAFE = "border-l-4 border-l-emerald-500 rounded-l-[22px]";
+const FEED_STRIPE_CAUTION = "border-l-4 border-l-amber-500 rounded-l-[22px]";
+const FEED_STRIPE_SUSPICIOUS = "border-l-4 border-l-orange-500 rounded-l-[22px]";
+const FEED_STRIPE_DANGER = "border-l-4 border-l-rose-500 rounded-l-[22px]";
+const FEED_STRIPE_INFO = "border-l-4 border-l-blue-500 rounded-l-[22px]";
 
 const FEED_TRUSTED: OverviewFeedCardVisual = {
   tone: "safe",
   iconKind: "trusted",
   stripe: FEED_STRIPE_SAFE,
-  card: `relative flex w-full overflow-hidden rounded-[22px] border border-emerald-300/75 bg-gradient-to-br from-emerald-100 via-emerald-100/95 to-emerald-200/80 shadow-[0_6px_24px_-10px_rgba(16,185,129,0.26)] ${FEED_MOTION}`,
+  card: `relative flex w-full overflow-hidden rounded-[22px] border border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-emerald-100/75 to-emerald-100/55 shadow-[0_6px_24px_-10px_rgba(16,185,129,0.22)] ${FEED_MOTION}`,
   cardHover:
     "hover:-translate-y-0.5 hover:border-emerald-400/85 hover:shadow-[0_10px_30px_-10px_rgba(16,185,129,0.3)]",
   iconCircle:
     "flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border-2 border-emerald-500/85 bg-emerald-50/95 shadow-[0_2px_8px_rgba(16,185,129,0.2)]",
   iconInk: "text-emerald-800",
-  headline: `${FEED_HEADLINE} text-emerald-950`,
+  headline: `${FEED_HEADLINE} text-emerald-700`,
   scorePill:
     "inline-flex min-w-[5.5rem] items-baseline justify-center gap-0.5 rounded-full border-2 border-emerald-300/90 bg-gradient-to-b from-emerald-100 to-emerald-50/95 px-4 py-2 text-xl font-bold tabular-nums text-emerald-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_4px_14px_rgba(16,185,129,0.16)]",
   scoreSlash: "text-sm font-semibold text-emerald-700/85",
@@ -615,20 +615,20 @@ const FEED_MOSTLY_SAFE: OverviewFeedCardVisual = {
   ...FEED_TRUSTED,
   tone: "mostly-safe",
   stripe: FEED_STRIPE_SAFE,
-  headline: `${FEED_HEADLINE} text-emerald-950`
+  headline: `${FEED_HEADLINE} text-emerald-700`
 };
 
 const FEED_CAUTION: OverviewFeedCardVisual = {
   tone: "caution",
   iconKind: "caution",
   stripe: FEED_STRIPE_CAUTION,
-  card: `relative flex w-full overflow-hidden rounded-[22px] border border-amber-300/70 bg-gradient-to-br from-amber-100 via-amber-50/95 to-orange-100/70 shadow-[0_6px_24px_-10px_rgba(245,158,11,0.22)] ${FEED_MOTION}`,
+  card: `relative flex w-full overflow-hidden rounded-[22px] border border-amber-200/80 bg-gradient-to-br from-amber-50 via-amber-100/75 to-amber-100/55 shadow-[0_6px_24px_-10px_rgba(245,158,11,0.2)] ${FEED_MOTION}`,
   cardHover:
     "hover:-translate-y-0.5 hover:border-amber-400/80 hover:shadow-[0_12px_36px_-10px_rgba(245,158,11,0.3)]",
   iconCircle:
     "flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border-2 border-amber-500/85 bg-amber-50/95 shadow-[0_2px_8px_rgba(245,158,11,0.2)]",
   iconInk: "text-amber-800",
-  headline: `${FEED_HEADLINE} text-amber-950`,
+  headline: `${FEED_HEADLINE} text-amber-700`,
   scorePill:
     "inline-flex min-w-[5.5rem] items-baseline justify-center gap-0.5 rounded-full border-2 border-amber-300/90 bg-gradient-to-b from-amber-100 to-amber-50/95 px-4 py-2 text-xl font-bold tabular-nums text-amber-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_4px_14px_rgba(245,158,11,0.16)]",
   scoreSlash: "text-sm font-semibold text-amber-800/85",
@@ -648,12 +648,12 @@ const FEED_SUSPICIOUS: OverviewFeedCardVisual = {
   tone: "suspicious",
   iconKind: "caution",
   stripe: FEED_STRIPE_SUSPICIOUS,
-  card: `relative flex w-full overflow-hidden rounded-[22px] border border-orange-300/70 bg-gradient-to-br from-orange-100 via-orange-50/95 to-orange-200/70 shadow-[0_6px_24px_-10px_rgba(249,115,22,0.22)] ${FEED_MOTION}`,
+  card: `relative flex w-full overflow-hidden rounded-[22px] border border-orange-200/80 bg-gradient-to-br from-orange-50 via-orange-100/75 to-orange-100/55 shadow-[0_6px_24px_-10px_rgba(249,115,22,0.2)] ${FEED_MOTION}`,
   cardHover:
     "hover:-translate-y-0.5 hover:border-orange-400/80 hover:shadow-[0_12px_36px_-10px_rgba(249,115,22,0.3)]",
   iconCircle:
     "flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border-2 border-orange-500/85 bg-orange-50/95 shadow-[0_2px_8px_rgba(249,115,22,0.2)]",
-  headline: `${FEED_HEADLINE} text-orange-950`,
+  headline: `${FEED_HEADLINE} text-orange-700`,
   iconInk: "text-orange-800",
   ctaText: "text-orange-800",
   ctaTextHover: "group-hover:text-orange-950",
@@ -668,13 +668,13 @@ const FEED_DANGER: OverviewFeedCardVisual = {
   tone: "danger",
   iconKind: "danger",
   stripe: FEED_STRIPE_DANGER,
-  card: `relative flex w-full overflow-hidden rounded-[22px] border border-rose-300/70 bg-gradient-to-br from-rose-100 via-rose-50/95 to-rose-200/75 shadow-[0_6px_24px_-10px_rgba(244,63,94,0.24)] ${FEED_MOTION}`,
+  card: `relative flex w-full overflow-hidden rounded-[22px] border border-rose-200/80 bg-gradient-to-br from-rose-50 via-rose-100/75 to-rose-100/55 shadow-[0_6px_24px_-10px_rgba(244,63,94,0.22)] ${FEED_MOTION}`,
   cardHover:
     "hover:-translate-y-0.5 hover:border-rose-400/80 hover:shadow-[0_12px_36px_-10px_rgba(244,63,94,0.32)]",
   iconCircle:
     "flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border-2 border-rose-500/85 bg-rose-50/95 shadow-[0_2px_8px_rgba(244,63,94,0.2)]",
   iconInk: "text-rose-800",
-  headline: `${FEED_HEADLINE} text-rose-950`,
+  headline: `${FEED_HEADLINE} text-rose-700`,
   scorePill:
     "inline-flex min-w-[5.5rem] items-baseline justify-center gap-0.5 rounded-full border-2 border-rose-300/90 bg-gradient-to-b from-rose-100 to-rose-50/95 px-4 py-2 text-xl font-bold tabular-nums text-rose-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_4px_14px_rgba(244,63,94,0.18)]",
   scoreSlash: "text-sm font-semibold text-rose-800/85",
