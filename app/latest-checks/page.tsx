@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LatestChecksJsonLd } from "@/components/seo/LatestChecksJsonLd";
 import { LatestChecksHero } from "@/components/latest-checks/LatestChecksHero";
-import { CompactOverviewFeedLinkCard } from "@/components/overview/CompactOverviewFeedCard";
+import { CompactOverviewFeedArticleCard } from "@/components/overview/CompactOverviewFeedCard";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { formatPublicCheckRelativeTime } from "@/lib/latest-public-checks/relative-time";
@@ -108,13 +108,12 @@ function LatestCheckListItem({ row }: { row: LatestPublicCheckListRow }) {
     const domainLine = primaryLine.primary || row.normalizedValue || EN_MESSAGES.latestChecks.entityFallback;
 
     return (
-      <CompactOverviewFeedLinkCard
+      <CompactOverviewFeedArticleCard
         model={m}
         headlineId={`latest-check-headline-${row.id}`}
         domainLine={domainLine}
         domainFullTitle={primaryLine.fullTitle || domainLine}
         href={safeCardHref(row)}
-        prefetch
         viewLabel={EN_MESSAGES.latestChecks.viewResultArrow}
         timeIso={iso}
         timeRelative={formatPublicCheckRelativeTime(iso)}

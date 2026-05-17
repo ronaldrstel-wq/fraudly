@@ -559,6 +559,9 @@ export type OverviewFeedCardVisual = {
   scoreSlash: string;
   cta: string;
   ctaHover: string;
+  /** Text “View result →” link on feed rows */
+  ctaText: string;
+  ctaTextHover: string;
 };
 
 const FEED_MOTION = "transition-all duration-200 ease-out";
@@ -578,7 +581,9 @@ const FEED_TRUSTED: OverviewFeedCardVisual = {
     "inline-flex min-w-[5.5rem] items-baseline justify-center gap-0.5 rounded-full border-2 border-emerald-300/90 bg-gradient-to-b from-emerald-100 to-emerald-50/95 px-4 py-2 text-xl font-bold tabular-nums text-emerald-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_4px_14px_rgba(16,185,129,0.16)]",
   scoreSlash: "text-sm font-semibold text-emerald-700/85",
   cta: "inline-flex items-center justify-center gap-1 rounded-xl bg-gradient-to-b from-emerald-600 to-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_18px_-4px_rgba(16,185,129,0.45)]",
-  ctaHover: "group-hover:from-emerald-700 group-hover:to-emerald-800 group-hover:shadow-[0_8px_22px_-4px_rgba(16,185,129,0.5)]"
+  ctaHover: "group-hover:from-emerald-700 group-hover:to-emerald-800 group-hover:shadow-[0_8px_22px_-4px_rgba(16,185,129,0.5)]",
+  ctaText: "text-emerald-700",
+  ctaTextHover: "group-hover:text-emerald-900"
 };
 
 const FEED_MOSTLY_SAFE: OverviewFeedCardVisual = {
@@ -603,7 +608,9 @@ const FEED_CAUTION: OverviewFeedCardVisual = {
     "inline-flex min-w-[5.5rem] items-baseline justify-center gap-0.5 rounded-full border-2 border-amber-300/90 bg-gradient-to-b from-amber-100 to-amber-50/95 px-4 py-2 text-xl font-bold tabular-nums text-amber-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_4px_14px_rgba(245,158,11,0.16)]",
   scoreSlash: "text-sm font-semibold text-amber-800/85",
   cta: "inline-flex items-center justify-center gap-1 rounded-xl bg-gradient-to-b from-amber-500 to-orange-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_18px_-4px_rgba(245,158,11,0.4)]",
-  ctaHover: "group-hover:from-amber-600 group-hover:to-orange-700 group-hover:shadow-[0_8px_22px_-4px_rgba(245,158,11,0.48)]"
+  ctaHover: "group-hover:from-amber-600 group-hover:to-orange-700 group-hover:shadow-[0_8px_22px_-4px_rgba(245,158,11,0.48)]",
+  ctaText: "text-amber-800",
+  ctaTextHover: "group-hover:text-amber-950"
 };
 
 const FEED_SUSPICIOUS: OverviewFeedCardVisual = {
@@ -612,7 +619,9 @@ const FEED_SUSPICIOUS: OverviewFeedCardVisual = {
   iconKind: "caution",
   stripe: "border-l-[7px] border-l-orange-500",
   headline: "text-[1.65rem] font-bold leading-tight tracking-tight text-orange-700 sm:text-[1.75rem]",
-  iconInk: "text-orange-600"
+  iconInk: "text-orange-600",
+  ctaText: "text-orange-700",
+  ctaTextHover: "group-hover:text-orange-900"
 };
 
 const FEED_DANGER: OverviewFeedCardVisual = {
@@ -630,7 +639,9 @@ const FEED_DANGER: OverviewFeedCardVisual = {
     "inline-flex min-w-[5.5rem] items-baseline justify-center gap-0.5 rounded-full border-2 border-rose-300/90 bg-gradient-to-b from-rose-100 to-rose-50/95 px-4 py-2 text-xl font-bold tabular-nums text-rose-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_4px_14px_rgba(244,63,94,0.18)]",
   scoreSlash: "text-sm font-semibold text-rose-800/85",
   cta: "inline-flex items-center justify-center gap-1 rounded-xl bg-gradient-to-b from-rose-600 to-rose-700 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_18px_-4px_rgba(244,63,94,0.42)]",
-  ctaHover: "group-hover:from-rose-700 group-hover:to-rose-800 group-hover:shadow-[0_8px_22px_-4px_rgba(244,63,94,0.48)]"
+  ctaHover: "group-hover:from-rose-700 group-hover:to-rose-800 group-hover:shadow-[0_8px_22px_-4px_rgba(244,63,94,0.48)]",
+  ctaText: "text-rose-700",
+  ctaTextHover: "group-hover:text-rose-900"
 };
 
 const FEED_UNKNOWN: OverviewFeedCardVisual = {
@@ -648,7 +659,9 @@ const FEED_UNKNOWN: OverviewFeedCardVisual = {
     "inline-flex min-w-[5.5rem] items-baseline justify-center gap-0.5 rounded-full border-2 border-blue-300/85 bg-gradient-to-b from-blue-100 to-slate-50/95 px-4 py-2 text-xl font-bold tabular-nums text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_4px_14px_rgba(59,130,246,0.12)]",
   scoreSlash: "text-sm font-semibold text-slate-600",
   cta: "inline-flex items-center justify-center gap-1 rounded-xl bg-gradient-to-b from-slate-600 to-slate-700 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_18px_-4px_rgba(71,85,105,0.35)]",
-  ctaHover: "group-hover:from-slate-700 group-hover:to-slate-800 group-hover:shadow-[0_8px_22px_-4px_rgba(71,85,105,0.42)]"
+  ctaHover: "group-hover:from-slate-700 group-hover:to-slate-800 group-hover:shadow-[0_8px_22px_-4px_rgba(71,85,105,0.42)]",
+  ctaText: "text-blue-600",
+  ctaTextHover: "group-hover:text-blue-800"
 };
 
 export function getOverviewFeedCardVisual(trustScore: number | null | undefined): OverviewFeedCardVisual {
