@@ -541,6 +541,7 @@ export const EN_MESSAGES = {
     viewSnapshot: "View public result",
     /** Compact feed rows (latest checks · discovery list) */
     viewResultArrow: "View result →",
+    trustScorePillLabel: "Trust Score",
     labels: {
       risk: "Trust score",
       status: "Status label",

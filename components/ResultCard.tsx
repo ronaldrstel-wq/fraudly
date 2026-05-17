@@ -534,7 +534,11 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
                 channel={normalized.reputation.trustpilot}
                 matchNote={normalized.reputation.trustpilotMatchNote}
               />
-              <PublicReviewChannelCard source="Google Reviews" channel={normalized.reputation.google} />
+              <PublicReviewChannelCard
+                source="Google Reviews"
+                channel={normalized.reputation.google}
+                matchNote={normalized.reputation.googleMatchNote}
+              />
               </div>
             </section>
 
@@ -919,7 +923,11 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
             <p className="mt-1 text-xs leading-relaxed text-slate-500">{sec.baselineReviewsHint}</p>
         <div className="mt-2 grid gap-2.5 sm:grid-cols-2">
           <PublicReviewChannelCard source="Trustpilot" channel={normalized.reputation.trustpilot} />
-          <PublicReviewChannelCard source="Google Reviews" channel={normalized.reputation.google} />
+          <PublicReviewChannelCard
+            source="Google Reviews"
+            channel={normalized.reputation.google}
+            matchNote={normalized.reputation.googleMatchNote}
+          />
         </div>
 
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">

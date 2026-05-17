@@ -42,6 +42,15 @@ export type ReviewSignals = {
   trustpilotMatchConfidence?: "high" | "medium" | "low" | "none";
   /** Optional UI note when Trustpilot match is medium confidence. */
   trustpilotMatchNote?: string;
+  /** Validated Google Business match strength (display + scoring gate). */
+  googleMatchConfidence?: "high" | "medium" | "low" | "none";
+  /** Normalized 0–1 Google entity match confidence. */
+  googleMatchScore?: number;
+  /** True when Google profile website matches scanned registrable domain. */
+  googleExactDomainMatch?: boolean;
+  googleMatchedBusinessName?: string;
+  googleMatchedWebsite?: string;
+  googleMatchNote?: string;
 };
 
 export function adjustScoreWithReviewSignals(baseScore: number, reviewSignals: ReviewSignals): number {

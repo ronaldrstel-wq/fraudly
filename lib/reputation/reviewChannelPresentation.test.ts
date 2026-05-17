@@ -22,7 +22,10 @@ describe("reviewChannelPresentation", () => {
     const channel = resolveGoogleReviewChannel({
       ...base,
       googleRating: 4.6,
-      googleReviewCount: 120
+      googleReviewCount: 120,
+      googleMatchConfidence: "high",
+      googleExactDomainMatch: true,
+      googleMatchScore: 1
     });
     expect(channel.displayState).toBe("strong");
     expect(channel.showMetrics).toBe(true);
@@ -35,7 +38,9 @@ describe("reviewChannelPresentation", () => {
     const channel = resolveGoogleReviewChannel({
       ...base,
       googleRating: 4.8,
-      googleReviewCount: 2
+      googleReviewCount: 2,
+      googleMatchConfidence: "high",
+      googleExactDomainMatch: true
     });
     expect(channel.displayState).toBe("limited");
     expect(channel.showMetrics).toBe(false);
@@ -64,9 +69,26 @@ describe("reviewChannelPresentation", () => {
     const ratings = reviewRatingsForScoringFromSignals({
       ...base,
       googleRating: 5,
-      googleReviewCount: 2
+      googleReviewCount: 2,
+      googleMatchConfidence: "high",
+      googleExactDomainMatch: true
     });
     expect(ratings).toHaveLength(0);
+  });
+
+  it("never shows poor reputation for unverified Google entity match", () => {
+    const channel = resolveGoogleReviewChannel({
+      ...base,
+      googleRating: 2,
+      googleReviewCount: 40,
+      googleMatchConfidence: "low",
+      googleExactDomainMatch: false,
+      googleMatchNote: "Possible Google business match found"
+    });
+    expect(channel.displayState).toBe("low_confidence");
+    expect(channel.showMetrics).toBe(false);
+    expect(channel.reputationLabel).toBeNull();
+    expect(channel.usedInTrustScore).toBe(false);
   });
 
   it("includes Trustpilot in scoring only when high confidence and enough reviews", () => {

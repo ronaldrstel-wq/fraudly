@@ -1,12 +1,11 @@
 import type { ReviewSignals } from "@/lib/reviewSignals";
 import {
+  GOOGLE_MIN_CONFIDENCE_FOR_TRUST_SCORE,
+  GOOGLE_POSSIBLE_MATCH_UI_NOTE,
   MIN_CONFIDENCE_FOR_TRUST_SCORE,
   MIN_REVIEWS_FOR_TRUST_SCORE
 } from "@/lib/reputation/reviewConfig";
-import {
-  resolveGoogleReviewMatch,
-  resolveTrustpilotReviewMatch
-} from "@/lib/reputation/reviewMatchConfidence";
+import { resolveTrustpilotReviewMatch } from "@/lib/reputation/reviewMatchConfidence";
 import { sanitizeReviewFields } from "@/lib/reputation/reviewRatingNormalize";
 import type { TrustpilotMatchConfidence } from "@/lib/reputation/trustpilotMatch";
 
@@ -29,6 +28,8 @@ export type ReviewChannelPresentation = {
   scoreImpactLabel: string;
   /** When true, show numeric rating + count (never rating without count). */
   showMetrics: boolean;
+  /** Consumer-facing line when not showing metrics. */
+  bodyMessage: string;
 };
 
 export const REVIEW_SCORE_IMPACT = {
@@ -63,18 +64,55 @@ function matchConfidenceScore(conf: "high" | "low" | "none"): number {
   return 0;
 }
 
+function googleConfidenceScore(signals: ReviewSignals): number {
+  if (typeof signals.googleMatchScore === "number" && Number.isFinite(signals.googleMatchScore)) {
+    return signals.googleMatchScore;
+  }
+  switch (signals.googleMatchConfidence) {
+    case "high":
+      return 0.95;
+    case "medium":
+      return 0.65;
+    case "low":
+      return 0.4;
+    default:
+      return 0;
+  }
+}
+
+function googlePossibleMatchFound(signals: ReviewSignals): boolean {
+  const conf = signals.googleMatchConfidence;
+  if (conf === "medium" || conf === "low") return true;
+  if (conf === "high" && signals.googleExactDomainMatch !== true) return true;
+  return Boolean(signals.googleMatchNote?.includes("Possible"));
+}
+
 function meetsTrustScoreGate(
   found: boolean,
   rating: number | null,
   reviewCount: number | null,
-  confidenceScore: number
+  confidenceScore: number,
+  minConfidence = MIN_CONFIDENCE_FOR_TRUST_SCORE
 ): boolean {
   return (
     found &&
     rating != null &&
     reviewCount != null &&
     reviewCount >= MIN_REVIEWS_FOR_TRUST_SCORE &&
-    confidenceScore >= MIN_CONFIDENCE_FOR_TRUST_SCORE
+    confidenceScore >= minConfidence
+  );
+}
+
+function meetsGoogleTrustScoreGate(
+  signals: ReviewSignals,
+  rating: number | null,
+  reviewCount: number | null,
+  confidenceScore: number
+): boolean {
+  return (
+    signals.googleMatchConfidence === "high" &&
+    signals.googleExactDomainMatch === true &&
+    meetsTrustScoreGate(true, rating, reviewCount, confidenceScore, GOOGLE_MIN_CONFIDENCE_FOR_TRUST_SCORE)
   );
 }
 
@@ -85,8 +123,24 @@ function buildChannelPresentation(args: {
   reviewCount: number | null;
   confidenceScore: number;
   forceLowConfidence?: boolean;
+  lowConfidenceMessage?: string;
+  meetsScoreGate?: (
+    found: boolean,
+    rating: number | null,
+    reviewCount: number | null,
+    confidenceScore: number
+  ) => boolean;
 }): ReviewChannelPresentation {
-  const { source, found, rating, reviewCount, confidenceScore, forceLowConfidence } = args;
+  const {
+    source,
+    found,
+    rating,
+    reviewCount,
+    confidenceScore,
+    forceLowConfidence,
+    lowConfidenceMessage,
+    meetsScoreGate = meetsTrustScoreGate
+  } = args;
 
   if (!found) {
     return {
@@ -99,7 +153,8 @@ function buildChannelPresentation(args: {
       displayState: "none",
       reputationLabel: null,
       scoreImpactLabel: REVIEW_SCORE_IMPACT.noPublicReviews,
-      showMetrics: false
+      showMetrics: false,
+      bodyMessage: "No public reviews found"
     };
   }
 
@@ -121,11 +176,12 @@ function buildChannelPresentation(args: {
       displayState: "low_confidence",
       reputationLabel: null,
       scoreImpactLabel: REVIEW_SCORE_IMPACT.possibleMismatch,
-      showMetrics: false
+      showMetrics: false,
+      bodyMessage: lowConfidenceMessage ?? "Possible match found, not used in score"
     };
   }
 
-  const usedInTrustScore = meetsTrustScoreGate(found, rating, reviewCount, confidenceScore);
+  const usedInTrustScore = meetsScoreGate(found, rating, reviewCount, confidenceScore);
 
   if (hasRatingAndCount && reviewCount >= MIN_REVIEWS_FOR_TRUST_SCORE) {
     return {
@@ -140,7 +196,8 @@ function buildChannelPresentation(args: {
       scoreImpactLabel: usedInTrustScore
         ? REVIEW_SCORE_IMPACT.usedInTrustScore
         : REVIEW_SCORE_IMPACT.notEnoughData,
-      showMetrics: true
+      showMetrics: true,
+      bodyMessage: ""
     };
   }
 
@@ -154,22 +211,48 @@ function buildChannelPresentation(args: {
     displayState: "limited",
     reputationLabel: null,
     scoreImpactLabel: REVIEW_SCORE_IMPACT.notEnoughData,
-    showMetrics: false
+    showMetrics: false,
+    bodyMessage: "Limited review data"
   };
 }
 
 export function resolveGoogleReviewChannel(signals: ReviewSignals): ReviewChannelPresentation {
-  const match = resolveGoogleReviewMatch(signals);
   const sanitized = sanitizeReviewFields(signals.googleRating, signals.googleReviewCount);
-  const found = sanitized.rating != null || sanitized.reviewCount != null;
-  const confidenceScore = matchConfidenceScore(match.confidence);
+  const confidenceScore = googleConfidenceScore(signals);
+  const validatedDisplay =
+    signals.googleMatchConfidence === "high" && signals.googleExactDomainMatch === true;
+  const possibleMatch = googlePossibleMatchFound(signals);
+
+  if (!validatedDisplay && !possibleMatch) {
+    return buildChannelPresentation({
+      source: "Google Reviews",
+      found: false,
+      rating: null,
+      reviewCount: null,
+      confidenceScore: 0
+    });
+  }
+
+  if (!validatedDisplay) {
+    return buildChannelPresentation({
+      source: "Google Reviews",
+      found: true,
+      rating: null,
+      reviewCount: null,
+      confidenceScore,
+      forceLowConfidence: true,
+      lowConfidenceMessage: signals.googleMatchNote ?? GOOGLE_POSSIBLE_MATCH_UI_NOTE
+    });
+  }
 
   return buildChannelPresentation({
     source: "Google Reviews",
-    found,
+    found: true,
     rating: sanitized.rating,
     reviewCount: sanitized.reviewCount,
-    confidenceScore
+    confidenceScore,
+    meetsScoreGate: (_found, rating, reviewCount, score) =>
+      meetsGoogleTrustScoreGate(signals, rating, reviewCount, score)
   });
 }
 

@@ -543,6 +543,134 @@ export function getOverviewCardChrome(trustScore: number | null | undefined): Ov
 /** Alias — same chrome helper for any trust card surface. */
 export const getTrustCardChrome = getOverviewCardChrome;
 
+export type OverviewFeedIconKind = "trusted" | "caution" | "danger" | "unknown";
+
+/** Reference-style latest-check / feed row — thick stripe, tinted shell, solid CTA. */
+export type OverviewFeedCardVisual = {
+  tone: SemanticTone;
+  iconKind: OverviewFeedIconKind;
+  stripe: string;
+  card: string;
+  cardHover: string;
+  iconCircle: string;
+  iconInk: string;
+  headline: string;
+  scorePill: string;
+  scoreSlash: string;
+  cta: string;
+  ctaHover: string;
+};
+
+const FEED_MOTION = "transition-all duration-200 ease-out";
+
+const FEED_TRUSTED: OverviewFeedCardVisual = {
+  tone: "safe",
+  iconKind: "trusted",
+  stripe: "border-l-[7px] border-l-emerald-500",
+  card: `relative flex w-full overflow-hidden rounded-[20px] border border-emerald-200/90 bg-gradient-to-br from-emerald-50/98 via-emerald-50/85 to-emerald-100/45 shadow-[0_10px_32px_-14px_rgba(16,185,129,0.22),inset_0_1px_0_rgba(255,255,255,0.9)] ${FEED_MOTION}`,
+  cardHover:
+    "hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-[0_18px_44px_-16px_rgba(16,185,129,0.28)]",
+  iconCircle:
+    "flex h-[4.75rem] w-[4.75rem] shrink-0 items-center justify-center rounded-full bg-white shadow-[0_10px_28px_-10px_rgba(16,185,129,0.22),0_2px_6px_rgba(15,23,42,0.06)] ring-1 ring-emerald-100/90 sm:h-20 sm:w-20",
+  iconInk: "text-emerald-600",
+  headline: "text-[1.65rem] font-bold leading-tight tracking-tight text-emerald-700 sm:text-[1.75rem]",
+  scorePill:
+    "inline-flex min-w-[5.5rem] items-baseline justify-center gap-0.5 rounded-full border-2 border-emerald-300/90 bg-gradient-to-b from-emerald-100 to-emerald-50/95 px-4 py-2 text-xl font-bold tabular-nums text-emerald-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_4px_14px_rgba(16,185,129,0.16)]",
+  scoreSlash: "text-sm font-semibold text-emerald-700/85",
+  cta: "inline-flex items-center justify-center gap-1 rounded-xl bg-gradient-to-b from-emerald-600 to-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_18px_-4px_rgba(16,185,129,0.45)]",
+  ctaHover: "group-hover:from-emerald-700 group-hover:to-emerald-800 group-hover:shadow-[0_8px_22px_-4px_rgba(16,185,129,0.5)]"
+};
+
+const FEED_MOSTLY_SAFE: OverviewFeedCardVisual = {
+  ...FEED_TRUSTED,
+  tone: "mostly-safe",
+  stripe: "border-l-[7px] border-l-emerald-500",
+  headline: "text-[1.65rem] font-bold leading-tight tracking-tight text-emerald-700 sm:text-[1.75rem]"
+};
+
+const FEED_CAUTION: OverviewFeedCardVisual = {
+  tone: "caution",
+  iconKind: "caution",
+  stripe: "border-l-[7px] border-l-amber-500",
+  card: `relative flex w-full overflow-hidden rounded-[20px] border border-amber-200/90 bg-gradient-to-br from-amber-50/98 via-amber-50/85 to-orange-50/40 shadow-[0_10px_32px_-14px_rgba(245,158,11,0.22),inset_0_1px_0_rgba(255,255,255,0.9)] ${FEED_MOTION}`,
+  cardHover:
+    "hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-[0_18px_44px_-16px_rgba(245,158,11,0.28)]",
+  iconCircle:
+    "flex h-[4.75rem] w-[4.75rem] shrink-0 items-center justify-center rounded-full bg-white shadow-[0_10px_28px_-10px_rgba(245,158,11,0.22),0_2px_6px_rgba(15,23,42,0.06)] ring-1 ring-amber-100/90 sm:h-20 sm:w-20",
+  iconInk: "text-amber-600",
+  headline: "text-[1.65rem] font-bold leading-tight tracking-tight text-amber-700 sm:text-[1.75rem]",
+  scorePill:
+    "inline-flex min-w-[5.5rem] items-baseline justify-center gap-0.5 rounded-full border-2 border-amber-300/90 bg-gradient-to-b from-amber-100 to-amber-50/95 px-4 py-2 text-xl font-bold tabular-nums text-amber-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_4px_14px_rgba(245,158,11,0.16)]",
+  scoreSlash: "text-sm font-semibold text-amber-800/85",
+  cta: "inline-flex items-center justify-center gap-1 rounded-xl bg-gradient-to-b from-amber-500 to-orange-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_18px_-4px_rgba(245,158,11,0.4)]",
+  ctaHover: "group-hover:from-amber-600 group-hover:to-orange-700 group-hover:shadow-[0_8px_22px_-4px_rgba(245,158,11,0.48)]"
+};
+
+const FEED_SUSPICIOUS: OverviewFeedCardVisual = {
+  ...FEED_CAUTION,
+  tone: "suspicious",
+  iconKind: "caution",
+  stripe: "border-l-[7px] border-l-orange-500",
+  headline: "text-[1.65rem] font-bold leading-tight tracking-tight text-orange-700 sm:text-[1.75rem]",
+  iconInk: "text-orange-600"
+};
+
+const FEED_DANGER: OverviewFeedCardVisual = {
+  tone: "danger",
+  iconKind: "danger",
+  stripe: "border-l-[7px] border-l-rose-500",
+  card: `relative flex w-full overflow-hidden rounded-[20px] border border-rose-200/90 bg-gradient-to-br from-rose-50/98 via-rose-50/85 to-rose-100/40 shadow-[0_10px_32px_-14px_rgba(244,63,94,0.24),inset_0_1px_0_rgba(255,255,255,0.9)] ${FEED_MOTION}`,
+  cardHover:
+    "hover:-translate-y-0.5 hover:border-rose-300 hover:shadow-[0_18px_44px_-16px_rgba(244,63,94,0.3)]",
+  iconCircle:
+    "flex h-[4.75rem] w-[4.75rem] shrink-0 items-center justify-center rounded-full bg-white shadow-[0_10px_28px_-10px_rgba(244,63,94,0.24),0_2px_6px_rgba(15,23,42,0.06)] ring-1 ring-rose-100/90 sm:h-20 sm:w-20",
+  iconInk: "text-rose-600",
+  headline: "text-[1.65rem] font-bold leading-tight tracking-tight text-rose-700 sm:text-[1.75rem]",
+  scorePill:
+    "inline-flex min-w-[5.5rem] items-baseline justify-center gap-0.5 rounded-full border-2 border-rose-300/90 bg-gradient-to-b from-rose-100 to-rose-50/95 px-4 py-2 text-xl font-bold tabular-nums text-rose-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_4px_14px_rgba(244,63,94,0.18)]",
+  scoreSlash: "text-sm font-semibold text-rose-800/85",
+  cta: "inline-flex items-center justify-center gap-1 rounded-xl bg-gradient-to-b from-rose-600 to-rose-700 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_18px_-4px_rgba(244,63,94,0.42)]",
+  ctaHover: "group-hover:from-rose-700 group-hover:to-rose-800 group-hover:shadow-[0_8px_22px_-4px_rgba(244,63,94,0.48)]"
+};
+
+const FEED_UNKNOWN: OverviewFeedCardVisual = {
+  tone: "caution",
+  iconKind: "unknown",
+  stripe: "border-l-[7px] border-l-blue-500",
+  card: `relative flex w-full overflow-hidden rounded-[20px] border border-slate-300/85 bg-gradient-to-br from-slate-50/98 via-blue-50/70 to-slate-50/90 shadow-[0_10px_32px_-14px_rgba(100,116,139,0.18),inset_0_1px_0_rgba(255,255,255,0.9)] ${FEED_MOTION}`,
+  cardHover:
+    "hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-[0_18px_44px_-16px_rgba(59,130,246,0.2)]",
+  iconCircle:
+    "flex h-[4.75rem] w-[4.75rem] shrink-0 items-center justify-center rounded-full bg-white shadow-[0_10px_28px_-10px_rgba(59,130,246,0.16),0_2px_6px_rgba(15,23,42,0.06)] ring-1 ring-blue-100/90 sm:h-20 sm:w-20",
+  iconInk: "text-blue-600",
+  headline: "text-[1.65rem] font-bold leading-tight tracking-tight text-slate-800 sm:text-[1.75rem]",
+  scorePill:
+    "inline-flex min-w-[5.5rem] items-baseline justify-center gap-0.5 rounded-full border-2 border-blue-300/85 bg-gradient-to-b from-blue-100 to-slate-50/95 px-4 py-2 text-xl font-bold tabular-nums text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_4px_14px_rgba(59,130,246,0.12)]",
+  scoreSlash: "text-sm font-semibold text-slate-600",
+  cta: "inline-flex items-center justify-center gap-1 rounded-xl bg-gradient-to-b from-slate-600 to-slate-700 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_18px_-4px_rgba(71,85,105,0.35)]",
+  ctaHover: "group-hover:from-slate-700 group-hover:to-slate-800 group-hover:shadow-[0_8px_22px_-4px_rgba(71,85,105,0.42)]"
+};
+
+export function getOverviewFeedCardVisual(trustScore: number | null | undefined): OverviewFeedCardVisual {
+  if (trustScore == null || !Number.isFinite(trustScore)) {
+    return FEED_UNKNOWN;
+  }
+  const band = getTrustBandFromScore(clampScore(trustScore));
+  switch (band) {
+    case "likely-safe":
+      return FEED_TRUSTED;
+    case "mostly-safe":
+      return FEED_MOSTLY_SAFE;
+    case "caution":
+      return FEED_CAUTION;
+    case "suspicious":
+      return FEED_SUSPICIOUS;
+    case "high-risk":
+    default:
+      return FEED_DANGER;
+  }
+}
+
 export function headlineToneFromSemantic(tone: SemanticTone): { text: string; icon: string } {
   const colors = getTrustColors(toneToRepresentativeScore(tone));
   return { text: colors.headlineText, icon: colors.icon };

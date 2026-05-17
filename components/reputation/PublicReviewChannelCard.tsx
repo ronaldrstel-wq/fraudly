@@ -31,12 +31,9 @@ function statusTextClass(channel: NormalizedReviewChannel): string {
 }
 
 function bodyMessage(channel: NormalizedReviewChannel): string {
-  if (channel.displayState === "limited") {
-    return "Limited review data";
-  }
-  if (channel.displayState === "none") {
-    return "No public reviews found";
-  }
+  if (channel.bodyMessage) return channel.bodyMessage;
+  if (channel.displayState === "limited") return "Limited review data";
+  if (channel.displayState === "none") return "No public reviews found";
   if (channel.displayState === "low_confidence") {
     return "Possible match found, not used in score";
   }

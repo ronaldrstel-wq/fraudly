@@ -19,6 +19,7 @@ export type NormalizedReviewChannel = {
   scoreImpactLabel: string;
   showMetrics: boolean;
   confidenceScore: number;
+  bodyMessage: string;
 };
 
 export type NormalizedTrustResult = {
@@ -62,6 +63,7 @@ export type NormalizedTrustResult = {
     optionalUnavailableNote: string | null;
     /** Shown under Trustpilot when match confidence is medium. */
     trustpilotMatchNote: string | null;
+    googleMatchNote: string | null;
   };
 
   summary: string;

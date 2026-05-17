@@ -17,7 +17,8 @@ describe("fetchOutscraperReviewSignals", () => {
             [
               {
                 rating: 4.6,
-                reviews: 1280
+                reviews: 1280,
+                website: "https://example.com"
               }
             ]
           ]),
@@ -50,6 +51,8 @@ describe("fetchOutscraperReviewSignals", () => {
 
     expect(result.googleRating).toBe(4.6);
     expect(result.googleReviewCount).toBe(1280);
+    expect(result.googleLookup.confidence).toBe("high");
+    expect(result.googleLookup.exactDomainMatch).toBe(true);
     expect(result.trustpilotRating).toBe(4.2);
     expect(result.trustpilotReviewCount).toBe(540);
     expect(result.trustpilotLookup.confidence).toBe("high");
@@ -62,7 +65,10 @@ describe("fetchOutscraperReviewSignals", () => {
     let trustpilotCalls = 0;
     const fetchMock = vi.fn(async (url: string) => {
       if (url.includes("google-maps-reviews")) {
-        return new Response(JSON.stringify([[{ rating: 4.5, reviews: 200 }]]), { status: 200 });
+        return new Response(
+          JSON.stringify([[{ rating: 4.5, reviews: 200, website: "https://coolblue.nl" }]]),
+          { status: 200 }
+        );
       }
       if (url.includes("trustpilot/reviews")) {
         trustpilotCalls += 1;

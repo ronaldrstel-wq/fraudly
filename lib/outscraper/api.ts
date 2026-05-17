@@ -1,4 +1,13 @@
 import { extractCompanyIdentity, type CompanyIdentity } from "@/lib/reputation/companyIdentity";
+import {
+  logGoogleMatchDebug,
+  validateGoogleBusinessMatch,
+  googleValidationAffectsTrustScore,
+  googleValidationIsDisplayable,
+  type GoogleBusinessCandidate,
+  type GoogleMatchConfidence,
+  type GoogleMatchValidation
+} from "@/lib/reputation/googleMatch";
 import { MAX_TRUSTPILOT_OUTSCRAPER_ATTEMPTS } from "@/lib/reputation/reviewConfig";
 import {
   validateTrustpilotMatch,
@@ -24,9 +33,24 @@ export type TrustpilotLookupMeta = {
   errorType?: string | null;
 };
 
+export type GoogleLookupMeta = {
+  provider: "outscraper";
+  queryUsed: string | null;
+  confidence: GoogleMatchConfidence;
+  confidenceScore: number;
+  exactDomainMatch: boolean;
+  matchedDomain?: string | null;
+  matchedBusinessName?: string | null;
+  googleWebsite?: string | null;
+  validationReasons?: string[];
+  httpStatus: number | null;
+  errorType?: string | null;
+};
+
 export type OutscraperReviewSignals = {
   googleRating: number | null;
   googleReviewCount: number | null;
+  googleLookup: GoogleLookupMeta;
   trustpilotRating: number | null;
   trustpilotReviewCount: number | null;
   trustpilotLookup: TrustpilotLookupMeta;
@@ -116,6 +140,22 @@ function pickString(row: Record<string, unknown>, keys: string[]): string | null
   return null;
 }
 
+function parseGoogleBusinessCandidate(row: Record<string, unknown>): GoogleBusinessCandidate {
+  const picked = pickRatingAndCount(row);
+  return {
+    rating: picked.rating,
+    reviewCount: picked.reviewCount,
+    businessName:
+      pickString(row, ["name", "business_name", "title", "place_name", "display_name"]) ?? null,
+    website: pickString(row, ["site", "website", "company_website", "domain", "url"]) ?? null,
+    placeId: pickString(row, ["place_id", "google_id"]) ?? null
+  };
+}
+
+function hasGoogleAggregateData(candidate: GoogleBusinessCandidate): boolean {
+  return candidate.rating != null || candidate.reviewCount != null;
+}
+
 function parseTrustpilotCandidate(row: Record<string, unknown>): TrustpilotCandidate {
   const picked = pickRatingAndCount(row);
   return {
@@ -152,28 +192,168 @@ async function outscraperFetch(path: string, params: Record<string, string>): Pr
   });
 }
 
-async function fetchGoogleMapsAggregate(
-  domain: string
-): Promise<{ rating: number | null; reviewCount: number | null; httpStatus: number }> {
+function collectGoogleRows(payload: unknown): Record<string, unknown>[] {
+  const rows: Record<string, unknown>[] = [];
+  const walk = (node: unknown): void => {
+    if (!node) return;
+    if (Array.isArray(node)) {
+      for (const item of node) walk(item);
+      return;
+    }
+    if (typeof node === "object") {
+      const rec = node as Record<string, unknown>;
+      if (hasGoogleAggregateData(parseGoogleBusinessCandidate(rec))) {
+        rows.push(rec);
+      }
+      for (const value of Object.values(rec)) {
+        if (Array.isArray(value)) walk(value);
+      }
+    }
+  };
+  walk(payload);
+  return rows;
+}
+
+async function fetchGoogleMapsCandidates(
+  query: string,
+  limit: number
+): Promise<{ candidates: GoogleBusinessCandidate[]; httpStatus: number; errorType: string | null }> {
   const response = await outscraperFetch("/google-maps-reviews", {
-    query: domain,
+    query,
     reviewsLimit: "0",
-    limit: "1",
+    limit: String(Math.max(1, limit)),
     language: "en"
   });
   const httpStatus = response.status;
   if (!httpStatus || httpStatus >= 400) {
-    return { rating: null, reviewCount: null, httpStatus };
+    return {
+      candidates: [],
+      httpStatus,
+      errorType: httpStatus === 429 ? "rate_limited" : "http_error"
+    };
   }
   try {
     const json = (await response.json()) as unknown;
-    const row = firstRecord(json);
-    if (!row) return { rating: null, reviewCount: null, httpStatus };
-    const picked = pickRatingAndCount(row);
-    return { ...picked, httpStatus };
+    const rows = collectGoogleRows(json);
+    const candidates = rows
+      .map((row) => ({ ...parseGoogleBusinessCandidate(row), queryUsed: query }))
+      .filter(hasGoogleAggregateData);
+    return { candidates, httpStatus, errorType: candidates.length === 0 ? "no_match" : null };
   } catch {
-    return { rating: null, reviewCount: null, httpStatus };
+    return { candidates: [], httpStatus, errorType: "parse_error" };
   }
+}
+
+function pickBestGoogleValidation(args: {
+  candidates: GoogleBusinessCandidate[];
+  registrableDomain: string;
+  companyIdentity: CompanyIdentity;
+}): { validation: GoogleMatchValidation; candidate: GoogleBusinessCandidate | null } {
+  let best: { validation: GoogleMatchValidation; candidate: GoogleBusinessCandidate } | null = null;
+
+  for (const candidate of args.candidates) {
+    const validation = validateGoogleBusinessMatch(candidate, args.registrableDomain, args.companyIdentity);
+    if (googleValidationIsDisplayable(validation)) {
+      return { validation, candidate };
+    }
+    if (!best || validation.score > best.validation.score) {
+      best = { validation, candidate };
+    }
+  }
+
+  if (best) return best;
+  return {
+    validation: {
+      accepted: false,
+      confidence: "none",
+      score: 0,
+      exactDomainMatch: false,
+      reasons: ["no_google_candidates"]
+    },
+    candidate: null
+  };
+}
+
+async function fetchGoogleWithValidation(args: {
+  domain: string;
+  registrableDomain: string;
+  companyIdentity: CompanyIdentity;
+}): Promise<{
+  rating: number | null;
+  reviewCount: number | null;
+  meta: GoogleLookupMeta;
+}> {
+  const queries = [args.registrableDomain, `https://${args.registrableDomain}`];
+  const seen = new Set<string>();
+  let lastHttpStatus: number | null = null;
+  let lastErrorType: string | null = null;
+  let bestOverall: { validation: GoogleMatchValidation; candidate: GoogleBusinessCandidate | null } | null =
+    null;
+
+  for (const query of queries) {
+    const key = query.trim().toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+
+    const fetched = await fetchGoogleMapsCandidates(query, 3);
+    lastHttpStatus = fetched.httpStatus;
+    lastErrorType = fetched.errorType;
+    const picked = pickBestGoogleValidation({
+      candidates: fetched.candidates,
+      registrableDomain: args.registrableDomain,
+      companyIdentity: args.companyIdentity
+    });
+    if (googleValidationIsDisplayable(picked.validation)) {
+      bestOverall = picked;
+      break;
+    }
+    if (
+      !bestOverall ||
+      picked.validation.score > bestOverall.validation.score
+    ) {
+      bestOverall = picked;
+    }
+  }
+
+  const validation = bestOverall?.validation ?? {
+    accepted: false,
+    confidence: "none" as const,
+    score: 0,
+    exactDomainMatch: false,
+    reasons: ["no_validated_google_match"]
+  };
+  const candidate = bestOverall?.candidate ?? null;
+  const useInTrustScore = googleValidationAffectsTrustScore(validation);
+  const displayable = googleValidationIsDisplayable(validation);
+
+  logGoogleMatchDebug({
+    domain: args.registrableDomain,
+    businessName: validation.matchedBusinessName ?? candidate?.businessName ?? null,
+    googleWebsite: validation.googleWebsite ?? candidate?.website ?? null,
+    confidence: validation.confidence,
+    confidenceScore: validation.score,
+    exactDomainMatch: validation.exactDomainMatch,
+    usedInTrustScore: useInTrustScore,
+    reasons: validation.reasons
+  });
+
+  return {
+    rating: displayable ? candidate?.rating ?? null : null,
+    reviewCount: displayable ? candidate?.reviewCount ?? null : null,
+    meta: {
+      provider: "outscraper",
+      queryUsed: candidate?.queryUsed ?? queries[0] ?? null,
+      confidence: validation.confidence,
+      confidenceScore: validation.score,
+      exactDomainMatch: validation.exactDomainMatch,
+      matchedDomain: validation.matchedDomain ?? null,
+      matchedBusinessName: validation.matchedBusinessName ?? null,
+      googleWebsite: validation.googleWebsite ?? null,
+      validationReasons: validation.reasons,
+      httpStatus: lastHttpStatus,
+      errorType: lastErrorType
+    }
+  };
 }
 
 async function fetchTrustpilotQuery(
@@ -354,7 +534,23 @@ export async function fetchOutscraperReviewSignals(input: FetchOutscraperInput):
   const maxAttempts = input.maxTrustpilotAttempts ?? MAX_TRUSTPILOT_OUTSCRAPER_ATTEMPTS;
 
   const errors: string[] = [];
-  let google = { rating: null as number | null, reviewCount: null as number | null, httpStatus: 0 };
+  let google: {
+    rating: number | null;
+    reviewCount: number | null;
+    meta: GoogleLookupMeta;
+  } = {
+    rating: null,
+    reviewCount: null,
+    meta: {
+      provider: "outscraper",
+      queryUsed: null,
+      confidence: "none",
+      confidenceScore: 0,
+      exactDomainMatch: false,
+      httpStatus: null,
+      errorType: null
+    }
+  };
   let trustpilot: {
     rating: number | null;
     reviewCount: number | null;
@@ -374,13 +570,15 @@ export async function fetchOutscraperReviewSignals(input: FetchOutscraperInput):
     }
   };
 
-  const googleSettled = await Promise.allSettled([fetchGoogleMapsAggregate(registrableDomain)]);
-  if (googleSettled[0].status === "fulfilled") {
-    google = googleSettled[0].value;
-  } else {
-    errors.push(
-      `google: ${googleSettled[0].reason instanceof Error ? googleSettled[0].reason.message : String(googleSettled[0].reason)}`
-    );
+  try {
+    google = await fetchGoogleWithValidation({
+      domain: input.domain,
+      registrableDomain,
+      companyIdentity
+    });
+  } catch (error) {
+    errors.push(`google: ${error instanceof Error ? error.message : String(error)}`);
+    google.meta.errorType = "provider_error";
   }
 
   try {
@@ -397,20 +595,24 @@ export async function fetchOutscraperReviewSignals(input: FetchOutscraperInput):
     trustpilot.meta.errorType = "provider_error";
   }
 
-  const googleOk = google.rating != null && google.reviewCount != null;
+  const googleOk =
+    google.meta.confidence === "high" &&
+    google.meta.exactDomainMatch &&
+    (google.rating != null || google.reviewCount != null);
   const trustpilotOk =
     trustpilot.meta.confidence === "high" || trustpilot.meta.confidence === "medium"
       ? trustpilot.rating != null || trustpilot.reviewCount != null
       : false;
 
   return {
-    googleRating: google.rating,
-    googleReviewCount: google.reviewCount,
+    googleRating: googleOk ? google.rating : null,
+    googleReviewCount: googleOk ? google.reviewCount : null,
+    googleLookup: google.meta,
     trustpilotRating: trustpilotOk ? trustpilot.rating : null,
     trustpilotReviewCount: trustpilotOk ? trustpilot.reviewCount : null,
     trustpilotLookup: trustpilot.meta,
     ok: googleOk || trustpilotOk,
-    httpStatusGoogle: google.httpStatus || null,
+    httpStatusGoogle: google.meta.httpStatus,
     httpStatusTrustpilot: trustpilot.meta.httpStatus,
     error: errors.length > 0 ? errors.join("; ") : null
   };

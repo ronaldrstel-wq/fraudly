@@ -18,6 +18,15 @@ describe("mergeReviewSignalsWithEnrichment", () => {
     const enrichment = {
       googleRating: 4.5,
       googleReviewCount: 250,
+      googleMatchConfidence: "high",
+      googleLookup: {
+        provider: "outscraper",
+        queryUsed: "example.com",
+        confidence: "high",
+        confidenceScore: 1,
+        exactDomainMatch: true,
+        httpStatus: 200
+      },
       trustpilotRating: null,
       trustpilotReviewCount: null,
       trustpilotMatchConfidence: "none"
@@ -44,6 +53,30 @@ describe("mergeReviewSignalsWithEnrichment", () => {
     expect(merged.trustpilotFound).toBe(true);
     expect(merged.trustpilotRating).toBe(4.1);
     expect(merged.trustpilotMatchNote).toContain("moderate confidence");
+  });
+
+  it("does not merge Google enrichment without exact domain validation", () => {
+    const enrichment = {
+      googleRating: 2,
+      googleReviewCount: 30,
+      googleMatchConfidence: "low",
+      googleLookup: {
+        provider: "outscraper",
+        queryUsed: "letsfoil.nl",
+        confidence: "low",
+        confidenceScore: 0.15,
+        exactDomainMatch: false,
+        httpStatus: 200
+      },
+      trustpilotRating: null,
+      trustpilotReviewCount: null,
+      trustpilotMatchConfidence: "none"
+    } as ReputationEnrichment;
+
+    const merged = mergeReviewSignalsWithEnrichment(baseSignals, enrichment);
+    expect(merged.googleFound).toBe(false);
+    expect(merged.googleRating).toBeUndefined();
+    expect(merged.googleMatchConfidence).toBe("low");
   });
 
   it("does not merge low-confidence Trustpilot enrichment", () => {

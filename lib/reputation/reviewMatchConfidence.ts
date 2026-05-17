@@ -31,38 +31,42 @@ export type ResolvedTrustpilotReview = {
   enrichmentConfidence?: TrustpilotMatchConfidence | "none";
 };
 
-function resolveGoogleRatingPair(
-  rating: number | null | undefined,
-  reviewCount: number | null | undefined
-): { confidence: ReviewMatchConfidence; rating: number | null; reviewCount: number | null; displayable: boolean } {
-  const sanitized = sanitizeReviewFields(rating, reviewCount);
-  const r = sanitized.rating;
-  const c = sanitized.reviewCount;
-
-  if (r != null && c != null) {
-    return {
-      confidence: "high",
-      rating: r,
-      reviewCount: c,
-      displayable: c >= MIN_REVIEWS_FOR_TRUST_SCORE
-    };
-  }
-  if (r != null && c == null) {
-    return { confidence: "low", rating: r, reviewCount: null, displayable: false };
-  }
-  if (r == null && c != null) {
-    return {
-      confidence: "high",
-      rating: null,
-      reviewCount: c,
-      displayable: c >= MIN_REVIEWS_FOR_TRUST_SCORE
-    };
-  }
-  return { confidence: "none", rating: null, reviewCount: null, displayable: false };
+function googleMatchConfidenceToLegacy(
+  conf: ReviewSignals["googleMatchConfidence"]
+): ReviewMatchConfidence {
+  if (conf === "high") return "high";
+  if (conf === "medium" || conf === "low") return "low";
+  return "none";
 }
 
 export function resolveGoogleReviewMatch(signals: ReviewSignals): ResolvedGoogleReview {
-  return resolveGoogleRatingPair(signals.googleRating, signals.googleReviewCount);
+  const sanitized = sanitizeReviewFields(signals.googleRating, signals.googleReviewCount);
+  const enrichmentConf = signals.googleMatchConfidence ?? "none";
+  const exactDomain = signals.googleExactDomainMatch === true;
+  const legacyConf = googleMatchConfidenceToLegacy(enrichmentConf);
+
+  if (enrichmentConf === "none" && sanitized.rating == null && sanitized.reviewCount == null) {
+    return {
+      confidence: "none",
+      rating: null,
+      reviewCount: null,
+      displayable: false
+    };
+  }
+
+  const displayable =
+    enrichmentConf === "high" &&
+    exactDomain &&
+    sanitized.rating != null &&
+    sanitized.reviewCount != null &&
+    sanitized.reviewCount >= MIN_REVIEWS_FOR_TRUST_SCORE;
+
+  return {
+    confidence: displayable ? "high" : legacyConf,
+    rating: displayable ? sanitized.rating : null,
+    reviewCount: displayable ? sanitized.reviewCount : null,
+    displayable
+  };
 }
 
 function enrichmentAllowsTrustpilotDisplay(

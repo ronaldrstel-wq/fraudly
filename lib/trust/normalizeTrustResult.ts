@@ -86,7 +86,8 @@ function resolveReviewChannel(
     reputationLabel: presentation.reputationLabel,
     scoreImpactLabel: presentation.scoreImpactLabel,
     showMetrics: presentation.showMetrics,
-    confidenceScore: presentation.confidenceScore
+    confidenceScore: presentation.confidenceScore,
+    bodyMessage: presentation.bodyMessage
   };
 }
 
@@ -111,7 +112,8 @@ function resolveTrustpilotChannel(
     reputationLabel: presentation.reputationLabel,
     scoreImpactLabel: presentation.scoreImpactLabel,
     showMetrics: presentation.showMetrics,
-    confidenceScore: presentation.confidenceScore
+    confidenceScore: presentation.confidenceScore,
+    bodyMessage: presentation.bodyMessage
   };
 }
 
@@ -255,7 +257,8 @@ export function normalizeTrustResult(
       trustpilot,
       neutralFallback: PUBLIC_REVIEW_NOT_MATCHED_COPY,
       optionalUnavailableNote,
-      trustpilotMatchNote: reviewSignals.trustpilotMatchNote ?? null
+      trustpilotMatchNote: reviewSignals.trustpilotMatchNote ?? null,
+      googleMatchNote: reviewSignals.googleMatchNote ?? null
     },
     summary,
     helpfulSignals: consumerSignals.helpful,

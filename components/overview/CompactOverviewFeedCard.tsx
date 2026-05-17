@@ -2,34 +2,86 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import type { OverviewCardModel } from "@/lib/overviewCardPresentation";
-import { getOverviewCardChrome, type OverviewCardChrome } from "@/lib/scoring/trust-bands";
+import { getOverviewFeedCardVisual, type OverviewFeedCardVisual } from "@/lib/scoring/trust-bands";
 
-/** Thick left status rail — primary scanability cue for trust state. */
-const ACCENT_BAR_POSITION =
-  "before:absolute before:inset-y-2.5 before:left-0 before:z-10 before:w-[7px] before:rounded-r-full";
+const CARD_PAD = "px-4 py-4 sm:px-5 sm:py-5 md:min-h-[148px]";
 
-const FEED_MOTION = "transition-all duration-200 ease-out";
-const FEED_CTA_BASE = `inline-flex items-center gap-1.5 text-sm ${FEED_MOTION}`;
+function FeedVerdictIcon({ visual }: { visual: OverviewFeedCardVisual }) {
+  const ink = visual.iconInk;
+  const svgProps = { className: `h-9 w-9 sm:h-10 sm:w-10 ${ink}`, fill: "none", viewBox: "0 0 24 24", "aria-hidden": true as const };
+
+  if (visual.iconKind === "trusted") {
+    return (
+      <svg {...svgProps}>
+        <path
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M12 3 4 7v5c0 4.42 3.28 8.56 8 9 4.72-.44 8-4.58 8-9V7l-8-4Z"
+        />
+        <path stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" d="m9 12 2 2 4-4" />
+      </svg>
+    );
+  }
+
+  if (visual.iconKind === "caution") {
+    return (
+      <svg {...svgProps}>
+        <path
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M12 9v4m0 4h.01M10.29 3.86 2.82 17a1 1 0 0 0 .86 1.5h16.64a1 1 0 0 0 .86-1.5L13.71 3.86a1 1 0 0 0-1.72 0Z"
+        />
+      </svg>
+    );
+  }
+
+  if (visual.iconKind === "danger") {
+    return (
+      <svg {...svgProps}>
+        <path
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M12 9v4m0 4h.01M10.29 3.86 2.82 17a1 1 0 0 0 .86 1.5h16.64a1 1 0 0 0 .86-1.5L13.71 3.86a1 1 0 0 0-1.72 0Z"
+        />
+        <path stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" d="M4 4 20 20" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...svgProps}>
+      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.75" />
+      <path stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" d="m20 20-3.5-3.5" />
+      <path stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" d="M11 8v6M8 11h6" />
+    </svg>
+  );
+}
 
 function FeedViewResultCta({
   viewLabel,
-  chrome,
+  visual,
   href,
   headlineId,
   decorative = false
 }: {
   viewLabel: string;
-  chrome: OverviewCardChrome;
+  visual: OverviewFeedCardVisual;
   href?: string;
   headlineId?: string;
   decorative?: boolean;
 }) {
   const label = viewLabel.replace("→", "").trim();
-  const cls = `${FEED_CTA_BASE} ${chrome.metaCtaButton} ${chrome.metaCtaButtonHover} ${chrome.metaCta} ${chrome.metaCtaHover}`;
+  const cls = `fraudly-focus ${visual.cta} ${visual.ctaHover} whitespace-nowrap`;
   const content = (
     <>
       {label}
-      <span className={`${FEED_MOTION} group-hover:translate-x-1`} aria-hidden>
+      <span className="transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden>
         →
       </span>
     </>
@@ -44,21 +96,24 @@ function FeedViewResultCta({
   }
 
   return (
-    <Link href={href} className={`fraudly-focus ${cls}`} aria-labelledby={headlineId}>
+    <Link href={href} className={cls} aria-labelledby={headlineId}>
       {content}
     </Link>
   );
 }
 
-function TrustScoreBadge({ score, chrome }: { score: number; chrome: OverviewCardChrome }) {
+function TrustScoreBlock({ score, visual }: { score: number; visual: OverviewFeedCardVisual }) {
   return (
-    <span
-      aria-label={`${EN_MESSAGES.scanResult.trustScoreLabel}: ${score} out of 100`}
-      className={`inline-flex h-11 min-w-[7.25rem] shrink-0 items-center justify-center rounded-2xl px-3 py-1 text-[15px] font-bold tabular-nums tracking-tight md:h-10 md:min-w-[6.75rem] md:text-[14px] ${chrome.scorePill}`}
-    >
-      {score}
-      <span className={`ml-0.5 text-[12px] font-semibold md:text-[11px] ${chrome.scorePillDim}`}> / 100</span>
-    </span>
+    <div className="flex flex-col items-center gap-1">
+      <div
+        className={visual.scorePill}
+        aria-label={`${EN_MESSAGES.latestChecks.trustScorePillLabel}: ${score} out of 100`}
+      >
+        <span>{score}</span>
+        <span className={visual.scoreSlash}>/100</span>
+      </div>
+      <span className="text-[11px] font-medium text-slate-500">{EN_MESSAGES.latestChecks.trustScorePillLabel}</span>
+    </div>
   );
 }
 
@@ -77,106 +132,82 @@ export type CompactOverviewFeedBaseProps = {
   ariaLabel?: string;
 };
 
-function FeedLeading(props: {
+function FeedCardBody(props: {
   m: OverviewCardModel;
-  chrome: OverviewCardChrome;
+  visual: OverviewFeedCardVisual;
   headlineId: string;
-  entityBadge?: string;
   domainLine: string;
   domainFullTitle: string;
-}) {
-  const { m, chrome, headlineId, entityBadge, domainLine, domainFullTitle } = props;
-
-  return (
-    <div className="flex min-w-0 flex-1 gap-3.5 md:gap-3">
-      <span
-        className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-[20px] leading-none md:h-10 md:w-10 md:text-[18px] ${chrome.iconWrap} ${chrome.icon}`}
-        aria-hidden
-      >
-        {m.glyph}
-      </span>
-      <div className="min-w-0 flex-1 space-y-1">
-        {entityBadge ? (
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">{entityBadge}</p>
-        ) : null}
-        <p
-          id={headlineId}
-          className={`text-balance text-[19px] font-bold leading-tight tracking-tight md:text-[18px] ${chrome.headlineText}`}
-        >
-          {m.headline}
-        </p>
-        <p className="break-all text-[15px] font-semibold leading-snug text-slate-950 md:text-[14.5px]" title={domainFullTitle}>
-          {domainLine || "—"}
-        </p>
-        <p className="text-[13px] leading-snug text-slate-500 md:text-[12.5px]">{m.oneLiner}</p>
-      </div>
-    </div>
-  );
-}
-
-function MobileMetaStripe(props: {
+  entityBadge?: string;
   timeIso: string;
   timeRelative: string;
   timeTitle: string;
-  score: number;
-  chrome: OverviewCardChrome;
-  children: ReactNode;
+  viewLabel: string;
+  href?: string;
+  decorativeCta?: boolean;
+  trailingActions?: ReactNode;
 }) {
-  const { timeIso, timeRelative, timeTitle, score, chrome, children } = props;
+  const {
+    m,
+    visual,
+    headlineId,
+    domainLine,
+    domainFullTitle,
+    entityBadge,
+    timeIso,
+    timeRelative,
+    timeTitle,
+    viewLabel,
+    href,
+    decorativeCta,
+    trailingActions
+  } = props;
+
+  const domainLabel =
+    entityBadge ?? EN_MESSAGES.latestChecks.entityLabels.domain.toUpperCase();
 
   return (
-    <div className={`flex min-w-0 flex-col gap-2.5 border-t-2 pt-3.5 md:hidden ${chrome.mobileDivider}`}>
-      <div className="flex min-w-0 items-center justify-between gap-3">
-        <time className="text-[11px] font-medium tabular-nums text-slate-400" dateTime={timeIso} title={timeTitle}>
+    <div className={`relative flex flex-col gap-4 md:flex-row md:items-center md:gap-5 ${CARD_PAD}`}>
+      <div className="flex min-w-0 flex-1 items-start gap-4 sm:gap-5">
+        <div className={visual.iconCircle}>
+          <FeedVerdictIcon visual={visual} />
+        </div>
+
+        <div className="min-w-0 flex-1 space-y-1 sm:space-y-1.5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">{domainLabel}</p>
+          <h2 id={headlineId} className={`text-balance ${visual.headline}`}>
+            {m.headline}
+          </h2>
+          <p className="line-clamp-2 text-sm leading-snug text-slate-600">{m.oneLiner}</p>
+          <p className="break-all text-base font-bold leading-snug text-slate-900" title={domainFullTitle}>
+            {domainLine || "—"}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex shrink-0 flex-col gap-3 md:w-auto md:min-w-[13.5rem] md:items-end md:self-stretch md:justify-between md:py-0.5">
+        <time
+          className="text-xs font-medium tabular-nums text-slate-500 md:text-right"
+          dateTime={timeIso}
+          title={timeTitle}
+        >
           {timeRelative}
         </time>
-        <TrustScoreBadge score={score} chrome={chrome} />
-      </div>
-      {children}
-    </div>
-  );
-}
 
-function OverviewCardShell({
-  chrome,
-  className,
-  children
-}: {
-  chrome: OverviewCardChrome;
-  className?: string;
-  children: ReactNode;
-}) {
-  return (
-    <>
-      <span
-        aria-hidden
-        className={`pointer-events-none absolute -left-6 top-1/2 h-32 w-32 -translate-y-1/2 rounded-full bg-gradient-to-br blur-3xl md:h-28 md:w-28 ${chrome.surfaceGlow}`}
-      />
-      <div className={`relative flex flex-col gap-3.5 md:flex-row md:items-center md:justify-between md:gap-5 ${className ?? ""}`}>
-        {children}
+        <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end md:flex-nowrap md:gap-4">
+          <TrustScoreBlock score={m.trustScore} visual={visual} />
+          <div className="flex flex-wrap items-center gap-2">
+            <FeedViewResultCta
+              viewLabel={viewLabel}
+              visual={visual}
+              href={href}
+              headlineId={headlineId}
+              decorative={decorativeCta}
+            />
+            {trailingActions}
+          </div>
+        </div>
       </div>
-    </>
-  );
-}
-
-function DesktopMetaStripe(props: {
-  timeIso: string;
-  timeRelative: string;
-  timeTitle: string;
-  score: number;
-  chrome: OverviewCardChrome;
-  children: ReactNode;
-}) {
-  const { timeIso, timeRelative, timeTitle, score, chrome, children } = props;
-  return (
-    <div className="hidden w-[min(12rem,100%)] min-w-[10rem] shrink-0 flex-col items-stretch gap-2 text-right md:flex">
-      <time className="text-[11px] font-medium tabular-nums text-slate-400" dateTime={timeIso} title={timeTitle}>
-        {timeRelative}
-      </time>
-      <div className="flex justify-end">
-        <TrustScoreBadge score={score} chrome={chrome} />
-      </div>
-      {children}
     </div>
   );
 }
@@ -199,35 +230,24 @@ export function CompactOverviewFeedLinkCard(props: CompactOverviewFeedBaseProps 
     prefetch = true
   } = props;
 
-  const chrome = getOverviewCardChrome(m.trustScore);
-  const shell = `fraudly-focus group relative block ${FEED_MOTION} ${ACCENT_BAR_POSITION} ${chrome.accentBar} ${chrome.cardShell} ${chrome.cardShellHover}`;
-
-  const ctaPresentation = <FeedViewResultCta viewLabel={viewLabel} chrome={chrome} decorative />;
+  const visual = getOverviewFeedCardVisual(m.trustScore);
+  const shell = `fraudly-focus group block ${visual.stripe} ${visual.card} ${visual.cardHover} ${bgClassName ?? ""}`;
 
   return (
-    <Link
-      href={href}
-      prefetch={prefetch}
-      className={`${shell} ${bgClassName ?? ""}`}
-      aria-labelledby={headlineId}
-      aria-label={ariaLabel}
-    >
-      <OverviewCardShell chrome={chrome}>
-        <FeedLeading
-          m={m}
-          chrome={chrome}
-          headlineId={headlineId}
-          entityBadge={entityBadge}
-          domainLine={domainLine}
-          domainFullTitle={domainFullTitle}
-        />
-        <DesktopMetaStripe timeIso={timeIso} timeRelative={timeRelative} timeTitle={timeTitle} score={m.trustScore} chrome={chrome}>
-          <div className="flex min-h-[2.75rem] items-end justify-end">{ctaPresentation}</div>
-        </DesktopMetaStripe>
-        <MobileMetaStripe timeIso={timeIso} timeRelative={timeRelative} timeTitle={timeTitle} score={m.trustScore} chrome={chrome}>
-          <div className="flex min-h-11 items-center">{ctaPresentation}</div>
-        </MobileMetaStripe>
-      </OverviewCardShell>
+    <Link href={href} prefetch={prefetch} className={shell} aria-labelledby={headlineId} aria-label={ariaLabel}>
+      <FeedCardBody
+        m={m}
+        visual={visual}
+        headlineId={headlineId}
+        domainLine={domainLine}
+        domainFullTitle={domainFullTitle}
+        entityBadge={entityBadge}
+        timeIso={timeIso}
+        timeRelative={timeRelative}
+        timeTitle={timeTitle}
+        viewLabel={viewLabel}
+        decorativeCta
+      />
     </Link>
   );
 }
@@ -248,37 +268,24 @@ export function CompactOverviewFeedArticleCard(props: CompactOverviewFeedBasePro
     entityBadge
   } = props;
 
-  const chrome = getOverviewCardChrome(m.trustScore);
-  const viewCta = <FeedViewResultCta viewLabel={viewLabel} chrome={chrome} href={href} headlineId={headlineId} />;
+  const visual = getOverviewFeedCardVisual(m.trustScore);
 
   return (
-    <article
-      className={`group relative ${FEED_MOTION} ${ACCENT_BAR_POSITION} ${chrome.accentBar} ${chrome.cardShell} ${chrome.cardShellHover}`}
-    >
-      <OverviewCardShell chrome={chrome}>
-        <FeedLeading
-          m={m}
-          chrome={chrome}
-          headlineId={headlineId}
-          entityBadge={entityBadge}
-          domainLine={domainLine}
-          domainFullTitle={domainFullTitle}
-        />
-        <DesktopMetaStripe timeIso={timeIso} timeRelative={timeRelative} timeTitle={timeTitle} score={m.trustScore} chrome={chrome}>
-          <div className="flex min-h-[2.75rem] flex-col items-end justify-end gap-2">
-            {viewCta}
-            {trailingActions ? (
-              <div className="flex w-full flex-wrap justify-end gap-2">{trailingActions}</div>
-            ) : null}
-          </div>
-        </DesktopMetaStripe>
-        <MobileMetaStripe timeIso={timeIso} timeRelative={timeRelative} timeTitle={timeTitle} score={m.trustScore} chrome={chrome}>
-          <div className="flex min-h-11 flex-wrap items-center gap-2">
-            {viewCta}
-            {trailingActions}
-          </div>
-        </MobileMetaStripe>
-      </OverviewCardShell>
+    <article className={`group ${visual.stripe} ${visual.card} ${visual.cardHover}`}>
+      <FeedCardBody
+        m={m}
+        visual={visual}
+        headlineId={headlineId}
+        domainLine={domainLine}
+        domainFullTitle={domainFullTitle}
+        entityBadge={entityBadge}
+        timeIso={timeIso}
+        timeRelative={timeRelative}
+        timeTitle={timeTitle}
+        viewLabel={viewLabel}
+        href={href}
+        trailingActions={trailingActions}
+      />
     </article>
   );
 }

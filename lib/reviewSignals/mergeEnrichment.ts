@@ -1,11 +1,17 @@
 import type { ReputationEnrichment } from "@/lib/outscraper/reputation";
 import type { ReviewSignals } from "@/lib/reviewSignals";
-import { TRUSTPILOT_MEDIUM_CONFIDENCE_UI_NOTE } from "@/lib/reputation/reviewConfig";
+import {
+  GOOGLE_POSSIBLE_MATCH_UI_NOTE,
+  GOOGLE_UNVERIFIED_UI_NOTE,
+  TRUSTPILOT_MEDIUM_CONFIDENCE_UI_NOTE
+} from "@/lib/reputation/reviewConfig";
+import { googleValidationIsDisplayable } from "@/lib/reputation/googleMatch";
 import {
   resolveGoogleReviewMatch,
   resolveTrustpilotReviewMatch
 } from "@/lib/reputation/reviewMatchConfidence";
 import { sanitizeReviewFields } from "@/lib/reputation/reviewRatingNormalize";
+import type { GoogleMatchConfidence } from "@/lib/reputation/googleMatch";
 import type { TrustpilotMatchConfidence } from "@/lib/reputation/trustpilotMatch";
 
 function preferEnrichmentRating(
@@ -30,9 +36,44 @@ function trustpilotConfidenceFromEnrichment(
   return enrichment.trustpilotMatchConfidence ?? enrichment.trustpilotLookup?.confidence ?? "none";
 }
 
+function googleConfidenceFromEnrichment(enrichment: ReputationEnrichment): GoogleMatchConfidence | "none" {
+  return enrichment.googleMatchConfidence ?? enrichment.googleLookup?.confidence ?? "none";
+}
+
+function googleFieldsFromEnrichment(enrichment: ReputationEnrichment): Pick<
+  ReviewSignals,
+  | "googleMatchConfidence"
+  | "googleMatchScore"
+  | "googleExactDomainMatch"
+  | "googleMatchedBusinessName"
+  | "googleMatchedWebsite"
+  | "googleMatchNote"
+> {
+  const lookup = enrichment.googleLookup;
+  const confidence = googleConfidenceFromEnrichment(enrichment);
+  const exactDomainMatch = lookup?.exactDomainMatch === true;
+  const displayable = confidence === "high" && exactDomainMatch;
+
+  let googleMatchNote: string | undefined;
+  if (confidence === "medium" || (confidence === "low" && lookup?.matchedBusinessName)) {
+    googleMatchNote = GOOGLE_POSSIBLE_MATCH_UI_NOTE;
+  } else if (confidence === "low" || confidence === "none") {
+    googleMatchNote = GOOGLE_UNVERIFIED_UI_NOTE;
+  }
+
+  return {
+    googleMatchConfidence: confidence,
+    googleMatchScore: lookup?.confidenceScore,
+    googleExactDomainMatch: exactDomainMatch,
+    googleMatchedBusinessName: lookup?.matchedBusinessName ?? undefined,
+    googleMatchedWebsite: lookup?.googleWebsite ?? undefined,
+    googleMatchNote: displayable ? undefined : googleMatchNote
+  };
+}
+
 /**
  * Merges paid/public-intel enrichment into scan-time review signals.
- * Trustpilot values are only merged when Outscraper validation is high or medium.
+ * Google and Trustpilot values are only merged when entity validation passes display gates.
  */
 export function mergeReviewSignalsWithEnrichment(
   base: ReviewSignals,
@@ -40,11 +81,19 @@ export function mergeReviewSignalsWithEnrichment(
 ): ReviewSignals {
   if (!enrichment) return base;
 
-  const googleRating = preferEnrichmentRating(base.googleRating, enrichment.googleRating ?? enrichment.google?.rating);
-  const googleReviewCount = preferEnrichmentCount(
-    base.googleReviewCount,
-    enrichment.googleReviewCount ?? enrichment.google?.reviewCount
-  );
+  const googleMeta = googleFieldsFromEnrichment(enrichment);
+  const googleDisplayable =
+    googleMeta.googleMatchConfidence === "high" && googleMeta.googleExactDomainMatch === true;
+
+  const googleRating = googleDisplayable
+    ? preferEnrichmentRating(base.googleRating, enrichment.googleRating ?? enrichment.google?.rating)
+    : base.googleRating;
+  const googleReviewCount = googleDisplayable
+    ? preferEnrichmentCount(
+        base.googleReviewCount,
+        enrichment.googleReviewCount ?? enrichment.google?.reviewCount
+      )
+    : base.googleReviewCount;
 
   const tpConfidence = trustpilotConfidenceFromEnrichment(enrichment);
   const trustpilotAllowed = tpConfidence === "high" || tpConfidence === "medium";
@@ -65,6 +114,7 @@ export function mergeReviewSignalsWithEnrichment(
     googleReviewCount,
     trustpilotRating,
     trustpilotReviewCount,
+    ...googleMeta,
     trustpilotMatchConfidence: trustpilotAllowed ? tpConfidence : base.trustpilotMatchConfidence ?? "none",
     trustpilotMatchNote:
       tpConfidence === "medium"
@@ -96,7 +146,14 @@ export function enrichmentHasDisplayableReviews(enrichment: ReputationEnrichment
   if (!enrichment) return false;
   const google = sanitizeReviewFields(enrichment.googleRating, enrichment.googleReviewCount);
   const trustpilot = sanitizeReviewFields(enrichment.trustpilotRating, enrichment.trustpilotReviewCount);
-  const googleOk = google.rating != null && google.reviewCount != null;
+  const googleOk =
+    googleValidationIsDisplayable({
+      accepted: true,
+      confidence: enrichment.googleLookup?.confidence ?? "none",
+      score: enrichment.googleLookup?.confidenceScore ?? 0,
+      exactDomainMatch: enrichment.googleLookup?.exactDomainMatch === true,
+      reasons: []
+    }) && google.rating != null && google.reviewCount != null;
   const tpConf = trustpilotConfidenceFromEnrichment(enrichment);
   const trustpilotOk =
     (tpConf === "high" || tpConf === "medium") && (trustpilot.rating != null || trustpilot.reviewCount != null);

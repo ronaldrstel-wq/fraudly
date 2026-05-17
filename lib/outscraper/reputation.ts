@@ -1,6 +1,11 @@
 import { normalizeDomain } from "@/lib/cache";
 import { db } from "@/lib/db";
-import { fetchOutscraperReviewSignals, type TrustpilotLookupMeta } from "@/lib/outscraper/api";
+import {
+  fetchOutscraperReviewSignals,
+  type GoogleLookupMeta,
+  type TrustpilotLookupMeta
+} from "@/lib/outscraper/api";
+import type { GoogleMatchConfidence } from "@/lib/reputation/googleMatch";
 import type { CompanyIdentity } from "@/lib/reputation/companyIdentity";
 import { MAX_TRUSTPILOT_OUTSCRAPER_ATTEMPTS } from "@/lib/reputation/reviewConfig";
 import type { TrustpilotMatchConfidence } from "@/lib/reputation/trustpilotMatch";
@@ -45,6 +50,8 @@ export interface ReputationEnrichment {
   google?: { rating: number | null; reviewCount: number | null };
   trustpilotLookup?: TrustpilotLookupMeta;
   trustpilotMatchConfidence?: TrustpilotMatchConfidence | "none";
+  googleLookup?: GoogleLookupMeta;
+  googleMatchConfidence?: GoogleMatchConfidence | "none";
   publicSignals?: {
     redditWarnings: number;
     domainAgeDays: number | null;
@@ -215,7 +222,12 @@ function resolveCacheTtlMs(value: ReputationEnrichment): number {
     return PROVIDER_ERROR_TTL_MS;
   }
   const tpConfidence = value.trustpilotLookup?.confidence ?? value.trustpilotMatchConfidence ?? "none";
-  const hasGoogle = value.googleRating != null && value.googleReviewCount != null;
+  const googleConf = value.googleMatchConfidence ?? value.googleLookup?.confidence ?? "none";
+  const hasGoogle =
+    googleConf === "high" &&
+    value.googleLookup?.exactDomainMatch === true &&
+    value.googleRating != null &&
+    value.googleReviewCount != null;
   const hasTrustpilot = tpConfidence === "high" || tpConfidence === "medium";
   if (hasGoogle || hasTrustpilot) return SUCCESS_TTL_MS;
   if (tpConfidence === "low") return LOW_CONFIDENCE_TTL_MS;
@@ -369,6 +381,8 @@ export async function getReputationEnrichment(input: {
     const sourceStatus = { ...intel.signals.sourceStatus };
     let trustpilotLookup: TrustpilotLookupMeta | undefined;
     let trustpilotMatchConfidence: TrustpilotMatchConfidence | "none" = "none";
+    let googleLookup: GoogleLookupMeta | undefined;
+    let googleMatchConfidence: GoogleMatchConfidence | "none" = "none";
 
     if (outscraperEnabled && apiKeyPresent) {
       sourceStatus.outscraper.attempted = true;
@@ -390,6 +404,8 @@ export async function getReputationEnrichment(input: {
         if (outscraper.trustpilotReviewCount != null) trustpilotReviewCount = outscraper.trustpilotReviewCount;
         trustpilotLookup = outscraper.trustpilotLookup;
         trustpilotMatchConfidence = outscraper.trustpilotLookup.confidence;
+        googleLookup = outscraper.googleLookup;
+        googleMatchConfidence = outscraper.googleLookup.confidence;
         if (outscraper.error) {
           intel.signals.warnings.push(`outscraper: ${outscraper.error}`);
         }
@@ -407,7 +423,11 @@ export async function getReputationEnrichment(input: {
       trustpilotMatchConfidence === "high" || trustpilotMatchConfidence === "medium"
         ? trustpilotRating != null || trustpilotReviewCount != null
         : false;
-    const googleFound = googleRating != null && googleReviewCount != null;
+    const googleFound =
+      googleMatchConfidence === "high" &&
+      googleLookup?.exactDomainMatch === true &&
+      googleRating != null &&
+      googleReviewCount != null;
     const providerState: ReputationEnrichment["providerState"] = trustpilotFound || googleFound ? "found" : "no_match";
     const providerReason = providerState === "found" ? "Review data found." : "No matching review profile found.";
     const out: ReputationEnrichment = {
@@ -445,6 +465,8 @@ export async function getReputationEnrichment(input: {
       },
       trustpilotLookup,
       trustpilotMatchConfidence,
+      googleLookup,
+      googleMatchConfidence,
       publicSignals: {
         redditWarnings: intel.signals.redditWarnings,
         domainAgeDays: intel.signals.domainAgeDays,

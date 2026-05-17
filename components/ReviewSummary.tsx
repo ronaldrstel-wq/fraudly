@@ -23,7 +23,8 @@ function channelFromPresentation(
     reputationLabel: presentation.reputationLabel,
     scoreImpactLabel: presentation.scoreImpactLabel,
     showMetrics: presentation.showMetrics,
-    confidenceScore: presentation.confidenceScore
+    confidenceScore: presentation.confidenceScore,
+    bodyMessage: presentation.bodyMessage
   };
 }
 
@@ -52,7 +53,11 @@ export function ReviewSummary({ enrichment }: { enrichment: ReputationEnrichment
   return (
     <div className="space-y-2.5">
       <PublicReviewChannelCard source="Trustpilot" channel={trustpilot} />
-      <PublicReviewChannelCard source="Google Reviews" channel={google} />
+      <PublicReviewChannelCard
+        source="Google Reviews"
+        channel={google}
+        matchNote={merged.googleMatchNote}
+      />
       <p className="pt-0.5 text-[11px] text-slate-500">External reviews are supporting signals only.</p>
     </div>
   );
