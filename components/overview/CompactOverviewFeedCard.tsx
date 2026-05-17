@@ -4,10 +4,12 @@ import { EN_MESSAGES } from "@/lib/messages.en";
 import type { OverviewCardModel } from "@/lib/overviewCardPresentation";
 import { getOverviewCardChrome, type OverviewCardChrome } from "@/lib/scoring/trust-bands";
 
+/** Thick left status rail — primary scanability cue for trust state. */
 const ACCENT_BAR_POSITION =
-  "before:absolute before:inset-y-3 before:left-0 before:w-1 before:rounded-r md:before:inset-y-2";
+  "before:absolute before:inset-y-2.5 before:left-0 before:z-10 before:w-[7px] before:rounded-r-full";
 
-const FEED_CTA_BASE = "inline-flex items-center gap-1 text-sm transition-colors duration-200";
+const FEED_MOTION = "transition-all duration-200 ease-out";
+const FEED_CTA_BASE = `inline-flex items-center gap-1.5 text-sm ${FEED_MOTION}`;
 
 function FeedViewResultCta({
   viewLabel,
@@ -23,11 +25,11 @@ function FeedViewResultCta({
   decorative?: boolean;
 }) {
   const label = viewLabel.replace("→", "").trim();
-  const cls = `${FEED_CTA_BASE} ${chrome.metaCta} ${chrome.metaCtaHover}`;
+  const cls = `${FEED_CTA_BASE} ${chrome.metaCtaButton} ${chrome.metaCtaButtonHover} ${chrome.metaCta} ${chrome.metaCtaHover}`;
   const content = (
     <>
       {label}
-      <span className="transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden>
+      <span className={`${FEED_MOTION} group-hover:translate-x-1`} aria-hidden>
         →
       </span>
     </>
@@ -52,10 +54,10 @@ function TrustScoreBadge({ score, chrome }: { score: number; chrome: OverviewCar
   return (
     <span
       aria-label={`${EN_MESSAGES.scanResult.trustScoreLabel}: ${score} out of 100`}
-      className={`inline-flex h-8 w-[108px] shrink-0 items-center justify-center rounded-xl border px-2 py-0.5 text-[12px] font-semibold tabular-nums transition-colors duration-200 md:h-7 md:w-[100px] md:text-[11px] ${chrome.scorePill}`}
+      className={`inline-flex h-11 min-w-[7.25rem] shrink-0 items-center justify-center rounded-2xl px-3 py-1 text-[15px] font-bold tabular-nums tracking-tight md:h-10 md:min-w-[6.75rem] md:text-[14px] ${chrome.scorePill}`}
     >
       {score}
-      <span className={`font-medium ${chrome.scorePillDim}`}> / 100</span>
+      <span className={`ml-0.5 text-[12px] font-semibold md:text-[11px] ${chrome.scorePillDim}`}> / 100</span>
     </span>
   );
 }
@@ -86,27 +88,27 @@ function FeedLeading(props: {
   const { m, chrome, headlineId, entityBadge, domainLine, domainFullTitle } = props;
 
   return (
-    <div className="flex min-w-0 flex-1 gap-3 md:gap-2.5">
+    <div className="flex min-w-0 flex-1 gap-3.5 md:gap-3">
       <span
-        className={`mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border text-[18px] leading-none md:mt-0 md:h-9 md:w-9 md:text-[16px] ${chrome.iconWrap} ${chrome.icon}`}
+        className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-[20px] leading-none md:h-10 md:w-10 md:text-[18px] ${chrome.iconWrap} ${chrome.icon}`}
         aria-hidden
       >
         {m.glyph}
       </span>
-      <div className="min-w-0 flex-1 space-y-1 md:space-y-0.5">
+      <div className="min-w-0 flex-1 space-y-1">
         {entityBadge ? (
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">{entityBadge}</p>
         ) : null}
         <p
           id={headlineId}
-          className={`text-balance text-[17px] font-semibold leading-tight tracking-tight md:text-[17px] md:leading-snug ${chrome.headlineText}`}
+          className={`text-balance text-[19px] font-bold leading-tight tracking-tight md:text-[18px] ${chrome.headlineText}`}
         >
           {m.headline}
         </p>
-        <p className="text-[13px] font-medium leading-snug text-slate-600 md:text-[12.5px] md:leading-snug">{m.oneLiner}</p>
-        <p className="break-all pt-0.5 text-[14px] font-medium text-slate-900 md:pt-0 md:text-[14px]" title={domainFullTitle}>
+        <p className="break-all text-[15px] font-semibold leading-snug text-slate-950 md:text-[14.5px]" title={domainFullTitle}>
           {domainLine || "—"}
         </p>
+        <p className="text-[13px] leading-snug text-slate-500 md:text-[12.5px]">{m.oneLiner}</p>
       </div>
     </div>
   );
@@ -123,9 +125,9 @@ function MobileMetaStripe(props: {
   const { timeIso, timeRelative, timeTitle, score, chrome, children } = props;
 
   return (
-    <div className={`flex min-w-0 flex-col gap-2 border-t pt-3 md:hidden ${chrome.mobileDivider}`}>
+    <div className={`flex min-w-0 flex-col gap-2.5 border-t-2 pt-3.5 md:hidden ${chrome.mobileDivider}`}>
       <div className="flex min-w-0 items-center justify-between gap-3">
-        <time className="text-[12px] font-medium tabular-nums text-slate-500" dateTime={timeIso} title={timeTitle}>
+        <time className="text-[11px] font-medium tabular-nums text-slate-400" dateTime={timeIso} title={timeTitle}>
           {timeRelative}
         </time>
         <TrustScoreBadge score={score} chrome={chrome} />
@@ -148,9 +150,9 @@ function OverviewCardShell({
     <>
       <span
         aria-hidden
-        className={`pointer-events-none absolute -left-8 top-1/2 h-28 w-28 -translate-y-1/2 rounded-full bg-gradient-radial blur-2xl md:h-24 md:w-24 ${chrome.surfaceGlow}`}
+        className={`pointer-events-none absolute -left-6 top-1/2 h-32 w-32 -translate-y-1/2 rounded-full bg-gradient-to-br blur-3xl md:h-28 md:w-28 ${chrome.surfaceGlow}`}
       />
-      <div className={`relative flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4 ${className ?? ""}`}>
+      <div className={`relative flex flex-col gap-3.5 md:flex-row md:items-center md:justify-between md:gap-5 ${className ?? ""}`}>
         {children}
       </div>
     </>
@@ -167,10 +169,8 @@ function DesktopMetaStripe(props: {
 }) {
   const { timeIso, timeRelative, timeTitle, score, chrome, children } = props;
   return (
-    <div
-      className="hidden w-[min(11rem,100%)] min-w-[9.25rem] shrink-0 flex-col items-stretch gap-1.5 text-right md:flex"
-    >
-      <time className="text-[11px] font-medium tabular-nums text-slate-500" dateTime={timeIso} title={timeTitle}>
+    <div className="hidden w-[min(12rem,100%)] min-w-[10rem] shrink-0 flex-col items-stretch gap-2 text-right md:flex">
+      <time className="text-[11px] font-medium tabular-nums text-slate-400" dateTime={timeIso} title={timeTitle}>
         {timeRelative}
       </time>
       <div className="flex justify-end">
@@ -200,12 +200,18 @@ export function CompactOverviewFeedLinkCard(props: CompactOverviewFeedBaseProps 
   } = props;
 
   const chrome = getOverviewCardChrome(m.trustScore);
-  const shell = `fraudly-motion fraudly-focus group relative block ${ACCENT_BAR_POSITION} ${chrome.accentBar} ${chrome.cardShell} ${chrome.cardShellHover} md:px-4 md:py-3`;
+  const shell = `fraudly-focus group relative block ${FEED_MOTION} ${ACCENT_BAR_POSITION} ${chrome.accentBar} ${chrome.cardShell} ${chrome.cardShellHover}`;
 
   const ctaPresentation = <FeedViewResultCta viewLabel={viewLabel} chrome={chrome} decorative />;
 
   return (
-    <Link href={href} prefetch={prefetch} className={`${shell} ${bgClassName ?? ""}`} aria-labelledby={headlineId} aria-label={ariaLabel}>
+    <Link
+      href={href}
+      prefetch={prefetch}
+      className={`${shell} ${bgClassName ?? ""}`}
+      aria-labelledby={headlineId}
+      aria-label={ariaLabel}
+    >
       <OverviewCardShell chrome={chrome}>
         <FeedLeading
           m={m}
@@ -216,7 +222,7 @@ export function CompactOverviewFeedLinkCard(props: CompactOverviewFeedBaseProps 
           domainFullTitle={domainFullTitle}
         />
         <DesktopMetaStripe timeIso={timeIso} timeRelative={timeRelative} timeTitle={timeTitle} score={m.trustScore} chrome={chrome}>
-          <div className="flex min-h-[2.5rem] items-end justify-end">{ctaPresentation}</div>
+          <div className="flex min-h-[2.75rem] items-end justify-end">{ctaPresentation}</div>
         </DesktopMetaStripe>
         <MobileMetaStripe timeIso={timeIso} timeRelative={timeRelative} timeTitle={timeTitle} score={m.trustScore} chrome={chrome}>
           <div className="flex min-h-11 items-center">{ctaPresentation}</div>
@@ -247,7 +253,7 @@ export function CompactOverviewFeedArticleCard(props: CompactOverviewFeedBasePro
 
   return (
     <article
-      className={`fraudly-motion group ${ACCENT_BAR_POSITION} ${chrome.accentBar} ${chrome.cardShell} ${chrome.cardShellHover} hover:-translate-y-px md:px-4 md:py-3`}
+      className={`group relative ${FEED_MOTION} ${ACCENT_BAR_POSITION} ${chrome.accentBar} ${chrome.cardShell} ${chrome.cardShellHover}`}
     >
       <OverviewCardShell chrome={chrome}>
         <FeedLeading
@@ -259,15 +265,15 @@ export function CompactOverviewFeedArticleCard(props: CompactOverviewFeedBasePro
           domainFullTitle={domainFullTitle}
         />
         <DesktopMetaStripe timeIso={timeIso} timeRelative={timeRelative} timeTitle={timeTitle} score={m.trustScore} chrome={chrome}>
-          <div className="flex min-h-[2.5rem] flex-col items-end justify-end gap-1.5">
+          <div className="flex min-h-[2.75rem] flex-col items-end justify-end gap-2">
             {viewCta}
             {trailingActions ? (
-              <div className="flex w-full flex-wrap justify-end gap-2 md:pt-0">{trailingActions}</div>
+              <div className="flex w-full flex-wrap justify-end gap-2">{trailingActions}</div>
             ) : null}
           </div>
         </DesktopMetaStripe>
         <MobileMetaStripe timeIso={timeIso} timeRelative={timeRelative} timeTitle={timeTitle} score={m.trustScore} chrome={chrome}>
-          <div className="flex min-h-[2.75rem] flex-wrap items-center gap-2">
+          <div className="flex min-h-11 flex-wrap items-center gap-2">
             {viewCta}
             {trailingActions}
           </div>

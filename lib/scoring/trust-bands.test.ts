@@ -83,7 +83,9 @@ describe("trust-bands", () => {
       mostly.cardShellHover
     ] as const) {
       expect(field).toMatch(/teal/);
-      expect(field).not.toMatch(/slate|gray|grey|emerald|amber/);
+      // cardShellHover uses translate-y (contains "slate" as substring — exclude motion tokens)
+      const colorField = field === mostly.cardShellHover ? field.replace(/translate/g, "") : field;
+      expect(colorField).not.toMatch(/slate|gray|grey|emerald|amber/);
     }
 
     for (const field of [

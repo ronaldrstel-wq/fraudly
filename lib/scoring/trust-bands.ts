@@ -43,9 +43,14 @@ export type TrustBandColors = {
   cardShellHover: string;
   metaCta: string;
   metaCtaHover: string;
+  metaCtaButton: string;
+  metaCtaButtonHover: string;
   mobileDivider: string;
   metricCard: string;
   metricScoreText: string;
+  heroGlow: string;
+  heroIconWrap: string;
+  heroScoreRing: string;
 };
 
 export type OverviewCardChrome = {
@@ -62,6 +67,8 @@ export type OverviewCardChrome = {
   cardShellHover: string;
   metaCta: string;
   metaCtaHover: string;
+  metaCtaButton: string;
+  metaCtaButtonHover: string;
   mobileDivider: string;
 };
 
@@ -89,49 +96,62 @@ type TrustBandDefinition = {
 };
 
 const LIKELY_SAFE_COLORS: TrustBandColors = {
-  border: "border-emerald-200/80",
+  border: "border-2 border-emerald-300/95",
   borderLeft: "before:bg-emerald-500",
-  icon: "text-emerald-600",
-  iconWrap: "border-emerald-200/70 bg-emerald-50/90 shadow-[0_6px_18px_rgba(16,185,129,0.15)]",
+  icon: "text-emerald-700",
+  iconWrap:
+    "border-2 border-emerald-300/90 bg-gradient-to-br from-emerald-100 to-emerald-50 shadow-[0_8px_22px_rgba(16,185,129,0.22)] ring-1 ring-emerald-200/70",
   scorePill:
-    "border-emerald-200/80 bg-gradient-to-b from-emerald-50 to-white text-emerald-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_14px_rgba(16,185,129,0.12)]",
-  scorePillDim: "text-emerald-700/80",
-  surfaceBg: "bg-emerald-50/30",
-  surfaceGradient: "border-emerald-200/80 bg-gradient-to-b from-emerald-50/30 to-white",
-  headlineText: "text-emerald-900",
+    "border-2 border-emerald-300/95 bg-gradient-to-b from-emerald-100 via-emerald-50 to-white text-emerald-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_8px_24px_rgba(16,185,129,0.22)] ring-1 ring-emerald-200/80",
+  scorePillDim: "text-emerald-700/90",
+  surfaceBg: "bg-emerald-50/45",
+  surfaceGradient:
+    "border-2 border-emerald-300/90 bg-gradient-to-br from-emerald-50/95 via-emerald-50/40 to-white shadow-[0_12px_40px_-18px_rgba(16,185,129,0.35),inset_0_1px_0_rgba(255,255,255,0.9)]",
+  headlineText: "text-emerald-950",
   meterTrack: "bg-emerald-100",
   meterFill: "bg-gradient-to-r from-emerald-500 via-emerald-500 to-emerald-600",
   meterMarker: "text-emerald-900",
   progressBar: "bg-emerald-500",
-  softBg: "bg-emerald-50/90",
-  softBorder: "border-emerald-200/80",
+  softBg: "bg-emerald-50/95",
+  softBorder: "border-emerald-300/85",
   toneText: "text-emerald-800",
-  cta: "text-emerald-700 decoration-emerald-500/35 hover:text-emerald-800",
-  surfaceGlow: "from-emerald-500/10 via-emerald-400/0 to-transparent",
+  cta: "text-emerald-800 decoration-emerald-500/45 hover:text-emerald-950",
+  surfaceGlow: "from-emerald-500/22 via-emerald-400/8 to-transparent",
   accentBar: "before:bg-emerald-500",
-  articleBg: "border border-emerald-200/70 bg-emerald-50/50",
+  articleBg: "border-2 border-emerald-300/85 bg-emerald-50/65",
   cardShell:
-    "relative min-h-0 rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 via-white to-white p-4 shadow-subtle transition-all duration-200",
-  cardShellHover: "hover:border-emerald-300/90 hover:shadow-elevated hover:from-emerald-50/95",
-  metaCta: "font-semibold text-emerald-700",
-  metaCtaHover: "group-hover:text-emerald-800",
-  mobileDivider: "border-emerald-200/55",
-  metricCard: "rounded-xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/80 to-white p-4 shadow-sm",
-  metricScoreText: "text-emerald-900"
+    "relative min-h-0 overflow-hidden rounded-2xl border-2 border-emerald-300/90 bg-gradient-to-br from-emerald-50/95 via-emerald-50/50 to-white p-4 pl-5 shadow-[0_10px_36px_-14px_rgba(16,185,129,0.28),inset_0_1px_0_rgba(255,255,255,0.92)] transition-all duration-200 sm:p-5 sm:pl-6",
+  cardShellHover:
+    "hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-[0_20px_48px_-16px_rgba(16,185,129,0.32)] hover:ring-2 hover:ring-emerald-400/25",
+  metaCta: "font-bold text-emerald-800",
+  metaCtaHover: "group-hover:text-emerald-950",
+  metaCtaButton:
+    "rounded-lg border-2 border-emerald-300/90 bg-emerald-50/95 px-3 py-1.5 text-emerald-900 shadow-[0_4px_12px_rgba(16,185,129,0.12)]",
+  metaCtaButtonHover:
+    "group-hover:border-emerald-400 group-hover:bg-emerald-100 group-hover:shadow-[0_6px_16px_rgba(16,185,129,0.18)]",
+  mobileDivider: "border-emerald-300/70",
+  metricCard: "rounded-xl border-2 border-emerald-300/85 bg-gradient-to-br from-emerald-50/90 to-white p-4 shadow-md",
+  metricScoreText: "text-emerald-950",
+  heroGlow: "from-emerald-400/35 via-emerald-300/10 to-transparent",
+  heroIconWrap:
+    "border-2 border-emerald-300/90 bg-gradient-to-br from-emerald-100 to-emerald-50 text-emerald-800 shadow-[0_10px_28px_rgba(16,185,129,0.25)]",
+  heroScoreRing:
+    "border-[3px] border-emerald-400/90 bg-gradient-to-b from-emerald-100 via-white to-emerald-50/80 text-emerald-950 shadow-[0_12px_36px_rgba(16,185,129,0.28),inset_0_1px_0_rgba(255,255,255,0.95)]"
 };
 
 const MOSTLY_SAFE_COLORS: TrustBandColors = {
-  border: "border-teal-400/95",
+  border: "border-2 border-teal-400/95",
   borderLeft: "before:bg-teal-500",
-  icon: "text-teal-600",
+  icon: "text-teal-700",
   iconWrap:
-    "border-teal-400/90 bg-gradient-to-br from-teal-50 to-cyan-50 text-teal-600 shadow-[0_6px_20px_rgba(20,184,166,0.22)] ring-1 ring-teal-400/25",
+    "border-2 border-teal-400/95 bg-gradient-to-br from-teal-100 to-cyan-50 text-teal-700 shadow-[0_8px_22px_rgba(20,184,166,0.24)] ring-1 ring-teal-300/70",
   scorePill:
-    "border-teal-400/95 bg-gradient-to-b from-teal-50 via-cyan-50/90 to-white text-teal-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_4px_16px_rgba(6,182,212,0.16)]",
-  scorePillDim: "text-teal-700",
-  surfaceBg: "bg-teal-50/80",
-  surfaceGradient: "border-teal-400/90 bg-gradient-to-b from-teal-50/95 via-cyan-50/55 to-white",
-  headlineText: "text-teal-800",
+    "border-2 border-teal-400/95 bg-gradient-to-b from-teal-100 via-cyan-50 to-white text-teal-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_8px_24px_rgba(20,184,166,0.2)] ring-1 ring-teal-300/75",
+  scorePillDim: "text-teal-700/90",
+  surfaceBg: "bg-teal-50/85",
+  surfaceGradient:
+    "border-2 border-teal-400/90 bg-gradient-to-br from-teal-50/95 via-cyan-50/55 to-white shadow-[0_12px_40px_-18px_rgba(20,184,166,0.3),inset_0_1px_0_rgba(255,255,255,0.9)]",
+  headlineText: "text-teal-950",
   meterTrack: "bg-teal-100",
   meterFill: "bg-gradient-to-r from-teal-500 via-teal-500 to-cyan-500",
   meterMarker: "text-teal-800",
@@ -139,135 +159,186 @@ const MOSTLY_SAFE_COLORS: TrustBandColors = {
   softBg: "bg-teal-50/95",
   softBorder: "border-teal-400/90",
   toneText: "text-teal-800",
-  cta: "text-teal-700 decoration-teal-500/55 hover:text-teal-800",
-  surfaceGlow: "from-teal-500/18 via-cyan-400/10 to-transparent",
+  cta: "text-teal-800 decoration-teal-500/55 hover:text-teal-950",
+  surfaceGlow: "from-teal-500/24 via-cyan-400/10 to-transparent",
   accentBar: "before:bg-teal-500",
-  articleBg: "border border-teal-400/85 bg-gradient-to-br from-teal-50/90 via-cyan-50/50 to-white",
+  articleBg: "border-2 border-teal-400/90 bg-gradient-to-br from-teal-50/95 via-cyan-50/55 to-white",
   cardShell:
-    "relative min-h-0 rounded-2xl border border-teal-400/90 bg-gradient-to-br from-teal-50/95 via-cyan-50/70 to-white p-4 shadow-[0_8px_28px_rgba(20,184,166,0.1)] transition-all duration-200",
+    "relative min-h-0 overflow-hidden rounded-2xl border-2 border-teal-400/90 bg-gradient-to-br from-teal-50/95 via-cyan-50/65 to-white p-4 pl-5 shadow-[0_10px_36px_-14px_rgba(20,184,166,0.26),inset_0_1px_0_rgba(255,255,255,0.92)] transition-all duration-200 sm:p-5 sm:pl-6",
   cardShellHover:
-    "hover:border-teal-500 hover:shadow-[0_12px_32px_rgba(6,182,212,0.14)] hover:from-teal-50 hover:via-cyan-50/85",
-  metaCta: "font-semibold text-teal-700",
-  metaCtaHover: "group-hover:text-teal-800",
-  mobileDivider: "border-teal-400/80",
+    "hover:-translate-y-0.5 hover:border-teal-500 hover:shadow-[0_20px_48px_-16px_rgba(20,184,166,0.3)] hover:ring-2 hover:ring-teal-400/25",
+  metaCta: "font-bold text-teal-800",
+  metaCtaHover: "group-hover:text-teal-950",
+  metaCtaButton:
+    "rounded-lg border-2 border-teal-400/90 bg-teal-50/95 px-3 py-1.5 text-teal-900 shadow-[0_4px_12px_rgba(20,184,166,0.14)]",
+  metaCtaButtonHover:
+    "group-hover:border-teal-500 group-hover:bg-teal-100 group-hover:shadow-[0_6px_16px_rgba(20,184,166,0.2)]",
+  mobileDivider: "border-teal-400/75",
   metricCard:
-    "rounded-xl border border-teal-400/85 bg-gradient-to-b from-teal-50/95 via-cyan-50/60 to-white p-4 shadow-sm",
-  metricScoreText: "text-teal-800"
+    "rounded-xl border-2 border-teal-400/90 bg-gradient-to-b from-teal-50/95 via-cyan-50/60 to-white p-4 shadow-md",
+  metricScoreText: "text-teal-950",
+  heroGlow: "from-teal-400/32 via-cyan-400/10 to-transparent",
+  heroIconWrap:
+    "border-2 border-teal-400/90 bg-gradient-to-br from-teal-100 to-cyan-50 text-teal-800 shadow-[0_10px_28px_rgba(20,184,166,0.24)]",
+  heroScoreRing:
+    "border-[3px] border-teal-400/90 bg-gradient-to-b from-teal-100 via-white to-cyan-50/80 text-teal-950 shadow-[0_12px_36px_rgba(20,184,166,0.26),inset_0_1px_0_rgba(255,255,255,0.95)]"
 };
 
 const CAUTION_COLORS: TrustBandColors = {
-  border: "border-amber-200/80",
+  border: "border-2 border-amber-300/95",
   borderLeft: "before:bg-amber-500",
-  icon: "text-amber-600",
-  iconWrap: "border-amber-200/70 bg-amber-50/90 shadow-[0_6px_18px_rgba(245,158,11,0.16)]",
+  icon: "text-amber-700",
+  iconWrap:
+    "border-2 border-amber-300/90 bg-gradient-to-br from-amber-100 to-amber-50 shadow-[0_8px_22px_rgba(245,158,11,0.22)] ring-1 ring-amber-200/70",
   scorePill:
-    "border-amber-200/80 bg-gradient-to-b from-amber-50 to-white text-amber-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_14px_rgba(245,158,11,0.12)]",
-  scorePillDim: "text-amber-700/80",
-  surfaceBg: "bg-amber-50/35",
-  surfaceGradient: "border-amber-200/80 bg-gradient-to-b from-amber-50/35 to-white",
+    "border-2 border-amber-300/95 bg-gradient-to-b from-amber-100 via-amber-50 to-white text-amber-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_8px_24px_rgba(245,158,11,0.2)] ring-1 ring-amber-200/80",
+  scorePillDim: "text-amber-800/90",
+  surfaceBg: "bg-amber-50/50",
+  surfaceGradient:
+    "border-2 border-amber-300/90 bg-gradient-to-br from-amber-50/95 via-amber-50/45 to-white shadow-[0_12px_40px_-18px_rgba(245,158,11,0.32),inset_0_1px_0_rgba(255,255,255,0.9)]",
   headlineText: "text-amber-950",
   meterTrack: "bg-amber-100",
   meterFill: "bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600",
   meterMarker: "text-amber-900",
   progressBar: "bg-amber-500",
-  softBg: "bg-amber-50/90",
-  softBorder: "border-amber-300/80",
+  softBg: "bg-amber-50/95",
+  softBorder: "border-amber-300/85",
   toneText: "text-amber-900",
-  cta: "text-amber-700 decoration-amber-500/35 hover:text-amber-800",
-  surfaceGlow: "from-amber-500/10 via-amber-400/0 to-transparent",
+  cta: "text-amber-800 decoration-amber-500/45 hover:text-amber-950",
+  surfaceGlow: "from-amber-500/22 via-orange-400/8 to-transparent",
   accentBar: "before:bg-amber-500",
-  articleBg: "border border-amber-200/70 bg-amber-50/55",
+  articleBg: "border-2 border-amber-300/85 bg-amber-50/65",
   cardShell:
-    "relative min-h-0 rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/85 via-white to-white p-4 shadow-subtle transition-all duration-200",
-  cardShellHover: "hover:border-amber-300/90 hover:shadow-elevated hover:from-amber-50/95",
-  metaCta: "font-semibold text-amber-800",
-  metaCtaHover: "group-hover:text-amber-900",
-  mobileDivider: "border-amber-200/55",
-  metricCard: "rounded-xl border border-amber-200/80 bg-gradient-to-br from-amber-50/80 to-white p-4 shadow-sm",
-  metricScoreText: "text-amber-950"
+    "relative min-h-0 overflow-hidden rounded-2xl border-2 border-amber-300/90 bg-gradient-to-br from-amber-50/95 via-amber-50/55 to-white p-4 pl-5 shadow-[0_10px_36px_-14px_rgba(245,158,11,0.26),inset_0_1px_0_rgba(255,255,255,0.92)] transition-all duration-200 sm:p-5 sm:pl-6",
+  cardShellHover:
+    "hover:-translate-y-0.5 hover:border-amber-400 hover:shadow-[0_20px_48px_-16px_rgba(245,158,11,0.3)] hover:ring-2 hover:ring-amber-400/25",
+  metaCta: "font-bold text-amber-900",
+  metaCtaHover: "group-hover:text-amber-950",
+  metaCtaButton:
+    "rounded-lg border-2 border-amber-300/90 bg-amber-50/95 px-3 py-1.5 text-amber-950 shadow-[0_4px_12px_rgba(245,158,11,0.14)]",
+  metaCtaButtonHover:
+    "group-hover:border-amber-400 group-hover:bg-amber-100 group-hover:shadow-[0_6px_16px_rgba(245,158,11,0.2)]",
+  mobileDivider: "border-amber-300/70",
+  metricCard: "rounded-xl border-2 border-amber-300/85 bg-gradient-to-br from-amber-50/90 to-white p-4 shadow-md",
+  metricScoreText: "text-amber-950",
+  heroGlow: "from-amber-400/35 via-orange-300/10 to-transparent",
+  heroIconWrap:
+    "border-2 border-amber-300/90 bg-gradient-to-br from-amber-100 to-amber-50 text-amber-900 shadow-[0_10px_28px_rgba(245,158,11,0.24)]",
+  heroScoreRing:
+    "border-[3px] border-amber-400/90 bg-gradient-to-b from-amber-100 via-white to-amber-50/80 text-amber-950 shadow-[0_12px_36px_rgba(245,158,11,0.26),inset_0_1px_0_rgba(255,255,255,0.95)]"
 };
 
 const SUSPICIOUS_COLORS: TrustBandColors = {
-  border: "border-orange-200/80",
+  border: "border-2 border-orange-300/95",
   borderLeft: "before:bg-orange-500",
-  icon: "text-orange-600",
-  iconWrap: "border-orange-200/70 bg-orange-50/90 shadow-[0_6px_18px_rgba(249,115,22,0.16)]",
+  icon: "text-orange-700",
+  iconWrap:
+    "border-2 border-orange-300/90 bg-gradient-to-br from-orange-100 to-orange-50 shadow-[0_8px_22px_rgba(249,115,22,0.22)] ring-1 ring-orange-200/70",
   scorePill:
-    "border-orange-200/80 bg-gradient-to-b from-orange-50 to-white text-orange-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_14px_rgba(249,115,22,0.12)]",
-  scorePillDim: "text-orange-800/80",
-  surfaceBg: "bg-orange-50/40",
-  surfaceGradient: "border-orange-200/80 bg-gradient-to-b from-orange-50/40 to-white",
+    "border-2 border-orange-300/95 bg-gradient-to-b from-orange-100 via-orange-50 to-white text-orange-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_8px_24px_rgba(249,115,22,0.2)] ring-1 ring-orange-200/80",
+  scorePillDim: "text-orange-800/90",
+  surfaceBg: "bg-orange-50/50",
+  surfaceGradient:
+    "border-2 border-orange-300/90 bg-gradient-to-br from-orange-50/95 via-orange-50/45 to-white shadow-[0_12px_40px_-18px_rgba(249,115,22,0.3),inset_0_1px_0_rgba(255,255,255,0.9)]",
   headlineText: "text-orange-950",
   meterTrack: "bg-orange-100",
   meterFill: "bg-gradient-to-r from-orange-500 via-orange-500 to-orange-600",
   meterMarker: "text-orange-950",
   progressBar: "bg-orange-500",
-  softBg: "bg-orange-50/90",
-  softBorder: "border-orange-300/80",
+  softBg: "bg-orange-50/95",
+  softBorder: "border-orange-300/85",
   toneText: "text-orange-950",
-  cta: "text-orange-700 decoration-orange-500/35 hover:text-orange-800",
-  surfaceGlow: "from-orange-500/10 via-orange-400/0 to-transparent",
+  cta: "text-orange-800 decoration-orange-500/45 hover:text-orange-950",
+  surfaceGlow: "from-orange-500/22 via-orange-400/8 to-transparent",
   accentBar: "before:bg-orange-500",
-  articleBg: "border border-orange-200/70 bg-orange-50/55",
+  articleBg: "border-2 border-orange-300/85 bg-orange-50/65",
   cardShell:
-    "relative min-h-0 rounded-2xl border border-orange-200/80 bg-gradient-to-br from-orange-50/85 via-white to-white p-4 shadow-subtle transition-all duration-200",
-  cardShellHover: "hover:border-orange-300/90 hover:shadow-elevated hover:from-orange-50/95",
-  metaCta: "font-semibold text-orange-800",
-  metaCtaHover: "group-hover:text-orange-900",
-  mobileDivider: "border-orange-200/55",
-  metricCard: "rounded-xl border border-orange-200/80 bg-gradient-to-br from-orange-50/80 to-white p-4 shadow-sm",
-  metricScoreText: "text-orange-950"
+    "relative min-h-0 overflow-hidden rounded-2xl border-2 border-orange-300/90 bg-gradient-to-br from-orange-50/95 via-orange-50/55 to-white p-4 pl-5 shadow-[0_10px_36px_-14px_rgba(249,115,22,0.26),inset_0_1px_0_rgba(255,255,255,0.92)] transition-all duration-200 sm:p-5 sm:pl-6",
+  cardShellHover:
+    "hover:-translate-y-0.5 hover:border-orange-400 hover:shadow-[0_20px_48px_-16px_rgba(249,115,22,0.3)] hover:ring-2 hover:ring-orange-400/25",
+  metaCta: "font-bold text-orange-900",
+  metaCtaHover: "group-hover:text-orange-950",
+  metaCtaButton:
+    "rounded-lg border-2 border-orange-300/90 bg-orange-50/95 px-3 py-1.5 text-orange-950 shadow-[0_4px_12px_rgba(249,115,22,0.14)]",
+  metaCtaButtonHover:
+    "group-hover:border-orange-400 group-hover:bg-orange-100 group-hover:shadow-[0_6px_16px_rgba(249,115,22,0.2)]",
+  mobileDivider: "border-orange-300/70",
+  metricCard: "rounded-xl border-2 border-orange-300/85 bg-gradient-to-br from-orange-50/90 to-white p-4 shadow-md",
+  metricScoreText: "text-orange-950",
+  heroGlow: "from-orange-400/35 via-orange-300/10 to-transparent",
+  heroIconWrap:
+    "border-2 border-orange-300/90 bg-gradient-to-br from-orange-100 to-orange-50 text-orange-900 shadow-[0_10px_28px_rgba(249,115,22,0.24)]",
+  heroScoreRing:
+    "border-[3px] border-orange-400/90 bg-gradient-to-b from-orange-100 via-white to-orange-50/80 text-orange-950 shadow-[0_12px_36px_rgba(249,115,22,0.26),inset_0_1px_0_rgba(255,255,255,0.95)]"
 };
 
 const DANGER_COLORS: TrustBandColors = {
-  border: "border-rose-200/80",
+  border: "border-2 border-rose-300/95",
   borderLeft: "before:bg-rose-500",
-  icon: "text-rose-600",
-  iconWrap: "border-rose-200/70 bg-rose-50/90 shadow-[0_6px_18px_rgba(244,63,94,0.18)]",
+  icon: "text-rose-700",
+  iconWrap:
+    "border-2 border-rose-300/90 bg-gradient-to-br from-rose-100 to-rose-50 shadow-[0_8px_22px_rgba(244,63,94,0.24)] ring-1 ring-rose-200/70",
   scorePill:
-    "border-rose-200/80 bg-gradient-to-b from-rose-50 to-white text-rose-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_14px_rgba(244,63,94,0.14)]",
-  scorePillDim: "text-rose-700/80",
-  surfaceBg: "bg-rose-50/35",
-  surfaceGradient: "border-rose-200/80 bg-gradient-to-b from-rose-50/35 to-white",
-  headlineText: "text-rose-900",
+    "border-2 border-rose-300/95 bg-gradient-to-b from-rose-100 via-rose-50 to-white text-rose-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_8px_24px_rgba(244,63,94,0.22)] ring-1 ring-rose-200/80",
+  scorePillDim: "text-rose-700/90",
+  surfaceBg: "bg-rose-50/50",
+  surfaceGradient:
+    "border-2 border-rose-300/90 bg-gradient-to-br from-rose-50/95 via-rose-50/45 to-white shadow-[0_12px_40px_-18px_rgba(244,63,94,0.32),inset_0_1px_0_rgba(255,255,255,0.9)]",
+  headlineText: "text-rose-950",
   meterTrack: "bg-rose-100",
   meterFill: "bg-gradient-to-r from-rose-500 via-rose-500 to-rose-600",
   meterMarker: "text-rose-900",
   progressBar: "bg-rose-600",
-  softBg: "bg-rose-50/90",
-  softBorder: "border-rose-300/80",
+  softBg: "bg-rose-50/95",
+  softBorder: "border-rose-300/85",
   toneText: "text-rose-900",
-  cta: "text-rose-700 decoration-rose-500/35 hover:text-rose-800",
-  surfaceGlow: "from-rose-500/10 via-rose-400/0 to-transparent",
+  cta: "text-rose-800 decoration-rose-500/45 hover:text-rose-950",
+  surfaceGlow: "from-rose-500/24 via-rose-400/8 to-transparent",
   accentBar: "before:bg-rose-500",
-  articleBg: "border border-rose-200/70 bg-rose-50/55",
+  articleBg: "border-2 border-rose-300/85 bg-rose-50/65",
   cardShell:
-    "relative min-h-0 rounded-2xl border border-rose-200/80 bg-gradient-to-br from-rose-50/85 via-white to-white p-4 shadow-subtle transition-all duration-200",
-  cardShellHover: "hover:border-rose-300/90 hover:shadow-elevated hover:from-rose-50/95",
-  metaCta: "font-semibold text-rose-800",
-  metaCtaHover: "group-hover:text-rose-900",
-  mobileDivider: "border-rose-200/55",
-  metricCard: "rounded-xl border border-rose-200/80 bg-gradient-to-br from-rose-50/80 to-white p-4 shadow-sm",
-  metricScoreText: "text-rose-900"
+    "relative min-h-0 overflow-hidden rounded-2xl border-2 border-rose-300/90 bg-gradient-to-br from-rose-50/95 via-rose-50/55 to-white p-4 pl-5 shadow-[0_10px_36px_-14px_rgba(244,63,94,0.28),inset_0_1px_0_rgba(255,255,255,0.92)] transition-all duration-200 sm:p-5 sm:pl-6",
+  cardShellHover:
+    "hover:-translate-y-0.5 hover:border-rose-400 hover:shadow-[0_20px_48px_-16px_rgba(244,63,94,0.32)] hover:ring-2 hover:ring-rose-400/25",
+  metaCta: "font-bold text-rose-900",
+  metaCtaHover: "group-hover:text-rose-950",
+  metaCtaButton:
+    "rounded-lg border-2 border-rose-300/90 bg-rose-50/95 px-3 py-1.5 text-rose-950 shadow-[0_4px_12px_rgba(244,63,94,0.16)]",
+  metaCtaButtonHover:
+    "group-hover:border-rose-400 group-hover:bg-rose-100 group-hover:shadow-[0_6px_16px_rgba(244,63,94,0.22)]",
+  mobileDivider: "border-rose-300/70",
+  metricCard: "rounded-xl border-2 border-rose-300/85 bg-gradient-to-br from-rose-50/90 to-white p-4 shadow-md",
+  metricScoreText: "text-rose-950",
+  heroGlow: "from-rose-400/38 via-rose-300/10 to-transparent",
+  heroIconWrap:
+    "border-2 border-rose-300/90 bg-gradient-to-br from-rose-100 to-rose-50 text-rose-900 shadow-[0_10px_28px_rgba(244,63,94,0.26)]",
+  heroScoreRing:
+    "border-[3px] border-rose-400/90 bg-gradient-to-b from-rose-100 via-white to-rose-50/80 text-rose-950 shadow-[0_12px_36px_rgba(244,63,94,0.28),inset_0_1px_0_rgba(255,255,255,0.95)]"
 };
 
 /** Neutral chrome only when trust score is unknown — never for scored bands. */
 const MISSING_SCORE_CHROME: OverviewCardChrome = {
   tone: "caution",
-  accentBar: "before:bg-slate-300/80",
-  surfaceGlow: "from-slate-400/5 to-transparent",
-  iconWrap: "border-slate-200/80 bg-slate-50/95",
-  icon: "text-slate-500",
-  scorePill: "border-slate-200/80 bg-slate-50 text-slate-800",
+  accentBar: "before:bg-slate-400",
+  surfaceGlow: "from-slate-400/12 via-blue-400/5 to-transparent",
+  iconWrap: "border-2 border-slate-300/90 bg-gradient-to-br from-slate-100 to-slate-50 shadow-[0_6px_18px_rgba(100,116,139,0.16)]",
+  icon: "text-slate-600",
+  scorePill:
+    "border-2 border-slate-300/90 bg-gradient-to-b from-slate-100 to-white text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_6px_18px_rgba(100,116,139,0.12)]",
   scorePillDim: "text-slate-500",
-  cta: "text-slate-700 decoration-slate-400/35 hover:text-slate-900",
-  headlineText: "text-slate-900",
+  cta: "text-slate-800 decoration-slate-400/45 hover:text-slate-950",
+  headlineText: "text-slate-950",
   cardShell:
-    "relative min-h-0 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-subtle transition-all duration-200",
-  cardShellHover: "hover:border-slate-300/90 hover:shadow-elevated",
-  metaCta: "text-slate-700",
-  metaCtaHover: "group-hover:text-slate-900",
-  mobileDivider: "border-slate-200/60"
+    "relative min-h-0 overflow-hidden rounded-2xl border-2 border-slate-300/85 bg-gradient-to-br from-slate-50/95 via-blue-50/25 to-white p-4 pl-5 shadow-[0_10px_32px_-14px_rgba(100,116,139,0.18),inset_0_1px_0_rgba(255,255,255,0.92)] transition-all duration-200 sm:p-5 sm:pl-6",
+  cardShellHover:
+    "hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-[0_18px_44px_-16px_rgba(100,116,139,0.22)] hover:ring-2 hover:ring-slate-300/30",
+  metaCta: "font-bold text-slate-800",
+  metaCtaHover: "group-hover:text-slate-950",
+  metaCtaButton:
+    "rounded-lg border-2 border-slate-300/90 bg-slate-50/95 px-3 py-1.5 text-slate-800 shadow-[0_4px_12px_rgba(100,116,139,0.1)]",
+  metaCtaButtonHover:
+    "group-hover:border-slate-400 group-hover:bg-slate-100 group-hover:shadow-[0_6px_16px_rgba(100,116,139,0.14)]",
+  mobileDivider: "border-slate-300/70"
 };
 
 const TRUST_BANDS: readonly TrustBandDefinition[] = [
@@ -449,6 +520,8 @@ function overviewChromeFromColors(tone: SemanticTone, colors: TrustBandColors): 
     cardShellHover: colors.cardShellHover,
     metaCta: colors.metaCta,
     metaCtaHover: colors.metaCtaHover,
+    metaCtaButton: colors.metaCtaButton,
+    metaCtaButtonHover: colors.metaCtaButtonHover,
     mobileDivider: colors.mobileDivider
   };
 }

@@ -5,11 +5,17 @@ export default function LatestChecksLoading() {
   return (
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
       <Navbar />
-      <main className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:pt-10 md:pt-14">
-        <div className="h-5 w-40 animate-pulse rounded bg-slate-200" aria-hidden />
-        <div className="mt-3 h-9 max-w-xl animate-pulse rounded bg-slate-200" aria-hidden />
-        <div className="mt-4 h-20 max-w-2xl animate-pulse rounded bg-slate-200/80" aria-hidden />
-        <div className="mt-10 space-y-3" aria-busy aria-label="Loading latest checks">
+      <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-8 sm:pt-10 md:pt-14">
+        <div className="grid gap-10 lg:grid-cols-2 lg:gap-12">
+          <div>
+            <div className="mx-auto h-5 w-48 max-w-full animate-pulse rounded bg-slate-200 lg:mx-0" aria-hidden />
+            <div className="mx-auto mt-3 h-10 max-w-xl animate-pulse rounded bg-slate-200 lg:mx-0" aria-hidden />
+            <div className="mx-auto mt-5 h-16 max-w-2xl animate-pulse rounded bg-slate-200/80 lg:mx-0" aria-hidden />
+            <div className="mx-auto mt-3 h-10 max-w-xl animate-pulse rounded bg-slate-200/60 lg:mx-0" aria-hidden />
+          </div>
+          <div className="mx-auto h-52 w-full max-w-sm animate-pulse rounded-[1.35rem] bg-slate-200/90 sm:h-60 lg:max-w-md" aria-hidden />
+        </div>
+        <div className="mt-12 space-y-4 md:mt-14" aria-busy aria-label="Loading latest checks">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="h-[5.75rem] animate-pulse rounded-2xl border border-slate-100 bg-white shadow-subtle" />
           ))}

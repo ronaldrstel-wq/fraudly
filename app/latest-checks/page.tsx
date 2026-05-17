@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LatestChecksJsonLd } from "@/components/seo/LatestChecksJsonLd";
+import { LatestChecksHero } from "@/components/latest-checks/LatestChecksHero";
 import { CompactOverviewFeedLinkCard } from "@/components/overview/CompactOverviewFeedCard";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -149,24 +150,13 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
       <LatestChecksJsonLd items={rows} positionOffset={skip} />
       <Navbar />
 
-      <main className="mx-auto w-full max-w-5xl px-4 pb-14 pt-7 sm:pt-9 md:pt-12">
-        <header className="max-w-3xl">
-          <p className="text-sm font-medium text-blue-700">{EN_MESSAGES.latestChecks.overline}</p>
-          <h1 className="mt-2 text-balance text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
-            {EN_MESSAGES.latestChecks.pageTitle}
-          </h1>
-          <p className="mt-4 max-w-prose text-pretty text-base leading-relaxed text-slate-600">
-            {EN_MESSAGES.latestChecks.intro}
-          </p>
-          <p className="mt-3 max-w-prose text-pretty text-sm leading-relaxed text-slate-600">
-            {EN_MESSAGES.latestChecks.scoreExplainerFootnote}
-          </p>
-        </header>
+      <main className="mx-auto w-full max-w-6xl px-4 pb-14 pt-8 sm:pt-10 md:pt-14">
+        <LatestChecksHero />
 
         {loadFailed ? (
           <section
             aria-labelledby="latest-unavailable"
-            className="mt-12 rounded-2xl border border-amber-200/80 bg-amber-50/80 px-6 py-14 text-center shadow-sm md:px-10"
+            className="mt-14 rounded-2xl border border-amber-200/80 bg-amber-50/80 px-6 py-14 text-center shadow-sm md:mt-16 md:px-10"
           >
             <p id="latest-unavailable" className="mx-auto max-w-xl text-sm leading-relaxed text-amber-950">
               {EN_MESSAGES.latestChecks.unavailableState}
@@ -181,7 +171,7 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
         ) : rows.length === 0 ? (
           <section
             aria-labelledby="latest-empty"
-            className="mt-12 rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-14 text-center shadow-sm md:px-10"
+            className="mt-14 rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-14 text-center shadow-sm md:mt-16 md:px-10"
           >
             <p id="latest-empty" className="mx-auto max-w-xl text-sm leading-relaxed text-slate-600">
               {EN_MESSAGES.latestChecks.emptyState}
@@ -194,11 +184,11 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
             </Link>
           </section>
         ) : (
-          <section className="mt-8" aria-labelledby="latest-list-heading">
+          <section className="mt-12 md:mt-14" aria-labelledby="latest-list-heading">
             <h2 id="latest-list-heading" className="sr-only">
               {EN_MESSAGES.latestChecks.listAria}
             </h2>
-            <ol className="space-y-3 md:space-y-4">
+            <ol className="space-y-4 md:space-y-5">
               {rows.map((row) => (
                 <li key={row.id}><LatestCheckListItem row={row} /></li>
               ))}
