@@ -155,7 +155,7 @@ function FeedMetaBox({
   trailingActions?: ReactNode;
 }) {
   return (
-    <div className="flex w-full shrink-0 flex-col gap-2 md:ml-auto md:w-[260px]">
+    <div className="flex w-full shrink-0 flex-col gap-2 md:ml-auto md:w-[280px] md:min-w-[280px] md:max-w-[280px]">
       <div className={`flex items-center justify-between gap-3 rounded-[18px] px-4 py-3.5 ${visual.metaBox}`}>
         <time
           className="max-w-[4.25rem] shrink-0 text-[11px] font-medium leading-snug tabular-nums text-slate-500"
@@ -230,8 +230,8 @@ function FeedCardBody(props: {
     entityBadge ?? EN_MESSAGES.latestChecks.entityLabels.domain.toUpperCase();
 
   return (
-    <div className={`flex flex-col gap-4 ${CARD_PAD} md:flex-row md:items-center md:gap-5`}>
-      <div className="flex min-w-0 flex-1 items-start gap-4 sm:gap-5">
+    <div className={`flex w-full min-w-0 flex-col gap-4 ${CARD_PAD} md:flex-row md:items-center md:gap-5`}>
+      <div className="flex min-w-0 flex-1 basis-0 items-start gap-4 sm:gap-5">
         <div className={visual.iconCircle}>
           <FeedVerdictIcon visual={visual} />
         </div>
@@ -283,7 +283,7 @@ export function CompactOverviewFeedLinkCard(props: CompactOverviewFeedBaseProps 
   } = props;
 
   const visual = getOverviewFeedCardVisual(m.trustScore);
-  const shell = `fraudly-focus group block ${visual.stripe} ${visual.card} ${visual.cardHover} ${bgClassName ?? ""}`;
+  const shell = `fraudly-focus group block w-full ${visual.stripe} ${visual.card} ${visual.cardHover} ${bgClassName ?? ""}`;
 
   return (
     <Link href={href} prefetch={prefetch} className={shell} aria-labelledby={headlineId} aria-label={ariaLabel}>
@@ -323,7 +323,7 @@ export function CompactOverviewFeedArticleCard(props: CompactOverviewFeedBasePro
   const visual = getOverviewFeedCardVisual(m.trustScore);
 
   return (
-    <article className={`group ${visual.stripe} ${visual.card} ${visual.cardHover}`}>
+    <article className={`group w-full ${visual.stripe} ${visual.card} ${visual.cardHover}`}>
       <FeedCardBody
         m={m}
         visual={visual}
