@@ -4,7 +4,7 @@ import { EN_MESSAGES } from "@/lib/messages.en";
 import type { OverviewCardModel } from "@/lib/overviewCardPresentation";
 import { getOverviewFeedCardVisual, type OverviewFeedCardVisual } from "@/lib/scoring/trust-bands";
 
-const CARD_PAD = "px-5 py-5 sm:px-6 sm:py-5 md:min-h-[148px]";
+const CARD_PAD = "px-5 py-6 sm:px-6 sm:py-6 md:min-h-[152px]";
 
 function FeedVerdictIcon({ visual }: { visual: OverviewFeedCardVisual }) {
   const ink = visual.iconInk;
@@ -12,6 +12,7 @@ function FeedVerdictIcon({ visual }: { visual: OverviewFeedCardVisual }) {
     className: `h-6 w-6 shrink-0 ${ink}`,
     fill: "none",
     viewBox: "0 0 24 24",
+    strokeWidth: 2,
     "aria-hidden": true as const
   };
 
@@ -20,12 +21,12 @@ function FeedVerdictIcon({ visual }: { visual: OverviewFeedCardVisual }) {
       <svg {...svgProps}>
         <path
           stroke="currentColor"
-          strokeWidth="1.75"
+          strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
           d="M12 3 4 7v5c0 4.42 3.28 8.56 8 9 4.72-.44 8-4.58 8-9V7l-8-4Z"
         />
-        <path stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" d="m9 12 2 2 4-4" />
+        <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="m9 12 2 2 4-4" />
       </svg>
     );
   }
@@ -35,7 +36,7 @@ function FeedVerdictIcon({ visual }: { visual: OverviewFeedCardVisual }) {
       <svg {...svgProps}>
         <path
           stroke="currentColor"
-          strokeWidth="1.75"
+          strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
           d="M12 9v4m0 4h.01M10.29 3.86 2.82 17a1 1 0 0 0 .86 1.5h16.64a1 1 0 0 0 .86-1.5L13.71 3.86a1 1 0 0 0-1.72 0Z"
@@ -49,7 +50,7 @@ function FeedVerdictIcon({ visual }: { visual: OverviewFeedCardVisual }) {
       <svg {...svgProps}>
         <path
           stroke="currentColor"
-          strokeWidth="1.75"
+          strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
           d="M12 9v4m0 4h.01M10.29 3.86 2.82 17a1 1 0 0 0 .86 1.5h16.64a1 1 0 0 0 .86-1.5L13.71 3.86a1 1 0 0 0-1.72 0Z"
@@ -60,9 +61,9 @@ function FeedVerdictIcon({ visual }: { visual: OverviewFeedCardVisual }) {
 
   return (
     <svg {...svgProps}>
-      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.75" />
-      <path stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" d="m20 20-3.5-3.5" />
-      <path stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" d="M11 8v6M8 11h6" />
+      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+      <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" d="m20 20-3.5-3.5" />
+      <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" d="M11 8v6M8 11h6" />
     </svg>
   );
 }
@@ -124,15 +125,15 @@ function TrustScoreBlock({
 
   if (variant === "meta") {
     return (
-      <div className="flex w-full min-w-0 flex-col items-center">
+      <div className="flex w-[88px] shrink-0 flex-col items-center justify-center">
         <div
           className={pillClass}
           aria-label={`${EN_MESSAGES.latestChecks.trustScorePillLabel}: ${score} out of 100`}
         >
-          <span>{score}</span>
+          <span className="font-bold">{score}</span>
           <span className={slashClass}>/100</span>
         </div>
-        <span className="mt-1 text-[11px] font-medium leading-none text-slate-500">
+        <span className="mt-1 text-[10px] font-medium leading-none text-slate-500">
           {EN_MESSAGES.latestChecks.trustScorePillLabel}
         </span>
       </div>
@@ -226,21 +227,23 @@ function FeedMetaBox({
   trailingActions?: ReactNode;
 }) {
   return (
-    <div className="flex w-full shrink-0 flex-col gap-2 md:ml-auto md:w-[240px] md:min-w-[240px] md:max-w-[240px]">
+    <div className="flex w-full shrink-0 flex-col gap-2 md:ml-auto md:w-[288px] md:min-w-[288px] md:max-w-[288px]">
       <div
-        className={`grid h-[74px] w-full grid-cols-[60px_90px_minmax(0,1fr)] items-center gap-x-3 overflow-hidden rounded-[18px] px-[14px] py-3 ${visual.metaBox}`}
+        className={`flex min-h-[80px] w-full items-center gap-3 rounded-[18px] px-4 py-3.5 ${visual.metaBox}`}
       >
         <time
-          className="truncate text-left text-xs font-medium leading-tight tabular-nums text-slate-500 whitespace-nowrap"
+          className="w-[4.75rem] shrink-0 text-left text-xs font-medium leading-tight tabular-nums text-slate-600 whitespace-nowrap"
           dateTime={timeIso}
           title={timeTitle}
         >
           {timeRelative}
         </time>
 
-        <TrustScoreBlock score={trustScore} visual={visual} variant="meta" />
+        <div className="flex min-w-0 flex-1 items-center justify-center px-1">
+          <TrustScoreBlock score={trustScore} visual={visual} variant="meta" />
+        </div>
 
-        <div className="flex min-w-0 items-center justify-end overflow-hidden">
+        <div className="shrink-0 pl-1">
           <FeedMetaViewCta
             viewLabel={viewLabel}
             visual={visual}
@@ -305,9 +308,9 @@ function FeedCardBody(props: {
     entityBadge ?? EN_MESSAGES.latestChecks.entityLabels.domain.toUpperCase();
 
   return (
-    <div className={`flex w-full min-w-0 flex-col gap-4 ${CARD_PAD} md:flex-row md:items-center md:gap-5`}>
-      <div className="flex min-w-0 flex-1 basis-0 items-center gap-4">
-        <div className={visual.iconCircle} aria-hidden>
+    <div className={`flex w-full min-w-0 flex-col gap-4 ${CARD_PAD} md:flex-row md:items-center md:gap-6`}>
+      <div className="flex min-w-0 flex-1 basis-0 items-center gap-4 sm:gap-5">
+        <div className={`${visual.iconCircle} leading-none [&_svg]:block`} aria-hidden>
           <FeedVerdictIcon visual={visual} />
         </div>
 
