@@ -101,6 +101,9 @@ describe("trust-bands", () => {
     }
 
     expect(likely.scorePill).toContain("emerald");
+    expect(likely.scorePill).not.toContain("to-white");
+    expect(likely.cardShell).not.toContain("to-white");
+    expect(caution.scorePill).not.toContain("to-white");
     expect(likely.accentBar).toContain("emerald");
     expect(mostly.metaCta).not.toContain("underline");
     expect(getTrustColors(75).metricCard).toContain("teal");
