@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAdminRecalcAuthorized } from "@/lib/admin/adminKeyAuth";
 import { normalizeDomain } from "@/lib/cache";
 import { db } from "@/lib/db";
 import { getReputationEnrichment } from "@/lib/outscraper/reputation";
@@ -10,17 +11,8 @@ import {
 
 export const runtime = "nodejs";
 
-function isAuthorized(request: Request): boolean {
-  const expected = process.env.ADMIN_RECALC_KEY?.trim();
-  const provided =
-    request.headers.get("x-admin-key")?.trim() ??
-    request.headers.get("x-admin-recalc-key")?.trim() ??
-    request.headers.get("authorization")?.trim().replace(/^Bearer\s+/i, "");
-  return Boolean(expected && provided && provided === expected);
-}
-
 export async function GET(request: Request) {
-  if (!isAuthorized(request)) {
+  if (!isAdminRecalcAuthorized(request)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
