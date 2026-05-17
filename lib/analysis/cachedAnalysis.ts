@@ -6,21 +6,32 @@ import { enrichScamCheckResultDomainAge } from "@/lib/domain/normalizeDomainAge"
 
 const REVALIDATE_SECONDS = 3600;
 
-/** Cache key segments; serialized function args differentiate domains. */
-const getCachedWebsiteAnalysisInner = unstable_cache(
-  async (domainLower: string) => runWebsiteAnalysis(`https://${domainLower}`, "en", { scanKind: "basic" }),
-  ["website-analysis-v3-domain-age"],
-  { revalidate: REVALIDATE_SECONDS }
-);
+import {
+  WEBSITE_ANALYSIS_CACHE_TAG_ALL,
+  websiteAnalysisCacheTag
+} from "@/lib/trust/cacheTags";
+
+export { WEBSITE_ANALYSIS_CACHE_TAG_ALL, websiteAnalysisCacheTag } from "@/lib/trust/cacheTags";
+
+async function runAnalysisForDomain(domainLower: string) {
+  const normalized = domainLower.toLowerCase();
+  const base = await runWebsiteAnalysis(`https://${normalized}`, "en", { scanKind: "basic" });
+  const override = await db.domainAdminOverride.findUnique({ where: { domain: normalized } });
+  return enrichScamCheckResultDomainAge(applyDomainOverrideToResult(base, override));
+}
 
 /**
  * Cached per-domain analysis for SEO/shareable `/check/[domain]` pages.
+ * Per-domain cache keys + tags allow targeted invalidation after public snapshot persist.
  */
 export function getCachedWebsiteAnalysis(domainLower: string) {
-  return (async () => {
-    const normalized = domainLower.toLowerCase();
-    const base = await getCachedWebsiteAnalysisInner(normalized);
-    const override = await db.domainAdminOverride.findUnique({ where: { domain: normalized } });
-    return enrichScamCheckResultDomainAge(applyDomainOverrideToResult(base, override));
-  })();
+  const normalized = domainLower.toLowerCase();
+  return unstable_cache(
+    () => runAnalysisForDomain(normalized),
+    ["website-analysis-v3-domain-age", normalized],
+    {
+      revalidate: REVALIDATE_SECONDS,
+      tags: [WEBSITE_ANALYSIS_CACHE_TAG_ALL, websiteAnalysisCacheTag(normalized)]
+    }
+  )();
 }

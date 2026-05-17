@@ -29,6 +29,19 @@ describe("reviewMatchConfidence", () => {
     expect(match.confidence).toBe("high");
   });
 
+  it("shows legacy Google metrics as low confidence but displayable", () => {
+    const match = resolveGoogleReviewMatch({
+      ...base,
+      googleFound: true,
+      googleRating: 4.5,
+      googleReviewCount: 5000
+    });
+    expect(match.confidence).toBe("low");
+    expect(match.displayable).toBe(true);
+    expect(match.rating).toBe(4.5);
+    expect(match.reviewCount).toBe(5000);
+  });
+
   it("shows Trustpilot when only rating is present", () => {
     const match = resolveTrustpilotReviewMatch({
       ...base,

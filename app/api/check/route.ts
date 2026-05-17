@@ -17,6 +17,10 @@ import { getAdminIdentityOrNull, getCurrentUserIsAdmin } from "@/lib/auth/admin"
 import { db } from "@/lib/db";
 import { applyDomainOverrideToResult } from "@/lib/admin/apply-domain-override";
 import { buildCheckApiCanonicalExtensions } from "@/lib/trust/canonicalTrustBridge";
+import {
+  detectRiskTrustMismatch,
+  logTrustDisplayAlignment
+} from "@/lib/trust/trustDisplayLog";
 
 export const runtime = "nodejs";
 
@@ -254,6 +258,17 @@ export async function POST(request: Request) {
     }
 
     const canonical = buildCheckApiCanonicalExtensions(fullResult);
+    logTrustDisplayAlignment({
+      domain: fullResult.domain,
+      riskScore: canonical.riskScore,
+      trustScore: canonical.trustScore,
+      consumerVerdictLabel: canonical.consumerVerdictLabel,
+      consumerVerdictBand: canonical.consumerVerdictBand,
+      statusLabel: null,
+      hasPublicPayloadV2: true,
+      source: "api",
+      mismatchRiskTrust: detectRiskTrustMismatch(canonical.riskScore, canonical.trustScore)
+    });
     const payload = {
       detailLevel: "full" as const,
       result: fullResult,

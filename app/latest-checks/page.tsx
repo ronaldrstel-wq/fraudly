@@ -14,6 +14,11 @@ import { publicRobots, SITE_URL } from "@/lib/seo";
 import { checkResultHref } from "@/lib/check/checkResultHref";
 import { buildOverviewFromPublicCheck } from "@/lib/overviewCardPresentation";
 import { logDisplayScoreDebug } from "@/lib/scoring/displayScore";
+import { feedListRowConfidenceBadges } from "@/lib/trust/feedConfidenceStrip";
+import {
+  detectRiskTrustMismatch,
+  logTrustDisplayAlignment
+} from "@/lib/trust/trustDisplayLog";
 import {
   fetchLatestPublicChecksPage,
   type LatestPublicCheckListRow
@@ -106,6 +111,25 @@ function LatestCheckListItem({ row }: { row: LatestPublicCheckListRow }) {
     const iso = safeLastSeenIso(row.lastSeenAt);
     const primaryLine = overviewFeedPrimaryLine(row.checkedValue ?? row.normalizedValue);
     const domainLine = primaryLine.primary || row.normalizedValue || EN_MESSAGES.latestChecks.entityFallback;
+    const confidenceBadges = feedListRowConfidenceBadges({
+      normalizedTrustScore: row.normalizedTrustScore,
+      consumerVerdictLabel: row.consumerVerdictLabel,
+      lastSeenAt: row.lastSeenAt
+    });
+
+    logTrustDisplayAlignment({
+      domain: row.normalizedValue,
+      scanId: row.id,
+      riskScore: row.riskScoreSnapshot,
+      trustScore: m.trustScore,
+      consumerVerdictLabel: row.consumerVerdictLabel ?? m.verdictLabel,
+      consumerVerdictBand: row.consumerVerdictBand ?? null,
+      statusLabel: row.statusLabel,
+      hasPublicPayloadV2: row.normalizedTrustScore != null,
+      source: "latest-checks",
+      mismatchStatusLabel: false,
+      mismatchRiskTrust: detectRiskTrustMismatch(row.riskScoreSnapshot, m.trustScore)
+    });
 
     return (
       <CompactOverviewFeedArticleCard
@@ -123,6 +147,7 @@ function LatestCheckListItem({ row }: { row: LatestPublicCheckListRow }) {
             : ""
         }
         entityBadge={entityBadge(row.entityType)}
+        confidenceBadges={confidenceBadges}
       />
     );
   } catch (err) {

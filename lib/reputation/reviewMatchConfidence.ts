@@ -1,5 +1,6 @@
 import type { ReviewSignals } from "@/lib/reviewSignals";
 import { sanitizeReviewFields } from "@/lib/reputation/reviewRatingNormalize";
+import { assessGoogleReviewEvidence } from "@/lib/reputation/googleReviewRules";
 import {
   MIN_CONFIDENCE_FOR_TRUST_SCORE,
   MIN_REVIEWS_FOR_TRUST_SCORE,
@@ -31,42 +32,59 @@ export type ResolvedTrustpilotReview = {
   enrichmentConfidence?: TrustpilotMatchConfidence | "none";
 };
 
-function googleMatchConfidenceToLegacy(
-  conf: ReviewSignals["googleMatchConfidence"]
-): ReviewMatchConfidence {
-  if (conf === "high") return "high";
-  if (conf === "medium" || conf === "low") return "low";
-  return "none";
-}
-
 export function resolveGoogleReviewMatch(signals: ReviewSignals): ResolvedGoogleReview {
-  const sanitized = sanitizeReviewFields(signals.googleRating, signals.googleReviewCount);
-  const enrichmentConf = signals.googleMatchConfidence ?? "none";
-  const exactDomain = signals.googleExactDomainMatch === true;
-  const legacyConf = googleMatchConfidenceToLegacy(enrichmentConf);
+  const ev = assessGoogleReviewEvidence(signals);
 
-  if (enrichmentConf === "none" && sanitized.rating == null && sanitized.reviewCount == null) {
+  if (!ev.hasSource) {
+    return { confidence: "none", rating: null, reviewCount: null, displayable: false };
+  }
+
+  if (ev.validated && ev.hasFullPublicMetrics) {
     return {
-      confidence: "none",
+      confidence: "high",
+      rating: ev.rating,
+      reviewCount: ev.reviewCount,
+      displayable: true
+    };
+  }
+
+  if (ev.rating != null && ev.reviewCount == null) {
+    return {
+      confidence: "low",
+      rating: ev.rating,
+      reviewCount: null,
+      displayable: false
+    };
+  }
+
+  if (ev.enrichmentConf === "low" || ev.enrichmentConf === "medium") {
+    return {
+      confidence: "low",
       rating: null,
       reviewCount: null,
       displayable: false
     };
   }
 
-  const displayable =
-    enrichmentConf === "high" &&
-    exactDomain &&
-    sanitized.rating != null &&
-    sanitized.reviewCount != null &&
-    sanitized.reviewCount >= MIN_REVIEWS_FOR_TRUST_SCORE;
+  if (ev.hasFullPublicMetrics) {
+    return {
+      confidence: "low",
+      rating: ev.rating,
+      reviewCount: ev.reviewCount,
+      displayable: true
+    };
+  }
 
-  return {
-    confidence: displayable ? "high" : legacyConf,
-    rating: displayable ? sanitized.rating : null,
-    reviewCount: displayable ? sanitized.reviewCount : null,
-    displayable
-  };
+  if (ev.hasPartialMetrics || ev.hasSource) {
+    return {
+      confidence: "low",
+      rating: ev.rating,
+      reviewCount: ev.reviewCount,
+      displayable: false
+    };
+  }
+
+  return { confidence: "none", rating: null, reviewCount: null, displayable: false };
 }
 
 function enrichmentAllowsTrustpilotDisplay(

@@ -1,5 +1,7 @@
+import { unstable_cache } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import { LATEST_PUBLIC_CHECKS_CACHE_TAG } from "@/lib/trust/cacheTags";
 
 /** Columns guaranteed by the original LatestPublicCheck migration (no optional JSON payload). */
 export const latestPublicCheckListSelect = {
@@ -58,7 +60,7 @@ function isMissingColumnError(err: unknown): boolean {
  * Paginated latest-public-check feed for `/latest-checks`.
  * Never throws — returns `{ rows: [], loadFailed: true }` on any DB error.
  */
-export async function fetchLatestPublicChecksPage(
+async function fetchLatestPublicChecksPageInner(
   skip: number,
   take: number
 ): Promise<LatestPublicChecksListResult> {
@@ -88,4 +90,15 @@ export async function fetchLatestPublicChecksPage(
       return { rows: [], loadFailed: true };
     }
   }
+}
+
+export async function fetchLatestPublicChecksPage(
+  skip: number,
+  take: number
+): Promise<LatestPublicChecksListResult> {
+  return unstable_cache(
+    () => fetchLatestPublicChecksPageInner(skip, take),
+    ["latest-public-checks-page", String(skip), String(take)],
+    { revalidate: 120, tags: [LATEST_PUBLIC_CHECKS_CACHE_TAG] }
+  )();
 }

@@ -5,8 +5,70 @@ import { reserveScanQuotaOrReject } from "@/lib/checkRateLimits";
 import { runWebsiteAnalysis } from "@/lib/analysis/runWebsiteAnalysis";
 import { getBillingUserOrNull } from "@/lib/user-store";
 
+const scanResultFixture = {
+  score: 42,
+  verdict: "safe" as const,
+  domain: "example.com",
+  reasons: [],
+  trustSignals: [],
+  providerEvidence: [],
+  intelScoreBreakdown: [],
+  domainIntelligence: { source: "test", warnings: [] },
+  safeBrowsing: { safeBrowsingStatus: "safe" as const, safeBrowsingThreats: [], source: "GSB", warnings: [] },
+  openPhish: { listed: false, matches: [], source: "OpenPhish", warnings: [] },
+  urlHaus: { listed: false, matches: [], source: "URLhaus", warnings: [] },
+  ssl: { httpsEnabled: true, validCertificate: true, source: "tls", warnings: [] },
+  police: { listedInPoliceScamDatabase: false, source: "police", warnings: [] },
+  reviewSignals: {
+    googleFound: false,
+    trustpilotFound: false,
+    suspiciousReviewSignals: [],
+    sources: [],
+    warnings: [],
+    publicReviewAvailabilityNotes: [],
+    reviewFetchDebug: []
+  },
+  reviewSummary: "",
+  aiUsed: false,
+  supplyChainSignals: {
+    likelyDropshipping: false,
+    likelyChinaShipping: false,
+    likelyLocalProduction: false,
+    confidence: "low" as const,
+    dropshipConfidence: "low" as const,
+    chinaConfidence: "low" as const,
+    localConfidence: "low" as const,
+    reasons: [],
+    scoreAdjustment: 0
+  },
+  scoreResult: {
+    baseScore: 50,
+    finalScore: 42,
+    verdict: "safe" as const,
+    signals: [],
+    topPositive: [],
+    topNegative: [],
+    topPositiveSignals: [],
+    topNegativeSignals: []
+  },
+  domainInfrastructure: {
+    source: "dns",
+    warnings: [],
+    dnsResolvable: true,
+    rdapIndicatesNotFound: false,
+    treatAsNonExistentHost: false
+  },
+  siteStatus: "active" as const,
+  confidenceLevel: "medium" as const,
+  confidenceRationale: "",
+  behavioralSignalsPending: {}
+};
+
 vi.mock("@/lib/analysis/runWebsiteAnalysis", () => ({
-  runWebsiteAnalysis: vi.fn(async () => ({ domain: "example.com", score: 42 } as never))
+  runWebsiteAnalysis: vi.fn(async (_url: string) => ({
+    ...scanResultFixture,
+    domain: new URL(_url).hostname
+  }))
 }));
 
 vi.mock("@/lib/latest-public-checks/persist", () => ({

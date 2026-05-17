@@ -1,5 +1,6 @@
 import { standardVerdictLabel, trustScoreFromRisk } from "@/lib/scoring/displayScore";
 import { scamVerdictFromConsumerLabel } from "@/lib/scoring/consumerVerdictMap";
+import { logTrustDisplayAlignment } from "@/lib/trust/trustDisplayLog";
 import type { ConsumerVerdictLabel } from "@/lib/trust/types";
 import type { ScamVerdict } from "@/types/scam";
 
@@ -55,8 +56,17 @@ export function auditTrustDisplayAlignment(input: {
     notes
   };
 
-  if (process.env.NODE_ENV === "development" && report.mismatch) {
-    console.warn("[scoringIntegrity]", report);
+  if (report.mismatch) {
+    logTrustDisplayAlignment({
+      domain: input.domain,
+      riskScore: input.riskScore,
+      trustScore: report.trustFromRisk,
+      consumerVerdictLabel: report.consumerVerdict,
+      statusLabel: input.storedStatusLabel ?? null,
+      hasPublicPayloadV2: false,
+      source: "snapshot",
+      mismatchStatusLabel: true
+    });
   }
 
   return report;

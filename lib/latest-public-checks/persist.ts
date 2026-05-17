@@ -10,6 +10,13 @@ import {
   buildNormalizedTrustFromLegacyResult,
   buildPublicResultPayloadV2
 } from "@/lib/trust/canonicalTrustBridge";
+import { invalidateTrustCachesAfterPublicSnapshot } from "@/lib/trust/invalidateTrustCaches";
+import {
+  detectRiskTrustMismatch,
+  logTrustDisplayAlignment,
+  payloadHasV2Schema
+} from "@/lib/trust/trustDisplayLog";
+import { auditTrustDisplayAlignment } from "@/lib/scoring/scoringIntegrity";
 import type { ScamCheckResult } from "@/types/scam";
 import { Prisma } from "@prisma/client";
 
@@ -90,4 +97,27 @@ export async function upsertLatestPublicCheckFromCompletedScan(options: {
   } catch {
     // Non-fatal if path update fails
   }
+
+  const drift = auditTrustDisplayAlignment({
+    domain,
+    source: "persist/latest-public-check",
+    riskScore: canonical.riskScore,
+    storedStatusLabel: statusLabel
+  });
+
+  logTrustDisplayAlignment({
+    domain,
+    scanId: row.id,
+    riskScore: canonical.riskScore,
+    trustScore: canonical.trustScore,
+    consumerVerdictLabel: canonical.consumerVerdictLabel,
+    consumerVerdictBand: canonical.consumerVerdictBand,
+    statusLabel,
+    hasPublicPayloadV2: payloadHasV2Schema(payload),
+    source: "persist",
+    mismatchStatusLabel: drift.mismatch,
+    mismatchRiskTrust: detectRiskTrustMismatch(canonical.riskScore, canonical.trustScore)
+  });
+
+  await invalidateTrustCachesAfterPublicSnapshot(domain);
 }

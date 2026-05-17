@@ -152,11 +152,13 @@ flowchart TD
 - [x] `lib/scoring/componentIntegrity.ts` dev warnings on conflicting props
 - [x] ResultCard integrity logging when normalized trust provided
 
-### Phase 4 — Performance + cache
+### Phase 4 — Production hardening (DONE)
 
-- [ ] Invalidate analysis cache when new snapshot persisted
-- [ ] Reduce `/check` ISR staleness or on-demand revalidate after scan
-- [ ] Structured logging pipeline for `logDisplayScoreDebug` / `auditTrustDisplayAlignment`
+- [x] Per-domain cache tags + `invalidateTrustCachesAfterPublicSnapshot`
+- [x] `loadTrustView` snapshot-first signals; backfill script + deploy checklist
+- [x] Sampled `logTrustDisplayAlignment` (see `docs/TRUST_SCORE_DEPLOY.md`)
+- [x] `docs/MOBILE_TRUST_CONTRACT.md`
+- [x] Latest-checks confidence strip on feed cards
 
 ---
 

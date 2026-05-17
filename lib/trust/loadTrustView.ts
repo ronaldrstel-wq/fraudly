@@ -5,9 +5,15 @@ import {
   normalizeTrustResult,
   type NormalizeTrustResultOptions
 } from "@/lib/trust/normalizeTrustResult";
+import {
+  detectRiskTrustMismatch,
+  logTrustDisplayAlignment,
+  payloadHasV2Schema
+} from "@/lib/trust/trustDisplayLog";
 import type { NormalizedTrustResult } from "@/lib/trust/types";
 import type { ScamCheckResult } from "@/types/scam";
 import type { LatestPublicCheckSnapshot } from "@/lib/latest-public-checks/snapshot";
+import { auditTrustDisplayAlignment } from "@/lib/scoring/scoringIntegrity";
 
 export type TrustViewForDomain = {
   result: ScamCheckResult;
@@ -15,46 +21,83 @@ export type TrustViewForDomain = {
   normalized: NormalizedTrustResult;
 };
 
-/**
- * Loads cached analysis + latest public snapshot and returns one normalized trust view.
- * Snapshot display lock ensures /check, /domain, and latest→detail share the same score/verdict.
- */
 export type LoadTrustViewOptions = Pick<NormalizeTrustResultOptions, "enrichment"> & {
-  /** When set, prefer this public snapshot id if it matches the domain (e.g. ?scanId= from latest checks). */
   preferredScanId?: string;
 };
 
+export async function resolveAnalysisResult(
+  domainLower: string,
+  snapshot: LatestPublicCheckSnapshot | null,
+  preferredScanId?: string
+): Promise<{ result: ScamCheckResult; resultSource: "stored-payload" | "live-cache" }> {
+  if (snapshot?.storedResult) {
+    return { result: snapshot.storedResult, resultSource: "stored-payload" };
+  }
+  if (preferredScanId && snapshot) {
+    return { result: await getCachedWebsiteAnalysis(domainLower), resultSource: "live-cache" };
+  }
+  if (snapshot?.canonical) {
+    return { result: await getCachedWebsiteAnalysis(domainLower), resultSource: "live-cache" };
+  }
+  return { result: await getCachedWebsiteAnalysis(domainLower), resultSource: "live-cache" };
+}
+
+/**
+ * Loads snapshot-first analysis + normalized trust view.
+ * Pinned `scanId` + stored payload avoids mixing 1h cached analysis with canonical snapshot scores.
+ */
 export async function loadTrustViewForDomain(
   domainLower: string,
   route: string,
   extra?: LoadTrustViewOptions
 ): Promise<TrustViewForDomain> {
   const preferredScanId = extra?.preferredScanId;
-  const [cachedResult, snapshot] = await Promise.all([
-    getCachedWebsiteAnalysis(domainLower),
-    resolveLatestPublicCheckSnapshotForCheckPage(domainLower, preferredScanId)
-  ]);
+  const snapshot = await resolveLatestPublicCheckSnapshotForCheckPage(domainLower, preferredScanId);
+  const { result, resultSource } = await resolveAnalysisResult(domainLower, snapshot, preferredScanId);
 
-  const result = snapshot?.storedResult ?? cachedResult;
+  let normalized: NormalizedTrustResult;
 
   if (snapshot?.storedNormalized) {
-    const normalized: NormalizedTrustResult = {
+    normalized = {
       ...snapshot.storedNormalized,
       raw: result,
       scanId: snapshot.id,
       scoreSource: "public_snapshot",
       checkedAt: snapshot.lastSeenAt.toISOString()
     };
-    return { result, snapshot, normalized };
+  } else {
+    normalized = normalizeTrustResult(result, {
+      displayLock: snapshot ? displayLockFromSnapshot(snapshot) : null,
+      checkedAt: snapshot?.lastSeenAt ?? null,
+      submittedUrl: result.redirectChain?.finalUrl ?? `https://${domainLower}`,
+      route,
+      ...extra
+    });
   }
 
-  const normalized = normalizeTrustResult(result, {
-    displayLock: snapshot ? displayLockFromSnapshot(snapshot) : null,
-    checkedAt: snapshot?.lastSeenAt ?? null,
-    submittedUrl: result.redirectChain?.finalUrl ?? `https://${domainLower}`,
-    route,
-    ...extra
-  });
+  if (snapshot) {
+    const canonical = snapshot.canonical;
+    const drift = auditTrustDisplayAlignment({
+      domain: domainLower,
+      source: route,
+      riskScore: canonical?.riskScore ?? snapshot.display.riskScore,
+      storedStatusLabel: snapshot.statusLabel
+    });
+    logTrustDisplayAlignment({
+      domain: domainLower,
+      scanId: snapshot.id,
+      riskScore: normalized.riskScore,
+      trustScore: normalized.trustScore,
+      consumerVerdictLabel: normalized.verdict,
+      consumerVerdictBand: canonical?.consumerVerdictBand ?? null,
+      statusLabel: snapshot.statusLabel,
+      hasPublicPayloadV2: Boolean(snapshot.storedNormalized) || payloadHasV2Schema(null),
+      source: "check-page",
+      mismatchStatusLabel: drift.mismatch,
+      mismatchRiskTrust: detectRiskTrustMismatch(normalized.riskScore, normalized.trustScore)
+    });
+    void resultSource;
+  }
 
   return { result, snapshot, normalized };
 }

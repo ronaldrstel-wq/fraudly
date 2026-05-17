@@ -2,8 +2,10 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { FeedCardDevLogger } from "@/components/overview/FeedCardDevLogger";
 import { EN_MESSAGES } from "@/lib/messages.en";
+import { TrustDataConfidenceBadge } from "@/components/trust/TrustDataConfidenceBadge";
 import type { OverviewCardModel } from "@/lib/overviewCardPresentation";
 import { getOverviewFeedCardVisual, type OverviewFeedCardVisual } from "@/lib/scoring/trust-bands";
+import type { DataConfidenceBadgeModel } from "@/lib/trust/dataConfidence";
 
 const CARD_PAD = "px-4 py-3.5 sm:px-5 sm:py-3.5 md:min-h-[116px]";
 
@@ -269,6 +271,7 @@ export type CompactOverviewFeedBaseProps = {
   timeTitle: string;
   entityBadge?: string;
   ariaLabel?: string;
+  confidenceBadges?: DataConfidenceBadgeModel[];
 };
 
 function FeedCardBody(props: {
@@ -285,6 +288,7 @@ function FeedCardBody(props: {
   href?: string;
   decorativeCta?: boolean;
   trailingActions?: ReactNode;
+  confidenceBadges?: DataConfidenceBadgeModel[];
 }) {
   const {
     m,
@@ -299,7 +303,8 @@ function FeedCardBody(props: {
     viewLabel,
     href,
     decorativeCta,
-    trailingActions
+    trailingActions,
+    confidenceBadges
   } = props;
 
   const domainLabel =
@@ -320,6 +325,13 @@ function FeedCardBody(props: {
             {domainLine || "—"}
           </p>
           <p className="line-clamp-2 text-sm font-normal leading-snug text-slate-600">{m.oneLiner}</p>
+          {confidenceBadges && confidenceBadges.length > 0 ? (
+            <div className="flex flex-wrap gap-1 pt-0.5" aria-label="Data confidence">
+              {confidenceBadges.map((badge) => (
+                <TrustDataConfidenceBadge key={`${badge.indicator}-${badge.label}`} badge={badge} />
+              ))}
+            </div>
+          ) : null}
           <p className="sr-only">{domainLabel}</p>
         </div>
       </div>
@@ -375,6 +387,7 @@ export function CompactOverviewFeedLinkCard(props: CompactOverviewFeedBaseProps 
         timeTitle={timeTitle}
         viewLabel={viewLabel}
         decorativeCta
+        confidenceBadges={props.confidenceBadges}
       />
     </Link>
   );
@@ -423,6 +436,7 @@ export function CompactOverviewFeedArticleCard(props: CompactOverviewFeedBasePro
         viewLabel={viewLabel}
         href={href}
         trailingActions={trailingActions}
+        confidenceBadges={props.confidenceBadges}
       />
     </article>
   );

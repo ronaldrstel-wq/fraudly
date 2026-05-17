@@ -2,9 +2,11 @@ import type { ReviewSignals } from "@/lib/reviewSignals";
 import {
   GOOGLE_MIN_CONFIDENCE_FOR_TRUST_SCORE,
   GOOGLE_POSSIBLE_MATCH_UI_NOTE,
+  GOOGLE_UNVERIFIED_UI_NOTE,
   MIN_CONFIDENCE_FOR_TRUST_SCORE,
   MIN_REVIEWS_FOR_TRUST_SCORE
 } from "@/lib/reputation/reviewConfig";
+import { assessGoogleReviewEvidence, googlePossibleMatchFound } from "@/lib/reputation/googleReviewRules";
 import { resolveTrustpilotReviewMatch } from "@/lib/reputation/reviewMatchConfidence";
 import { sanitizeReviewFields } from "@/lib/reputation/reviewRatingNormalize";
 import type { TrustpilotMatchConfidence } from "@/lib/reputation/trustpilotMatch";
@@ -78,13 +80,6 @@ function googleConfidenceScore(signals: ReviewSignals): number {
     default:
       return 0;
   }
-}
-
-function googlePossibleMatchFound(signals: ReviewSignals): boolean {
-  const conf = signals.googleMatchConfidence;
-  if (conf === "medium" || conf === "low") return true;
-  if (conf === "high" && signals.googleExactDomainMatch !== true) return true;
-  return Boolean(signals.googleMatchNote?.includes("Possible"));
 }
 
 function meetsTrustScoreGate(
@@ -217,13 +212,10 @@ function buildChannelPresentation(args: {
 }
 
 export function resolveGoogleReviewChannel(signals: ReviewSignals): ReviewChannelPresentation {
-  const sanitized = sanitizeReviewFields(signals.googleRating, signals.googleReviewCount);
+  const ev = assessGoogleReviewEvidence(signals);
   const confidenceScore = googleConfidenceScore(signals);
-  const validatedDisplay =
-    signals.googleMatchConfidence === "high" && signals.googleExactDomainMatch === true;
-  const possibleMatch = googlePossibleMatchFound(signals);
 
-  if (!validatedDisplay && !possibleMatch) {
+  if (!ev.hasSource) {
     return buildChannelPresentation({
       source: "Google Reviews",
       found: false,
@@ -233,7 +225,19 @@ export function resolveGoogleReviewChannel(signals: ReviewSignals): ReviewChanne
     });
   }
 
-  if (!validatedDisplay) {
+  if (ev.validated && ev.rating != null && ev.reviewCount != null) {
+    return buildChannelPresentation({
+      source: "Google Reviews",
+      found: true,
+      rating: ev.rating,
+      reviewCount: ev.reviewCount,
+      confidenceScore,
+      meetsScoreGate: (_found, rating, reviewCount, score) =>
+        meetsGoogleTrustScoreGate(signals, rating, reviewCount, score)
+    });
+  }
+
+  if (googlePossibleMatchFound(signals) || ev.enrichmentConf === "medium" || ev.enrichmentConf === "low") {
     return buildChannelPresentation({
       source: "Google Reviews",
       found: true,
@@ -245,14 +249,42 @@ export function resolveGoogleReviewChannel(signals: ReviewSignals): ReviewChanne
     });
   }
 
+  if (ev.hasFullPublicMetrics) {
+    return {
+      source: "Google Reviews",
+      found: true,
+      rating: ev.rating,
+      reviewCount: ev.reviewCount,
+      confidenceScore: Math.max(confidenceScore, 0.45),
+      usedInTrustScore: false,
+      displayState: "limited",
+      reputationLabel: ev.rating != null ? reputationLabelFromRating(ev.rating) : null,
+      scoreImpactLabel: REVIEW_SCORE_IMPACT.notEnoughData,
+      showMetrics: true,
+      bodyMessage: "Limited review data"
+    };
+  }
+
+  if (ev.rating != null && ev.reviewCount == null) {
+    return buildChannelPresentation({
+      source: "Google Reviews",
+      found: true,
+      rating: null,
+      reviewCount: null,
+      confidenceScore: Math.max(confidenceScore, 0.45),
+      forceLowConfidence: true,
+      lowConfidenceMessage: "Limited review data"
+    });
+  }
+
   return buildChannelPresentation({
     source: "Google Reviews",
     found: true,
-    rating: sanitized.rating,
-    reviewCount: sanitized.reviewCount,
+    rating: null,
+    reviewCount: null,
     confidenceScore,
-    meetsScoreGate: (_found, rating, reviewCount, score) =>
-      meetsGoogleTrustScoreGate(signals, rating, reviewCount, score)
+    forceLowConfidence: true,
+    lowConfidenceMessage: GOOGLE_UNVERIFIED_UI_NOTE
   });
 }
 

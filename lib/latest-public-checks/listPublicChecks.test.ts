@@ -1,5 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
+vi.mock("next/cache", () => ({
+  unstable_cache: (fn: () => unknown) => fn
+}));
+
 vi.mock("@/lib/db", () => ({
   db: {
     latestPublicCheck: {
