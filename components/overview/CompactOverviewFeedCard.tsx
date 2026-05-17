@@ -4,11 +4,16 @@ import { EN_MESSAGES } from "@/lib/messages.en";
 import type { OverviewCardModel } from "@/lib/overviewCardPresentation";
 import { getOverviewFeedCardVisual, type OverviewFeedCardVisual } from "@/lib/scoring/trust-bands";
 
-const CARD_PAD = "px-4 py-4 sm:px-5 sm:py-5 md:min-h-[148px]";
+const CARD_PAD = "px-5 py-5 sm:px-6 sm:py-5 md:min-h-[148px]";
 
 function FeedVerdictIcon({ visual }: { visual: OverviewFeedCardVisual }) {
   const ink = visual.iconInk;
-  const svgProps = { className: `h-9 w-9 sm:h-10 sm:w-10 ${ink}`, fill: "none", viewBox: "0 0 24 24", "aria-hidden": true as const };
+  const svgProps = {
+    className: `h-6 w-6 shrink-0 ${ink}`,
+    fill: "none",
+    viewBox: "0 0 24 24",
+    "aria-hidden": true as const
+  };
 
   if (visual.iconKind === "trusted") {
     return (
@@ -49,7 +54,6 @@ function FeedVerdictIcon({ visual }: { visual: OverviewFeedCardVisual }) {
           strokeLinejoin="round"
           d="M12 9v4m0 4h.01M10.29 3.86 2.82 17a1 1 0 0 0 .86 1.5h16.64a1 1 0 0 0 .86-1.5L13.71 3.86a1 1 0 0 0-1.72 0Z"
         />
-        <path stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" d="M4 4 20 20" />
       </svg>
     );
   }
@@ -118,6 +122,23 @@ function TrustScoreBlock({
   const pillClass = variant === "meta" ? visual.metaScorePill : visual.scorePill;
   const slashClass = variant === "meta" ? visual.metaScoreSlash : visual.scoreSlash;
 
+  if (variant === "meta") {
+    return (
+      <div className="flex w-full min-w-0 flex-col items-center">
+        <div
+          className={pillClass}
+          aria-label={`${EN_MESSAGES.latestChecks.trustScorePillLabel}: ${score} out of 100`}
+        >
+          <span>{score}</span>
+          <span className={slashClass}>/100</span>
+        </div>
+        <span className="mt-1 text-[11px] font-medium leading-none text-slate-500">
+          {EN_MESSAGES.latestChecks.trustScorePillLabel}
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className="flex w-full min-w-0 flex-col items-center gap-0.5">
       <div
@@ -148,9 +169,10 @@ function FeedMetaViewCta({
   decorative?: boolean;
 }) {
   const cls = [
-    "fraudly-focus inline-flex max-w-full shrink-0 items-center gap-0.5 rounded-full border bg-white px-2.5 py-2 text-[13px] font-bold leading-none",
+    "fraudly-focus",
+    visual.metaViewBtn,
     visual.ctaText,
-    decorative ? visual.ctaTextHover : `${visual.ctaTextHover} hover:brightness-95`
+    decorative ? visual.ctaTextHover : `${visual.ctaTextHover} hover:brightness-[0.98]`
   ].join(" ");
   const content = (
     <>
@@ -204,12 +226,12 @@ function FeedMetaBox({
   trailingActions?: ReactNode;
 }) {
   return (
-    <div className="flex w-full shrink-0 flex-col gap-2 md:ml-auto md:w-[250px] md:min-w-[250px] md:max-w-[250px]">
+    <div className="flex w-full shrink-0 flex-col gap-2 md:ml-auto md:w-[240px] md:min-w-[240px] md:max-w-[240px]">
       <div
-        className={`grid h-[72px] w-full grid-cols-[64px_82px_1fr] items-center gap-x-2.5 overflow-hidden rounded-[18px] px-[14px] py-[10px] ${visual.metaBox}`}
+        className={`grid h-[74px] w-full grid-cols-[60px_90px_minmax(0,1fr)] items-center gap-x-3 overflow-hidden rounded-[18px] px-[14px] py-3 ${visual.metaBox}`}
       >
         <time
-          className="truncate text-left text-[10px] font-medium leading-tight tabular-nums text-slate-500"
+          className="truncate text-left text-xs font-medium leading-tight tabular-nums text-slate-500 whitespace-nowrap"
           dateTime={timeIso}
           title={timeTitle}
         >
@@ -218,7 +240,7 @@ function FeedMetaBox({
 
         <TrustScoreBlock score={trustScore} visual={visual} variant="meta" />
 
-        <div className="flex min-w-0 justify-end">
+        <div className="flex min-w-0 items-center justify-end overflow-hidden">
           <FeedMetaViewCta
             viewLabel={viewLabel}
             visual={visual}
@@ -284,8 +306,8 @@ function FeedCardBody(props: {
 
   return (
     <div className={`flex w-full min-w-0 flex-col gap-4 ${CARD_PAD} md:flex-row md:items-center md:gap-5`}>
-      <div className="flex min-w-0 flex-1 basis-0 items-start gap-4 sm:gap-5">
-        <div className={visual.iconCircle}>
+      <div className="flex min-w-0 flex-1 basis-0 items-center gap-4">
+        <div className={visual.iconCircle} aria-hidden>
           <FeedVerdictIcon visual={visual} />
         </div>
 
