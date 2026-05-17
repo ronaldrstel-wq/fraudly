@@ -167,45 +167,46 @@ function FeedCardBody(props: {
     entityBadge ?? EN_MESSAGES.latestChecks.entityLabels.domain.toUpperCase();
 
   return (
-    <div className={`relative flex flex-col gap-4 md:flex-row md:items-center md:gap-5 ${CARD_PAD}`}>
-      <div className="flex min-w-0 flex-1 items-start gap-4 sm:gap-5">
-        <div className={visual.iconCircle}>
-          <FeedVerdictIcon visual={visual} />
-        </div>
+    <div className={`relative ${CARD_PAD}`}>
+      <time
+        className="absolute right-4 top-4 z-10 text-xs font-medium tabular-nums text-slate-500 sm:right-5 sm:top-5"
+        dateTime={timeIso}
+        title={timeTitle}
+      >
+        {timeRelative}
+      </time>
 
-        <div className="min-w-0 flex-1 space-y-1 sm:space-y-1.5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">{domainLabel}</p>
-          <h2 id={headlineId} className={`text-balance ${visual.headline}`}>
-            {m.headline}
-          </h2>
-          <p className="line-clamp-2 text-sm leading-snug text-slate-600">{m.oneLiner}</p>
-          <p className="break-all text-base font-bold leading-snug text-slate-900" title={domainFullTitle}>
-            {domainLine || "—"}
-          </p>
-        </div>
-      </div>
-
-      <div className="flex shrink-0 flex-col gap-3 md:w-auto md:min-w-[13.5rem] md:items-end md:self-stretch md:justify-between md:py-0.5">
-        <time
-          className="text-xs font-medium tabular-nums text-slate-500 md:text-right"
-          dateTime={timeIso}
-          title={timeTitle}
-        >
-          {timeRelative}
-        </time>
-
-        <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end md:flex-nowrap md:gap-4">
-          <TrustScoreBlock score={m.trustScore} visual={visual} />
-          <div className="flex flex-wrap items-center gap-2">
-            <FeedViewResultCta
-              viewLabel={viewLabel}
-              visual={visual}
-              href={href}
-              headlineId={headlineId}
-              decorative={decorativeCta}
-            />
-            {trailingActions}
+      <div className="grid grid-cols-1 items-center gap-4 pt-5 sm:gap-5 md:grid-cols-[minmax(0,1fr)_180px_160px] md:gap-6 md:pt-0">
+        <div className="flex min-w-0 items-start gap-4 sm:gap-5 md:pr-2">
+          <div className={visual.iconCircle}>
+            <FeedVerdictIcon visual={visual} />
           </div>
+
+          <div className="min-w-0 flex-1 space-y-1 overflow-hidden sm:space-y-1.5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">{domainLabel}</p>
+            <h2 id={headlineId} className={`text-balance ${visual.headline}`}>
+              {m.headline}
+            </h2>
+            <p className="line-clamp-2 text-sm leading-snug text-slate-600">{m.oneLiner}</p>
+            <p className="truncate text-base font-bold leading-snug text-slate-900" title={domainFullTitle}>
+              {domainLine || "—"}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex w-full justify-center justify-self-center md:w-[180px]">
+          <TrustScoreBlock score={m.trustScore} visual={visual} />
+        </div>
+
+        <div className="flex w-full flex-wrap items-center justify-end justify-self-end gap-2 md:w-[160px]">
+          <FeedViewResultCta
+            viewLabel={viewLabel}
+            visual={visual}
+            href={href}
+            headlineId={headlineId}
+            decorative={decorativeCta}
+          />
+          {trailingActions}
         </div>
       </div>
     </div>
