@@ -572,31 +572,35 @@ export type OverviewFeedCardVisual = {
 };
 
 const FEED_MOTION = "transition-all duration-200 ease-out";
-/** Integrated meta rail — soft inset on verdict-tinted card (no floating widget outline). */
+/** Integrated meta rail — flush with card (no floating widget). */
 const FEED_META_BOX =
-  "border border-black/[0.04] bg-white/32 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]";
+  "border border-[rgba(15,23,42,0.06)] bg-[rgba(255,255,255,0.72)] shadow-none";
 const FEED_META_VIEW_BTN =
-  "inline-flex h-[34px] shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-full border border-slate-200/80 bg-white/90 px-3.5 text-[13px] font-semibold leading-none text-slate-700 shadow-sm hover:bg-white";
+  "inline-flex h-[34px] shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-full border border-slate-200/80 bg-white/90 px-3.5 text-[13px] font-semibold leading-none text-slate-700 shadow-none hover:bg-white";
 const FEED_META_SCORE_SLASH = "text-[11px] font-normal text-slate-500";
-const FEED_HEADLINE =
-  "text-[1.85rem] font-black leading-[1.05] tracking-[-0.025em] sm:text-[2rem]";
-const FEED_STRIPE_SAFE = "border-l-4 border-l-emerald-500 rounded-l-[22px]";
-const FEED_STRIPE_CAUTION = "border-l-4 border-l-amber-500 rounded-l-[22px]";
-const FEED_STRIPE_SUSPICIOUS = "border-l-4 border-l-orange-500 rounded-l-[22px]";
-const FEED_STRIPE_DANGER = "border-l-4 border-l-rose-500 rounded-l-[22px]";
-const FEED_STRIPE_INFO = "border-l-4 border-l-blue-500 rounded-l-[22px]";
+const FEED_HEADLINE_BASE =
+  "text-[calc(1.85rem+2px)] font-bold leading-[1.05] tracking-[-0.025em] sm:text-[calc(2rem+2px)]";
+const FEED_STRIPE_SAFE = "border-l-4 border-solid border-l-[#14b86a] rounded-l-[22px]";
+const FEED_STRIPE_CAUTION = "border-l-4 border-solid border-l-[#f2a93b] rounded-l-[22px]";
+const FEED_STRIPE_SUSPICIOUS = "border-l-4 border-solid border-l-[#f2a93b] rounded-l-[22px]";
+const FEED_STRIPE_DANGER = "border-l-4 border-solid border-l-[#ef4444] rounded-l-[22px]";
+const FEED_STRIPE_INFO = "border-l-4 border-solid border-l-blue-500 rounded-l-[22px]";
+const FEED_CARD_SHELL =
+  "relative flex w-full overflow-hidden rounded-[22px] border border-[rgba(15,23,42,0.08)]";
+const FEED_META_SCORE_PILL =
+  "inline-flex h-[32px] w-[88px] shrink-0 items-baseline justify-center gap-0.5 rounded-full border border-slate-200/75 bg-white/90 px-3 text-[14px] leading-none tabular-nums text-slate-800 shadow-none";
 
 const FEED_TRUSTED: OverviewFeedCardVisual = {
   tone: "safe",
   iconKind: "trusted",
   stripe: FEED_STRIPE_SAFE,
-  card: `relative flex w-full overflow-hidden rounded-[22px] border border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-emerald-100/75 to-emerald-100/55 shadow-[0_6px_24px_-10px_rgba(16,185,129,0.22)] ${FEED_MOTION}`,
+  card: `${FEED_CARD_SHELL} bg-[#f3fbf7] shadow-[0_6px_24px_-10px_rgba(16,185,129,0.14)] ${FEED_MOTION}`,
   cardHover:
-    "hover:-translate-y-0.5 hover:border-emerald-400/85 hover:shadow-[0_10px_30px_-10px_rgba(16,185,129,0.3)]",
+    "hover:-translate-y-0.5 hover:border-[rgba(20,184,106,0.25)] hover:shadow-[0_8px_28px_-10px_rgba(16,185,129,0.2)]",
   iconCircle:
-    "flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border-2 border-emerald-500/85 bg-emerald-50/95 shadow-[0_2px_8px_rgba(16,185,129,0.2)]",
-  iconInk: "text-emerald-800",
-  headline: `${FEED_HEADLINE} text-emerald-700`,
+    "flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border-2 border-[#14b86a]/35 bg-white/90 shadow-[0_2px_8px_rgba(16,185,129,0.12)]",
+  iconInk: "text-[#067647]",
+  headline: `${FEED_HEADLINE_BASE} text-[#067647]`,
   scorePill:
     "inline-flex min-w-[5.5rem] items-baseline justify-center gap-0.5 rounded-full border-2 border-emerald-300/90 bg-gradient-to-b from-emerald-100 to-emerald-50/95 px-4 py-2 text-xl font-bold tabular-nums text-emerald-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_4px_14px_rgba(16,185,129,0.16)]",
   scoreSlash: "text-sm font-semibold text-emerald-700/85",
@@ -605,8 +609,7 @@ const FEED_TRUSTED: OverviewFeedCardVisual = {
   ctaText: "text-emerald-700",
   ctaTextHover: "group-hover:text-emerald-900",
   metaBox: FEED_META_BOX,
-  metaScorePill:
-    "inline-flex h-[34px] w-[88px] shrink-0 items-baseline justify-center gap-0.5 rounded-full border border-emerald-300/80 bg-white px-3 text-[15px] leading-none tabular-nums text-emerald-950 shadow-sm",
+  metaScorePill: FEED_META_SCORE_PILL,
   metaScoreSlash: FEED_META_SCORE_SLASH,
   metaViewBtn: FEED_META_VIEW_BTN
 };
@@ -615,20 +618,20 @@ const FEED_MOSTLY_SAFE: OverviewFeedCardVisual = {
   ...FEED_TRUSTED,
   tone: "mostly-safe",
   stripe: FEED_STRIPE_SAFE,
-  headline: `${FEED_HEADLINE} text-emerald-700`
+  headline: `${FEED_HEADLINE_BASE} text-[#067647]`
 };
 
 const FEED_CAUTION: OverviewFeedCardVisual = {
   tone: "caution",
   iconKind: "caution",
   stripe: FEED_STRIPE_CAUTION,
-  card: `relative flex w-full overflow-hidden rounded-[22px] border border-amber-200/80 bg-gradient-to-br from-amber-50 via-amber-100/75 to-amber-100/55 shadow-[0_6px_24px_-10px_rgba(245,158,11,0.2)] ${FEED_MOTION}`,
+  card: `${FEED_CARD_SHELL} bg-[#fff8eb] shadow-[0_6px_24px_-10px_rgba(245,158,11,0.12)] ${FEED_MOTION}`,
   cardHover:
-    "hover:-translate-y-0.5 hover:border-amber-400/80 hover:shadow-[0_12px_36px_-10px_rgba(245,158,11,0.3)]",
+    "hover:-translate-y-0.5 hover:border-[rgba(242,169,59,0.28)] hover:shadow-[0_8px_28px_-10px_rgba(245,158,11,0.18)]",
   iconCircle:
-    "flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border-2 border-amber-500/85 bg-amber-50/95 shadow-[0_2px_8px_rgba(245,158,11,0.2)]",
-  iconInk: "text-amber-800",
-  headline: `${FEED_HEADLINE} text-amber-700`,
+    "flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border-2 border-[#f2a93b]/35 bg-white/90 shadow-[0_2px_8px_rgba(245,158,11,0.12)]",
+  iconInk: "text-[#b45309]",
+  headline: `${FEED_HEADLINE_BASE} text-[#b45309]`,
   scorePill:
     "inline-flex min-w-[5.5rem] items-baseline justify-center gap-0.5 rounded-full border-2 border-amber-300/90 bg-gradient-to-b from-amber-100 to-amber-50/95 px-4 py-2 text-xl font-bold tabular-nums text-amber-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_4px_14px_rgba(245,158,11,0.16)]",
   scoreSlash: "text-sm font-semibold text-amber-800/85",
@@ -637,8 +640,7 @@ const FEED_CAUTION: OverviewFeedCardVisual = {
   ctaText: "text-amber-800",
   ctaTextHover: "group-hover:text-amber-950",
   metaBox: FEED_META_BOX,
-  metaScorePill:
-    "inline-flex h-[34px] w-[88px] shrink-0 items-baseline justify-center gap-0.5 rounded-full border border-amber-300/80 bg-white px-3 text-[15px] leading-none tabular-nums text-amber-950 shadow-sm",
+  metaScorePill: FEED_META_SCORE_PILL,
   metaScoreSlash: FEED_META_SCORE_SLASH,
   metaViewBtn: FEED_META_VIEW_BTN
 };
@@ -648,33 +650,23 @@ const FEED_SUSPICIOUS: OverviewFeedCardVisual = {
   tone: "suspicious",
   iconKind: "caution",
   stripe: FEED_STRIPE_SUSPICIOUS,
-  card: `relative flex w-full overflow-hidden rounded-[22px] border border-orange-200/80 bg-gradient-to-br from-orange-50 via-orange-100/75 to-orange-100/55 shadow-[0_6px_24px_-10px_rgba(249,115,22,0.2)] ${FEED_MOTION}`,
-  cardHover:
-    "hover:-translate-y-0.5 hover:border-orange-400/80 hover:shadow-[0_12px_36px_-10px_rgba(249,115,22,0.3)]",
-  iconCircle:
-    "flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border-2 border-orange-500/85 bg-orange-50/95 shadow-[0_2px_8px_rgba(249,115,22,0.2)]",
-  headline: `${FEED_HEADLINE} text-orange-700`,
-  iconInk: "text-orange-800",
-  ctaText: "text-orange-800",
-  ctaTextHover: "group-hover:text-orange-950",
-  metaBox: FEED_META_BOX,
-  metaScorePill:
-    "inline-flex h-[34px] w-[88px] shrink-0 items-baseline justify-center gap-0.5 rounded-full border border-orange-300/80 bg-white px-3 text-[15px] leading-none tabular-nums text-orange-950 shadow-sm",
-  metaScoreSlash: FEED_META_SCORE_SLASH,
-  metaViewBtn: FEED_META_VIEW_BTN
+  headline: `${FEED_HEADLINE_BASE} text-[#b45309]`,
+  iconInk: "text-[#b45309]",
+  ctaText: "text-[#b45309]",
+  ctaTextHover: "group-hover:text-[#92400e]"
 };
 
 const FEED_DANGER: OverviewFeedCardVisual = {
   tone: "danger",
   iconKind: "danger",
   stripe: FEED_STRIPE_DANGER,
-  card: `relative flex w-full overflow-hidden rounded-[22px] border border-rose-200/80 bg-gradient-to-br from-rose-50 via-rose-100/75 to-rose-100/55 shadow-[0_6px_24px_-10px_rgba(244,63,94,0.22)] ${FEED_MOTION}`,
+  card: `${FEED_CARD_SHELL} bg-[#fff1f1] shadow-[0_6px_24px_-10px_rgba(239,68,68,0.12)] ${FEED_MOTION}`,
   cardHover:
-    "hover:-translate-y-0.5 hover:border-rose-400/80 hover:shadow-[0_12px_36px_-10px_rgba(244,63,94,0.32)]",
+    "hover:-translate-y-0.5 hover:border-[rgba(239,68,68,0.25)] hover:shadow-[0_8px_28px_-10px_rgba(244,63,94,0.18)]",
   iconCircle:
-    "flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border-2 border-rose-500/85 bg-rose-50/95 shadow-[0_2px_8px_rgba(244,63,94,0.2)]",
-  iconInk: "text-rose-800",
-  headline: `${FEED_HEADLINE} text-rose-700`,
+    "flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border-2 border-[#ef4444]/35 bg-white/90 shadow-[0_2px_8px_rgba(239,68,68,0.12)]",
+  iconInk: "text-[#dc2626]",
+  headline: `${FEED_HEADLINE_BASE} text-[#dc2626]`,
   scorePill:
     "inline-flex min-w-[5.5rem] items-baseline justify-center gap-0.5 rounded-full border-2 border-rose-300/90 bg-gradient-to-b from-rose-100 to-rose-50/95 px-4 py-2 text-xl font-bold tabular-nums text-rose-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_4px_14px_rgba(244,63,94,0.18)]",
   scoreSlash: "text-sm font-semibold text-rose-800/85",
@@ -683,8 +675,7 @@ const FEED_DANGER: OverviewFeedCardVisual = {
   ctaText: "text-rose-700",
   ctaTextHover: "group-hover:text-rose-900",
   metaBox: FEED_META_BOX,
-  metaScorePill:
-    "inline-flex h-[34px] w-[88px] shrink-0 items-baseline justify-center gap-0.5 rounded-full border border-rose-300/80 bg-white px-3 text-[15px] leading-none tabular-nums text-rose-950 shadow-sm",
+  metaScorePill: FEED_META_SCORE_PILL,
   metaScoreSlash: FEED_META_SCORE_SLASH,
   metaViewBtn: FEED_META_VIEW_BTN
 };
@@ -693,13 +684,13 @@ const FEED_UNKNOWN: OverviewFeedCardVisual = {
   tone: "caution",
   iconKind: "unknown",
   stripe: FEED_STRIPE_INFO,
-  card: `relative flex w-full overflow-hidden rounded-[22px] border border-blue-300/70 bg-gradient-to-br from-blue-100 via-blue-50/95 to-blue-200/70 shadow-[0_6px_24px_-10px_rgba(59,130,246,0.2)] ${FEED_MOTION}`,
+  card: `${FEED_CARD_SHELL} bg-[#fff8eb] shadow-[0_6px_24px_-10px_rgba(59,130,246,0.1)] ${FEED_MOTION}`,
   cardHover:
     "hover:-translate-y-0.5 hover:border-blue-400/80 hover:shadow-[0_12px_36px_-10px_rgba(59,130,246,0.28)]",
   iconCircle:
     "flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border-2 border-blue-500/85 bg-blue-50/95 shadow-[0_2px_8px_rgba(59,130,246,0.18)]",
   iconInk: "text-blue-800",
-  headline: `${FEED_HEADLINE} text-blue-950`,
+  headline: `${FEED_HEADLINE_BASE} text-slate-800`,
   scorePill:
     "inline-flex min-w-[5.5rem] items-baseline justify-center gap-0.5 rounded-full border-2 border-blue-300/85 bg-gradient-to-b from-blue-100 to-slate-50/95 px-4 py-2 text-xl font-bold tabular-nums text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_4px_14px_rgba(59,130,246,0.12)]",
   scoreSlash: "text-sm font-semibold text-slate-600",
@@ -708,8 +699,7 @@ const FEED_UNKNOWN: OverviewFeedCardVisual = {
   ctaText: "text-blue-600",
   ctaTextHover: "group-hover:text-blue-800",
   metaBox: FEED_META_BOX,
-  metaScorePill:
-    "inline-flex h-[34px] w-[88px] shrink-0 items-baseline justify-center gap-0.5 rounded-full border border-blue-300/80 bg-white px-3 text-[15px] leading-none tabular-nums text-blue-950 shadow-sm",
+  metaScorePill: FEED_META_SCORE_PILL,
   metaScoreSlash: FEED_META_SCORE_SLASH,
   metaViewBtn: FEED_META_VIEW_BTN
 };

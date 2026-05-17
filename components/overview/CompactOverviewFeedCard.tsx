@@ -4,7 +4,7 @@ import { EN_MESSAGES } from "@/lib/messages.en";
 import type { OverviewCardModel } from "@/lib/overviewCardPresentation";
 import { getOverviewFeedCardVisual, type OverviewFeedCardVisual } from "@/lib/scoring/trust-bands";
 
-const CARD_PAD = "px-4 py-4 sm:px-5 sm:py-4 md:min-h-[128px]";
+const CARD_PAD = "px-4 py-3.5 sm:px-5 sm:py-3.5 md:min-h-[116px]";
 
 function FeedVerdictIcon({ visual }: { visual: OverviewFeedCardVisual }) {
   const ink = visual.iconInk;
@@ -222,9 +222,9 @@ function FeedMetaBox({
   trailingActions?: ReactNode;
 }) {
   return (
-    <div className="flex w-full shrink-0 flex-col gap-1.5 md:ml-auto md:w-[288px] md:min-w-[288px] md:max-w-[288px]">
+    <div className="flex w-full shrink-0 flex-col gap-1 md:ml-auto md:w-[288px] md:min-w-[288px] md:max-w-[288px]">
       <div
-        className={`grid h-[72px] w-full grid-cols-[4.25rem_minmax(88px,1fr)_auto] items-center gap-x-2.5 rounded-xl px-3 py-2.5 ${visual.metaBox}`}
+        className={`grid h-[64px] w-full grid-cols-[4.25rem_minmax(88px,1fr)_auto] items-center gap-x-2 rounded-xl px-3 py-2 ${visual.metaBox}`}
       >
         <time
           className="self-center text-left text-[11px] font-medium leading-tight tabular-nums text-slate-500 whitespace-nowrap"
@@ -303,17 +303,17 @@ function FeedCardBody(props: {
     entityBadge ?? EN_MESSAGES.latestChecks.entityLabels.domain.toUpperCase();
 
   return (
-    <div className={`flex w-full min-w-0 flex-col gap-3 ${CARD_PAD} md:flex-row md:items-center md:gap-4`}>
-      <div className="flex min-w-0 flex-1 basis-0 items-center gap-3.5 sm:gap-4">
+    <div className={`flex w-full min-w-0 flex-col gap-2.5 ${CARD_PAD} md:flex-row md:items-center md:gap-3.5`}>
+      <div className="flex min-w-0 flex-1 basis-0 items-center gap-3 sm:gap-3.5">
         <div className={`${visual.iconCircle} leading-none [&_svg]:block`} aria-hidden>
           <FeedVerdictIcon visual={visual} />
         </div>
 
-        <div className="min-w-0 flex-1 space-y-0.5 overflow-hidden sm:space-y-1">
+        <div className="min-w-0 flex-1 space-y-0 overflow-hidden sm:space-y-0.5">
           <h2 id={headlineId} className={`text-balance ${visual.headline}`}>
             {m.headline}
           </h2>
-          <p className="truncate text-base font-semibold leading-snug text-slate-800" title={domainFullTitle}>
+          <p className="truncate text-base font-[600] leading-snug text-slate-900" title={domainFullTitle}>
             {domainLine || "—"}
           </p>
           <p className="line-clamp-2 text-sm font-normal leading-snug text-slate-600">{m.oneLiner}</p>

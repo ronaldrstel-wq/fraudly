@@ -145,6 +145,54 @@ export default function TermsPage() {
             </p>
           </Section>
 
+          <Section id="subscriptions-billing" title="Subscriptions &amp; Billing">
+            <p>
+              Fraudly may offer optional premium subscriptions that unlock additional features or usage. If you choose to
+              subscribe, you agree to the pricing and billing terms presented at the time of purchase.
+            </p>
+            <p>
+              <strong>Auto-renewal.</strong> Subscriptions may renew automatically at the end of each billing period unless
+              you cancel before the renewal date. You are responsible for managing your subscription status.
+            </p>
+            <p>
+              <strong>Billing through app stores.</strong> When you purchase a subscription through the Apple App Store or
+              Google Play, payment, billing, and subscription management are handled by Apple or Google (not directly by
+              Fraudly). Your purchase is subject to that platform&apos;s terms and payment policies.
+            </p>
+            <p>
+              <strong>Managing or cancelling.</strong> You can view, change, or cancel your subscription at any time
+              through your Apple ID or Google Play account settings (for example under Subscriptions on your device or in
+              your account on the web). Cancelling stops future charges; your premium access typically continues until the
+              end of the current paid billing period, unless the platform states otherwise.
+            </p>
+            <p>
+              <strong>Price changes.</strong> We may change subscription prices or plans in the future where permitted by
+              applicable law and by Apple&apos;s or Google&apos;s platform policies. If a price change affects your
+              subscription, the platform will usually notify you in advance and may require your consent before the new
+              price applies.
+            </p>
+            <p>
+              <strong>Refunds.</strong> Refund requests for App Store or Google Play purchases are processed by Apple or
+              Google according to their respective refund rules and policies. Fraudly cannot issue refunds for charges
+              made through those platforms.
+            </p>
+          </Section>
+
+          <Section id="apple-app-store-terms" title="Apple App Store Terms">
+            <p>
+              Subscriptions purchased through the Apple App Store are governed by Apple&apos;s Standard End User License
+              Agreement (EULA):{" "}
+              <a
+                href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
+                className="font-medium text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+              </a>
+            </p>
+          </Section>
+
           <Section id="termination" title="Termination">
             <p>
               We may suspend or terminate access to Fraudly — in whole or in part — if we reasonably believe you have
