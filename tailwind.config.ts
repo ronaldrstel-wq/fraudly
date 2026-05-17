@@ -4,7 +4,20 @@ const config: Config = {
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./lib/**/*.{js,ts,jsx,tsx,mdx}",
     "!./**/*.test.{ts,tsx}"
+  ],
+  /** Feed verdict tokens live in lib/scoring/trust-bands.ts — keep in sync if hex values change. */
+  safelist: [
+    "bg-[#f3fbf7]",
+    "bg-[#fff8eb]",
+    "bg-[#fff1f1]",
+    "border-l-[#14b86a]",
+    "border-l-[#f2a93b]",
+    "border-l-[#ef4444]",
+    "text-[#067647]",
+    "text-[#b45309]",
+    "text-[#dc2626]"
   ],
   theme: {
     extend: {

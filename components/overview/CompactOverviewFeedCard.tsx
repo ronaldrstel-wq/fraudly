@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { FeedCardDevLogger } from "@/components/overview/FeedCardDevLogger";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import type { OverviewCardModel } from "@/lib/overviewCardPresentation";
 import { getOverviewFeedCardVisual, type OverviewFeedCardVisual } from "@/lib/scoring/trust-bands";
@@ -394,9 +395,19 @@ export function CompactOverviewFeedArticleCard(props: CompactOverviewFeedBasePro
   } = props;
 
   const visual = getOverviewFeedCardVisual(m.trustScore);
+  const shellClassName = `group w-full ${visual.stripe} ${visual.card} ${visual.cardHover}`;
 
   return (
-    <article className={`group w-full ${visual.stripe} ${visual.card} ${visual.cardHover}`}>
+    <article className={shellClassName}>
+      {process.env.NODE_ENV !== "production" ? (
+        <FeedCardDevLogger
+          headlineId={headlineId}
+          componentName="CompactOverviewFeedArticleCard"
+          domain={domainLine}
+          verdict={m.headline}
+          shellClassName={shellClassName}
+        />
+      ) : null}
       <FeedCardBody
         m={m}
         visual={visual}
