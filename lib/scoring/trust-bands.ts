@@ -564,6 +564,9 @@ export type OverviewFeedCardVisual = {
   ctaTextHover: string;
   /** Right-side grouped meta box (time, score, CTA) */
   metaBox: string;
+  /** Compact score pill inside meta capsule */
+  metaScorePill: string;
+  metaScoreSlash: string;
 };
 
 const FEED_MOTION = "transition-all duration-200 ease-out";
@@ -586,7 +589,10 @@ const FEED_TRUSTED: OverviewFeedCardVisual = {
   ctaHover: "group-hover:from-emerald-700 group-hover:to-emerald-800 group-hover:shadow-[0_8px_22px_-4px_rgba(16,185,129,0.5)]",
   ctaText: "text-emerald-700",
   ctaTextHover: "group-hover:text-emerald-900",
-  metaBox: "border border-emerald-200/75 bg-emerald-50/90"
+  metaBox: "border border-emerald-200/75 bg-emerald-50/90",
+  metaScorePill:
+    "mx-auto inline-flex w-full max-w-[82px] items-baseline justify-center gap-0.5 rounded-full border border-emerald-300/90 bg-white px-1.5 py-0.5 text-sm font-bold leading-none tabular-nums text-emerald-800",
+  metaScoreSlash: "text-[10px] font-semibold text-emerald-700/85"
 };
 
 const FEED_MOSTLY_SAFE: OverviewFeedCardVisual = {
@@ -614,7 +620,10 @@ const FEED_CAUTION: OverviewFeedCardVisual = {
   ctaHover: "group-hover:from-amber-600 group-hover:to-orange-700 group-hover:shadow-[0_8px_22px_-4px_rgba(245,158,11,0.48)]",
   ctaText: "text-amber-800",
   ctaTextHover: "group-hover:text-amber-950",
-  metaBox: "border border-amber-200/75 bg-amber-50/90"
+  metaBox: "border border-amber-200/75 bg-amber-50/90",
+  metaScorePill:
+    "mx-auto inline-flex w-full max-w-[82px] items-baseline justify-center gap-0.5 rounded-full border border-amber-300/90 bg-white px-1.5 py-0.5 text-sm font-bold leading-none tabular-nums text-amber-900",
+  metaScoreSlash: "text-[10px] font-semibold text-amber-800/85"
 };
 
 const FEED_SUSPICIOUS: OverviewFeedCardVisual = {
@@ -626,7 +635,10 @@ const FEED_SUSPICIOUS: OverviewFeedCardVisual = {
   iconInk: "text-orange-600",
   ctaText: "text-orange-700",
   ctaTextHover: "group-hover:text-orange-900",
-  metaBox: "border border-orange-200/75 bg-orange-50/90"
+  metaBox: "border border-orange-200/75 bg-orange-50/90",
+  metaScorePill:
+    "mx-auto inline-flex w-full max-w-[82px] items-baseline justify-center gap-0.5 rounded-full border border-orange-300/90 bg-white px-1.5 py-0.5 text-sm font-bold leading-none tabular-nums text-orange-800",
+  metaScoreSlash: "text-[10px] font-semibold text-orange-700/85"
 };
 
 const FEED_DANGER: OverviewFeedCardVisual = {
@@ -647,7 +659,10 @@ const FEED_DANGER: OverviewFeedCardVisual = {
   ctaHover: "group-hover:from-rose-700 group-hover:to-rose-800 group-hover:shadow-[0_8px_22px_-4px_rgba(244,63,94,0.48)]",
   ctaText: "text-rose-700",
   ctaTextHover: "group-hover:text-rose-900",
-  metaBox: "border border-rose-200/75 bg-rose-50/90"
+  metaBox: "border border-rose-200/75 bg-rose-50/90",
+  metaScorePill:
+    "mx-auto inline-flex w-full max-w-[82px] items-baseline justify-center gap-0.5 rounded-full border border-rose-300/90 bg-white px-1.5 py-0.5 text-sm font-bold leading-none tabular-nums text-rose-900",
+  metaScoreSlash: "text-[10px] font-semibold text-rose-800/85"
 };
 
 const FEED_UNKNOWN: OverviewFeedCardVisual = {
@@ -668,7 +683,10 @@ const FEED_UNKNOWN: OverviewFeedCardVisual = {
   ctaHover: "group-hover:from-slate-700 group-hover:to-slate-800 group-hover:shadow-[0_8px_22px_-4px_rgba(71,85,105,0.42)]",
   ctaText: "text-blue-600",
   ctaTextHover: "group-hover:text-blue-800",
-  metaBox: "border border-blue-200/70 bg-blue-50/85"
+  metaBox: "border border-blue-200/70 bg-blue-50/85",
+  metaScorePill:
+    "mx-auto inline-flex w-full max-w-[82px] items-baseline justify-center gap-0.5 rounded-full border border-blue-300/85 bg-white px-1.5 py-0.5 text-sm font-bold leading-none tabular-nums text-slate-900",
+  metaScoreSlash: "text-[10px] font-semibold text-slate-600"
 };
 
 export function getOverviewFeedCardVisual(trustScore: number | null | undefined): OverviewFeedCardVisual {

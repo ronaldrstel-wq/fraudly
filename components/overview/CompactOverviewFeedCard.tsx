@@ -109,25 +109,74 @@ function FeedViewResultCta({
 function TrustScoreBlock({
   score,
   visual,
-  compact = false
+  variant = "default"
 }: {
   score: number;
   visual: OverviewFeedCardVisual;
-  compact?: boolean;
+  variant?: "default" | "meta";
 }) {
+  const pillClass = variant === "meta" ? visual.metaScorePill : visual.scorePill;
+  const slashClass = variant === "meta" ? visual.metaScoreSlash : visual.scoreSlash;
+
   return (
-    <div className="flex shrink-0 flex-col items-center gap-0.5">
+    <div className="flex w-full min-w-0 flex-col items-center gap-0.5">
       <div
-        className={visual.scorePill}
+        className={pillClass}
         aria-label={`${EN_MESSAGES.latestChecks.trustScorePillLabel}: ${score} out of 100`}
       >
         <span>{score}</span>
-        <span className={visual.scoreSlash}>/100</span>
+        <span className={slashClass}>/100</span>
       </div>
-      <span className={`font-medium text-slate-500 ${compact ? "text-[10px]" : "text-[11px]"}`}>
+      <span className="text-[11px] font-medium leading-none text-slate-500">
         {EN_MESSAGES.latestChecks.trustScorePillLabel}
       </span>
     </div>
+  );
+}
+
+function FeedMetaViewCta({
+  viewLabel,
+  visual,
+  href,
+  headlineId,
+  decorative = false
+}: {
+  viewLabel: string;
+  visual: OverviewFeedCardVisual;
+  href?: string;
+  headlineId?: string;
+  decorative?: boolean;
+}) {
+  const cls = [
+    "fraudly-focus inline-flex max-w-full shrink-0 items-center gap-0.5 rounded-full border bg-white px-2.5 py-2 text-[13px] font-bold leading-none",
+    visual.ctaText,
+    decorative ? visual.ctaTextHover : `${visual.ctaTextHover} hover:brightness-95`
+  ].join(" ");
+  const content = (
+    <>
+      View
+      <span aria-hidden>→</span>
+    </>
+  );
+
+  if (decorative || !href) {
+    return (
+      <span className={cls} aria-hidden>
+        {content}
+      </span>
+    );
+  }
+
+  return (
+    <Link
+      href={href}
+      className={cls}
+      aria-labelledby={headlineId}
+      aria-label={viewLabel}
+      prefetch
+    >
+      {content}
+    </Link>
   );
 }
 
@@ -155,25 +204,29 @@ function FeedMetaBox({
   trailingActions?: ReactNode;
 }) {
   return (
-    <div className="flex w-full shrink-0 flex-col gap-2 md:ml-auto md:w-[280px] md:min-w-[280px] md:max-w-[280px]">
-      <div className={`flex items-center justify-between gap-3 rounded-[18px] px-4 py-3.5 ${visual.metaBox}`}>
+    <div className="flex w-full shrink-0 flex-col gap-2 md:ml-auto md:w-[250px] md:min-w-[250px] md:max-w-[250px]">
+      <div
+        className={`grid h-[72px] w-full grid-cols-[64px_82px_1fr] items-center gap-x-2.5 overflow-hidden rounded-[18px] px-[14px] py-[10px] ${visual.metaBox}`}
+      >
         <time
-          className="max-w-[4.25rem] shrink-0 text-[11px] font-medium leading-snug tabular-nums text-slate-500"
+          className="truncate text-left text-[10px] font-medium leading-tight tabular-nums text-slate-500"
           dateTime={timeIso}
           title={timeTitle}
         >
           {timeRelative}
         </time>
 
-        <TrustScoreBlock score={trustScore} visual={visual} compact />
+        <TrustScoreBlock score={trustScore} visual={visual} variant="meta" />
 
-        <FeedViewResultCta
-          viewLabel={viewLabel}
-          visual={visual}
-          href={href}
-          headlineId={headlineId}
-          decorative={decorativeCta}
-        />
+        <div className="flex min-w-0 justify-end">
+          <FeedMetaViewCta
+            viewLabel={viewLabel}
+            visual={visual}
+            href={href}
+            headlineId={headlineId}
+            decorative={decorativeCta}
+          />
+        </div>
       </div>
       {trailingActions ? <div className="flex flex-wrap justify-end gap-2">{trailingActions}</div> : null}
     </div>
