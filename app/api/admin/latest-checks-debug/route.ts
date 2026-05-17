@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { isAdminRecalcAuthorized } from "@/lib/admin/adminKeyAuth";
 import { getDatabaseConnectionDiagnostics } from "@/lib/db/connectionDiagnostics";
 import { getPublicFeatureFlagsSnapshot } from "@/lib/env/publicFeatureFlags";
+import { fetchLatestPublicChecksFeedPage } from "@/lib/latest-public-checks/fetchFeedPage";
 import { probeLatestChecksDatabase } from "@/lib/latest-public-checks/dbProbe";
+import {
+  assessLatestCheckRowRenderable,
+  normalizeLastSeenAt
+} from "@/lib/latest-public-checks/rowRender";
 import {
   fetchLatestPublicChecksPage,
   latestChecksCacheBypassEnabled
@@ -13,57 +18,97 @@ import { LATEST_PUBLIC_CHECKS_CACHE_TAG } from "@/lib/trust/cacheTags";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const PAGE_SIZE = 10;
+
+function parsePage(url: URL): number {
+  const raw = Number.parseInt(url.searchParams.get("page") ?? "1", 10);
+  if (!Number.isFinite(raw) || raw < 1) return 1;
+  return Math.min(raw, 500);
+}
+
+async function buildPageDiagnostics(page: number) {
+  const skip = (page - 1) * PAGE_SIZE;
+  const take = PAGE_SIZE + 1;
+  const rawCached = await fetchLatestPublicChecksPage(skip, take, { bypassCache: false });
+  const rawUncached = await fetchLatestPublicChecksPage(skip, take, { bypassCache: true });
+  const feed = await fetchLatestPublicChecksFeedPage(page, PAGE_SIZE, { bypassCache: true });
+
+  const renderAssessments = rawUncached.rows.map((row) => {
+    const assessed = assessLatestCheckRowRenderable(row);
+    return {
+      id: row.id,
+      domain: row.normalizedValue || row.checkedValue,
+      renderable: assessed.renderable,
+      reason: assessed.reason ?? null,
+      detail: assessed.detail ?? null,
+      lastSeenAtType: row.lastSeenAt instanceof Date ? "Date" : typeof row.lastSeenAt,
+      lastSeenAtNormalized: normalizeLastSeenAt(row.lastSeenAt).toISOString()
+    };
+  });
+
+  return {
+    page,
+    pagination: { pageSize: PAGE_SIZE, skip, take },
+    cache: {
+      enabled: !latestChecksCacheBypassEnabled(),
+      bypassEnv: latestChecksCacheBypassEnabled(),
+      cacheKey: ["latest-public-checks-page", String(skip), String(take)]
+    },
+    rawDb: {
+      cached: { rowCount: rawCached.rows.length, loadFailed: rawCached.loadFailed },
+      uncached: { rowCount: rawUncached.rows.length, loadFailed: rawUncached.loadFailed }
+    },
+    feed: {
+      renderableRowCount: feed.rows.length,
+      loadFailed: feed.loadFailed,
+      hasNext: feed.hasNext,
+      dbRowsScanned: feed.dbRowsScanned,
+      skipped: feed.skipped,
+      domains: feed.rows.map((r) => r.normalizedValue || r.checkedValue).slice(0, 10)
+    },
+    renderAssessments: renderAssessments.slice(0, 10)
+  };
+}
+
 export async function GET(request: Request) {
   if (!isAdminRecalcAuthorized(request)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
+  const url = new URL(request.url);
+  const page = parsePage(url);
+  const pagesParam = url.searchParams.get("pages");
+  const pagesToDiagnose = pagesParam
+    ? pagesParam
+        .split(",")
+        .map((p) => Number.parseInt(p.trim(), 10))
+        .filter((n) => Number.isFinite(n) && n >= 1 && n <= 500)
+        .slice(0, 5)
+    : [page];
+
   const dbConnection = getDatabaseConnectionDiagnostics();
-  const probe = await probeLatestChecksDatabase(10);
+  const probe = await probeLatestChecksDatabase(50);
+  const pageDiagnostics = await Promise.all(pagesToDiagnose.map((p) => buildPageDiagnostics(p)));
 
-  const listCached = await fetchLatestPublicChecksPage(0, 10, { bypassCache: false });
-  const listUncached = await fetchLatestPublicChecksPage(0, 10, { bypassCache: true });
-
-  const rowsFilteredInUi = 0;
   const diagnosis: string[] = [];
+  if (!dbConnection.configured) diagnosis.push("DATABASE_URL is not set in this runtime.");
+  if (probe.connectionError) diagnosis.push(`Database connection failed: ${probe.connectionError}`);
 
-  if (!dbConnection.configured) {
-    diagnosis.push("DATABASE_URL is not set in this runtime.");
-  }
-  if (probe.connectionError) {
-    diagnosis.push(`Database connection failed: ${probe.connectionError}`);
-  }
-  if (probe.connected && probe.latestPublicCheckCount === 0) {
-    diagnosis.push(
-      "Connected successfully but LatestPublicCheck has zero rows — likely wrong Neon branch/empty database, not a UI filter issue."
-    );
-  }
-  if (probe.connected && (probe.latestPublicCheckCount ?? 0) > 0 && listUncached.rows.length === 0) {
-    diagnosis.push(
-      "Rows exist in DB but listPublicChecks returned empty — check Prisma schema/migration mismatch (P2022) or query error (loadFailed)."
-    );
-  }
-  if (listCached.loadFailed || listUncached.loadFailed) {
-    diagnosis.push("listPublicChecks reported loadFailed=true (DB error or missing columns without successful fallback).");
-  }
-  if (
-    probe.connected &&
-    (probe.latestPublicCheckCount ?? 0) > 0 &&
-    listUncached.rows.length > 0 &&
-    listCached.rows.length === 0 &&
-    !listCached.loadFailed
-  ) {
-    diagnosis.push(
-      "Uncached query returns rows but cached query is empty — set LATEST_CHECKS_BYPASS_CACHE=true and POST to this endpoint to revalidate, or redeploy."
-    );
-  }
-  if (!probe.canonicalSelectWorks && probe.legacySelectWorks) {
-    diagnosis.push(
-      "Canonical trust columns missing in DB — running legacy select fallback. Run prisma migrate deploy on this database."
-    );
-  }
-  if (probe.connected && (probe.latestPublicCheckCount ?? 0) > 0) {
-    diagnosis.push("Data exists in connected database; if UI is empty, suspect ISR/unstable_cache or wrong Vercel env target.");
+  for (const pd of pageDiagnostics) {
+    if (pd.rawDb.uncached.rowCount > 0 && pd.feed.renderableRowCount === 0) {
+      diagnosis.push(
+        `Page ${pd.page}: ${pd.rawDb.uncached.rowCount} DB rows but 0 renderable — rows fail render (see renderAssessments / skipped).`
+      );
+    }
+    if (pd.rawDb.cached.loadFailed && !pd.rawDb.uncached.loadFailed) {
+      diagnosis.push(`Page ${pd.page}: stale cached loadFailed=true — POST revalidate-cache.`);
+    }
+    const stringDates = pd.renderAssessments.filter((r) => r.lastSeenAtType === "string");
+    if (stringDates.length > 0 && pd.renderAssessments.some((r) => !r.renderable)) {
+      diagnosis.push(
+        `Page ${pd.page}: lastSeenAt deserialized as string from cache — fixed by normalizeLastSeenAt in feedConfidenceStrip.`
+      );
+    }
   }
 
   return NextResponse.json({
@@ -85,39 +130,21 @@ export async function GET(request: Request) {
       canonicalSelectWorks: probe.canonicalSelectWorks,
       legacySelectWorks: probe.legacySelectWorks
     },
-    sampleRows: probe.sampleRows.map((row) => ({
+    newestSample: probe.sampleRows.slice(0, 10).map((row) => ({
       id: row.id,
       normalizedValue: row.normalizedValue,
-      checkedValue: row.checkedValue.slice(0, 120),
       riskScoreSnapshot: row.riskScoreSnapshot,
-      statusLabel: row.statusLabel,
       normalizedTrustScore: row.normalizedTrustScore ?? null,
       consumerVerdictLabel: row.consumerVerdictLabel ?? null,
       lastSeenAt: row.lastSeenAt instanceof Date ? row.lastSeenAt.toISOString() : row.lastSeenAt
     })),
-    listPublicChecks: {
-      cached: {
-        rowCount: listCached.rows.length,
-        loadFailed: listCached.loadFailed,
-        cacheBypassEnv: latestChecksCacheBypassEnabled()
-      },
-      uncached: {
-        rowCount: listUncached.rows.length,
-        loadFailed: listUncached.loadFailed
-      }
-    },
-    ui: {
-      rowsFilteredByCanonicalRequirement: false,
-      rowsSkippedInRender: rowsFilteredInUi,
-      note: "listPublicChecks does not filter on normalizedTrustScore or consumerVerdictLabel; NULL canonical columns are supported."
-    },
+    pageDiagnostics,
     envFlags: getPublicFeatureFlagsSnapshot(),
     diagnosis,
     recoveryHints: [
-      "Verify Vercel Production DATABASE_URL matches the Neon production branch (compare host/branch slug).",
-      "If counts are zero on production URL but nonzero locally, restore previous DATABASE_URL and redeploy.",
-      "Set LATEST_CHECKS_BYPASS_CACHE=true temporarily, POST ?action=revalidate-cache to bust feed cache.",
-      "Run: npx prisma migrate deploy (against production DIRECT_URL or DATABASE_URL)."
+      "POST ?action=revalidate-cache to bust all latest-checks unstable_cache entries.",
+      "Set LATEST_CHECKS_BYPASS_CACHE=true on Production until redeployed with render fixes.",
+      "Use ?pages=1,2,3 to compare pagination slices."
     ]
   });
 }
@@ -133,7 +160,16 @@ export async function POST(request: Request) {
   if (action === "revalidate-cache") {
     try {
       revalidateTag(LATEST_PUBLIC_CHECKS_CACHE_TAG);
-      return NextResponse.json({ ok: true, action, tag: LATEST_PUBLIC_CHECKS_CACHE_TAG });
+      revalidatePath("/latest-checks");
+      for (let p = 2; p <= 20; p += 1) {
+        revalidatePath(`/latest-checks?page=${p}`);
+      }
+      return NextResponse.json({
+        ok: true,
+        action,
+        tag: LATEST_PUBLIC_CHECKS_CACHE_TAG,
+        pathsRevalidated: ["/latest-checks", "/latest-checks?page=2..20"]
+      });
     } catch (error) {
       return NextResponse.json(
         {

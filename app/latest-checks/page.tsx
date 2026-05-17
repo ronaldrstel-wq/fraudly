@@ -19,10 +19,9 @@ import {
   detectRiskTrustMismatch,
   logTrustDisplayAlignment
 } from "@/lib/trust/trustDisplayLog";
-import {
-  fetchLatestPublicChecksPage,
-  type LatestPublicCheckListRow
-} from "@/lib/latest-public-checks/listPublicChecks";
+import { fetchLatestPublicChecksFeedPage } from "@/lib/latest-public-checks/fetchFeedPage";
+import { normalizeLastSeenAt } from "@/lib/latest-public-checks/normalizeLastSeenAt";
+import type { LatestPublicCheckListRow } from "@/lib/latest-public-checks/listPublicChecks";
 
 export const revalidate = 120;
 
@@ -77,11 +76,8 @@ function entityBadge(type: string | null | undefined): string {
   return k in labels ? labels[k] : EN_MESSAGES.latestChecks.entityFallback;
 }
 
-function safeLastSeenIso(lastSeenAt: Date): string {
-  if (!(lastSeenAt instanceof Date) || Number.isNaN(lastSeenAt.getTime())) {
-    return new Date(0).toISOString();
-  }
-  return lastSeenAt.toISOString();
+function safeLastSeenIso(lastSeenAt: Date | string): string {
+  return normalizeLastSeenAt(lastSeenAt).toISOString();
 }
 
 function safeCardHref(row: LatestPublicCheckListRow): string {
@@ -151,9 +147,7 @@ function LatestCheckListItem({ row }: { row: LatestPublicCheckListRow }) {
       />
     );
   } catch (err) {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn("[latest-checks] skipped row", row.id, err);
-    }
+    console.warn("[latest-checks] skipped row", row.id, err instanceof Error ? err.message : err);
     return null;
   }
 }
@@ -162,12 +156,18 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
   const page = clampPage((await searchParams).page);
   const skip = (page - 1) * PAGE_SIZE;
 
-  const { rows: batch, loadFailed } = await fetchLatestPublicChecksPage(skip, PAGE_SIZE + 1);
-
-  const hasNext = !loadFailed && batch.length > PAGE_SIZE;
-  const rows = loadFailed ? [] : hasNext ? batch.slice(0, PAGE_SIZE) : batch;
+  const feed = await fetchLatestPublicChecksFeedPage(page, PAGE_SIZE);
+  const { rows, loadFailed, hasNext } = feed;
   const prevPage = page > 1 ? page - 1 : null;
   const nextPage = hasNext ? page + 1 : null;
+
+  if (feed.skipped.length > 0 && process.env.NODE_ENV === "production") {
+    console.info("[latest-checks] skipped rows while filling page", {
+      page,
+      skippedCount: feed.skipped.length,
+      reasons: feed.skipped.slice(0, 5)
+    });
+  }
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
@@ -220,7 +220,7 @@ export default async function LatestChecksPage({ searchParams }: PageProps) {
           </section>
         )}
 
-        {(prevPage !== null || nextPage !== null) && rows.length > 0 ? (
+        {(prevPage !== null || nextPage !== null) && (rows.length > 0 || nextPage !== null) ? (
           <nav
             className="mt-8 flex items-center justify-between gap-4 border-t border-slate-200 pt-5"
             aria-label="Pagination"

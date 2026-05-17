@@ -13,7 +13,10 @@ vi.mock("@/lib/db", () => ({
 }));
 
 import { db } from "@/lib/db";
-import { fetchLatestPublicChecksPage } from "@/lib/latest-public-checks/listPublicChecks";
+import {
+  fetchLatestPublicChecksPage,
+  latestPublicChecksCacheKey
+} from "@/lib/latest-public-checks/listPublicChecks";
 import { Prisma } from "@prisma/client";
 
 describe("fetchLatestPublicChecksPage", () => {
@@ -79,6 +82,12 @@ describe("fetchLatestPublicChecksPage", () => {
     const result = await fetchLatestPublicChecksPage(0, 10);
     expect(result.loadFailed).toBe(true);
     expect(result.rows).toEqual([]);
+  });
+
+  it("includes skip and take in cache key per page", () => {
+    expect(latestPublicChecksCacheKey(0, 11)).toEqual(["latest-public-checks-page", "0", "11"]);
+    expect(latestPublicChecksCacheKey(10, 11)).toEqual(["latest-public-checks-page", "10", "11"]);
+    expect(latestPublicChecksCacheKey(20, 11)).toEqual(["latest-public-checks-page", "20", "11"]);
   });
 
   it("returns empty list without throwing on generic errors", async () => {

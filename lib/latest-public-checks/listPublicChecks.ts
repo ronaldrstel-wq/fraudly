@@ -110,3 +110,8 @@ export async function fetchLatestPublicChecksPage(
     { revalidate: 120, tags: [LATEST_PUBLIC_CHECKS_CACHE_TAG] }
   )();
 }
+
+/** Documented cache key shape for pagination debugging. */
+export function latestPublicChecksCacheKey(skip: number, take: number): string[] {
+  return ["latest-public-checks-page", String(skip), String(take)];
+}

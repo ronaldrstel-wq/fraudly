@@ -1,16 +1,17 @@
+import { normalizeLastSeenAt } from "@/lib/latest-public-checks/normalizeLastSeenAt";
 import type { DataConfidenceBadgeModel } from "@/lib/trust/dataConfidence";
 import { dataConfidenceBadge, reputationStaleIndicator } from "@/lib/trust/dataConfidence";
 
 export type FeedListRowConfidenceInput = {
   normalizedTrustScore?: number | null;
   consumerVerdictLabel?: string | null;
-  lastSeenAt: Date;
+  lastSeenAt: Date | string;
 };
 
 /** Subtle latest-checks confidence strip — metadata only, no score changes. */
 export function feedListRowConfidenceBadges(row: FeedListRowConfidenceInput): DataConfidenceBadgeModel[] {
   const badges: DataConfidenceBadgeModel[] = [];
-  const stale = reputationStaleIndicator(row.lastSeenAt.toISOString());
+  const stale = reputationStaleIndicator(normalizeLastSeenAt(row.lastSeenAt).toISOString());
   if (stale) badges.push(dataConfidenceBadge(stale));
 
   if (row.normalizedTrustScore != null && row.consumerVerdictLabel) {
