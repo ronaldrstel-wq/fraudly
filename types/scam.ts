@@ -9,6 +9,12 @@ import type { DomainInfrastructure } from "@/types/domain-infrastructure";
 import type { ConfidenceLevel, SiteStatus } from "@/types/site-outcome";
 import type { TrustEvidenceBundle } from "@/lib/evidence/types";
 import type { RedirectChainAnalysis } from "@/lib/checks/redirectChain";
+import type { SerializedNormalizedTrustResult } from "@/lib/trust/canonicalTrustBridge";
+import type {
+  ConsumerDisplayBand,
+  ConsumerVerdictLabel,
+  TrustBandId
+} from "@/lib/scoring/trust-bands";
 
 export type { ScoreResult, ScoreSignal };
 
@@ -106,11 +112,32 @@ export interface BillingSnapshot {
   subscriptionStatus: "active" | "inactive" | "canceled" | "past_due";
 }
 
+/** Canonical trust fields returned by POST /api/check (Phase 2). Legacy `result` unchanged. */
+export type CheckApiCanonicalTrust = {
+  trustScore: number;
+  riskScore: number;
+  consumerVerdict: ScamVerdict | null;
+  consumerVerdictLabel: ConsumerVerdictLabel;
+  consumerVerdictBand: TrustBandId;
+  consumerVerdictBandDisplay: ConsumerDisplayBand;
+  scoreConfidence: ConfidenceLevel;
+  normalizedTrustResult: SerializedNormalizedTrustResult;
+};
+
 export interface CheckApiResponse {
   result: ScamCheckResult | BasicCheckResult;
   detailLevel: "basic" | "full";
   upsellPremium: boolean;
   billing: BillingSnapshot;
+  /** Canonical display trust (0–100). Same as normalizedTrustResult.trustScore when present. */
+  trustScore?: number;
+  riskScore?: number;
+  consumerVerdict?: ScamVerdict | null;
+  consumerVerdictLabel?: ConsumerVerdictLabel;
+  consumerVerdictBand?: TrustBandId;
+  consumerVerdictBandDisplay?: ConsumerDisplayBand;
+  scoreConfidence?: ConfidenceLevel;
+  normalizedTrustResult?: SerializedNormalizedTrustResult;
 }
 
 const VERDICTS: ScamVerdict[] = ["safe", "suspicious", "scam"];

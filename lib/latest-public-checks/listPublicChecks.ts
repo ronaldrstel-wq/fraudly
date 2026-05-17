@@ -13,6 +13,13 @@ export const latestPublicCheckListSelect = {
   lastSeenAt: true
 } as const;
 
+export const latestPublicCheckListSelectCanonical = {
+  ...latestPublicCheckListSelect,
+  normalizedTrustScore: true,
+  consumerVerdictLabel: true,
+  consumerVerdictBand: true
+} as const;
+
 export type LatestPublicCheckListRow = {
   id: string;
   normalizedValue: string;
@@ -22,6 +29,9 @@ export type LatestPublicCheckListRow = {
   statusLabel: string;
   publicResultPath: string;
   lastSeenAt: Date;
+  normalizedTrustScore?: number | null;
+  consumerVerdictLabel?: string | null;
+  consumerVerdictBand?: string | null;
 };
 
 export type LatestPublicChecksListResult = {
@@ -40,6 +50,10 @@ function logListFetchError(err: unknown, context: string): void {
   console.error(`[latest-checks] ${context}`, detail);
 }
 
+function isMissingColumnError(err: unknown): boolean {
+  return err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2022";
+}
+
 /**
  * Paginated latest-public-check feed for `/latest-checks`.
  * Never throws — returns `{ rows: [], loadFailed: true }` on any DB error.
@@ -53,11 +67,25 @@ export async function fetchLatestPublicChecksPage(
       orderBy: { lastSeenAt: "desc" },
       skip,
       take,
-      select: latestPublicCheckListSelect
+      select: latestPublicCheckListSelectCanonical
     });
     return { rows, loadFailed: false };
   } catch (err) {
-    logListFetchError(err, "list fetch failed");
-    return { rows: [], loadFailed: true };
+    if (!isMissingColumnError(err)) {
+      logListFetchError(err, "list fetch failed");
+      return { rows: [], loadFailed: true };
+    }
+    try {
+      const rows = await db.latestPublicCheck.findMany({
+        orderBy: { lastSeenAt: "desc" },
+        skip,
+        take,
+        select: latestPublicCheckListSelect
+      });
+      return { rows, loadFailed: false };
+    } catch (fallbackErr) {
+      logListFetchError(fallbackErr, "list fetch legacy fallback failed");
+      return { rows: [], loadFailed: true };
+    }
   }
 }

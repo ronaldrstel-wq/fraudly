@@ -10,6 +10,7 @@ import {
   shortExplainForBasic
 } from "@/lib/scanResultDualLayer";
 import { ResultSupportBox } from "@/components/ResultSupportBox";
+import { trustScoreFromRisk } from "@/lib/scoring/displayScore";
 import { getTrustColors } from "@/lib/scoring/trust-bands";
 import { trustPresentationFromScore } from "@/lib/trustSystem";
 
@@ -25,7 +26,7 @@ function toSafeHttpUrl(input: string | null | undefined): string | null {
 }
 
 export function BasicResultCard({ result }: { result: BasicCheckResult }) {
-  const trustStyle = Math.max(0, Math.min(100, Math.round(100 - result.score)));
+  const trustStyle = trustScoreFromRisk(result.score);
   const trust = trustPresentationFromScore(trustStyle);
   const trustColors = getTrustColors(trustStyle);
   const humanKind = resolveHumanRecKindForBasicCheck(result.verdict, result.score);

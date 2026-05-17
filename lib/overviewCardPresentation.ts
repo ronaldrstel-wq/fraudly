@@ -1,5 +1,5 @@
 import { EN_MESSAGES } from "@/lib/messages.en";
-import { verdictFromPublicSnapshotLabel } from "@/lib/latest-public-checks/status-label";
+import { scamVerdictFromConsumerLabel } from "@/lib/scoring/consumerVerdictMap";
 import {
   type HumanRecKind,
   humanRecGlyph,
@@ -96,13 +96,8 @@ export function buildOverviewFromTrustAndVerdict(trustScore: number, verdict: Sc
   };
 }
 
+const FALLBACK_OVERVIEW_RISK = 50;
 const FALLBACK_OVERVIEW_TRUST = 50;
-
-function scamVerdictFromConsumerLabel(label: ConsumerVerdictLabel): ScamVerdict | null {
-  if (label === "Likely Safe" || label === "Mostly Safe") return "safe";
-  if (label === "High Risk") return "scam";
-  return "suspicious";
-}
 
 /** Overview cards from canonical normalized trust — same score/verdict as result surfaces. */
 export function buildOverviewFromNormalized(normalized: NormalizedTrustResult): OverviewCardModel {
@@ -142,12 +137,20 @@ export function buildOverviewFromRecentSearch(input: {
 export function buildOverviewFromPublicCheck(row: {
   riskScoreSnapshot?: number | null;
   statusLabel?: string | null;
+  normalizedTrustScore?: number | null;
+  consumerVerdictLabel?: string | null;
 }): OverviewCardModel {
-  const risk = Number.isFinite(row.riskScoreSnapshot) ? Number(row.riskScoreSnapshot) : FALLBACK_OVERVIEW_TRUST;
-  const label = typeof row.statusLabel === "string" ? row.statusLabel : "";
-  const verdict = verdictFromPublicSnapshotLabel(label);
-  const { trustScore } = publicDisplayScoreFromRiskAndVerdict(risk, verdict);
-  return buildOverviewFromTrustAndVerdict(trustScore, verdict);
+  void row.statusLabel;
+  const risk = Number.isFinite(row.riskScoreSnapshot) ? Number(row.riskScoreSnapshot) : FALLBACK_OVERVIEW_RISK;
+  const trustScore =
+    row.normalizedTrustScore != null && Number.isFinite(row.normalizedTrustScore)
+      ? clampScore(row.normalizedTrustScore)
+      : trustScoreFromRisk(risk);
+  const consumerLabel =
+    (row.consumerVerdictLabel as ConsumerVerdictLabel | null | undefined) ??
+    standardVerdictLabel(trustScore);
+  const legacyVerdict = scamVerdictFromConsumerLabel(consumerLabel);
+  return buildOverviewFromTrustAndVerdict(trustScore, legacyVerdict);
 }
 
 /** Scam alert list: consumer headline from type; technical line stays severity/feed-oriented via presentation.ts elsewhere. */

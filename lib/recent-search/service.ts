@@ -2,6 +2,8 @@ import { normalizeDomain } from "@/lib/cache";
 import type { RecentSearch as RecentSearchRow } from "@prisma/client";
 import { checkResultHref } from "@/lib/check/checkResultHref";
 import { db } from "@/lib/db";
+import { trustScoreFromRisk } from "@/lib/scoring/displayScore";
+import { displayTrustScoreForResult } from "@/lib/scanPresentation";
 import type { ScamCheckResult } from "@/types/scam";
 import { CLEAR_ALL_CONFIRM_BODY, RECENT_SEARCH_DEDUPE_MS } from "@/lib/recent-search/constants";
 
@@ -53,7 +55,8 @@ export async function tryRecordRecentSearch(input: {
   const originalQuery = truncateOriginal(input.originalUrlInput.trim());
   const normalizedQuery = truncateNormalized(normalizeDomain(input.analyzedHref));
   const entityType = inferEntityTypeFromUrl(input.analyzedHref);
-  const trustScoreSnap = Math.round(100 - input.result.score);
+  const trustScoreSnap =
+    displayTrustScoreForResult(input.result) ?? trustScoreFromRisk(input.result.score);
   const verdictSnap = input.result.verdict ?? null;
   const resultPath = checkResultHref(input.result.domain, { from: "recent" });
 

@@ -1,4 +1,5 @@
 import { buildOverviewFromTrustAndVerdict } from "@/lib/overviewCardPresentation";
+import { scamVerdictFromConsumerLabel } from "@/lib/scoring/consumerVerdictMap";
 import type { LatestPublicCheckSnapshot } from "@/lib/latest-public-checks/snapshot";
 import type { HumanRecKind } from "@/lib/scanResultDualLayer";
 
@@ -14,9 +15,10 @@ export type CheckAlignedDisplay = {
 export function alignedDisplayFromSnapshot(
   snapshot: LatestPublicCheckSnapshot
 ): CheckAlignedDisplay {
+  const consumerLabel = snapshot.display.label;
   const overview = buildOverviewFromTrustAndVerdict(
     snapshot.display.trustScore,
-    snapshot.display.verdict
+    scamVerdictFromConsumerLabel(consumerLabel)
   );
   return {
     trustScore: overview.trustScore,

@@ -1,14 +1,26 @@
 import { normalizeDomain } from "@/lib/cache";
-import { parseStoredPublicResultPayload } from "@/lib/check/parseStoredPublicResultPayload";
+import { parsePublicResultPayload } from "@/lib/trust/canonicalTrustBridge";
 import { db } from "@/lib/db";
 import { Prisma } from "@prisma/client";
 import {
+  consumerDisplayBand,
+  getTrustBandFromScore,
+  standardVerdictLabel,
+  type TrustBandId
+} from "@/lib/scoring/trust-bands";
+import {
   logDisplayScoreDebug,
+  normalizeRiskScore,
   publicDisplayScoreFromLatestRow,
   type PublicDisplayScore
 } from "@/lib/scoring/displayScore";
 import { enrichScamCheckResultDomainAge } from "@/lib/domain/normalizeDomainAge";
-import type { ScamCheckResult } from "@/types/scam";
+import { scamVerdictFromConsumerLabel } from "@/lib/scoring/consumerVerdictMap";
+import type { CanonicalTrustFields } from "@/lib/trust/canonicalTrustBridge";
+import type { ConsumerVerdictLabel, NormalizedTrustResult } from "@/lib/trust/types";
+import type { ScamCheckResult, ScamVerdict } from "@/types/scam";
+
+export type SnapshotCanonicalTrust = CanonicalTrustFields;
 
 export type LatestPublicCheckSnapshot = {
   id: string;
@@ -16,7 +28,12 @@ export type LatestPublicCheckSnapshot = {
   checkedValue: string;
   lastSeenAt: Date;
   display: PublicDisplayScore & { scanId: string };
+  /** Persisted canonical fields when migration columns exist. */
+  canonical: SnapshotCanonicalTrust | null;
   storedResult: ScamCheckResult | null;
+  storedNormalized: NormalizedTrustResult | null;
+  /** @deprecated Backwards-compatible metadata only — do not use for UX. */
+  statusLabel: string;
 };
 
 type SnapshotRowBase = {
@@ -26,10 +43,29 @@ type SnapshotRowBase = {
   riskScoreSnapshot: number;
   statusLabel: string;
   lastSeenAt: Date;
+  consumerVerdict?: string | null;
+  consumerVerdictLabel?: string | null;
+  consumerVerdictBand?: string | null;
+  normalizedTrustScore?: number | null;
+  normalizedRiskScore?: number | null;
   publicResultPayload?: unknown;
 };
 
 const snapshotSelectBase = {
+  id: true,
+  normalizedValue: true,
+  checkedValue: true,
+  riskScoreSnapshot: true,
+  statusLabel: true,
+  lastSeenAt: true,
+  consumerVerdict: true,
+  consumerVerdictLabel: true,
+  consumerVerdictBand: true,
+  normalizedTrustScore: true,
+  normalizedRiskScore: true
+} as const;
+
+const snapshotSelectLegacy = {
   id: true,
   normalizedValue: true,
   checkedValue: true,
@@ -48,8 +84,44 @@ function isPrismaReadSkipped(err: unknown): boolean {
   );
 }
 
+function canonicalFromRow(row: SnapshotRowBase): SnapshotCanonicalTrust | null {
+  if (row.normalizedTrustScore == null || row.normalizedRiskScore == null) return null;
+  const trustScore = row.normalizedTrustScore;
+  const riskScore = row.normalizedRiskScore;
+  const consumerVerdictLabel =
+    (row.consumerVerdictLabel as ConsumerVerdictLabel | null) ??
+    (standardVerdictLabel(trustScore) as ConsumerVerdictLabel);
+  return {
+    trustScore,
+    riskScore,
+    consumerVerdict:
+      (row.consumerVerdict as ScamVerdict | null) ??
+      scamVerdictFromConsumerLabel(consumerVerdictLabel),
+    consumerVerdictLabel,
+    consumerVerdictBand:
+      (row.consumerVerdictBand as TrustBandId | null) ?? getTrustBandFromScore(trustScore),
+    scoreConfidence: "medium"
+  };
+}
+
+function displayFromRow(row: SnapshotRowBase, canonical: SnapshotCanonicalTrust | null): PublicDisplayScore & { scanId: string } {
+  if (canonical) {
+    return {
+      riskScore: normalizeRiskScore(canonical.riskScore),
+      trustScore: canonical.trustScore,
+      band: consumerDisplayBand(canonical.trustScore),
+      label: canonical.consumerVerdictLabel,
+      verdict: canonical.consumerVerdict,
+      scanId: row.id
+    };
+  }
+  return publicDisplayScoreFromLatestRow(row);
+}
+
 function rowToSnapshot(row: SnapshotRowBase, domainLower: string): LatestPublicCheckSnapshot {
-  const display = publicDisplayScoreFromLatestRow(row);
+  const canonical = canonicalFromRow(row);
+  const display = displayFromRow(row, canonical);
+
   logDisplayScoreDebug({
     domain: domainLower,
     scanId: row.id,
@@ -61,9 +133,14 @@ function rowToSnapshot(row: SnapshotRowBase, domainLower: string): LatestPublicC
   });
 
   const parsedPayload = row.publicResultPayload
-    ? parseStoredPublicResultPayload(row.publicResultPayload, domainLower)
+    ? parsePublicResultPayload(row.publicResultPayload, domainLower)
     : null;
-  const storedResult = parsedPayload ? enrichScamCheckResultDomainAge(parsedPayload) : null;
+
+  const storedResult = parsedPayload?.result
+    ? enrichScamCheckResultDomainAge(parsedPayload.result)
+    : null;
+
+  const storedNormalized = parsedPayload?.normalizedTrustResult ?? null;
 
   return {
     id: row.id,
@@ -71,7 +148,10 @@ function rowToSnapshot(row: SnapshotRowBase, domainLower: string): LatestPublicC
     checkedValue: row.checkedValue,
     lastSeenAt: row.lastSeenAt,
     display,
-    storedResult
+    canonical,
+    storedResult,
+    storedNormalized: storedNormalized ?? null,
+    statusLabel: row.statusLabel
   };
 }
 
@@ -85,7 +165,11 @@ async function findSnapshotRow(where: { normalizedValue: string } | { id: string
   } catch (err) {
     if (!isPrismaReadSkipped(err)) throw err;
     try {
-      return await db.latestPublicCheck.findUnique({ where, select: snapshotSelectBase });
+      const row = await db.latestPublicCheck.findUnique({
+        where,
+        select: { ...snapshotSelectLegacy, publicResultPayload: true }
+      });
+      return row;
     } catch (fallbackErr) {
       if (isPrismaReadSkipped(fallbackErr)) return null;
       throw fallbackErr;

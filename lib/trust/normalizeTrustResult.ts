@@ -294,6 +294,15 @@ export function normalizeTrustResult(
 }
 
 export function displayLockFromSnapshot(snapshot: LatestPublicCheckSnapshot): TrustDisplayLock {
+  if (snapshot.canonical) {
+    return {
+      riskScore: snapshot.canonical.riskScore,
+      trustScore: snapshot.canonical.trustScore,
+      verdict: snapshot.canonical.consumerVerdictLabel,
+      scanId: snapshot.id,
+      source: "public_snapshot"
+    };
+  }
   const trustScore = snapshot.display.trustScore;
   return {
     riskScore: snapshot.display.riskScore,

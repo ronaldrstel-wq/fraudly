@@ -82,6 +82,12 @@ model LatestPublicCheck {
   entityType         String   @db.VarChar(64)
   riskScoreSnapshot  Int
   statusLabel        String   @db.VarChar(128)
+  /// Legacy 3-tier verdict (safe/suspicious/scam) — metadata only; UX uses consumerVerdictLabel.
+  consumerVerdict        String?  @db.VarChar(32)
+  consumerVerdictLabel String?  @db.VarChar(64)
+  consumerVerdictBand  String?  @db.VarChar(32)
+  normalizedTrustScore Int?
+  normalizedRiskScore  Int?
   publicResultPath   String   @db.VarChar(2048)
   /// Full public `ScamCheckResult` JSON for instant `/check/[domain]` paint when linked from latest checks.
   publicResultPayload Json?

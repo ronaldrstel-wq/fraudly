@@ -16,6 +16,7 @@ import type { WebsiteAnalysisClientEvidence } from "@/lib/evidence/types";
 import { getAdminIdentityOrNull, getCurrentUserIsAdmin } from "@/lib/auth/admin";
 import { db } from "@/lib/db";
 import { applyDomainOverrideToResult } from "@/lib/admin/apply-domain-override";
+import { buildCheckApiCanonicalExtensions } from "@/lib/trust/canonicalTrustBridge";
 
 export const runtime = "nodejs";
 
@@ -252,11 +253,20 @@ export async function POST(request: Request) {
       logNonCritical("[api/check] latest public snapshot skipped:", e);
     }
 
+    const canonical = buildCheckApiCanonicalExtensions(fullResult);
     const payload = {
       detailLevel: "full" as const,
       result: fullResult,
       upsellPremium: false,
-      billing: isAdmin ? ADMIN_BILLING_SNAPSHOT : billingUser ? toBillingSnapshot(billingUser) : ANON_BILLING_SNAPSHOT
+      billing: isAdmin ? ADMIN_BILLING_SNAPSHOT : billingUser ? toBillingSnapshot(billingUser) : ANON_BILLING_SNAPSHOT,
+      trustScore: canonical.trustScore,
+      riskScore: canonical.riskScore,
+      consumerVerdict: canonical.consumerVerdict,
+      consumerVerdictLabel: canonical.consumerVerdictLabel,
+      consumerVerdictBand: canonical.consumerVerdictBand,
+      consumerVerdictBandDisplay: canonical.consumerVerdictBandDisplay,
+      scoreConfidence: canonical.scoreConfidence,
+      normalizedTrustResult: canonical.normalizedTrustResult
     };
 
     const response = NextResponse.json(payload);

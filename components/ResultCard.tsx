@@ -8,7 +8,7 @@ import { normalizeTrustResult, trustHighlightsFromNormalized } from "@/lib/trust
 import type { NormalizedTrustResult } from "@/lib/trust/types";
 import type { ConsumerVerdictLabel } from "@/lib/trust/types";
 import { riskScoreFromTrust } from "@/lib/scoring/displayScore";
-import { standardVerdictLabel } from "@/lib/scoring/displayScore";
+import { logComponentTrustIntegrity } from "@/lib/scoring/componentIntegrity";
 import { inferIntelEvidenceTier, type IntelScoreBreakdownEntry } from "@/lib/checks/scoring";
 import type { TrustSignal } from "@/lib/checks/types";
 import { inferScoreEvidenceTier, type ScoreEvidenceTier, type ScoreSignal } from "@/lib/scoringEngine";
@@ -238,6 +238,17 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
       route: "ResultCard"
     });
   }, [safeResult, normalizedTrust, alignedDisplay]);
+
+  useEffect(() => {
+    logComponentTrustIntegrity({
+      component: "ResultCard",
+      domain: safeResult.domain,
+      trustScore: normalized.trustScore,
+      riskScore: normalized.riskScore,
+      consumerVerdictLabel: normalized.verdict,
+      legacyVerdict: safeResult.verdict
+    });
+  }, [safeResult.domain, safeResult.verdict, normalized.trustScore, normalized.riskScore, normalized.verdict]);
 
   const scoreSignals = safeResult.scoreResult?.signals ?? [];
   const trustSignals = safeResult.trustSignals ?? [];

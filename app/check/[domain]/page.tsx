@@ -18,14 +18,13 @@ import { EN_MESSAGES } from "@/lib/messages.en";
 import { loadTrustViewForDomain } from "@/lib/trust/loadTrustView";
 import { logDisplayScoreDebug } from "@/lib/scoring/displayScore";
 import { TrustSummaryMetrics } from "@/components/trust/TrustSummaryMetrics";
-import type { HumanRecKind } from "@/lib/scanResultDualLayer";
-import { humanRecKindFromTrustVerdict } from "@/lib/scanResultDualLayer";
-import { clampScore } from "@/lib/trustSystem";
+import { alignedDisplayFromSnapshot } from "@/lib/check/alignedDisplayFromSnapshot";
 
 export const revalidate = 3600;
 
 type PageProps = {
   params: Promise<{ domain: string }>;
+  searchParams: Promise<{ scanId?: string }>;
 };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -111,15 +110,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-export default async function DomainCheckPage({ params }: PageProps) {
+export default async function DomainCheckPage({ params, searchParams }: PageProps) {
   const { domain: raw } = await params;
+  const { scanId } = await searchParams;
   const domain = parseCheckDomainParam(raw);
   if (!domain) notFound();
 
   const path = `/check/${encodeURIComponent(domain)}`;
   let view;
   try {
-    view = await loadTrustViewForDomain(domain, "/check/[domain]");
+    view = await loadTrustViewForDomain(domain, "/check/[domain]", {
+      preferredScanId: typeof scanId === "string" ? scanId : undefined
+    });
   } catch {
     notFound();
   }
@@ -138,19 +140,7 @@ export default async function DomainCheckPage({ params }: PageProps) {
     });
   }
 
-  const alignedDisplay = snapshot
-    ? {
-        trustScore: normalized.trustScore ?? 50,
-        label: normalized.verdict,
-        humanKind: humanRecKindFromTrustVerdict(
-          clampScore(normalized.trustScore ?? 50),
-          snapshot.display.verdict
-        ) as HumanRecKind,
-        humanHeadline: normalized.verdict,
-        scanId: snapshot.id,
-        lastSeenAtIso: snapshot.lastSeenAt.toISOString()
-      }
-    : undefined;
+  const alignedDisplay = snapshot ? alignedDisplayFromSnapshot(snapshot) : undefined;
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900">

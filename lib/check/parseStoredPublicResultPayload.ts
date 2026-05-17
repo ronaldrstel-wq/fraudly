@@ -1,4 +1,4 @@
-import { normalizeDomain } from "@/lib/cache";
+import { parsePublicResultPayload } from "@/lib/trust/canonicalTrustBridge";
 import type { ScamCheckResult } from "@/types/scam";
 
 /** Validates stored JSON before using it for first paint (legacy rows may omit payload). */
@@ -6,13 +6,8 @@ export function parseStoredPublicResultPayload(
   payload: unknown,
   expectedDomainLower: string
 ): ScamCheckResult | null {
-  if (!payload || typeof payload !== "object") return null;
-  const r = payload as Partial<ScamCheckResult>;
-  if (typeof r.domain !== "string" || typeof r.score !== "number") return null;
-  if (normalizeDomain(r.domain) !== normalizeDomain(expectedDomainLower)) return null;
-  if (!r.ssl || typeof r.ssl !== "object") return null;
-  if (!r.domainIntelligence || typeof r.domainIntelligence !== "object") return null;
-  if (!r.scoreResult || !Array.isArray(r.scoreResult.signals)) return null;
-  if (!Array.isArray(r.trustSignals)) return null;
-  return r as ScamCheckResult;
+  const parsed = parsePublicResultPayload(payload, expectedDomainLower);
+  return parsed?.result ?? null;
 }
+
+export { parsePublicResultPayload } from "@/lib/trust/canonicalTrustBridge";

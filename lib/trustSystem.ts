@@ -37,9 +37,8 @@ export {
   trustMeterColors
 } from "@/lib/scoring/trust-bands";
 
-export function trustScoreFromRisk(riskScore: number): number {
-  return clampScore(100 - riskScore);
-}
+import { trustScoreFromRisk } from "@/lib/scoring/displayScore";
+export { trustScoreFromRisk };
 
 function trustLevelFromBand(band: TrustBandId): TrustLevel {
   switch (band) {

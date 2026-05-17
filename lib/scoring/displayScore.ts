@@ -1,5 +1,6 @@
 import { clampScore } from "@/lib/clampScore";
-import { verdictFromPublicSnapshotLabel } from "@/lib/latest-public-checks/status-label";
+import { scamVerdictFromConsumerLabel } from "@/lib/scoring/consumerVerdictMap";
+import type { ConsumerVerdictLabel } from "@/lib/trust/types";
 import type { ScamVerdict } from "@/types/scam";
 import {
   consumerDisplayBand,
@@ -57,9 +58,10 @@ export function publicDisplayScoreFromLatestRow(row: {
   riskScoreSnapshot: number;
   statusLabel: string;
 }): PublicDisplayScore & { scanId: string } {
-  const verdict = verdictFromPublicSnapshotLabel(row.statusLabel);
-  const score = publicDisplayScoreFromRiskAndVerdict(row.riskScoreSnapshot, verdict);
-  return { ...score, scanId: row.id };
+  void row.statusLabel;
+  const score = publicDisplayScoreFromRiskAndVerdict(row.riskScoreSnapshot, null);
+  const legacyVerdict = scamVerdictFromConsumerLabel(score.label as ConsumerVerdictLabel);
+  return { ...score, verdict: legacyVerdict, scanId: row.id };
 }
 
 export type DisplayScoreDebugContext = {

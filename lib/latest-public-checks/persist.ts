@@ -4,6 +4,12 @@ import { classifyWebsiteCheckForPublication } from "@/lib/latest-public-checks/f
 import { publicStatusLabelForVerdict } from "@/lib/latest-public-checks/status-label";
 import { enrichScamCheckResultDomainAge } from "@/lib/domain/normalizeDomainAge";
 import { normalizeRiskScore } from "@/lib/scoring/displayScore";
+import {
+  alignNormalizedTrustToCanonical,
+  buildCanonicalTrustFieldsFromResult,
+  buildNormalizedTrustFromLegacyResult,
+  buildPublicResultPayloadV2
+} from "@/lib/trust/canonicalTrustBridge";
 import type { ScamCheckResult } from "@/types/scam";
 import { Prisma } from "@prisma/client";
 
@@ -18,16 +24,26 @@ export async function upsertLatestPublicCheckFromCompletedScan(options: {
 
   const result = enrichScamCheckResultDomainAge(options.result);
   const domain = result.domain;
-  const risk = normalizeRiskScore(
-    Number.isFinite(options.result.score) ? options.result.score : 35
-  );
+  const canonical = buildCanonicalTrustFieldsFromResult(result);
+  const risk = canonical.riskScore;
   const statusLabel = publicStatusLabelForVerdict(result.verdict);
-  const payload = result as unknown as Prisma.InputJsonValue;
+  const normalized = alignNormalizedTrustToCanonical(
+    buildNormalizedTrustFromLegacyResult(result, { route: "persist/latest-public-check" }),
+    canonical,
+    { scoreSource: "public_snapshot" }
+  );
+  const payload = buildPublicResultPayloadV2(result, normalized, canonical) as unknown as Prisma.InputJsonValue;
+
   const baseData = {
     checkedValue: gate.checkedValueForDisplay.slice(0, 4096),
     entityType: gate.entityType,
     riskScoreSnapshot: risk,
-    statusLabel
+    statusLabel,
+    consumerVerdict: canonical.consumerVerdict,
+    consumerVerdictLabel: canonical.consumerVerdictLabel,
+    consumerVerdictBand: canonical.consumerVerdictBand,
+    normalizedTrustScore: canonical.trustScore,
+    normalizedRiskScore: canonical.riskScore
   };
 
   let row: { id: string };
@@ -49,10 +65,18 @@ export async function upsertLatestPublicCheckFromCompletedScan(options: {
       where: { normalizedValue: gate.normalizedValue },
       create: {
         normalizedValue: gate.normalizedValue,
-        ...baseData,
+        checkedValue: baseData.checkedValue,
+        entityType: baseData.entityType,
+        riskScoreSnapshot: baseData.riskScoreSnapshot,
+        statusLabel: baseData.statusLabel,
         publicResultPath: `/check/${encodeURIComponent(domain)}`
       },
-      update: baseData,
+      update: {
+        checkedValue: baseData.checkedValue,
+        entityType: baseData.entityType,
+        riskScoreSnapshot: baseData.riskScoreSnapshot,
+        statusLabel: baseData.statusLabel
+      },
       select: { id: true }
     });
   }

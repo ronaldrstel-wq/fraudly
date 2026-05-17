@@ -22,6 +22,28 @@ describe("overviewCardPresentation", () => {
     expect(m.headline).toBe("High Risk");
   });
 
+  it("feed overview trusts risk snapshot over misleading statusLabel", () => {
+    const m = buildOverviewFromPublicCheck({
+      riskScoreSnapshot: 20,
+      statusLabel: PUBLIC_SNAPSHOT_LABEL_STRONG_RISK
+    });
+    expect(m.trustScore).toBe(80);
+    expect(m.verdictLabel).toBe("Mostly Safe");
+    expect(m.isCritical).toBe(false);
+  });
+
+  it("feed overview prefers persisted normalizedTrustScore and consumerVerdictLabel", () => {
+    const m = buildOverviewFromPublicCheck({
+      riskScoreSnapshot: 88,
+      statusLabel: PUBLIC_SNAPSHOT_LABEL_STRONG_RISK,
+      normalizedTrustScore: 80,
+      consumerVerdictLabel: "Mostly Safe"
+    });
+    expect(m.trustScore).toBe(80);
+    expect(m.verdictLabel).toBe("Mostly Safe");
+    expect(m.isCritical).toBe(false);
+  });
+
   it("computes trust from risk snapshot", () => {
     expect(trustScoreFromRiskSnapshot(20)).toBe(80);
   });

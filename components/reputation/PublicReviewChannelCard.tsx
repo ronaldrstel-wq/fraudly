@@ -1,4 +1,6 @@
+import { TrustDataConfidenceBadge } from "@/components/trust/TrustDataConfidenceBadge";
 import { ReviewRating } from "@/components/reputation/ReviewRating";
+import { reviewChannelConfidenceIndicator, dataConfidenceBadge } from "@/lib/trust/dataConfidence";
 import type { NormalizedReviewChannel } from "@/lib/trust/types";
 import type { ReviewChannelSource } from "@/lib/reputation/reviewChannelPresentation";
 
@@ -56,8 +58,13 @@ export function PublicReviewChannelCard({
   channel: NormalizedReviewChannel;
   matchNote?: string | null;
 }) {
+  const confidenceBadge = dataConfidenceBadge(reviewChannelConfidenceIndicator(channel));
+
   return (
     <article className={shellClass(channel)}>
+      <div className="mb-2">
+        <TrustDataConfidenceBadge badge={confidenceBadge} />
+      </div>
       {channel.showMetrics ? (
         <>
           <ReviewRating

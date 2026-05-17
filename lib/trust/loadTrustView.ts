@@ -1,5 +1,5 @@
 import { getCachedWebsiteAnalysis } from "@/lib/analysis/cachedAnalysis";
-import { getLatestPublicCheckSnapshotForDomain } from "@/lib/latest-public-checks/snapshot";
+import { resolveLatestPublicCheckSnapshotForCheckPage } from "@/lib/latest-public-checks/snapshot";
 import {
   displayLockFromSnapshot,
   normalizeTrustResult,
@@ -19,15 +19,34 @@ export type TrustViewForDomain = {
  * Loads cached analysis + latest public snapshot and returns one normalized trust view.
  * Snapshot display lock ensures /check, /domain, and latest→detail share the same score/verdict.
  */
+export type LoadTrustViewOptions = Pick<NormalizeTrustResultOptions, "enrichment"> & {
+  /** When set, prefer this public snapshot id if it matches the domain (e.g. ?scanId= from latest checks). */
+  preferredScanId?: string;
+};
+
 export async function loadTrustViewForDomain(
   domainLower: string,
   route: string,
-  extra?: Pick<NormalizeTrustResultOptions, "enrichment">
+  extra?: LoadTrustViewOptions
 ): Promise<TrustViewForDomain> {
-  const [result, snapshot] = await Promise.all([
+  const preferredScanId = extra?.preferredScanId;
+  const [cachedResult, snapshot] = await Promise.all([
     getCachedWebsiteAnalysis(domainLower),
-    getLatestPublicCheckSnapshotForDomain(domainLower)
+    resolveLatestPublicCheckSnapshotForCheckPage(domainLower, preferredScanId)
   ]);
+
+  const result = snapshot?.storedResult ?? cachedResult;
+
+  if (snapshot?.storedNormalized) {
+    const normalized: NormalizedTrustResult = {
+      ...snapshot.storedNormalized,
+      raw: result,
+      scanId: snapshot.id,
+      scoreSource: "public_snapshot",
+      checkedAt: snapshot.lastSeenAt.toISOString()
+    };
+    return { result, snapshot, normalized };
+  }
 
   const normalized = normalizeTrustResult(result, {
     displayLock: snapshot ? displayLockFromSnapshot(snapshot) : null,
