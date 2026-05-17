@@ -42,7 +42,33 @@ describe("fetchLatestPublicChecksPage", () => {
     );
   });
 
-  it("returns empty list without throwing on Prisma errors", async () => {
+  it("falls back to legacy select when canonical columns are missing (P2022)", async () => {
+    const row = {
+      id: "c1",
+      normalizedValue: "example.com",
+      checkedValue: "example.com",
+      entityType: "domain",
+      riskScoreSnapshot: 30,
+      statusLabel: "Lower risk context snapshot",
+      publicResultPath: "/check/example.com",
+      lastSeenAt: new Date("2026-01-01T00:00:00.000Z")
+    };
+    vi.mocked(db.latestPublicCheck.findMany)
+      .mockRejectedValueOnce(
+        new Prisma.PrismaClientKnownRequestError("column does not exist", {
+          code: "P2022",
+          clientVersion: "test"
+        })
+      )
+      .mockResolvedValueOnce([row] as never);
+
+    const result = await fetchLatestPublicChecksPage(0, 10);
+    expect(result.loadFailed).toBe(false);
+    expect(result.rows).toHaveLength(1);
+    expect(db.latestPublicCheck.findMany).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns loadFailed when both canonical and legacy selects fail", async () => {
     vi.mocked(db.latestPublicCheck.findMany).mockRejectedValue(
       new Prisma.PrismaClientKnownRequestError("column does not exist", {
         code: "P2022",

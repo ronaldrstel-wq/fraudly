@@ -3,6 +3,10 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { LATEST_PUBLIC_CHECKS_CACHE_TAG } from "@/lib/trust/cacheTags";
 
+export function latestChecksCacheBypassEnabled(): boolean {
+  return process.env.LATEST_CHECKS_BYPASS_CACHE?.trim().toLowerCase() === "true";
+}
+
 /** Columns guaranteed by the original LatestPublicCheck migration (no optional JSON payload). */
 export const latestPublicCheckListSelect = {
   id: true,
@@ -94,8 +98,12 @@ async function fetchLatestPublicChecksPageInner(
 
 export async function fetchLatestPublicChecksPage(
   skip: number,
-  take: number
+  take: number,
+  options?: { bypassCache?: boolean }
 ): Promise<LatestPublicChecksListResult> {
+  if (options?.bypassCache || latestChecksCacheBypassEnabled()) {
+    return fetchLatestPublicChecksPageInner(skip, take);
+  }
   return unstable_cache(
     () => fetchLatestPublicChecksPageInner(skip, take),
     ["latest-public-checks-page", String(skip), String(take)],
