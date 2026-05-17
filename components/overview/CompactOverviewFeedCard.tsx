@@ -108,7 +108,7 @@ function FeedViewResultCta({
 
 function TrustScoreBlock({ score, visual }: { score: number; visual: OverviewFeedCardVisual }) {
   return (
-    <div className="flex shrink-0 flex-col items-center gap-1">
+    <div className="flex w-full flex-col items-center gap-1">
       <div
         className={visual.scorePill}
         aria-label={`${EN_MESSAGES.latestChecks.trustScorePillLabel}: ${score} out of 100`}
@@ -172,14 +172,16 @@ function FeedCardBody(props: {
 
   return (
     <div
-      className={`flex flex-col items-stretch gap-6 md:flex-row md:items-center md:justify-between md:gap-6 ${CARD_PAD}`}
+      className={`grid grid-cols-1 gap-4 ${CARD_PAD} md:grid-cols-[56px_minmax(0,1fr)_90px_120px_140px] md:items-center md:gap-x-6 md:gap-y-4`}
     >
-      <div className="flex min-w-0 flex-1 items-start gap-4 sm:gap-5">
+      <div className="flex items-center justify-center md:col-start-1">
         <div className={visual.iconCircle}>
           <FeedVerdictIcon visual={visual} />
         </div>
+      </div>
 
-        <div className="min-w-0 flex-1 space-y-1 overflow-hidden sm:space-y-1.5">
+      <div className="min-w-0 md:col-start-2">
+        <div className="space-y-1 overflow-hidden sm:space-y-1.5">
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">{domainLabel}</p>
           <h2 id={headlineId} className={`text-balance ${visual.headline}`}>
             {m.headline}
@@ -191,27 +193,27 @@ function FeedCardBody(props: {
         </div>
       </div>
 
-      <div className="ml-auto flex w-full shrink-0 flex-col items-end gap-4 sm:w-auto sm:flex-row sm:items-center sm:gap-7">
-        <time
-          className="shrink-0 text-xs font-medium tabular-nums text-slate-500"
-          dateTime={timeIso}
-          title={timeTitle}
-        >
-          {timeRelative}
-        </time>
+      <time
+        className="text-xs font-medium tabular-nums text-slate-500 md:col-start-3 md:w-[90px] md:text-right"
+        dateTime={timeIso}
+        title={timeTitle}
+      >
+        {timeRelative}
+      </time>
 
+      <div className="md:col-start-4 md:w-[120px]">
         <TrustScoreBlock score={m.trustScore} visual={visual} />
+      </div>
 
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
-          <FeedViewResultCta
-            viewLabel={viewLabel}
-            visual={visual}
-            href={href}
-            headlineId={headlineId}
-            decorative={decorativeCta}
-          />
-          {trailingActions}
-        </div>
+      <div className="flex flex-col items-start gap-2 md:col-start-5 md:w-[140px]">
+        <FeedViewResultCta
+          viewLabel={viewLabel}
+          visual={visual}
+          href={href}
+          headlineId={headlineId}
+          decorative={decorativeCta}
+        />
+        {trailingActions}
       </div>
     </div>
   );
