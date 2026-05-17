@@ -579,7 +579,7 @@ const FEED_META_VIEW_BTN =
   "inline-flex h-[34px] shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-full border border-slate-200/80 bg-white/90 px-3.5 text-[13px] font-semibold leading-none text-slate-700 shadow-none hover:bg-white";
 const FEED_META_SCORE_SLASH = "text-[11px] font-normal text-slate-500";
 const FEED_HEADLINE_BASE =
-  "text-[calc(1.85rem+2px)] font-bold leading-[1.05] tracking-[-0.025em] sm:text-[calc(2rem+2px)]";
+  "text-[1.625rem] font-bold leading-[1.12] tracking-[-0.02em] sm:text-[1.75rem]";
 const FEED_STRIPE_SAFE = "border-l-4 border-solid border-l-[#14b86a] rounded-l-[22px]";
 const FEED_STRIPE_CAUTION = "border-l-4 border-solid border-l-[#f2a93b] rounded-l-[22px]";
 const FEED_STRIPE_SUSPICIOUS = "border-l-4 border-solid border-l-[#f2a93b] rounded-l-[22px]";
@@ -588,7 +588,7 @@ const FEED_STRIPE_INFO = "border-l-4 border-solid border-l-blue-500 rounded-l-[2
 const FEED_CARD_SHELL =
   "relative flex w-full overflow-hidden rounded-[22px] border border-[rgba(15,23,42,0.08)]";
 const FEED_META_SCORE_PILL =
-  "inline-flex h-[32px] w-[88px] shrink-0 items-baseline justify-center gap-0.5 rounded-full border border-slate-200/75 bg-white/90 px-3 text-[14px] leading-none tabular-nums text-slate-800 shadow-none";
+  "inline-flex h-[32px] w-[88px] shrink-0 items-center justify-center rounded-full border border-slate-200/75 bg-white/90 px-3 text-[14px] leading-none tabular-nums text-slate-800 shadow-none";
 
 const FEED_TRUSTED: OverviewFeedCardVisual = {
   tone: "safe",

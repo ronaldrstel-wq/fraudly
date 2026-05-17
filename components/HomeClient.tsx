@@ -342,22 +342,54 @@ export function HomeClient({ children }: { children?: ReactNode }) {
     </Link>
   );
 
-  const signupPrompt =
-    showSignupPrompt && !isSignedIn ? (
-      <div className="mx-auto mt-8 w-full max-w-[860px] fraudly-cta-panel">
-        <h3 className="text-lg font-bold tracking-tight text-slate-900 md:text-xl">{EN_MESSAGES.freemium.promptTitle}</h3>
-        <p className="mt-2 text-sm leading-relaxed text-slate-600">{EN_MESSAGES.freemium.promptBody}</p>
-        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-          {signUpLink}
-          <Link
-            href="/sign-in"
-            className="btn-secondary inline-flex px-5"
-            onClick={() => trackEvent("login_started", { source: "signup_prompt" })}
-          >
-            {EN_MESSAGES.auth.loginCta}
-          </Link>
-        </div>
-      </div>
+  const belowSearchCard =
+    error || result || (showSignupPrompt && !isSignedIn) ? (
+      <>
+        {error ? (
+          <div className="rounded-2xl border border-rose-200/85 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-subtle">
+            {error}
+            {error.includes("Log in") ? <div className="mt-3 flex justify-center">{signInLink}</div> : null}
+          </div>
+        ) : null}
+
+        {showSignupPrompt && !isSignedIn ? (
+          <div className={`w-full fraudly-cta-panel ${error ? "mt-5" : ""}`}>
+            <h3 className="text-lg font-bold tracking-tight text-slate-900 md:text-xl">{EN_MESSAGES.freemium.promptTitle}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">{EN_MESSAGES.freemium.promptBody}</p>
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+              {signUpLink}
+              <Link
+                href="/sign-in"
+                className="btn-secondary inline-flex px-5"
+                onClick={() => trackEvent("login_started", { source: "signup_prompt" })}
+              >
+                {EN_MESSAGES.auth.loginCta}
+              </Link>
+            </div>
+          </div>
+        ) : null}
+
+        {result ? (
+          <div className={`home-results-reveal space-y-5 ${error || (showSignupPrompt && !isSignedIn) ? "mt-5" : ""}`}>
+            <ResultCard result={result} normalizedTrust={normalizedTrust ?? undefined} />
+            <p className="text-center text-sm text-slate-600 md:text-left">
+              Share or revisit this snapshot:{" "}
+              <Link
+                href={`/check/${encodeURIComponent(result.domain)}`}
+                className="font-semibold text-blue-600 underline decoration-blue-600/40 underline-offset-2 hover:decoration-blue-600"
+              >
+                /check/{result.domain}
+              </Link>
+            </p>
+            <PostScanAppPromo />
+            {!isSignedIn ? (
+              <div className="rounded-2xl border border-slate-200/85 bg-slate-50 px-4 py-3 text-sm text-slate-700 shadow-subtle">
+                {EN_MESSAGES.freemium.afterResultBanner}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </>
     ) : null;
 
   return (
@@ -374,46 +406,8 @@ export function HomeClient({ children }: { children?: ReactNode }) {
           scanFailed={scanFailed}
           checkedLabel={displayCheckedLabel}
           isAdmin={isAdmin}
+          belowSearchCard={belowSearchCard}
         />
-
-        {error && (
-          <div className="mx-auto mt-5 max-w-3xl rounded-2xl border border-rose-200/85 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-subtle">
-            {error}
-            {error.includes("Log in") ? <div className="mt-3 flex justify-center">{signInLink}</div> : null}
-          </div>
-        )}
-
-        {signupPrompt}
-
-        {result && (
-          <>
-            <section className="home-results-reveal mt-7 grid gap-5 sm:mt-9 lg:grid-cols-[1.7fr_1fr]">
-              <div className="min-w-0 space-y-3">
-                <ResultCard result={result} normalizedTrust={normalizedTrust ?? undefined} />
-                <p className="text-center text-sm text-slate-600 md:text-left">
-                  Share or revisit this snapshot:{" "}
-                  <Link
-                    href={`/check/${encodeURIComponent(result.domain)}`}
-                    className="font-semibold text-blue-600 underline decoration-blue-600/40 underline-offset-2 hover:decoration-blue-600"
-                  >
-                    /check/{result.domain}
-                  </Link>
-                </p>
-              </div>
-              <div className="min-w-0 lg:pt-0">
-                <FeatureCards stacked />
-              </div>
-            </section>
-            <div className="home-results-reveal mx-auto mt-5 max-w-3xl">
-              <PostScanAppPromo />
-            </div>
-            {!isSignedIn && (
-              <div className="home-results-reveal mx-auto mt-5 max-w-3xl rounded-2xl border border-slate-200/85 bg-slate-50 px-4 py-3 text-sm text-slate-700 shadow-subtle">
-                {EN_MESSAGES.freemium.afterResultBanner}
-              </div>
-            )}
-          </>
-        )}
 
         {!result && (
           <section className="mt-5 [content-visibility:auto] [contain-intrinsic-size:1px_220px] sm:mt-7">

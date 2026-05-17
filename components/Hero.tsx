@@ -80,6 +80,8 @@ interface HeroProps {
   checkedLabel?: string | null;
   isAdmin?: boolean;
   authGate?: ReactNode;
+  /** Renders directly under the search/progress card (e.g. scan result). */
+  belowSearchCard?: ReactNode;
   extraBelowInput?: ReactNode;
 }
 
@@ -95,6 +97,7 @@ export function Hero({
   checkedLabel = null,
   isAdmin = false,
   authGate,
+  belowSearchCard,
   extraBelowInput
 }: HeroProps) {
   const {
@@ -199,6 +202,12 @@ export function Hero({
             scanFailed={scanFailed}
             checkedLabel={checkedLabel}
           />
+
+          {belowSearchCard ? (
+            <div id="home-scan-results" className="mt-5 w-full sm:mt-6">
+              {belowSearchCard}
+            </div>
+          ) : null}
 
           <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-slate-500 sm:text-sm">
             <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">

@@ -131,10 +131,12 @@ function TrustScoreBlock({
           className={pillClass}
           aria-label={`${EN_MESSAGES.latestChecks.trustScorePillLabel}: ${score} out of 100`}
         >
-          <span className="font-bold">{score}</span>
-          <span className={slashClass}>/100</span>
+          <span className="inline-flex items-baseline justify-center gap-0.5 leading-none">
+            <span className="font-bold tabular-nums">{score}</span>
+            <span className={slashClass}>/100</span>
+          </span>
         </div>
-        <span className="mt-0.5 text-[9px] font-medium uppercase tracking-wide leading-none text-slate-500">
+        <span className="mt-0.5 w-full text-center text-[9px] font-medium uppercase tracking-wide leading-none text-slate-500">
           {EN_MESSAGES.latestChecks.trustScorePillLabel}
         </span>
       </div>
@@ -225,17 +227,17 @@ function FeedMetaBox({
   return (
     <div className="flex w-full shrink-0 flex-col gap-1 md:ml-auto md:w-[288px] md:min-w-[288px] md:max-w-[288px]">
       <div
-        className={`grid h-[64px] w-full grid-cols-[4.25rem_minmax(88px,1fr)_auto] items-center gap-x-2 rounded-xl px-3 py-2 ${visual.metaBox}`}
+        className={`flex h-[64px] w-full items-center justify-between gap-3 rounded-xl px-3.5 py-2 ${visual.metaBox}`}
       >
         <time
-          className="self-center text-left text-[11px] font-medium leading-tight tabular-nums text-slate-500 whitespace-nowrap"
+          className="flex w-[4.25rem] shrink-0 items-center text-left text-[11px] font-medium leading-none tabular-nums text-slate-500 whitespace-nowrap"
           dateTime={timeIso}
           title={timeTitle}
         >
           {timeRelative}
         </time>
 
-        <div className="flex items-center justify-center">
+        <div className="flex flex-1 items-center justify-center">
           <TrustScoreBlock score={trustScore} visual={visual} variant="meta" />
         </div>
 
