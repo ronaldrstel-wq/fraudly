@@ -250,25 +250,38 @@ async function readCache(domain: string): Promise<ReputationEnrichment | null> {
   }
 }
 
+async function readCachePayload(domain: string): Promise<ReputationEnrichment | null> {
+  try {
+    const row = await db.reputationEnrichmentCache.findUnique({ where: { normalizedDomain: domain } });
+    if (!row?.payload || typeof row.payload !== "object") return null;
+    return row.payload as unknown as ReputationEnrichment;
+  } catch {
+    return null;
+  }
+}
+
 async function writeCache(domain: string, value: ReputationEnrichment): Promise<void> {
-  const success = value.providerState === "found";
-  const expiresAt = new Date(Date.now() + resolveCacheTtlMs(value));
+  const existing = await readCachePayload(domain);
+  const { mergeEnrichmentForCache } = await import("@/lib/reputation/reputationProviderResolver");
+  const merged = mergeEnrichmentForCache(value, existing);
+  const success = merged.providerState === "found";
+  const expiresAt = new Date(Date.now() + resolveCacheTtlMs(merged));
   try {
     await db.reputationEnrichmentCache.upsert({
       where: { normalizedDomain: domain },
       update: {
-        status: success ? "success" : value.providerState ?? "empty",
-        payload: serializeForCache(value),
-        fetchError: success ? null : value.providerReason ?? null,
+        status: success ? "success" : merged.providerState ?? "empty",
+        payload: serializeForCache(merged),
+        fetchError: success ? null : merged.providerReason ?? null,
         expiresAt,
         fetchedAt: new Date()
       },
       create: {
         normalizedDomain: domain,
         provider: "public-intel",
-        status: success ? "success" : value.providerState ?? "empty",
-        payload: serializeForCache(value),
-        fetchError: success ? null : value.providerReason ?? null,
+        status: success ? "success" : merged.providerState ?? "empty",
+        payload: serializeForCache(merged),
+        fetchError: success ? null : merged.providerReason ?? null,
         expiresAt,
         fetchedAt: new Date()
       }

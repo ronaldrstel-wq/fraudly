@@ -79,6 +79,37 @@ describe("mergeReviewSignalsWithEnrichment", () => {
     expect(merged.googleMatchConfidence).toBe("low");
   });
 
+  it("keeps base indexed Google when enrichment validation fails", () => {
+    const enrichment = {
+      googleRating: 1.5,
+      googleReviewCount: 3,
+      googleMatchConfidence: "low",
+      googleLookup: {
+        provider: "outscraper",
+        queryUsed: "example.com",
+        confidence: "low",
+        confidenceScore: 0.1,
+        exactDomainMatch: false,
+        httpStatus: 200
+      },
+      trustpilotMatchConfidence: "none"
+    } as ReputationEnrichment;
+
+    const merged = mergeReviewSignalsWithEnrichment(
+      {
+        ...baseSignals,
+        googleRating: 4.2,
+        googleReviewCount: 95
+      },
+      enrichment
+    );
+
+    expect(merged.googleFound).toBe(true);
+    expect(merged.googleRating).toBe(4.2);
+    expect(merged.googleReviewCount).toBe(95);
+    expect(merged.googleMatchConfidence).toBe("none");
+  });
+
   it("does not merge low-confidence Trustpilot enrichment", () => {
     const enrichment = {
       googleRating: null,
