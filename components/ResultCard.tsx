@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ReviewRating } from "@/components/reputation/ReviewRating";
+import { PublicReviewChannelCard } from "@/components/reputation/PublicReviewChannelCard";
 import { ReviewSummary } from "@/components/ReviewSummary";
 import { heroPreviewReasonsForResult } from "@/lib/signals/normalizeConsumerSignals";
 import { normalizeTrustResult, trustHighlightsFromNormalized } from "@/lib/trust/normalizeTrustResult";
@@ -399,12 +399,6 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
     };
   }, [result.domain, result.score, result.confidenceLevel, hasPublicReviewData]);
 
-  const trustpilotFound = normalized.reputation.trustpilot.display != null;
-  const googleFound = normalized.reputation.google.display != null;
-  const trustpilotRating = normalized.reputation.trustpilot.rating;
-  const trustpilotCount = normalized.reputation.trustpilot.reviewCount;
-  const googleRating = normalized.reputation.google.rating;
-  const googleCount = normalized.reputation.google.reviewCount;
   const providerLabel = providerStateLabel(reputation, repError);
   const neutralContextNotes = useMemo(() => {
     const note = normalized.reputation.optionalUnavailableNote;
@@ -535,45 +529,12 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
             <h3 className="text-sm font-semibold text-slate-900">{EN_MESSAGES.scanResult.reputationHeading}</h3>
             <p className="mt-1 text-xs leading-relaxed text-slate-600">{EN_MESSAGES.scanResult.reputationIntro}</p>
             <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
-                {trustpilotFound ? (
-                  <div className="rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5">
-                    <ReviewRating
-                      source="Trustpilot"
-                      rating={trustpilotRating}
-                      reviewCount={trustpilotCount}
-                    />
-                    {normalized.reputation.trustpilotMatchNote ? (
-                      <p className="mt-1.5 text-xs text-slate-600">{normalized.reputation.trustpilotMatchNote}</p>
-                    ) : null}
-                  </div>
-                ) : (
-                  <article className="rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5">
-                    <p className="text-sm font-semibold text-slate-900">Trustpilot</p>
-                    <p className="mt-1.5 text-xs text-slate-600">
-                      {publicReviewUnavailableMessage(
-                        reputation,
-                        repError,
-                        normalized.reputation.neutralFallback
-                      )}
-                    </p>
-                  </article>
-                )}
-
-                {googleFound ? (
-                  <ReviewRating
-                    source="Google Reviews"
-                    rating={googleRating}
-                    reviewCount={googleCount}
-                    className="rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5"
-                  />
-                ) : (
-                  <article className="rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5">
-                    <p className="text-sm font-semibold text-slate-900">Google Reviews</p>
-                    <p className="mt-1.5 text-xs text-slate-600">
-                      {publicReviewUnavailableMessage(reputation, repError, normalized.reputation.neutralFallback)}
-                    </p>
-                  </article>
-                )}
+              <PublicReviewChannelCard
+                source="Trustpilot"
+                channel={normalized.reputation.trustpilot}
+                matchNote={normalized.reputation.trustpilotMatchNote}
+              />
+              <PublicReviewChannelCard source="Google Reviews" channel={normalized.reputation.google} />
               </div>
             </section>
 
@@ -956,46 +917,10 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
             <p className="text-sm font-semibold text-slate-900">{sec.baselineReviewsHeading}</p>
             <p className="mt-1 text-xs leading-relaxed text-slate-500">{sec.baselineReviewsHint}</p>
-        {hasPublicReviewData ? (
-          <div className="mt-2 space-y-2 text-sm text-slate-700">
-            {normalized.reputation.google.display != null && (
-              <div>
-                <p className="font-medium text-slate-900">Indexed review snippets probe</p>
-                <p>
-                  Rating estimate:{" "}
-                  <span className="font-medium">
-                    {normalized.reputation.google.rating != null
-                      ? `${normalized.reputation.google.rating.toFixed(1)}/5`
-                      : "n/a"}
-                  </span>
-                </p>
-                <p>
-                  Review count estimate:{" "}
-                  <span className="font-medium">{normalized.reputation.google.reviewCount ?? "n/a"}</span>
-                </p>
-              </div>
-            )}
-            {normalized.reputation.trustpilot.display != null && (
-              <div>
-                <p className="font-medium text-slate-900">Trust snapshot probe</p>
-                <p>
-                  Rating:{" "}
-                  <span className="font-medium">
-                    {normalized.reputation.trustpilot.rating != null
-                      ? `${normalized.reputation.trustpilot.rating.toFixed(1)}/5`
-                      : "n/a"}
-                  </span>
-                </p>
-                <p>
-                  Review count:{" "}
-                  <span className="font-medium">{normalized.reputation.trustpilot.reviewCount ?? "n/a"}</span>
-                </p>
-              </div>
-            )}
-          </div>
-        ) : (
-          <p className="mt-2 text-sm text-slate-600">{EN_MESSAGES.reviewEvidence.reviewDataUnavailable}</p>
-        )}
+        <div className="mt-2 grid gap-2.5 sm:grid-cols-2">
+          <PublicReviewChannelCard source="Trustpilot" channel={normalized.reputation.trustpilot} />
+          <PublicReviewChannelCard source="Google Reviews" channel={normalized.reputation.google} />
+        </div>
 
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
           {reviewSignals.suspiciousReviewSignals.map((signal, index) => (

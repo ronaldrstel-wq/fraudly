@@ -1,3 +1,4 @@
+import type { ReviewChannelDisplayState, ReviewReputationLabel } from "@/lib/reputation/reviewChannelPresentation";
 import type { ReviewMatchConfidence } from "@/lib/reputation/reviewMatchConfidence";
 import type { ConsumerVerdictLabel } from "@/lib/scoring/trust-bands";
 import type { ScamFeedThreatStatus } from "@/lib/signals/feedConsumerSignals";
@@ -11,6 +12,13 @@ export type NormalizedReviewChannel = {
   matchedName?: string | null;
   confidence: ReviewMatchConfidence;
   display: string | null;
+  found: boolean;
+  usedInTrustScore: boolean;
+  displayState: ReviewChannelDisplayState;
+  reputationLabel: ReviewReputationLabel | null;
+  scoreImpactLabel: string;
+  showMetrics: boolean;
+  confidenceScore: number;
 };
 
 export type NormalizedTrustResult = {

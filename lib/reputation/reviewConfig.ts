@@ -1,8 +1,14 @@
-/** Minimum Google review volume required to show rating in consumer UI. */
-export const MIN_GOOGLE_REVIEWS_FOR_DISPLAY = 10;
+/** Minimum review volume for strong display and trust-score use. */
+export const MIN_REVIEWS_FOR_TRUST_SCORE = 5;
 
-/** Minimum Google review volume that may adjust risk score. */
-export const MIN_GOOGLE_REVIEWS_FOR_SCORE = 10;
+/** @deprecated Use {@link MIN_REVIEWS_FOR_TRUST_SCORE}. */
+export const MIN_GOOGLE_REVIEWS_FOR_DISPLAY = MIN_REVIEWS_FOR_TRUST_SCORE;
+
+/** @deprecated Use {@link MIN_REVIEWS_FOR_TRUST_SCORE}. */
+export const MIN_GOOGLE_REVIEWS_FOR_SCORE = MIN_REVIEWS_FOR_TRUST_SCORE;
+
+/** Minimum match confidence (0–1) before reviews affect trust score. */
+export const MIN_CONFIDENCE_FOR_TRUST_SCORE = 0.7;
 
 /** Trustpilot match confidence required before review data affects scoring. */
 export const TRUSTPILOT_SCORE_CONFIDENCE_REQUIRED = "high" as const;

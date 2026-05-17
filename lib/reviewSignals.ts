@@ -14,7 +14,7 @@ import {
   PUBLIC_REVIEW_NOT_MATCHED_COPY,
   resolveGoogleReviewMatch,
   resolveTrustpilotReviewMatch,
-  reviewRatingForScoring
+  reviewRatingsForScoringFromSignals
 } from "@/lib/reputation/reviewMatchConfidence";
 import { sanitizeReviewFields } from "@/lib/reputation/reviewRatingNormalize";
 
@@ -46,21 +46,7 @@ export type ReviewSignals = {
 
 export function adjustScoreWithReviewSignals(baseScore: number, reviewSignals: ReviewSignals): number {
   let score = baseScore;
-  const ratings: Array<{ rating: number; count: number }> = [];
-  const google = reviewRatingForScoring(
-    reviewSignals.googleRating ?? null,
-    reviewSignals.googleReviewCount ?? null,
-    resolveGoogleReviewMatch(reviewSignals).confidence
-  );
-  if (google) ratings.push(google);
-  const trustpilotMatch = resolveTrustpilotReviewMatch(reviewSignals);
-  const trustpilot = reviewRatingForScoring(
-    reviewSignals.trustpilotRating ?? null,
-    reviewSignals.trustpilotReviewCount ?? null,
-    trustpilotMatch.confidence,
-    { enrichmentConfidence: reviewSignals.trustpilotMatchConfidence ?? trustpilotMatch.enrichmentConfidence }
-  );
-  if (trustpilot) ratings.push(trustpilot);
+  const ratings = reviewRatingsForScoringFromSignals(reviewSignals);
   for (const item of ratings) {
     if (item.rating >= 4.3 && item.count >= 100) score -= 15;
     else if (item.rating <= 2.5 && item.count >= 10) score += 20;

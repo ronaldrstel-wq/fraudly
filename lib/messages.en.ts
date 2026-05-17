@@ -139,8 +139,9 @@ export const EN_MESSAGES = {
       "Fraudly combines website security checks, scam intelligence feeds, and public reputation signals into one trust score. The summary above reflects the strongest signals we found in this scan.",
     safetySignalsHeading: "Safety signals",
     safetySignalsIntro: "Key checks from this scan, explained in plain language.",
-    reputationHeading: "Reviews & reputation",
-    reputationIntro: "Public review data adds context. It is not proof that a site is safe or unsafe on its own.",
+    reputationHeading: "Public reputation",
+    reputationIntro:
+      "Trustpilot and Google review signals are always checked. Only reliable matches with enough reviews can influence the trust score.",
     evidenceTierLabels: {
       confirmed_malicious: "Matches from scam intelligence",
       positive_trust: "Trust-positive signals",

@@ -1,11 +1,16 @@
 import type { ReviewSignals } from "@/lib/reviewSignals";
 import { sanitizeReviewFields } from "@/lib/reputation/reviewRatingNormalize";
 import {
-  MIN_GOOGLE_REVIEWS_FOR_DISPLAY,
-  MIN_GOOGLE_REVIEWS_FOR_SCORE,
+  MIN_CONFIDENCE_FOR_TRUST_SCORE,
+  MIN_REVIEWS_FOR_TRUST_SCORE,
   PUBLIC_REVIEW_NO_RELIABLE_DATA_COPY,
   TRUSTPILOT_SCORE_CONFIDENCE_REQUIRED
 } from "@/lib/reputation/reviewConfig";
+import {
+  resolveGoogleReviewChannel,
+  resolveTrustpilotReviewChannel,
+  reviewRatingForTrustScore
+} from "@/lib/reputation/reviewChannelPresentation";
 import type { TrustpilotMatchConfidence } from "@/lib/reputation/trustpilotMatch";
 
 export type ReviewMatchConfidence = "high" | "low" | "none";
@@ -34,14 +39,24 @@ function resolveGoogleRatingPair(
   const r = sanitized.rating;
   const c = sanitized.reviewCount;
 
-  if (r != null && c != null && c >= MIN_GOOGLE_REVIEWS_FOR_DISPLAY) {
-    return { confidence: "high", rating: r, reviewCount: c, displayable: true };
+  if (r != null && c != null) {
+    return {
+      confidence: "high",
+      rating: r,
+      reviewCount: c,
+      displayable: c >= MIN_REVIEWS_FOR_TRUST_SCORE
+    };
   }
   if (r != null && c == null) {
     return { confidence: "low", rating: r, reviewCount: null, displayable: false };
   }
-  if (r == null && c != null && c >= MIN_GOOGLE_REVIEWS_FOR_DISPLAY) {
-    return { confidence: "low", rating: null, reviewCount: c, displayable: false };
+  if (r == null && c != null) {
+    return {
+      confidence: "high",
+      rating: null,
+      reviewCount: c,
+      displayable: c >= MIN_REVIEWS_FOR_TRUST_SCORE
+    };
   }
   return { confidence: "none", rating: null, reviewCount: null, displayable: false };
 }
@@ -93,7 +108,7 @@ export function resolveTrustpilotReviewMatch(signals: ReviewSignals): ResolvedTr
     };
   }
 
-  if (rating != null && reviewCount != null && reviewCount >= MIN_GOOGLE_REVIEWS_FOR_DISPLAY) {
+  if (rating != null && reviewCount != null && reviewCount >= MIN_REVIEWS_FOR_TRUST_SCORE) {
     return {
       confidence: "high",
       rating,
@@ -104,7 +119,7 @@ export function resolveTrustpilotReviewMatch(signals: ReviewSignals): ResolvedTr
   }
   if (rating != null) {
     return {
-      confidence: reviewCount != null && reviewCount >= MIN_GOOGLE_REVIEWS_FOR_DISPLAY ? "high" : "low",
+      confidence: reviewCount != null && reviewCount >= MIN_REVIEWS_FOR_TRUST_SCORE ? "high" : "low",
       rating,
       reviewCount,
       displayable: true,
@@ -113,7 +128,7 @@ export function resolveTrustpilotReviewMatch(signals: ReviewSignals): ResolvedTr
   }
   if (reviewCount != null) {
     return {
-      confidence: reviewCount >= MIN_GOOGLE_REVIEWS_FOR_DISPLAY ? "low" : "low",
+      confidence: reviewCount >= MIN_REVIEWS_FOR_TRUST_SCORE ? "low" : "low",
       rating: null,
       reviewCount,
       displayable: true,
@@ -130,24 +145,41 @@ export function resolveTrustpilotReviewMatch(signals: ReviewSignals): ResolvedTr
   };
 }
 
-/** Ratings used for scoring adjustments — requires high confidence and minimum volume. */
+/** Ratings used for scoring adjustments — gated by found, volume, and confidence. */
 export function reviewRatingForScoring(
   rating: number | null,
   reviewCount: number | null,
   confidence: ReviewMatchConfidence,
   opts?: { enrichmentConfidence?: TrustpilotMatchConfidence | "none" }
 ): { rating: number; count: number } | null {
+  if (opts?.enrichmentConfidence === "low") return null;
+  const enrichmentScore =
+    opts?.enrichmentConfidence === "high"
+      ? 0.9
+      : opts?.enrichmentConfidence === "medium"
+        ? 0.65
+        : 0;
+  const matchScore = confidence === "high" ? 0.85 : confidence === "low" ? 0.45 : 0;
+  const confidenceScore = enrichmentScore > 0 ? enrichmentScore : matchScore;
   if (
-    opts?.enrichmentConfidence === "medium" ||
-    opts?.enrichmentConfidence === "low" ||
-    opts?.enrichmentConfidence === "none"
+    rating == null ||
+    reviewCount == null ||
+    reviewCount < MIN_REVIEWS_FOR_TRUST_SCORE ||
+    confidenceScore < MIN_CONFIDENCE_FOR_TRUST_SCORE
   ) {
     return null;
   }
-  if (confidence !== "high" || rating == null || reviewCount == null || reviewCount < MIN_GOOGLE_REVIEWS_FOR_SCORE) {
-    return null;
-  }
   return { rating, count: reviewCount };
+}
+
+/** Prefer channel presentation when adjusting trust from review signals. */
+export function reviewRatingsForScoringFromSignals(signals: ReviewSignals): Array<{ rating: number; count: number }> {
+  const out: Array<{ rating: number; count: number }> = [];
+  const google = reviewRatingForTrustScore(resolveGoogleReviewChannel(signals));
+  const trustpilot = reviewRatingForTrustScore(resolveTrustpilotReviewChannel(signals));
+  if (google) out.push(google);
+  if (trustpilot) out.push(trustpilot);
+  return out;
 }
 
 export const PUBLIC_REVIEW_NOT_MATCHED_COPY = PUBLIC_REVIEW_NO_RELIABLE_DATA_COPY;

@@ -1,43 +1,59 @@
 "use client";
 
-import { ReviewRating } from "@/components/reputation/ReviewRating";
+import { PublicReviewChannelCard } from "@/components/reputation/PublicReviewChannelCard";
 import type { ReputationEnrichment } from "@/lib/outscraper/reputation";
+import {
+  resolveGoogleReviewChannel,
+  resolveTrustpilotReviewChannel
+} from "@/lib/reputation/reviewChannelPresentation";
+import { mergeReviewSignalsWithEnrichment } from "@/lib/reviewSignals/mergeEnrichment";
+import type { NormalizedReviewChannel } from "@/lib/trust/types";
+
+function channelFromPresentation(
+  presentation: ReturnType<typeof resolveGoogleReviewChannel>
+): NormalizedReviewChannel {
+  return {
+    rating: presentation.rating,
+    reviewCount: presentation.reviewCount,
+    confidence: presentation.confidenceScore >= 0.7 ? "high" : presentation.confidenceScore > 0 ? "low" : "none",
+    display: null,
+    found: presentation.found,
+    usedInTrustScore: presentation.usedInTrustScore,
+    displayState: presentation.displayState,
+    reputationLabel: presentation.reputationLabel,
+    scoreImpactLabel: presentation.scoreImpactLabel,
+    showMetrics: presentation.showMetrics,
+    confidenceScore: presentation.confidenceScore
+  };
+}
 
 export function ReviewSummary({ enrichment }: { enrichment: ReputationEnrichment }) {
-  const trustpilotRating = enrichment.trustpilotRating ?? enrichment.trustpilot?.rating ?? null;
-  const trustpilotReviewCount = enrichment.trustpilotReviewCount ?? enrichment.trustpilot?.reviewCount ?? null;
-  const googleRating = enrichment.googleRating ?? enrichment.google?.rating ?? null;
-  const googleReviewCount = enrichment.googleReviewCount ?? enrichment.google?.reviewCount ?? null;
+  const merged = mergeReviewSignalsWithEnrichment(
+    {
+      googleFound: false,
+      trustpilotFound: false,
+      googleRating: enrichment.googleRating ?? enrichment.google?.rating ?? undefined,
+      googleReviewCount: enrichment.googleReviewCount ?? enrichment.google?.reviewCount ?? undefined,
+      trustpilotRating: enrichment.trustpilotRating ?? enrichment.trustpilot?.rating ?? undefined,
+      trustpilotReviewCount: enrichment.trustpilotReviewCount ?? enrichment.trustpilot?.reviewCount ?? undefined,
+      trustpilotMatchConfidence: enrichment.trustpilotMatchConfidence,
+      suspiciousReviewSignals: [],
+      sources: [],
+      warnings: [],
+      publicReviewAvailabilityNotes: [],
+      reviewFetchDebug: []
+    },
+    enrichment
+  );
 
-  const hasAnyReviews =
-    trustpilotRating != null ||
-    trustpilotReviewCount != null ||
-    googleRating != null ||
-    googleReviewCount != null;
-
-  if (!hasAnyReviews) {
-    return (
-      <p className="text-sm text-slate-600">
-        No external review profile found. This does not automatically mean unsafe.
-      </p>
-    );
-  }
+  const trustpilot = channelFromPresentation(resolveTrustpilotReviewChannel(merged));
+  const google = channelFromPresentation(resolveGoogleReviewChannel(merged));
 
   return (
     <div className="space-y-2.5">
-      <ReviewRating
-        source="Trustpilot"
-        rating={trustpilotRating}
-        reviewCount={trustpilotReviewCount}
-        className="rounded-xl border border-slate-200 bg-white px-3 py-2.5"
-      />
-      <ReviewRating
-        source="Google Reviews"
-        rating={googleRating}
-        reviewCount={googleReviewCount}
-        className="rounded-xl border border-slate-200 bg-white px-3 py-2.5"
-      />
-      <p className="pt-0.5 text-[11px] text-slate-500">External reviews are used as supporting signals only.</p>
+      <PublicReviewChannelCard source="Trustpilot" channel={trustpilot} />
+      <PublicReviewChannelCard source="Google Reviews" channel={google} />
+      <p className="pt-0.5 text-[11px] text-slate-500">External reviews are supporting signals only.</p>
     </div>
   );
 }

@@ -8,6 +8,10 @@ import {
   resolveGoogleReviewMatch,
   resolveTrustpilotReviewMatch
 } from "@/lib/reputation/reviewMatchConfidence";
+import {
+  resolveGoogleReviewChannel,
+  resolveTrustpilotReviewChannel
+} from "@/lib/reputation/reviewChannelPresentation";
 import { basedOnReviewsLine, formatRatingOutOfFive } from "@/lib/reputation/reviewRatingNormalize";
 import {
   assessScamFeedThreatStatus,
@@ -61,25 +65,53 @@ function formatTrustpilotReviewDisplay(
   return null;
 }
 
-function resolveReviewChannel(match: ReturnType<typeof resolveGoogleReviewMatch>): NormalizedReviewChannel {
+function resolveReviewChannel(
+  match: ReturnType<typeof resolveGoogleReviewMatch>,
+  presentation: ReturnType<typeof resolveGoogleReviewChannel>
+): NormalizedReviewChannel {
   return {
-    rating: match.rating,
-    reviewCount: match.reviewCount,
+    rating: presentation.showMetrics ? presentation.rating : match.rating,
+    reviewCount: presentation.showMetrics ? presentation.reviewCount : match.reviewCount,
     profileUrl: null,
     matchedName: null,
     confidence: match.confidence,
-    display: formatGoogleReviewDisplay(match.rating, match.reviewCount, match.displayable)
+    display: formatGoogleReviewDisplay(
+      presentation.showMetrics ? presentation.rating : null,
+      presentation.showMetrics ? presentation.reviewCount : null,
+      presentation.showMetrics
+    ),
+    found: presentation.found,
+    usedInTrustScore: presentation.usedInTrustScore,
+    displayState: presentation.displayState,
+    reputationLabel: presentation.reputationLabel,
+    scoreImpactLabel: presentation.scoreImpactLabel,
+    showMetrics: presentation.showMetrics,
+    confidenceScore: presentation.confidenceScore
   };
 }
 
-function resolveTrustpilotChannel(match: ReturnType<typeof resolveTrustpilotReviewMatch>): NormalizedReviewChannel {
+function resolveTrustpilotChannel(
+  match: ReturnType<typeof resolveTrustpilotReviewMatch>,
+  presentation: ReturnType<typeof resolveTrustpilotReviewChannel>
+): NormalizedReviewChannel {
   return {
-    rating: match.rating,
-    reviewCount: match.reviewCount,
+    rating: presentation.showMetrics ? presentation.rating : match.rating,
+    reviewCount: presentation.showMetrics ? presentation.reviewCount : match.reviewCount,
     profileUrl: null,
     matchedName: null,
     confidence: match.confidence,
-    display: formatTrustpilotReviewDisplay(match)
+    display: formatTrustpilotReviewDisplay(
+      presentation.showMetrics
+        ? { ...match, rating: presentation.rating, reviewCount: presentation.reviewCount, displayable: true }
+        : { ...match, displayable: false }
+    ),
+    found: presentation.found,
+    usedInTrustScore: presentation.usedInTrustScore,
+    displayState: presentation.displayState,
+    reputationLabel: presentation.reputationLabel,
+    scoreImpactLabel: presentation.scoreImpactLabel,
+    showMetrics: presentation.showMetrics,
+    confidenceScore: presentation.confidenceScore
   };
 }
 
@@ -156,9 +188,11 @@ export function normalizeTrustResult(
     reviewFetchDebug: []
   };
 
-  const google = resolveReviewChannel(resolveGoogleReviewMatch(reviewSignals));
+  const googlePresentation = resolveGoogleReviewChannel(reviewSignals);
+  const google = resolveReviewChannel(resolveGoogleReviewMatch(reviewSignals), googlePresentation);
   const trustpilotMatch = resolveTrustpilotReviewMatch(reviewSignals);
-  const trustpilot = resolveTrustpilotChannel(trustpilotMatch);
+  const trustpilotPresentation = resolveTrustpilotReviewChannel(reviewSignals);
+  const trustpilot = resolveTrustpilotChannel(trustpilotMatch, trustpilotPresentation);
 
   const isLikelySafe = verdict === "Likely Safe";
 
