@@ -9,7 +9,7 @@ const CARD_PAD = "px-5 py-6 sm:px-6 sm:py-6 md:min-h-[152px]";
 function FeedVerdictIcon({ visual }: { visual: OverviewFeedCardVisual }) {
   const ink = visual.iconInk;
   const svgProps = {
-    className: `h-6 w-6 shrink-0 ${ink}`,
+    className: `h-7 w-7 shrink-0 ${ink}`,
     fill: "none",
     viewBox: "0 0 24 24",
     strokeWidth: 2,
@@ -229,7 +229,7 @@ function FeedMetaBox({
   return (
     <div className="flex w-full shrink-0 flex-col gap-2 md:ml-auto md:w-[288px] md:min-w-[288px] md:max-w-[288px]">
       <div
-        className={`flex min-h-[80px] w-full items-center gap-3 rounded-[18px] px-4 py-3.5 ${visual.metaBox}`}
+        className={`flex min-h-[80px] w-full items-center gap-4 rounded-[18px] px-4 py-3.5 ${visual.metaBox}`}
       >
         <time
           className="w-[4.75rem] shrink-0 text-left text-xs font-medium leading-tight tabular-nums text-slate-600 whitespace-nowrap"
@@ -315,12 +315,14 @@ function FeedCardBody(props: {
         </div>
 
         <div className="min-w-0 flex-1 space-y-1 overflow-hidden sm:space-y-1.5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">{domainLabel}</p>
           <h2 id={headlineId} className={`text-balance ${visual.headline}`}>
             {m.headline}
           </h2>
-          <p className="line-clamp-2 text-sm leading-snug text-slate-600">{m.oneLiner}</p>
-          <p className="truncate text-base font-bold leading-snug text-slate-900" title={domainFullTitle}>
+          <p className={`text-[10px] font-semibold uppercase tracking-[0.14em] ${visual.ctaText} opacity-80`}>
+            {domainLabel}
+          </p>
+          <p className="line-clamp-2 text-sm leading-snug text-slate-700/90">{m.oneLiner}</p>
+          <p className="truncate text-base font-semibold leading-snug text-slate-800" title={domainFullTitle}>
             {domainLine || "—"}
           </p>
         </div>
