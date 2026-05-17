@@ -224,7 +224,7 @@ function FeedMetaBox({
   return (
     <div className="flex w-full shrink-0 flex-col gap-1.5 md:ml-auto md:w-[288px] md:min-w-[288px] md:max-w-[288px]">
       <div
-        className={`grid h-[72px] w-full grid-cols-[4.25rem_minmax(88px,1fr)_auto] items-center gap-x-2.5 rounded-2xl px-3 py-2.5 ${visual.metaBox}`}
+        className={`grid h-[72px] w-full grid-cols-[4.25rem_minmax(88px,1fr)_auto] items-center gap-x-2.5 rounded-xl px-3 py-2.5 ${visual.metaBox}`}
       >
         <time
           className="self-center text-left text-[11px] font-medium leading-tight tabular-nums text-slate-500 whitespace-nowrap"
@@ -313,10 +313,10 @@ function FeedCardBody(props: {
           <h2 id={headlineId} className={`text-balance ${visual.headline}`}>
             {m.headline}
           </h2>
-          <p className="truncate text-[17px] font-bold leading-snug text-slate-900" title={domainFullTitle}>
+          <p className="truncate text-base font-semibold leading-snug text-slate-800" title={domainFullTitle}>
             {domainLine || "—"}
           </p>
-          <p className="line-clamp-2 text-sm leading-snug text-slate-600/95">{m.oneLiner}</p>
+          <p className="line-clamp-2 text-sm font-normal leading-snug text-slate-600">{m.oneLiner}</p>
           <p className="sr-only">{domainLabel}</p>
         </div>
       </div>
