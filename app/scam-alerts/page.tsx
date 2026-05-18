@@ -1,40 +1,26 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ScamAlertCard } from "@/components/scam-alerts/ScamAlertCard";
-import { ScamAlertsFilterBar } from "@/components/scam-alerts/ScamAlertsFilterBar";
-import { ScamAlertsPagination } from "@/components/scam-alerts/ScamAlertsPagination";
-import { ScamAlertsSummaryStrip } from "@/components/scam-alerts/ScamAlertsSummaryStrip";
-import { Navbar } from "@/components/Navbar";
-import { SiteFooter } from "@/components/SiteFooter";
+import { ScamAlertsPageContent, type ScamAlertsPageContentProps } from "@/components/scam-alerts/ScamAlertsPageContent";
 import {
   buildScamAlertsQuery,
-  clusterDomainKey,
-  type ListFilterKey,
   parseListFilterKey,
   parseScamAlertsPageParam,
   parseScamAlertsTimeWindow
 } from "@/lib/scam-alerts/presentation";
-import { EN_MESSAGES } from "@/lib/messages.en";
+import { hreflangLanguages } from "@/lib/i18n/seo";
 import { OG_IMAGE } from "@/lib/seo-metadata";
 import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo-description";
 import { publicRobots, SITE_URL } from "@/lib/seo";
 import { scamAlertsIndexFallbackMetadata } from "@/lib/scam-alerts/safe-metadata";
-import {
-  getPublishedScamAlertsPageResult,
-  getScamAlertsIndexStats,
-  listPublishedScamTypes,
-  SCAM_ALERTS_PAGE_SIZE
-} from "@/lib/scam-alerts/service";
 
 export const revalidate = 300;
 
 const PAGE_DESCRIPTION = SEO_DESCRIPTION.scamAlerts;
 
 type PageProps = {
-  searchParams: Promise<{ type?: string; filter?: string; page?: string; time?: string }>;
+  searchParams: ScamAlertsPageContentProps["searchParams"];
 };
 
-function scamAlertsCanonicalPath(options: {
+export function scamAlertsSearchSuffix(options: {
   page: number;
   time?: string;
   filter?: string;
@@ -46,12 +32,21 @@ function scamAlertsCanonicalPath(options: {
     filter = "all";
     timeWindow = "today";
   }
-  const q = buildScamAlertsQuery({
+  return buildScamAlertsQuery({
     time: timeWindow === "all" ? undefined : timeWindow,
     filter: filter === "all" ? undefined : filter,
     type: options.type?.trim() || undefined,
     page: options.page > 1 ? options.page : undefined
   });
+}
+
+function scamAlertsCanonicalPath(options: {
+  page: number;
+  time?: string;
+  filter?: string;
+  type?: string;
+}): string {
+  const q = scamAlertsSearchSuffix(options);
   return `${SITE_URL}/scam-alerts${q}`;
 }
 
@@ -68,10 +63,16 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
     const titleAbsolute =
       page > 1 ? `${SEO_TITLE.scamAlerts} · Page ${page} | Fraudly` : `${SEO_TITLE.scamAlerts} | Fraudly`;
 
+    const query = canonical.startsWith(SITE_URL) ? canonical.slice(SITE_URL.length) : canonical;
+    const searchSuffix = query.replace(/^\/scam-alerts/, "");
+
     return {
       title: { absolute: titleAbsolute },
       description: PAGE_DESCRIPTION,
-      alternates: { canonical },
+      alternates: {
+        canonical,
+        languages: hreflangLanguages("/scam-alerts", searchSuffix)
+      },
       robots: publicRobots,
       openGraph: {
         type: "website",
@@ -94,134 +95,6 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   }
 }
 
-export default async function ScamAlertsPage({ searchParams }: PageProps) {
-  const params = await searchParams;
-  const now = new Date();
-  const selectedType = typeof params.type === "string" ? params.type : "";
-  let filter: ListFilterKey = parseListFilterKey(params.filter);
-  let timeWindow = parseScamAlertsTimeWindow(typeof params.time === "string" ? params.time : undefined);
-  if (filter === "new-today") {
-    filter = "all";
-    timeWindow = "today";
-  }
-  const requestedPage = parseScamAlertsPageParam(params.page);
-
-  const emptyPageResult = {
-    alerts: [] as Awaited<ReturnType<typeof getPublishedScamAlertsPageResult>>["alerts"],
-    total: 0,
-    page: 1,
-    pageSize: SCAM_ALERTS_PAGE_SIZE,
-    maxPage: 1
-  };
-  const emptyStats = {
-    total: 0,
-    elevatedConfidenceCount: 0,
-    newTodayCount: 0,
-    topScamType: null as string | null
-  };
-
-  let types: string[] = [];
-  let pageResult = emptyPageResult;
-  let stats = emptyStats;
-
-  try {
-    [types, pageResult, stats] = await Promise.all([
-      listPublishedScamTypes(now),
-      getPublishedScamAlertsPageResult({
-        filter,
-        exactScamType: selectedType || undefined,
-        page: requestedPage,
-        pageSize: SCAM_ALERTS_PAGE_SIZE,
-        now,
-        timeWindow
-      }),
-      getScamAlertsIndexStats(now)
-    ]);
-  } catch (err) {
-    console.error("[scam-alerts] page load failed", err);
-  }
-
-  const { alerts, total, page, pageSize, maxPage } = pageResult;
-  const rangeStart = total === 0 ? 0 : (page - 1) * pageSize + 1;
-  const rangeEnd = total === 0 ? 0 : rangeStart + alerts.length - 1;
-
-  let prevDomainKey: string | null = null;
-
-  return (
-    <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
-      <Navbar />
-      <main className="mx-auto w-full max-w-6xl px-4 pb-14 pt-8 sm:pt-9">
-        <header className="max-w-3xl">
-          <p className="text-sm font-medium text-blue-700">{EN_MESSAGES.scamAlertsUi.pageEyebrow}</p>
-          <h1 className="mt-2 text-balance text-3xl font-bold tracking-tight md:text-4xl">Scam &amp; phishing alerts</h1>
-          <p className="mt-3 max-w-prose text-pretty text-base leading-relaxed text-slate-600">
-            {EN_MESSAGES.scamAlertsUi.overviewIntro}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2 text-xs font-medium text-slate-700 sm:text-sm">
-            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 shadow-sm">{EN_MESSAGES.scamAlertsUi.explainChipRecentlyDetected}</span>
-            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 shadow-sm">{EN_MESSAGES.scamAlertsUi.explainChipTrendingDomains}</span>
-            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 shadow-sm">{EN_MESSAGES.scamAlertsUi.explainChipPhishing}</span>
-            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 shadow-sm">{EN_MESSAGES.scamAlertsUi.explainChipSuspiciousDomains}</span>
-          </div>
-          <p className="mt-3 max-w-prose text-pretty text-sm leading-relaxed text-slate-600">{EN_MESSAGES.scamAlertsUi.chipHint}</p>
-          <p className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm leading-relaxed text-slate-700">
-            Fraudly aggregates third-party intelligence. Treat every alert as encouragement to verify—not as proof by itself.
-          </p>
-        </header>
-
-        <ScamAlertsSummaryStrip stats={stats} filteredTotal={total} rangeStart={rangeStart} rangeEnd={rangeEnd} />
-
-        <div className="mt-5">
-          <ScamAlertsFilterBar activeFilter={filter} activeTime={timeWindow} selectedType={selectedType} types={types} />
-        </div>
-
-        {alerts.length === 0 ? (
-          <section className="mt-10 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
-            <h2 className="text-xl font-semibold text-slate-900">
-              {stats.total === 0
-                ? EN_MESSAGES.scamAlertsUi.emptyStateZeroTitle
-                : EN_MESSAGES.scamAlertsUi.emptyStateFilteredTitle}
-            </h2>
-            <p className="mt-2 mx-auto max-w-lg text-sm leading-relaxed text-slate-600">
-              {stats.total === 0 ? EN_MESSAGES.scamAlertsUi.emptyStateZeroBody : EN_MESSAGES.scamAlertsUi.emptyStateFilteredBody}
-            </p>
-            {stats.total > 0 && timeWindow !== "all" ? (
-              <p className="mt-3 text-center text-sm">
-                <Link
-                  href={`/scam-alerts${buildScamAlertsQuery({
-                    time: "all",
-                    filter: filter === "all" ? undefined : filter,
-                    type: selectedType || undefined
-                  })}`}
-                  className="font-semibold text-blue-700 underline-offset-2 hover:underline"
-                >
-                  {EN_MESSAGES.scamAlertsUi.emptyStateViewAllTimeCta}
-                </Link>
-              </p>
-            ) : null}
-            <Link
-              href="/#link-check"
-              className="mt-6 inline-flex rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-5 py-3 text-sm font-semibold text-white shadow-md hover:brightness-110"
-            >
-              {EN_MESSAGES.scamAlertsUi.emptyStateCheckWebsiteCta}
-            </Link>
-          </section>
-        ) : (
-          <>
-            <section className="mt-7 grid auto-rows-fr gap-3.5 sm:grid-cols-2 lg:grid-cols-3" aria-label="Published alerts">
-              {alerts.map((alert) => {
-                const key = clusterDomainKey(alert.domain);
-                const showRelated = Boolean(key && prevDomainKey === key);
-                if (key) prevDomainKey = key;
-                else prevDomainKey = null;
-                return <ScamAlertCard key={alert.id} alert={alert} now={now} showRelatedHint={showRelated} />;
-              })}
-            </section>
-            <ScamAlertsPagination filter={filter} time={timeWindow} selectedType={selectedType} page={page} maxPage={maxPage} />
-          </>
-        )}
-      </main>
-      <SiteFooter />
-    </div>
-  );
+export default async function ScamAlertsPage(props: PageProps) {
+  return ScamAlertsPageContent(props);
 }

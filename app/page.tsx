@@ -6,6 +6,8 @@ import { HomeNavbar } from "@/components/home/HomeNavbar";
 import { HomeFaqJsonLd } from "@/components/HomeFaqJsonLd";
 import { HomeClient } from "@/components/HomeClient";
 import { OG_IMAGE } from "@/lib/seo-metadata";
+import { LocaleSuggestionServer } from "@/components/i18n/LocaleSuggestionServer";
+import { hreflangLanguages } from "@/lib/i18n/seo";
 import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo-description";
 import { defaultKeywords, publicRobots, SITE_URL } from "@/lib/seo";
 
@@ -17,7 +19,7 @@ export const metadata: Metadata = {
   description: homeDescription,
   keywords: [...defaultKeywords],
   robots: publicRobots,
-  alternates: { canonical: `${SITE_URL}/` },
+  alternates: { canonical: `${SITE_URL}/`, languages: hreflangLanguages("/") },
   openGraph: {
     type: "website",
     siteName: "Fraudly",
@@ -53,6 +55,7 @@ export default function HomePage() {
     <>
       <HomeFaqJsonLd />
       <HomeAuthProvider>
+        <LocaleSuggestionServer marketingPath="/" />
         <HomeNavbar />
         <HomeClient>
           <Suspense fallback={<HomeBelowFoldFallback />}>

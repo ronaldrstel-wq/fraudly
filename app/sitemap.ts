@@ -1,11 +1,13 @@
 import type { MetadataRoute } from "next";
+import { allLocalizedMarketingUrls } from "@/lib/i18n/sitemap-paths";
 import { SITE_URL } from "@/lib/seo";
 
-const PUBLIC_PATHS = [
-  "/",
-  "/latest-checks",
+const OTHER_PUBLIC_PATHS = [
   "/pulse",
-  "/scam-alerts",
+  "/scam-help/netherlands",
+  "/scam-help/united-kingdom",
+  "/scam-help/germany",
+  "/scam-help/united-states",
   "/how-it-works",
   "/features",
   "/learn",
@@ -15,13 +17,13 @@ const PUBLIC_PATHS = [
   "/email-scam-checker",
   "/crypto-scam-checker",
   "/pricing",
-  "/about",
   "/privacy",
   "/cookies",
   "/terms",
-  "/support",
   "/disclaimer"
 ] as const;
+
+const PUBLIC_PATHS = [...allLocalizedMarketingUrls(), ...OTHER_PUBLIC_PATHS] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
@@ -29,7 +31,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     url: `${SITE_URL}${path}`,
     lastModified: now,
     changeFrequency:
-      path === "/" || path === "/latest-checks" || path === "/pulse" || path === "/scam-alerts" ? "daily" : "weekly",
-    priority: path === "/" ? 1 : 0.8
+      path === "/" ||
+      path.endsWith("/latest-checks") ||
+      path.includes("/latest-checks") ||
+      path === "/pulse" ||
+      path.endsWith("/scam-alerts") ||
+      path.includes("/scam-alerts")
+        ? "daily"
+        : "weekly",
+    priority: path === "/" || path === "/nl" || path === "/de" || path === "/fr" ? 1 : 0.8
   }));
 }

@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { hreflangLanguages } from "@/lib/i18n/seo";
+import { LOCALIZED_MARKETING_PATHS, type LocalizedMarketingPath } from "@/lib/i18n/locales";
 import { warnMetaDescriptionIfNeeded } from "@/lib/seo-description";
 import { defaultKeywords, publicRobots, SITE_URL } from "@/lib/seo";
 
@@ -35,7 +37,12 @@ export function buildPageMetadata(opts: BuildPageMetadataOptions): Metadata {
     description: opts.description,
     keywords: [...defaultKeywords],
     robots: opts.robots ?? publicRobots,
-    alternates: { canonical: url },
+    alternates: {
+      canonical: url,
+      ...((LOCALIZED_MARKETING_PATHS as readonly string[]).includes(opts.path)
+        ? { languages: hreflangLanguages(opts.path as LocalizedMarketingPath) }
+        : {})
+    },
     openGraph: {
       type: "website",
       siteName: "Fraudly",

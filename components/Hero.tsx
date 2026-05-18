@@ -1,7 +1,10 @@
+"use client";
+
 import type { ReactNode } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import type { HomeSearchCardState } from "@/lib/scan/homeScanProgress";
 
@@ -23,7 +26,7 @@ const WebsiteScanSearchCard = dynamic(
   }
 );
 
-const home = EN_MESSAGES.home;
+const defaultHome = EN_MESSAGES.home;
 
 function SparkleGlyph({ className }: { className?: string }) {
   return (
@@ -100,22 +103,25 @@ export function Hero({
   belowSearchCard,
   extraBelowInput
 }: HeroProps) {
+  const { dict } = useLocale();
+  const hp = dict.homepage;
   const {
     heroBadge,
     subhead,
     heroTrustFeatures,
-    heroHowSteps,
     primaryCta,
     secondaryCta,
-    secondaryCtaHref,
     heroSearchHelper
-  } = home;
-  const stepDescriptions = [
-    "Enter any website URL to get started.",
-    "We scan signals, blacklists, and data sources.",
-    "Our AI evaluates risk and explains findings.",
-    "Get a trust score and clear, actionable insights."
-  ] as const;
+  } = {
+    heroBadge: hp.heroBadge,
+    subhead: hp.heroSubtitle,
+    heroTrustFeatures: hp.heroTrustFeatures,
+    primaryCta: hp.primaryCta,
+    secondaryCta: hp.secondaryCta,
+    heroSearchHelper: hp.heroSearchHelper
+  };
+  const secondaryCtaHref = defaultHome.secondaryCtaHref;
+  const howSteps = hp.howItWorksSteps;
 
   return (
     <section id="link-check" className="relative scroll-mt-20 overflow-hidden pb-16 pt-2 lg:pb-20 lg:pt-3">
@@ -142,10 +148,10 @@ export function Hero({
 
             <h1 className="mx-auto -mt-1 max-w-[760px] text-balance font-black tracking-[-0.04em] leading-[0.92] lg:-mt-2 lg:mx-0">
               <span className="block text-slate-950 text-[50px] md:text-[64px] lg:text-[72px] xl:text-[88px]">
-                See it. Check it.
+                {hp.heroTitleLine1} {hp.heroTitleLine2}
               </span>
               <span className="hero-gradient-trust-it block pt-1 text-[50px] md:text-[64px] lg:text-[72px] xl:text-[88px]">
-                Trust it.
+                {hp.heroTitleLine3}
               </span>
             </h1>
 
@@ -240,20 +246,22 @@ export function Hero({
         </div>
 
         <div className="mx-auto mt-8 max-w-6xl">
-          <p className="mb-3 text-center text-xs font-semibold uppercase tracking-[0.11em] text-violet-600/90">How Fraudly Works</p>
+          <p className="mb-3 text-center text-xs font-semibold uppercase tracking-[0.11em] text-violet-600/90">
+            {hp.howItWorksTitle}
+          </p>
           <ol className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {heroHowSteps.map((step, idx) => (
+            {howSteps.map((step, idx) => (
               <li
-                key={step}
+                key={step.title}
                 className="relative rounded-2xl border border-slate-200/80 bg-white px-4 py-3.5 shadow-subtle ring-1 ring-white/80"
               >
                 <div className="flex items-center gap-2.5">
                   <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-100 to-cyan-100 text-xs font-bold text-blue-700 ring-1 ring-slate-100">
                     {idx + 1}
                   </span>
-                  <p className="text-sm font-semibold text-slate-900">{step}</p>
+                  <p className="text-sm font-semibold text-slate-900">{step.title}</p>
                 </div>
-                <p className="mt-2 text-xs leading-relaxed text-slate-600">{stepDescriptions[idx]}</p>
+                <p className="mt-2 text-xs leading-relaxed text-slate-600">{step.body}</p>
               </li>
             ))}
           </ol>

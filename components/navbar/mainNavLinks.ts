@@ -1,12 +1,8 @@
-import { EN_MESSAGES } from "@/lib/messages.en";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
+import { getMainNavLinks } from "@/lib/i18n/nav";
+import type { Locale } from "@/lib/i18n/locales";
 
-/** Shared primary nav links (marketing + tools). */
-export const MAIN_NAV_LINKS = [
-  { label: EN_MESSAGES.latestChecks.navLabel, href: "/latest-checks" },
-  { label: "Fraudly Pulse", href: "/pulse" },
-  { label: "Scam alerts", href: "/scam-alerts" },
-  { label: "How it works", href: "/how-it-works" },
-  { label: "Features", href: "/features" },
-  { label: "Learn", href: "/learn" },
-  { label: "About", href: "/about" }
-] as const;
+/** @deprecated Use getMainNavLinks(locale, dict) — kept for gradual migration. */
+export const MAIN_NAV_LINKS = getMainNavLinks("en", getDictionary("en"));
+
+export { getMainNavLinks };

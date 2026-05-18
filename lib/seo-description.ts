@@ -28,6 +28,8 @@ export const SEO_TITLE = {
   terms: "Terms of Service",
   cookies: "Cookie Policy",
   disclaimer: "Disclaimer — Scam Checker Limits",
+  scamHelp: "Scam Help — What to Do If You Were Scammed",
+  scamHelpCountry: (country: string) => `Scam Help — ${country}`,
   signIn: "Sign In",
   signUp: "Create Account",
   recentSearches: "Recent Searches",
@@ -79,6 +81,10 @@ export const SEO_DESCRIPTION = {
     "Cookie policy for Fraudly—necessary, analytics and marketing cookies when you use our scam checker, phishing detection and website trust check tools.",
   disclaimer:
     "Disclaimer for Fraudly scam checker and website trust check results—limits of phishing detection, third-party data and online fraud protection guidance.",
+  scamHelp:
+    "Scammed online? Find official reporting links for the Netherlands, UK, Germany, and the US—plus practical steps. Fraudly is informational, not law enforcement.",
+  scamHelpCountry: (country: string) =>
+    `What to do if you were scammed in ${country}: official reporting links, immediate steps, and how to check a website before you pay again.`,
   signIn:
     "Sign in to save website trust checks, scam checker history and phishing alerts—sync your Fraudly online fraud protection tools across devices securely.",
   signUp:

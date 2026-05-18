@@ -1,11 +1,19 @@
+"use client";
+
 import Image from "next/image";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 import { EN_MESSAGES } from "@/lib/messages.en";
 
 const HERO_IMAGE = "/images/latest-checks-hero.png";
 const HERO_ALT = "Fraudly website trust and scam detection illustration";
 
 export function LatestChecksHero() {
-  const { overline, pageTitle, intro, scoreExplainerFootnote } = EN_MESSAGES.latestChecks;
+  const { locale, dict } = useLocale();
+  const lc = EN_MESSAGES.latestChecks;
+  const overline = locale === "en" ? lc.overline : dict.latestChecks.overline;
+  const pageTitle = locale === "en" ? lc.pageTitle : dict.latestChecks.title;
+  const intro = locale === "en" ? lc.intro : dict.latestChecks.intro;
+  const scoreExplainerFootnote = locale === "en" ? lc.scoreExplainerFootnote : dict.latestChecks.footnote;
 
   return (
     <header className="pb-2 pt-1 sm:pb-3 md:pb-4">
@@ -21,6 +29,9 @@ export function LatestChecksHero() {
           <p className="mt-3 max-w-prose text-pretty text-sm leading-relaxed text-slate-500 lg:mx-0">
             {scoreExplainerFootnote}
           </p>
+          {locale !== "en" ? (
+            <p className="mt-2 max-w-prose text-pretty text-xs text-slate-500 lg:mx-0">{dict.latestChecks.resultsNote}</p>
+          ) : null}
         </div>
 
         <div className="relative mx-auto flex w-full max-w-[min(100%,28rem)] justify-center lg:mx-0 lg:max-w-none lg:justify-end">
