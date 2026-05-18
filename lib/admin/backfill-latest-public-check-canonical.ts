@@ -87,6 +87,54 @@ export type BackfillSummary = BackfillBatchResult & {
   failed: number;
 };
 
+export type BackfillRunAllStoppedReason =
+  | "finished"
+  | "max_batches"
+  | "max_duration"
+  | "migration_blocked"
+  | "fatal_batch_error"
+  | "stuck_cursor";
+
+export type BackfillBatchProgress = {
+  batchNumber: number;
+  cursor: string | null;
+  scanned: number;
+  updated: number;
+  skipped: number;
+  errors: number;
+  hasMore: boolean;
+  nextCursor: string | null;
+};
+
+export type BackfillRunAllResult = {
+  dryRun: boolean;
+  completed: boolean;
+  stoppedReason: BackfillRunAllStoppedReason;
+  totalScanned: number;
+  totalUpdated: number;
+  totalSkipped: number;
+  totalErrors: number;
+  batchesProcessed: number;
+  startedAt: string;
+  completedAt: string;
+  durationMs: number;
+  finalCursor: string | null;
+  /** Pass as `cursor` on the next run-all call when stopped early (maxBatches / maxDuration). */
+  resumeCursor: string | null;
+  schemaMode: LatestPublicCheckBackfillMode;
+  schemaCheck: LatestPublicCheckSchemaCapabilities;
+  cacheInvalidation: InvalidateLatestPublicChecksCachesResult | null;
+  blockedReason: string | null;
+  failureExamples: Array<{ id: string; domain: string; reason: string }>;
+  domainsUpdatedCount: number;
+  batchProgress: BackfillBatchProgress[];
+  limits: {
+    batchSize: number;
+    maxBatches: number;
+    maxDurationMs: number;
+  };
+};
+
 const BACKFILL_TRACKED_COLUMNS = [
   "riskScoreSnapshot",
   "normalizedTrustScore",
@@ -340,6 +388,8 @@ export async function backfillLatestPublicCheckCanonicalBatch(options: {
   cursor?: string | null;
   /** When true (default), dryRun=false is blocked until canonical columns exist. */
   requireCanonicalColumns?: boolean;
+  /** Defer feed/check cache bust to run-all final pass. */
+  skipCacheInvalidation?: boolean;
 }): Promise<BackfillBatchResult> {
   const limit = Math.max(1, Math.min(100, Math.round(options.limit)));
   const cursor = options.cursor?.trim() || undefined;
@@ -414,7 +464,7 @@ export async function backfillLatestPublicCheckCanonicalBatch(options: {
     result.nextCursor = rows[rows.length - 1]!.id;
   }
 
-  if (!options.dryRun && result.updated > 0) {
+  if (!options.dryRun && result.updated > 0 && !options.skipCacheInvalidation) {
     result.cacheInvalidation = invalidateLatestPublicChecksCaches({ domains: updatedDomains });
   }
 
@@ -445,68 +495,7 @@ export async function backfillLatestPublicCheckCanonicalBatch(options: {
   return result;
 }
 
-/** Loops batches until `maxRows` exhausted (CLI script). */
-export async function backfillLatestPublicCheckCanonicalTrust(options: {
-  dryRun: boolean;
-  batchSize: number;
-  maxRows?: number;
-}): Promise<BackfillSummary> {
-  const initialSchema = await detectLatestPublicCheckSchemaCapabilities();
-  const summary: BackfillSummary = {
-    dryRun: options.dryRun,
-    schemaMode: initialSchema.backfillSelectMode,
-    schemaCheck: initialSchema,
-    scanned: 0,
-    updated: 0,
-    skipped: 0,
-    errors: 0,
-    processed: 0,
-    failed: 0,
-    nextCursor: null,
-    hasMore: false,
-    failureExamples: [],
-    changedRows: [],
-    cacheInvalidation: null,
-    blockedReason: null
-  };
-
-  let cursor: string | null = null;
-  const maxRows = options.maxRows ?? Number.POSITIVE_INFINITY;
-
-  while (summary.processed < maxRows) {
-    const take = Math.min(options.batchSize, maxRows - summary.processed);
-    const batch = await backfillLatestPublicCheckCanonicalBatch({
-      dryRun: options.dryRun,
-      limit: take,
-      cursor,
-      requireCanonicalColumns: true
-    });
-
-    if (batch.blockedReason) {
-      summary.blockedReason = batch.blockedReason;
-      summary.schemaCheck = batch.schemaCheck;
-      break;
-    }
-
-    summary.scanned += batch.scanned;
-    summary.updated += batch.updated;
-    summary.skipped += batch.skipped;
-    summary.errors += batch.errors;
-    summary.processed += batch.scanned;
-    summary.failed += batch.errors;
-    summary.failureExamples.push(...batch.failureExamples);
-    summary.changedRows.push(...batch.changedRows);
-    summary.nextCursor = batch.nextCursor;
-    summary.hasMore = batch.hasMore;
-    summary.schemaMode = batch.schemaMode;
-    summary.schemaCheck = batch.schemaCheck;
-    if (batch.cacheInvalidation) {
-      summary.cacheInvalidation = batch.cacheInvalidation;
-    }
-
-    if (!batch.hasMore || batch.scanned === 0) break;
-    cursor = batch.nextCursor;
-  }
-
-  return summary;
-}
+export {
+  backfillLatestPublicCheckCanonicalRunAll,
+  backfillLatestPublicCheckCanonicalTrust
+} from "@/lib/admin/backfill-latest-public-check-canonical-run-all";

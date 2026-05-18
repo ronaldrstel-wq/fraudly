@@ -6,13 +6,17 @@
  *   BACKFILL_DRY_RUN=true BACKFILL_BATCH_SIZE=50 npm run backfill:latest-public-checks
  *   BACKFILL_DRY_RUN=false BACKFILL_BATCH_SIZE=100 BACKFILL_MAX_ROWS=500 npm run backfill:latest-public-checks
  *
- * HTTP (production), one page per request:
+ * HTTP (production), full table — no manual cursor:
+ *   curl -sS -X POST "https://fraudly.app/api/admin/backfill-latest-public-check-canonical/run-all?dryRun=false&limit=50" \
+ *     -H "x-admin-key: $ADMIN_RECALC_KEY"
+ *
+ * Single page (manual cursor):
  *   curl -X POST "https://fraudly.app/api/admin/backfill-latest-public-check-canonical?dryRun=true&limit=50" \
  *     -H "x-admin-key: $ADMIN_RECALC_KEY"
  *
  * Requires DATABASE_URL. Does not rescan live domains.
  */
-import { backfillLatestPublicCheckCanonicalTrust } from "../lib/admin/backfill-latest-public-check-canonical";
+import { backfillLatestPublicCheckCanonicalTrust } from "../lib/admin/backfill-latest-public-check-canonical-run-all";
 
 function parseBool(value: string | undefined, defaultValue: boolean): boolean {
   if (value == null) return defaultValue;

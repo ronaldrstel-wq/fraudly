@@ -3,38 +3,18 @@ import {
   backfillLatestPublicCheckCanonicalBatch,
   getLatestPublicCheckBackfillSchemaCheck
 } from "@/lib/admin/backfill-latest-public-check-canonical";
-import { isAdminRecalcAuthorized } from "@/lib/admin/adminKeyAuth";
-import { getCurrentUserIsAdmin } from "@/lib/auth/admin";
+import { isBackfillAdminAuthorized } from "@/lib/admin/backfill-latest-public-check-canonical-auth";
+import {
+  parseBackfillBoolParam,
+  parseBackfillLimit
+} from "@/lib/admin/backfill-latest-public-check-canonical-params";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-function parseBoolParam(value: string | null, defaultValue: boolean): boolean {
-  if (value == null || value === "") return defaultValue;
-  const normalized = value.trim().toLowerCase();
-  if (normalized === "true" || normalized === "1") return true;
-  if (normalized === "false" || normalized === "0") return false;
-  return defaultValue;
-}
-
-function parseLimit(url: URL): number {
-  const raw = Number.parseInt(url.searchParams.get("limit") ?? "50", 10);
-  if (!Number.isFinite(raw) || raw < 1) return 50;
-  return Math.min(raw, 100);
-}
-
-async function isAuthorized(request: Request): Promise<boolean> {
-  try {
-    if (await getCurrentUserIsAdmin()) return true;
-  } catch {
-    // fall through to admin key
-  }
-  return isAdminRecalcAuthorized(request);
-}
-
 /** Schema probe — run before canonical backfill on production. */
 export async function GET(request: Request) {
-  if (!(await isAuthorized(request))) {
+  if (!(await isBackfillAdminAuthorized(request))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
@@ -58,15 +38,15 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  if (!(await isAuthorized(request))) {
+  if (!(await isBackfillAdminAuthorized(request))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
   const url = new URL(request.url);
-  const dryRun = parseBoolParam(url.searchParams.get("dryRun"), true);
-  const limit = parseLimit(url);
+  const dryRun = parseBackfillBoolParam(url.searchParams.get("dryRun"), true);
+  const limit = parseBackfillLimit(url.searchParams.get("limit"), 50);
   const cursor = url.searchParams.get("cursor");
-  const requireCanonicalColumns = parseBoolParam(url.searchParams.get("requireCanonical"), true);
+  const requireCanonicalColumns = parseBackfillBoolParam(url.searchParams.get("requireCanonical"), true);
 
   try {
     const summary = await backfillLatestPublicCheckCanonicalBatch({
@@ -107,8 +87,9 @@ export async function POST(request: Request) {
       blockedReason: summary.blockedReason,
       paginationNote:
         summary.hasMore && summary.nextCursor
-          ? "limit applies per batch; pass nextCursor until hasMore is false."
-          : null
+          ? "Single-page batch. For full table use POST /api/admin/backfill-latest-public-check-canonical/run-all"
+          : null,
+      runAllEndpoint: "/api/admin/backfill-latest-public-check-canonical/run-all"
     });
   } catch (err) {
     console.error("[admin/backfill-latest-public-check-canonical] batch failed", {

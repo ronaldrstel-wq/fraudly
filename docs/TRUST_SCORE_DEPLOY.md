@@ -57,13 +57,36 @@ Script: `scripts/backfill-latest-public-check-canonical-trust.ts`
 
 Does **not** rescan domains. Parses `publicResultPayload` when possible.
 
-### Dry run (default)
+### Production HTTP — full table (recommended)
+
+No manual `nextCursor`. Processes all rows in batches; invalidates caches once at the end.
+
+```bash
+# Dry run
+curl -sS -X POST "https://fraudly.app/api/admin/backfill-latest-public-check-canonical/run-all?dryRun=true&limit=50" \
+  -H "x-admin-key: $ADMIN_RECALC_KEY" | jq
+
+# Apply
+curl -sS -X POST "https://fraudly.app/api/admin/backfill-latest-public-check-canonical/run-all?dryRun=false&limit=50" \
+  -H "x-admin-key: $ADMIN_RECALC_KEY" | jq
+```
+
+If the table is large and Vercel hits the 60s limit, re-run with `resumeCursor` from the JSON response:
+
+```bash
+curl -sS -X POST "https://fraudly.app/api/admin/backfill-latest-public-check-canonical/run-all?dryRun=false&limit=50&cursor=<resumeCursor>" \
+  -H "x-admin-key: $ADMIN_RECALC_KEY" | jq
+```
+
+Optional limits: `maxBatches=500` (default), `maxDurationMs=55000` (default).
+
+### Dry run (local script)
 
 ```bash
 BACKFILL_DRY_RUN=true BACKFILL_BATCH_SIZE=50 npx tsx scripts/backfill-latest-public-check-canonical-trust.ts
 ```
 
-### Apply updates
+### Apply updates (local script)
 
 ```bash
 BACKFILL_DRY_RUN=false BACKFILL_BATCH_SIZE=100 npx tsx scripts/backfill-latest-public-check-canonical-trust.ts
