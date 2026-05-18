@@ -1,17 +1,62 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Phishing awareness">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Phishing awareness — suspicious email and unsafe link">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="commonpaypalphishingscams-bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#eff6ff"/>
-      <stop offset="55%" stop-color="#ffffff"/>
-      <stop offset="100%" stop-color="#f5f3ff"/>
+      <stop offset="45%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f0fdf4"/>
     </linearGradient>
-    <radialGradient id="glow" cx="70%" cy="35%" r="50%">
-      <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.18"/>
-      <stop offset="100%" stop-color="#60a5fa" stop-opacity="0"/>
-    </radialGradient>
+    <linearGradient id="commonpaypalphishingscams-card" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f8fafc"/>
+    </linearGradient>
+    <linearGradient id="commonpaypalphishingscams-accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <filter id="commonpaypalphishingscams-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#1e3a8a" flood-opacity="0.08"/>
+    </filter>
+    <filter id="commonpaypalphishingscams-shadow-sm" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#334155" flood-opacity="0.06"/>
+    </filter>
   </defs>
-  <rect width="1200" height="630" fill="url(#bg)"/>
-  <rect width="1200" height="630" fill="url(#glow)"/>
-  <g transform="translate(490 175)" fill="none" stroke="#60a5fa" stroke-width="3.5" opacity="0.85"><rect x="45" y="55" width="270" height="175" rx="14"/><path d="M45 55 L180 165 L315 55"/></g>
+  <rect width="1200" height="630" fill="url(#commonpaypalphishingscams-bg)"/>
+  <ellipse cx="920" cy="120" rx="200" ry="160" fill="#8b5cf6" fill-opacity="0.06"/>
+  <ellipse cx="180" cy="520" rx="240" ry="180" fill="#3b82f6" fill-opacity="0.07"/>
+  <ellipse cx="600" cy="80" rx="120" ry="80" fill="#10b981" fill-opacity="0.08"/>
+  
+  <g filter="url(#commonpaypalphishingscams-shadow)">
+    <!-- Email / message bubble -->
+    <rect x="240" y="110" width="520" height="380" rx="24" fill="url(#commonpaypalphishingscams-card)" stroke="#c7d2fe" stroke-width="2"/>
+    <rect x="240" y="110" width="520" height="56" rx="24" fill="#f8fafc"/>
+    <rect x="240" y="142" width="520" height="24" fill="#f8fafc"/>
+    <circle cx="280" cy="138" r="18" fill="url(#commonpaypalphishingscams-accent)" fill-opacity="0.25"/>
+    <text x="310" y="145" font-family="system-ui,sans-serif" font-size="15" font-weight="600" fill="#0f172a">Payment update required</text>
+    <text x="270" y="200" font-family="system-ui,sans-serif" font-size="14" fill="#475569">Your account will be limited unless you</text>
+    <text x="270" y="228" font-family="system-ui,sans-serif" font-size="14" fill="#475569">confirm your details immediately.</text>
+
+    <!-- Suspicious link pill -->
+    <rect x="270" y="260" width="420" height="48" rx="12" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <text x="290" y="290" font-family="ui-monospace,monospace" font-size="13" fill="#ef4444">paypa1-secure-verify.xyz/login</text>
+    <text x="270" y="340" font-family="system-ui,sans-serif" font-size="12" fill="#94a3b8">⚠ Link does not match official domain</text>
+  </g>
+
+  <!-- Shield with check -->
+  <g transform="translate(820,140)" filter="url(#commonpaypalphishingscams-shadow-sm)">
+    <rect width="200" height="240" rx="20" fill="#fff" stroke="#c7d2fe" stroke-width="2"/>
+    <path d="M100 40 L160 62 V130 C160 178 100 200 100 200 C100 200 40 178 40 130 V62 Z" fill="none" stroke="url(#commonpaypalphishingscams-accent)" stroke-width="3"/>
+    <path d="M72 128 L92 148 L132 98" fill="none" stroke="#10b981" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="100" y="230" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#10b981">Verify first</text>
+  </g>
+
+  <!-- Message tail -->
+  <path d="M240 350 L200 400 L260 380 Z" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+
+  <g transform="translate(280,520)">
+    <rect width="118" height="28" rx="14" fill="#3b82f6" fill-opacity="0.1" stroke="#c7d2fe" stroke-width="1"/>
+    <circle cx="16" cy="14" r="6" fill="url(#commonpaypalphishingscams-accent)"/>
+    <text x="28" y="18" font-family="system-ui,-apple-system,sans-serif" font-size="11" font-weight="700" fill="#3b82f6" letter-spacing="0.04em">FRAUDLY</text>
+  </g>
+  <text x="600" y="575" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="#94a3b8">Threat Awareness</text>
 </svg>

@@ -23,7 +23,7 @@ export function IntelligenceArticleVisual({
         alt={hero.alt}
         width={hero.width}
         height={hero.height}
-        className="h-full w-full object-contain object-center p-4 opacity-95"
+        className="h-full w-full object-contain object-center p-2 sm:p-3 opacity-100"
         priority={priority}
         loading={priority ? undefined : "lazy"}
         sizes={sizes}
