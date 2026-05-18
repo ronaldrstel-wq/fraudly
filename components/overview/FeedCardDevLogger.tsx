@@ -19,7 +19,6 @@ export function FeedCardDevLogger({
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
     const article = document.getElementById(headlineId)?.closest("article");
-    // eslint-disable-next-line no-console -- intentional dev-only verdict-style probe
     console.log("[Fraudly][FeedCard]", {
       component: componentName,
       domain,

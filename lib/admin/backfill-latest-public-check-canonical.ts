@@ -5,6 +5,8 @@ import {
   type LatestPublicCheckBackfillMode,
   type LatestPublicCheckSchemaCapabilities
 } from "@/lib/latest-public-checks/detectSchemaCapabilities";
+
+export type { LatestPublicCheckBackfillMode };
 import {
   invalidateLatestPublicChecksCaches,
   type InvalidateLatestPublicChecksCachesResult
