@@ -24,6 +24,10 @@ export const SEO_TITLE = {
   fakeWebsiteChecker: "Fake Webshop & Website Checker",
   emailScamChecker: "Email Scam Checker — Safe Link Checker",
   cryptoScamChecker: "Crypto Scam Checker — Website Trust Check",
+  websiteScamChecker: "Website Scam Checker — Verify URLs Before You Pay",
+  checkIfWebsiteIsSafe: "Check if a Website Is Safe — Free Trust Review",
+  fakeWebshopCheck: "Fake Webshop Check — Spot Suspicious Online Stores",
+  onlineScamDetector: "Online Scam Detector — Website & Link Risk Check",
   privacy: "Privacy Policy",
   terms: "Terms of Service",
   cookies: "Cookie Policy",
@@ -73,6 +77,14 @@ export const SEO_DESCRIPTION = {
     "Email scam checker and safe link checker for suspicious URLs—phishing detection context before you open invoices, alerts or too-good-to-be-true offers.",
   cryptoScamChecker:
     "Crypto scam checker with website trust check signals—phishing detection for suspicious coin sites. Informational only, not investment advice.",
+  websiteScamChecker:
+    "Free website scam checker—verify suspicious shops and links with Fraudly trust scores, phishing signals, and fake webshop patterns before you pay or log in.",
+  checkIfWebsiteIsSafe:
+    "Check if a website is safe with Fraudly—automated trust review, scam feeds, and reputation context for unfamiliar stores and login pages before you proceed.",
+  fakeWebshopCheck:
+    "Fake webshop check for dubious online stores—Fraudly reviews discount hype, policies, and trust signals so you can avoid copycat shops and payment fraud.",
+  onlineScamDetector:
+    "Online scam detector for URLs—Fraudly combines phishing detection, technical checks, and public trust data into one readable website risk snapshot.",
   privacy:
     "Privacy policy for Fraudly's scam checker and website trust check service—how we handle data, cookies and phishing detection logs for online fraud protection.",
   terms:

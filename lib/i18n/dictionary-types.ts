@@ -26,6 +26,10 @@ export type CoreDictionary = {
     howItWorks: string;
     learn: string;
     scamChecker: string;
+    websiteScamChecker: string;
+    checkIfWebsiteIsSafe: string;
+    fakeWebshopCheck: string;
+    onlineScamDetector: string;
     latestChecks: string;
     pulse: string;
     scamAlerts: string;

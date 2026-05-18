@@ -5,13 +5,19 @@ const crossTool = [
   { href: "/phishing-checker", label: "Phishing checker" },
   { href: "/email-scam-checker", label: "Email scam checker" },
   { href: "/fake-website-checker", label: "Fake website checker" },
-  { href: "/crypto-scam-checker", label: "Crypto scam checker" }
+  { href: "/crypto-scam-checker", label: "Crypto scam checker" },
+  { href: "/website-scam-checker", label: "Website scam checker" },
+  { href: "/check-if-website-is-safe", label: "Check if website is safe" },
+  { href: "/fake-webshop-check", label: "Fake webshop check" },
+  { href: "/online-scam-detector", label: "Online scam detector" }
 ] as const;
 
 function related(excludeHref: string): SeoToolPageProps["relatedLinks"] {
   const others = crossTool.filter((l) => l.href !== excludeHref);
   return [
     { href: "/", label: "Home" },
+    { href: "/latest-checks", label: "Latest checks" },
+    { href: "/scam-alerts", label: "Scam alerts" },
     { href: "/how-it-works", label: "How it works" },
     ...others,
     { href: "/privacy", label: "Privacy Policy" },
@@ -77,4 +83,52 @@ export const cryptoScamCheckerLanding: SeoToolPageProps = {
     "Verify projects through multiple independent sources, not a single link"
   ],
   relatedLinks: related("/crypto-scam-checker")
+};
+
+export const websiteScamCheckerLanding: SeoToolPageProps = {
+  h1: "Website scam checker — verify shops and links before you pay",
+  intro:
+    "Fraudly is a website scam checker that reviews public trust signals, technical checks, and scam intelligence for any URL. Use it before checkout, account login, or wire transfers when a site feels unfamiliar.",
+  bullets: [
+    "Works for webshops, marketplaces, and landing pages shared in ads or DMs",
+    "Shows a trust score and plain-language risk context—not a legal verdict",
+    "Pairs well with our latest public checks feed for real-world examples"
+  ],
+  relatedLinks: related("/website-scam-checker")
+};
+
+export const checkIfWebsiteIsSafeLanding: SeoToolPageProps = {
+  h1: "Check if a website is safe before you buy or log in",
+  intro:
+    "Wondering whether a website is safe? Fraudly runs an automated trust and risk review using domain age, reputation hints, SSL context, and scam feeds—helping you decide whether to proceed with caution.",
+  bullets: [
+    "Ideal when a deal looks too good or the brand is unfamiliar",
+    "Compare the visible company name with the real domain in the address bar",
+    "Always prefer official apps and bookmarked sites for banking and payments"
+  ],
+  relatedLinks: related("/check-if-website-is-safe")
+};
+
+export const fakeWebshopCheckLanding: SeoToolPageProps = {
+  h1: "Fake webshop check for suspicious online stores",
+  intro:
+    "Fake webshops copy legitimate brands, steal product photos, and pressure you to pay quickly. Fraudly’s fake webshop check highlights discount hype, thin policies, and other patterns common in fraudulent stores.",
+  bullets: [
+    "Check European and international shops before entering card details",
+    "Review trust scores alongside independent customer reviews",
+    "Report serious fraud to your bank and local consumer authority"
+  ],
+  relatedLinks: related("/fake-webshop-check")
+};
+
+export const onlineScamDetectorLanding: SeoToolPageProps = {
+  h1: "Online scam detector for websites and phishing links",
+  intro:
+    "Fraudly acts as an online scam detector for URLs—combining phishing signals, reputation data, and technical checks into one readable snapshot so you can avoid risky clicks and payments.",
+  bullets: [
+    "Useful for SMS links, sponsored ads, and marketplace seller pages",
+    "Explore related high-risk domains in our public check feed",
+    "Informational only—always verify through official channels when unsure"
+  ],
+  relatedLinks: related("/online-scam-detector")
 };

@@ -13,6 +13,7 @@ import { publicRobots, SITE_URL, unindexedFollowRobots } from "@/lib/seo";
 import { Navbar } from "@/components/Navbar";
 import { ResultCard } from "@/components/ResultCard";
 import { SiteFooter } from "@/components/SiteFooter";
+import { CheckPageDiscoverySections } from "@/components/seo/CheckPageDiscoverySections";
 import { DomainCheckJsonLd } from "@/components/seo/DomainCheckJsonLd";
 import { EN_MESSAGES } from "@/lib/messages.en";
 import { loadTrustViewForDomain } from "@/lib/trust/loadTrustView";
@@ -215,6 +216,8 @@ export default async function DomainCheckPage({ params, searchParams }: PageProp
             Latest public checks
           </Link>
         </section>
+
+        <CheckPageDiscoverySections domain={domain} />
       </main>
       <SiteFooter />
     </div>

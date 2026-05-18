@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { HomeBelowFold } from "@/components/HomeBelowFold";
+import { HomePublicChecksDiscovery } from "@/components/seo/HomePublicChecksDiscovery";
 import { HomeAuthProvider } from "@/components/home/HomeAuthContext";
 import { HomeNavbar } from "@/components/home/HomeNavbar";
 import { HomeFaqJsonLd } from "@/components/HomeFaqJsonLd";
@@ -58,6 +59,7 @@ export default function HomePage() {
         <LocaleSuggestionServer marketingPath="/" />
         <HomeNavbar />
         <HomeClient>
+          <HomePublicChecksDiscovery />
           <Suspense fallback={<HomeBelowFoldFallback />}>
             <HomeBelowFold />
           </Suspense>

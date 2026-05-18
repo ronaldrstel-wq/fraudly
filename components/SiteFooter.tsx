@@ -46,6 +46,18 @@ export function SiteFooter({ locale = "en" }: SiteFooterProps) {
           <Link href="/scam-checker" className="fraudly-footer-link">
             {dict.footer.scamChecker}
           </Link>
+          <Link href="/website-scam-checker" className="fraudly-footer-link">
+            {dict.footer.websiteScamChecker}
+          </Link>
+          <Link href="/check-if-website-is-safe" className="fraudly-footer-link">
+            {dict.footer.checkIfWebsiteIsSafe}
+          </Link>
+          <Link href="/fake-webshop-check" className="fraudly-footer-link">
+            {dict.footer.fakeWebshopCheck}
+          </Link>
+          <Link href="/online-scam-detector" className="fraudly-footer-link">
+            {dict.footer.onlineScamDetector}
+          </Link>
           <Link href="/pulse" className="fraudly-footer-link">
             {dict.footer.pulse}
           </Link>

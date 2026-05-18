@@ -8,7 +8,7 @@ import { formatPublicCheckRelativeTime } from "@/lib/latest-public-checks/relati
 import { overviewFeedPrimaryLine } from "@/lib/overviewFeedDisplay";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { homeHref, localizedPath } from "@/lib/i18n/paths";
-import { checkResultHref } from "@/lib/check/checkResultHref";
+import { publicCheckPath } from "@/lib/seo/public-check-links";
 import { buildOverviewFromPublicCheck } from "@/lib/overviewCardPresentation";
 import { logDisplayScoreDebug } from "@/lib/scoring/displayScore";
 import { feedListRowConfidenceBadges } from "@/lib/trust/feedConfidenceStrip";
@@ -45,13 +45,7 @@ function safeLastSeenIso(lastSeenAt: Date | string): string {
 function safeCardHref(row: LatestPublicCheckListRow): string {
   const primary = overviewFeedPrimaryLine(row.checkedValue ?? row.normalizedValue).primary;
   const domain = primary || row.normalizedValue || "unknown";
-  try {
-    return checkResultHref(domain, { scanId: row.id, from: "latest-card" });
-  } catch {
-    return row.publicResultPath?.startsWith("/check/")
-      ? row.publicResultPath
-      : `/check/${encodeURIComponent(domain)}`;
-  }
+  return publicCheckPath(domain);
 }
 
 function LatestCheckListItem({ row, locale }: { row: LatestPublicCheckListRow; locale: import("@/lib/i18n/locales").Locale }) {
@@ -192,10 +186,8 @@ export async function renderLatestChecksPage({ searchParams, locale = "en" }: La
         )}
 
         {(prevPage !== null || nextPage !== null) && (rows.length > 0 || nextPage !== null) ? (
-          <nav
-            className="mt-8 flex items-center justify-between gap-4 border-t border-slate-200 pt-5"
-            aria-label="Pagination"
-          >
+          <nav className="mt-8 border-t border-slate-200 pt-5" aria-label="Pagination">
+            <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="min-w-0">
               {prevPage !== null ? (
                 <Link
@@ -208,9 +200,6 @@ export async function renderLatestChecksPage({ searchParams, locale = "en" }: La
                 <span className="text-sm text-slate-400">{ui.pagination.prevDisabled}</span>
               )}
             </div>
-            <p className="text-center text-xs text-slate-500">
-              {ui.pagination.page}: {page}
-            </p>
             <div className="text-right">
               {nextPage !== null ? (
                 <Link
@@ -223,6 +212,38 @@ export async function renderLatestChecksPage({ searchParams, locale = "en" }: La
                 <span className="text-sm text-slate-400">{ui.pagination.nextDisabled}</span>
               )}
             </div>
+            </div>
+
+            {(() => {
+              const start = Math.max(1, page - 2);
+              const end = hasNext ? page + 2 : page;
+              const pages: number[] = [];
+              for (let p = start; p <= end; p += 1) pages.push(p);
+              if (pages.length <= 1) return null;
+              return (
+                <ol className="mt-4 flex flex-wrap justify-center gap-2" aria-label="Page numbers">
+                  {pages.map((p) => (
+                    <li key={p}>
+                      {p === page ? (
+                        <span
+                          className="inline-flex min-w-[2.25rem] justify-center rounded-lg border border-slate-300 bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-900"
+                          aria-current="page"
+                        >
+                          {p}
+                        </span>
+                      ) : (
+                        <Link
+                          href={p === 1 ? listBase : `${listBase}?page=${p}`}
+                          className="inline-flex min-w-[2.25rem] justify-center rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-sm font-semibold text-blue-600 hover:border-slate-300 hover:bg-slate-50"
+                        >
+                          {p}
+                        </Link>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              );
+            })()}
           </nav>
         ) : null}
       </main>
