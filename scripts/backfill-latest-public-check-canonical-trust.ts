@@ -2,8 +2,13 @@
  * Backfill canonical trust columns + v2 publicResultPayload on LatestPublicCheck.
  *
  * Usage:
- *   BACKFILL_DRY_RUN=true BACKFILL_BATCH_SIZE=50 npx tsx scripts/backfill-latest-public-check-canonical-trust.ts
- *   BACKFILL_DRY_RUN=false BACKFILL_BATCH_SIZE=100 BACKFILL_MAX_ROWS=500 npx tsx scripts/backfill-latest-public-check-canonical-trust.ts
+ *   npm run backfill:latest-public-checks
+ *   BACKFILL_DRY_RUN=true BACKFILL_BATCH_SIZE=50 npm run backfill:latest-public-checks
+ *   BACKFILL_DRY_RUN=false BACKFILL_BATCH_SIZE=100 BACKFILL_MAX_ROWS=500 npm run backfill:latest-public-checks
+ *
+ * HTTP (production), one page per request:
+ *   curl -X POST "https://fraudly.app/api/admin/backfill-latest-public-check-canonical?dryRun=true&limit=50" \
+ *     -H "x-admin-key: $ADMIN_RECALC_KEY"
  *
  * Requires DATABASE_URL. Does not rescan live domains.
  */

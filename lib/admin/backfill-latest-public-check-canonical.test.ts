@@ -86,16 +86,57 @@ describe("backfill latest public check canonical", () => {
     expect(plan.update?.consumerVerdictBand).toBe("mostly-safe");
   });
 
-  it("skips rows without parseable payload", () => {
+  it("reconciles canonical columns when payload is missing", () => {
     const plan = planBackfillRow({
       id: "row2",
       normalizedValue: "orphan.com",
       riskScoreSnapshot: 50,
       statusLabel: "Mixed signals snapshot",
+      normalizedTrustScore: 99,
       publicResultPayload: null
     });
-    expect(plan.update).toBeNull();
-    expect(plan.skipReason).toBe("no_parseable_payload");
+    expect(plan.update).not.toBeNull();
+    expect(plan.update?.normalizedTrustScore).toBe(50);
+    expect(plan.update?.publicResultPayload).toBeUndefined();
+  });
+
+  it("reconciles drifted trust column against snapshot risk", () => {
+    const result = fixtureResult();
+    const canonical = buildCanonicalTrustFieldsFromResult(result);
+    const normalized = alignNormalizedTrustToCanonical(
+      buildNormalizedTrustFromLegacyResult(result),
+      canonical
+    );
+    const payload = buildPublicResultPayloadV2(result, normalized, canonical);
+
+    const plan = planBackfillRow({
+      id: "row-drift",
+      normalizedValue: "example.com",
+      riskScoreSnapshot: 88,
+      statusLabel: "Lower risk context snapshot",
+      normalizedTrustScore: 80,
+      consumerVerdictLabel: "Mostly Safe",
+      publicResultPayload: payload
+    });
+
+    expect(plan.update).not.toBeNull();
+    expect(plan.update?.normalizedTrustScore).toBe(12);
+    expect(plan.update?.normalizedRiskScore).toBe(88);
+    expect(plan.update?.riskScoreSnapshot).toBe(88);
+  });
+
+  it("updates columns only when payload is missing", () => {
+    const plan = planBackfillRow({
+      id: "row-cols",
+      normalizedValue: "orphan.com",
+      riskScoreSnapshot: 88,
+      statusLabel: "Mixed signals snapshot",
+      normalizedTrustScore: 80,
+      publicResultPayload: null
+    });
+    expect(plan.update).not.toBeNull();
+    expect(plan.update?.normalizedTrustScore).toBe(12);
+    expect(plan.update?.publicResultPayload).toBeUndefined();
   });
 
   it("statusLabel does not change consumer verdict in plan", () => {
