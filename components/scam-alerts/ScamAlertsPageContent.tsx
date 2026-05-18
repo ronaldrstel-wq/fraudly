@@ -90,7 +90,13 @@ export async function ScamAlertsPageContent({ searchParams, locale = "en" }: Sca
       <main className="mx-auto w-full max-w-6xl px-4 pb-14 pt-8 sm:pt-9">
         <ScamAlertsPageHeader />
 
-        <ScamAlertsSummaryStrip stats={stats} filteredTotal={total} rangeStart={rangeStart} rangeEnd={rangeEnd} />
+        <ScamAlertsSummaryStrip
+          stats={stats}
+          filteredTotal={total}
+          rangeStart={rangeStart}
+          rangeEnd={rangeEnd}
+          summary={ui.summary}
+        />
 
         <div className="mt-5">
           <ScamAlertsFilterBar

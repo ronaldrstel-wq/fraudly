@@ -2,7 +2,7 @@
 
 import type { ChangeEvent, KeyboardEvent } from "react";
 import { useEffect, useRef } from "react";
-import { EN_MESSAGES } from "@/lib/messages.en";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 import { homeScanCtaButtonClass } from "@/lib/i18n/typography";
 import { DEFAULT_LOCALE } from "@/lib/i18n/locales";
 import type { HomeSearchCardState } from "@/lib/scan/homeScanProgress";
@@ -58,6 +58,8 @@ export function WebsiteScanSearchCard({
   scanFailed = false,
   checkedLabel
 }: WebsiteScanSearchCardProps) {
+  const { dict } = useLocale();
+  const flow = dict.checkFlow;
   const inputRef = useRef<HTMLInputElement>(null);
   const clampedProgress = Math.min(100, Math.max(0, Math.round(scanProgress)));
   const displayDomain = checkedLabel?.trim() || value.trim() || null;
@@ -78,7 +80,7 @@ export function WebsiteScanSearchCard({
         if (!disabled && !isScanning) handleSubmit();
       }
     },
-    placeholder: EN_MESSAGES.check.urlPlaceholder
+    placeholder: flow.check.urlPlaceholder
   };
 
   function handleSubmit() {
@@ -105,12 +107,12 @@ export function WebsiteScanSearchCard({
           <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-stretch">
             <div className="min-w-0 flex-1">
               <label htmlFor="fraudly-url-input" className="sr-only">
-                {EN_MESSAGES.check.urlFieldLabel}
+                {flow.check.urlFieldLabel}
               </label>
               <input
                 {...inputCommon}
                 ref={inputRef}
-                aria-label={EN_MESSAGES.check.urlFieldLabel}
+                aria-label={flow.check.urlFieldLabel}
                 disabled={isScanning}
                 className="h-16 min-h-[4rem] w-full min-w-0 rounded-2xl border border-blue-100/60 bg-gradient-to-r from-sky-50 to-violet-50 px-6 text-lg text-slate-900 shadow-inner outline-none placeholder:text-slate-400 focus:border-blue-300/90 focus:ring-4 focus:ring-blue-100/80 disabled:opacity-60"
               />
@@ -187,7 +189,7 @@ export function WebsiteScanSearchCard({
               <CheckGlyph className="h-5 w-5" />
             </span>
             <div className="min-w-0 text-left">
-              <p className="text-sm font-semibold text-slate-900">{EN_MESSAGES.scanProgress.complete}</p>
+              <p className="text-sm font-semibold text-slate-900">{flow.scanProgress.complete}</p>
               {displayDomain ? <p className="mt-0.5 truncate text-xs text-slate-500">{displayDomain}</p> : null}
             </div>
           </div>

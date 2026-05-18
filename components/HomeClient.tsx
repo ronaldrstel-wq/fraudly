@@ -17,7 +17,6 @@ import {
 } from "@/lib/analytics";
 import { parseFlexibleWebsiteInput } from "@/lib/check-input/normalizeWebsiteInput";
 import { useLocale } from "@/components/i18n/LocaleProvider";
-import { EN_MESSAGES } from "@/lib/messages.en";
 import type { Locale } from "@/lib/i18n/locales";
 import { GENERIC_CHECK_ERROR } from "@/lib/messages";
 import {
@@ -62,8 +61,9 @@ export function HomeClient({
   showFooter?: boolean;
   footerLocale?: Locale;
 }) {
-  const { locale: contextLocale } = useLocale();
+  const { locale: contextLocale, dict } = useLocale();
   const footerLang = footerLocale ?? contextLocale;
+  const flow = dict.checkFlow;
   const { signedIn: isSignedIn, isAdmin } = useHomeAuth();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -116,9 +116,9 @@ export function HomeClient({
 
   useEffect(() => {
     if (!loading) return;
-    const next = homeScanStatusMessage(scanProgress, scanFailed);
+    const next = homeScanStatusMessage(scanProgress, scanFailed, flow.scanProgress);
     setScanStatus((prev) => (prev === next ? prev : next));
-  }, [loading, scanFailed, scanProgress]);
+  }, [loading, scanFailed, scanProgress, flow.scanProgress]);
 
   async function runCheck() {
     if (inFlight.current) return;
@@ -126,7 +126,7 @@ export function HomeClient({
     const trimmed = url.trim();
 
     if (!trimmed) {
-      setError(EN_MESSAGES.check.missingUrl);
+      setError(flow.check.missingUrl);
       return;
     }
 
@@ -140,7 +140,7 @@ export function HomeClient({
 
     const parsedInput = parseFlexibleWebsiteInput(trimmed);
     if (!parsedInput.ok) {
-      setError(EN_MESSAGES.check.invalidWebsiteInput);
+      setError(flow.check.invalidWebsiteInput);
       trackCheckFailed("invalid_url_client");
       return;
     }
@@ -156,7 +156,7 @@ export function HomeClient({
     setLoading(true);
     setScanProgress(SCAN_PROGRESS_START);
     scanProgressRef.current = SCAN_PROGRESS_START;
-    setScanStatus(homeScanStatusMessage(SCAN_PROGRESS_START, false));
+    setScanStatus(homeScanStatusMessage(SCAN_PROGRESS_START, false, flow.scanProgress));
     setCheckedLabel(parsedInput.url.hostname);
 
     await yieldOneUiFrame();
@@ -184,7 +184,7 @@ export function HomeClient({
         body: JSON.stringify({
           url: parsedInput.canonicalHref,
           detailLevel: "full",
-          language: "en"
+          language: contextLocale
         })
       });
 
@@ -212,10 +212,10 @@ export function HomeClient({
         const msg =
           typeof payload?.message === "string"
             ? payload.message
-            : EN_MESSAGES.auth.loginForUrlCheck;
+            : flow.auth.loginForUrlCheck;
         setError(msg);
         setShowSignupPrompt(true);
-        failStrip(EN_MESSAGES.scanProgress.stoppedSignIn);
+        failStrip(flow.scanProgress.stoppedSignIn);
         trackEvent("signup_prompt_shown", { source: "api_401" });
         trackCheckFailed("unauthorized");
         return;
@@ -224,8 +224,8 @@ export function HomeClient({
       if (response.status === 402) {
         setResult(null);
         setShowSignupPrompt(true);
-        setError(EN_MESSAGES.auth.loginForAnotherCheck);
-        failStrip(EN_MESSAGES.scanProgress.stoppedLimit);
+        setError(flow.auth.loginForAnotherCheck);
+        failStrip(flow.scanProgress.stoppedLimit);
         trackEvent("signup_prompt_shown", { source: "api_402" });
         trackCheckFailed("rate_limit");
         return;
@@ -234,7 +234,7 @@ export function HomeClient({
       if (response.status === 429) {
         setResult(null);
         const msg =
-          typeof payload?.message === "string" ? payload.message : EN_MESSAGES.rateLimit.generic;
+          typeof payload?.message === "string" ? payload.message : flow.rateLimit.generic;
         setError(msg);
         failStrip(msg);
         const reason = typeof payload?.reason === "string" ? payload.reason : "unknown";
@@ -266,14 +266,14 @@ export function HomeClient({
           failStrip(msgFromApi);
         } else if (requestId) {
           setError(`${GENERIC_CHECK_ERROR} Reference: ${requestId}`);
-          failStrip(EN_MESSAGES.scanProgress.failedGeneric);
+          failStrip(flow.scanProgress.failedGeneric);
         } else {
           setError(
             process.env.NODE_ENV === "production"
               ? GENERIC_CHECK_ERROR
               : `Request failed (HTTP ${response.status}). ${bodySnippet ? `Body: ${bodySnippet}` : ""}`
           );
-          failStrip(EN_MESSAGES.scanProgress.failedGeneric);
+          failStrip(flow.scanProgress.failedGeneric);
         }
 
         trackCheckFailed(`http_${response.status}`);
@@ -287,7 +287,7 @@ export function HomeClient({
             ? GENERIC_CHECK_ERROR
             : `Unexpected API response (HTTP ${response.status}). Body: ${rawBody.slice(0, 180)}`
         );
-        failStrip(EN_MESSAGES.scanProgress.stoppedInvalidResponse);
+        failStrip(flow.scanProgress.stoppedInvalidResponse);
         trackCheckFailed("invalid_response_shape");
         return;
       }
@@ -296,7 +296,7 @@ export function HomeClient({
         setScanProgress(value);
         scanProgressRef.current = value;
       }, scanProgressRef.current);
-      setScanStatus(EN_MESSAGES.scanProgress.complete);
+      setScanStatus(flow.scanProgress.complete);
       setScanPhaseComplete(true);
       await new Promise((resolve) => setTimeout(resolve, RESULT_DISPLAY_HOLD_MS));
 
@@ -325,7 +325,7 @@ export function HomeClient({
       }
       setError(process.env.NODE_ENV === "production" ? GENERIC_CHECK_ERROR : `Network error: ${message}`);
       setScanFailed(true);
-      setScanStatus(EN_MESSAGES.scanProgress.failedNetwork);
+      setScanStatus(flow.scanProgress.failedNetwork);
       setScanPhaseComplete(false);
       setLoading(false);
       trackCheckFailed("network");
@@ -341,7 +341,7 @@ export function HomeClient({
 
   const signInLink = (
     <Link href="/sign-in" className="btn-secondary inline-flex px-5">
-      {EN_MESSAGES.auth.loginCta}
+      {flow.auth.loginCta}
     </Link>
   );
   const signUpLink = (
@@ -350,7 +350,7 @@ export function HomeClient({
       className="btn-primary inline-flex px-5"
       onClick={() => trackEvent("signup_started", { source: "signup_prompt" })}
     >
-      {EN_MESSAGES.freemium.createFreeAccount}
+      {flow.freemium.createFreeAccount}
     </Link>
   );
 
@@ -366,8 +366,8 @@ export function HomeClient({
 
         {showSignupPrompt && !isSignedIn ? (
           <div className={`w-full fraudly-cta-panel ${error ? "mt-5" : ""}`}>
-            <h3 className="text-lg font-bold tracking-tight text-slate-900 md:text-xl">{EN_MESSAGES.freemium.promptTitle}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">{EN_MESSAGES.freemium.promptBody}</p>
+            <h3 className="text-lg font-bold tracking-tight text-slate-900 md:text-xl">{flow.freemium.promptTitle}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">{flow.freemium.promptBody}</p>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               {signUpLink}
               <Link
@@ -375,7 +375,7 @@ export function HomeClient({
                 className="btn-secondary inline-flex px-5"
                 onClick={() => trackEvent("login_started", { source: "signup_prompt" })}
               >
-                {EN_MESSAGES.auth.loginCta}
+                {flow.auth.loginCta}
               </Link>
             </div>
           </div>
@@ -396,7 +396,7 @@ export function HomeClient({
             <PostScanAppPromo />
             {!isSignedIn ? (
               <div className="rounded-2xl border border-slate-200/85 bg-slate-50 px-4 py-3 text-sm text-slate-700 shadow-subtle">
-                {EN_MESSAGES.freemium.afterResultBanner}
+                {flow.freemium.afterResultBanner}
               </div>
             ) : null}
           </div>

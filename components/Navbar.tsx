@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { NavbarShell } from "@/components/navbar/NavbarShell";
+import { MarketingNavbarClient } from "@/components/navbar/MarketingNavbarClient";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/locales";
 
@@ -25,7 +25,7 @@ function NavbarFallback({ locale = "en" }: { locale?: Locale }) {
 export function Navbar({ locale = "en" }: { locale?: Locale }) {
   return (
     <Suspense fallback={<NavbarFallback locale={locale} />}>
-      <NavbarShell locale={locale} />
+      <MarketingNavbarClient />
     </Suspense>
   );
 }

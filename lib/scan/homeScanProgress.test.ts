@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { getCheckFlowMessages } from "@/lib/i18n/check-flow";
 import {
   HOME_SCAN_PROGRESS_FAST_CAP,
   HOME_SCAN_PROGRESS_SLOW_CAP,
@@ -8,9 +9,10 @@ import {
 
 describe("homeScanProgress", () => {
   it("maps progress to rotating messages", () => {
-    expect(homeScanStatusMessage(5, false)).toContain("SSL");
-    expect(homeScanStatusMessage(40, false)).toContain("feeds");
-    expect(homeScanStatusMessage(100, false)).toContain("complete");
+    const scanProgress = getCheckFlowMessages("en").scanProgress;
+    expect(homeScanStatusMessage(5, false, scanProgress)).toContain("SSL");
+    expect(homeScanStatusMessage(40, false, scanProgress)).toContain("feeds");
+    expect(homeScanStatusMessage(100, false, scanProgress)).toContain("complete");
   });
 
   it("simulates faster below 70 and slower toward 95", () => {

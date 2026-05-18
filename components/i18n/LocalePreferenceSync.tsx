@@ -22,8 +22,13 @@ export function LocalePreferenceSync() {
 
   useEffect(() => {
     const { locale, path } = stripLocalePrefix(pathname);
-    if (!isMarketingPath(path)) return;
-    writeStoredLocale(locale);
+    if (locale !== "en") {
+      writeStoredLocale(locale);
+      return;
+    }
+    if (isMarketingPath(path)) {
+      writeStoredLocale(locale);
+    }
   }, [pathname]);
 
   useEffect(() => {

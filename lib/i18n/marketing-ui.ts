@@ -1,9 +1,11 @@
 import type { MarketingUiExtension } from "@/lib/i18n/marketing-ui-types";
+import { getCheckFlowMessages } from "@/lib/i18n/check-flow";
 import { marketingUiEs } from "@/lib/i18n/marketing-ui-es";
 import { marketingUiPt } from "@/lib/i18n/marketing-ui-pt";
 import type { Locale } from "@/lib/i18n/locales";
 
 const en: MarketingUiExtension = {
+  checkFlow: getCheckFlowMessages("en"),
   common: { languageLabel: "Language" },
   scamAlertsPage: {
     filters: {
@@ -31,7 +33,13 @@ const en: MarketingUiExtension = {
     summary: {
       highScore: "High+ (score ≥ 75)",
       sortByScore: "Sorted by newest publication, then alert score",
-      newTodayUtc: "Recently published (UTC)"
+      newTodayUtc: "Recently published (UTC)",
+      totalPublished: "Total published",
+      mostCommonType: "Most common type",
+      showing: "Showing",
+      zeroPublished: "0 published alerts",
+      rangeSingle: "{current} of {total} published alerts",
+      rangeSpan: "{start}–{end} of {total} published alerts"
     },
     empty: {
       zeroTitle: "No active scam alerts right now",
@@ -227,6 +235,7 @@ const en: MarketingUiExtension = {
 };
 
 const nl: MarketingUiExtension = {
+  checkFlow: getCheckFlowMessages("nl"),
   common: { languageLabel: "Taal" },
   scamAlertsPage: {
     filters: {
@@ -254,7 +263,13 @@ const nl: MarketingUiExtension = {
     summary: {
       highScore: "Hoog+ (score ≥ 75)",
       sortByScore: "Gesorteerd op nieuwste publicatie, dan alertscore",
-      newTodayUtc: "Recent gepubliceerd (UTC)"
+      newTodayUtc: "Recent gepubliceerd (UTC)",
+      totalPublished: "Totaal gepubliceerd",
+      mostCommonType: "Meest voorkomend type",
+      showing: "Weergave",
+      zeroPublished: "0 gepubliceerde alerts",
+      rangeSingle: "{current} van {total} gepubliceerde alerts",
+      rangeSpan: "{start}–{end} van {total} gepubliceerde alerts"
     },
     empty: {
       zeroTitle: "Geen actieve scamalerts op dit moment",
@@ -480,7 +495,13 @@ const de: MarketingUiExtension = {
     summary: {
       highScore: "Hoch+ (Score ≥ 75)",
       sortByScore: "Sortiert nach Veröffentlichung, dann Alert-Score",
-      newTodayUtc: "Kürzlich veröffentlicht (UTC)"
+      newTodayUtc: "Kürzlich veröffentlicht (UTC)",
+      totalPublished: "Gesamt veröffentlicht",
+      mostCommonType: "Häufigster Typ",
+      showing: "Anzeige",
+      zeroPublished: "0 veröffentlichte Alerts",
+      rangeSingle: "{current} von {total} veröffentlichten Alerts",
+      rangeSpan: "{start}–{end} von {total} veröffentlichten Alerts"
     },
     empty: {
       zeroTitle: "Derzeit keine aktiven Scam-Alerts",
@@ -657,7 +678,13 @@ const fr: MarketingUiExtension = {
     summary: {
       highScore: "Élevé+ (score ≥ 75)",
       sortByScore: "Tri par publication récente, puis score",
-      newTodayUtc: "Récemment publié (UTC)"
+      newTodayUtc: "Récemment publié (UTC)",
+      totalPublished: "Total publié",
+      mostCommonType: "Type le plus fréquent",
+      showing: "Affichage",
+      zeroPublished: "0 alertes publiées",
+      rangeSingle: "{current} sur {total} alertes publiées",
+      rangeSpan: "{start}–{end} sur {total} alertes publiées"
     },
     empty: {
       zeroTitle: "Aucune alerte scam active pour l’instant",
@@ -791,7 +818,14 @@ const fr: MarketingUiExtension = {
   ]
 };
 
-const byLocale: Record<Locale, MarketingUiExtension> = { en, nl, de, fr, es: marketingUiEs, pt: marketingUiPt };
+const byLocale: Record<Locale, MarketingUiExtension> = {
+  en,
+  nl,
+  de,
+  fr,
+  es: { ...marketingUiEs, checkFlow: getCheckFlowMessages("es") },
+  pt: { ...marketingUiPt, checkFlow: getCheckFlowMessages("pt") }
+};
 
 export function getMarketingUi(locale: Locale): MarketingUiExtension {
   return byLocale[locale] ?? en;

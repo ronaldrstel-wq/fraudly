@@ -1,6 +1,8 @@
 import type { MarketingUiExtension } from "@/lib/i18n/marketing-ui-types";
+import { getCheckFlowMessages } from "@/lib/i18n/check-flow";
 
 export const marketingUiEn: MarketingUiExtension = {
+  checkFlow: getCheckFlowMessages("en"),
   common: { languageLabel: "Language" },
   scamAlertsPage: {
     filters: {
@@ -28,7 +30,13 @@ export const marketingUiEn: MarketingUiExtension = {
     summary: {
       highScore: "High+ (score ≥ 75)",
       sortByScore: "Sorted by newest publication, then alert score",
-      newTodayUtc: "Recently published (UTC)"
+      newTodayUtc: "Recently published (UTC)",
+      totalPublished: "Total published",
+      mostCommonType: "Most common type",
+      showing: "Showing",
+      zeroPublished: "0 published alerts",
+      rangeSingle: "{current} of {total} published alerts",
+      rangeSpan: "{start}–{end} of {total} published alerts"
     },
     empty: {
       zeroTitle: "No active scam alerts right now",

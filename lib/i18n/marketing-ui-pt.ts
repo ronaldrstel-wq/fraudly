@@ -29,9 +29,16 @@ export const marketingUiPt: MarketingUiExtension = {
       helper: "Standard zeigt alle veröffentlichten Alerts. Enger über URL auf Hoje (UTC) oder kürzere Fenster."
     },
     summary: {
+      ...marketingUiEn.scamAlertsPage.summary,
       highScore: "Alto+ (pontuação ≥ 75)",
-      sortByScore: "Ordenado por publicación reciente y pontuação",
-      newTodayUtc: "Publicado recientemente (UTC)"
+      sortByScore: "Ordenado por publicação recente e pontuação",
+      newTodayUtc: "Publicado recentemente (UTC)",
+      totalPublished: "Total publicado",
+      mostCommonType: "Tipo mais comum",
+      showing: "A mostrar",
+      zeroPublished: "0 alertas publicadas",
+      rangeSingle: "{current} de {total} alertas publicadas",
+      rangeSpan: "{start}–{end} de {total} alertas publicadas"
     },
     empty: {
       zeroTitle: "No hay alertas de fraude activas ahora",

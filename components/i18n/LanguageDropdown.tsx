@@ -4,7 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { writeStoredLocale } from "@/lib/i18n/locale-preference";
-import { isHomepagePath, localizedPath, localeFromPathname } from "@/lib/i18n/paths";
+import { localizedPath, stripLocalePrefix } from "@/lib/i18n/paths";
 import {
   LOCALE_LABELS,
   LOCALE_SWITCHER_CODES,
@@ -13,6 +13,7 @@ import {
   type Locale,
   type LocalizedMarketingPath
 } from "@/lib/i18n/locales";
+
 function isMarketingPath(path: string): path is LocalizedMarketingPath {
   return (LOCALIZED_MARKETING_PATHS as readonly string[]).includes(path);
 }
@@ -58,14 +59,12 @@ type LanguageDropdownProps = {
 
 export function LanguageDropdown({ className = "" }: LanguageDropdownProps) {
   const pathname = usePathname() || "/";
-  const currentLocale = localeFromPathname(pathname);
+  const { locale: currentLocale, path: strippedPath } = stripLocalePrefix(pathname);
+  const marketingPath = isMarketingPath(strippedPath) ? strippedPath : null;
   const [open, setOpen] = useState(false);
   const [querySuffix, setQuerySuffix] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const listboxId = useId();
-
-  const isHome = isHomepagePath(pathname);
-  const marketingPath = isHome ? ("/" as LocalizedMarketingPath) : null;
 
   useEffect(() => {
     setQuerySuffix(typeof window !== "undefined" ? window.location.search : "");
@@ -73,8 +72,8 @@ export function LanguageDropdown({ className = "" }: LanguageDropdownProps) {
 
   const hrefForLocale = useCallback(
     (locale: Locale) => {
-      if (!marketingPath) return localizedPath("/", locale);
-      return `${localizedPath(marketingPath, locale)}${querySuffix}`;
+      const targetPath = marketingPath ?? "/";
+      return `${localizedPath(targetPath, locale)}${querySuffix}`;
     },
     [marketingPath, querySuffix]
   );

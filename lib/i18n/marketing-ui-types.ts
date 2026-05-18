@@ -1,5 +1,8 @@
+import type { CheckFlowMessages } from "@/lib/i18n/check-flow";
+
 /** Extended marketing UI strings merged into each locale dictionary. */
 export type MarketingUiExtension = {
+  checkFlow: CheckFlowMessages;
   common: {
     languageLabel: string;
   };
@@ -30,6 +33,12 @@ export type MarketingUiExtension = {
       highScore: string;
       sortByScore: string;
       newTodayUtc: string;
+      totalPublished: string;
+      mostCommonType: string;
+      showing: string;
+      zeroPublished: string;
+      rangeSingle: string;
+      rangeSpan: string;
     };
     empty: {
       zeroTitle: string;

@@ -1,13 +1,9 @@
-import { EN_MESSAGES } from "@/lib/messages.en";
+import type { CheckFlowMessages } from "@/lib/i18n/check-flow";
+import { getCheckFlowMessages } from "@/lib/i18n/check-flow";
+import type { Locale } from "@/lib/i18n/locales";
 
-/** Rotating status copy shown during homepage scan (progress-driven). */
-export const HOME_SCAN_ROTATING_MESSAGES = [
-  "Checking SSL certificate...",
-  "Analyzing domain reputation...",
-  "Cross-checking scam feeds...",
-  "Inspecting trust signals...",
-  "Generating trust assessment..."
-] as const;
+/** @deprecated Use getHomeScanRotatingMessages(locale) */
+export const HOME_SCAN_ROTATING_MESSAGES = getCheckFlowMessages("en").scanProgress.rotating;
 
 export const HOME_SCAN_PROGRESS_FAST_CAP = 70;
 export const HOME_SCAN_PROGRESS_SLOW_CAP = 95;
@@ -16,14 +12,21 @@ export const HOME_SCAN_SLOW_INTERVAL_MS = 560;
 
 export type HomeSearchCardState = "idle" | "scanning" | "complete";
 
-export function homeScanStatusMessage(progress: number, failed: boolean, failedMessage?: string): string {
+export function getHomeScanRotatingMessages(locale: Locale = "en"): readonly string[] {
+  return getCheckFlowMessages(locale).scanProgress.rotating;
+}
+
+export function homeScanStatusMessage(
+  progress: number,
+  failed: boolean,
+  messages: CheckFlowMessages["scanProgress"],
+  failedMessage?: string
+): string {
   if (failed && failedMessage) return failedMessage;
-  if (progress >= 100) return EN_MESSAGES.scanProgress.complete;
-  const idx = Math.min(
-    HOME_SCAN_ROTATING_MESSAGES.length - 1,
-    Math.floor((progress / 100) * HOME_SCAN_ROTATING_MESSAGES.length)
-  );
-  return HOME_SCAN_ROTATING_MESSAGES[idx] ?? HOME_SCAN_ROTATING_MESSAGES[0];
+  if (progress >= 100) return messages.complete;
+  const rotating = messages.rotating;
+  const idx = Math.min(rotating.length - 1, Math.floor((progress / 100) * rotating.length));
+  return rotating[idx] ?? rotating[0];
 }
 
 /** Simulated progress: quick 0→70, slow 70→95, then hold for API. */
