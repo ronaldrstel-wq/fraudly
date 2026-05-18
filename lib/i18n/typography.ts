@@ -1,6 +1,6 @@
 import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locales";
 
-/** NL / DE / FR copy tends to run longer than English. */
+/** Non-English locales — copy often runs longer than English. */
 export function usesCompactCopy(locale: Locale): boolean {
   return locale !== DEFAULT_LOCALE;
 }

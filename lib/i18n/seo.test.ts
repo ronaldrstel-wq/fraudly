@@ -12,10 +12,12 @@ describe("localizedPath", () => {
     expect(localizedPath("/scam-help", "en")).toBe("/scam-help");
   });
 
-  it("prefixes nl, de, fr", () => {
+  it("prefixes nl, de, fr, es, pt", () => {
     expect(localizedPath("/", "nl")).toBe("/nl");
     expect(localizedPath("/about", "de")).toBe("/de/about");
     expect(localizedPath("/latest-checks", "fr")).toBe("/fr/latest-checks");
+    expect(localizedPath("/support", "es")).toBe("/es/support");
+    expect(localizedPath("/scam-help", "pt")).toBe("/pt/scam-help");
   });
 });
 
@@ -25,6 +27,8 @@ describe("homeScannerHref", () => {
     expect(homeScannerHref("nl")).toBe("/nl#link-check");
     expect(homeScannerHref("de")).toBe("/de#link-check");
     expect(homeScannerHref("fr")).toBe("/fr#link-check");
+    expect(homeScannerHref("es")).toBe("/es#link-check");
+    expect(homeScannerHref("pt")).toBe("/pt#link-check");
   });
 
   it("does not use the current page path", () => {
@@ -41,6 +45,8 @@ describe("isHomepagePath", () => {
     expect(isHomepagePath("/nl")).toBe(true);
     expect(isHomepagePath("/de")).toBe(true);
     expect(isHomepagePath("/fr")).toBe(true);
+    expect(isHomepagePath("/es")).toBe(true);
+    expect(isHomepagePath("/pt")).toBe(true);
   });
 
   it("rejects marketing subpages and check routes", () => {
@@ -55,9 +61,9 @@ describe("isHomepagePath", () => {
 });
 
 describe("hreflangLanguages", () => {
-  it("includes en, nl, de, fr and x-default", () => {
+  it("includes en, nl, de, fr, es, pt and x-default", () => {
     const languages = hreflangLanguages("/about");
-    expect(Object.keys(languages).sort()).toEqual(["de", "en", "fr", "nl", "x-default"].sort());
+    expect(Object.keys(languages).sort()).toEqual(["de", "en", "es", "fr", "nl", "pt", "x-default"].sort());
   });
 
   it("points x-default and en to unprefixed English URLs", () => {
@@ -67,6 +73,8 @@ describe("hreflangLanguages", () => {
     expect(languages.nl).toBe(`${SITE_URL}/nl/scam-help`);
     expect(languages.de).toBe(`${SITE_URL}/de/scam-help`);
     expect(languages.fr).toBe(`${SITE_URL}/fr/scam-help`);
+    expect(languages.es).toBe(`${SITE_URL}/es/scam-help`);
+    expect(languages.pt).toBe(`${SITE_URL}/pt/scam-help`);
   });
 
   it("preserves query strings across locales", () => {
@@ -93,7 +101,7 @@ describe("normalizeSearchSuffix", () => {
 });
 
 describe("sitemap marketing URLs", () => {
-  it("lists 24 localized marketing entries (6 paths × 4 locales)", () => {
+  it("lists 36 localized marketing entries (6 paths × 6 locales)", () => {
     const urls = allLocalizedMarketingUrls();
     const expected = [
       "/",
@@ -110,7 +118,10 @@ describe("sitemap marketing URLs", () => {
       "/nl/support",
       "/de",
       "/de/about",
-      "/fr/support"
+      "/fr/support",
+      "/es",
+      "/es/about",
+      "/pt/latest-checks"
     ];
     for (const path of expected) {
       expect(urls).toContain(path);

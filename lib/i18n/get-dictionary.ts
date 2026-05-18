@@ -1,12 +1,14 @@
 import { de } from "@/lib/i18n/dictionaries/de";
 import { en } from "@/lib/i18n/dictionaries/en";
+import { es } from "@/lib/i18n/dictionaries/es";
 import { fr } from "@/lib/i18n/dictionaries/fr";
 import { nl } from "@/lib/i18n/dictionaries/nl";
+import { pt } from "@/lib/i18n/dictionaries/pt";
 import type { Dictionary } from "@/lib/i18n/dictionary-types";
 import { getMarketingUi } from "@/lib/i18n/marketing-ui";
 import type { Locale } from "@/lib/i18n/locales";
 
-const dictionaries = { en, nl, de, fr } as const;
+const dictionaries = { en, nl, de, fr, es, pt } as const;
 
 export function getDictionary(locale: Locale): Dictionary {
   const base = dictionaries[locale] ?? en;

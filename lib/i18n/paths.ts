@@ -1,5 +1,6 @@
 import {
   DEFAULT_LOCALE,
+  isLocalizedLocale,
   type Locale,
   type LocalizedLocale,
   type LocalizedMarketingPath
@@ -19,11 +20,11 @@ export function localizedPath(path: LocalizedMarketingPath | string, locale: Loc
   return `/${locale}${normalized}`;
 }
 
-/** Strip a leading /nl|/de|/fr segment when present. */
+/** Strip a leading locale prefix (/nl, /de, /fr, /es, /pt) when present. */
 export function stripLocalePrefix(pathname: string): { locale: Locale; path: string } {
   const segments = pathname.split("/").filter(Boolean);
   const first = segments[0];
-  if (first === "nl" || first === "de" || first === "fr") {
+  if (first && isLocalizedLocale(first)) {
     const rest = segments.slice(1).join("/");
     return { locale: first, path: rest ? `/${rest}` : "/" };
   }
@@ -38,6 +39,8 @@ export function localeFromPathname(pathname: string): Locale {
 export function suggestLocaleFromAcceptLanguage(header: string | null): LocalizedLocale | null {
   if (!header) return null;
   const lower = header.toLowerCase();
+  if (lower.includes("pt")) return "pt";
+  if (lower.includes("es")) return "es";
   if (lower.includes("nl")) return "nl";
   if (lower.includes("de")) return "de";
   if (lower.includes("fr")) return "fr";
@@ -53,7 +56,7 @@ export function homeScannerHref(locale: Locale): string {
   return `${homeHref(locale)}#link-check`;
 }
 
-/** True for `/`, `/nl`, `/de`, `/fr` (homepage variants only). */
+/** True for `/`, `/nl`, `/de`, `/fr`, `/es`, `/pt` (homepage variants only). */
 export function isHomepagePath(pathname: string): boolean {
   return stripLocalePrefix(pathname || "/").path === "/";
 }

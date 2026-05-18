@@ -1,7 +1,7 @@
 /** Default English site has no URL prefix. */
 export const DEFAULT_LOCALE = "en" as const;
 
-export const LOCALIZED_LOCALES = ["nl", "de", "fr"] as const;
+export const LOCALIZED_LOCALES = ["nl", "de", "fr", "es", "pt"] as const;
 
 export const LOCALES = [DEFAULT_LOCALE, ...LOCALIZED_LOCALES] as const;
 
@@ -21,28 +21,36 @@ export const LOCALE_HTML_LANG: Record<Locale, string> = {
   en: "en",
   nl: "nl",
   de: "de",
-  fr: "fr"
+  fr: "fr",
+  es: "es",
+  pt: "pt"
 };
 
 export const LOCALE_OG: Record<Locale, string> = {
   en: "en_US",
   nl: "nl_NL",
   de: "de_DE",
-  fr: "fr_FR"
+  fr: "fr_FR",
+  es: "es_ES",
+  pt: "pt_PT"
 };
 
 export const LOCALE_LABELS: Record<Locale, string> = {
   en: "English",
   nl: "Nederlands",
   de: "Deutsch",
-  fr: "Français"
+  fr: "Français",
+  es: "Español",
+  pt: "Português"
 };
 
 export const LOCALE_SWITCHER_CODES: Record<Locale, string> = {
   en: "EN",
   nl: "NL",
   de: "DE",
-  fr: "FR"
+  fr: "FR",
+  es: "ES",
+  pt: "PT"
 };
 
 /** Static marketing paths that have localized versions. */

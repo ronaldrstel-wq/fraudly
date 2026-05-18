@@ -166,16 +166,6 @@ export function Hero({
               {subhead}
             </p>
 
-            <ul className="mx-auto mt-7 flex max-w-[760px] flex-wrap justify-center gap-4 lg:mx-0 lg:justify-start" aria-label="What Fraudly checks">
-              {heroTrustFeatures.map((label, i) => (
-                <li key={label} className={marketingHeroTrustPillClass(locale)}>
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-100 to-cyan-100 text-blue-800 ring-1 ring-slate-100/80">
-                    {FEATURE_ICONS[i] ?? FEATURE_ICONS[0]}
-                  </span>
-                  <span className="leading-snug">{label}</span>
-                </li>
-              ))}
-            </ul>
           </div>
 
           <div className="relative mx-auto mt-0 hidden w-full max-w-[620px] sm:flex lg:-mt-4 lg:w-full lg:max-w-[620px] lg:translate-x-4 lg:justify-end">
@@ -198,6 +188,20 @@ export function Hero({
             </div>
           </div>
         </div>
+
+        <ul
+          className="mx-auto mt-6 grid w-full max-w-6xl grid-cols-1 justify-items-center gap-3 sm:mt-7 md:mt-8 md:grid-cols-2 md:justify-items-stretch md:gap-4 lg:mt-9 lg:grid-cols-4 lg:gap-4 xl:max-w-[1200px] xl:gap-5"
+          aria-label="What Fraudly checks"
+        >
+          {heroTrustFeatures.map((label, i) => (
+            <li key={label} className={`w-full max-w-md md:max-w-none ${marketingHeroTrustPillClass(locale)}`}>
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-100 to-cyan-100 text-blue-800 ring-1 ring-slate-100/80">
+                {FEATURE_ICONS[i] ?? FEATURE_ICONS[0]}
+              </span>
+              <span className="leading-snug">{label}</span>
+            </li>
+          ))}
+        </ul>
 
         <div className="mx-auto mt-10 w-full md:mt-11">
           <WebsiteScanSearchCard

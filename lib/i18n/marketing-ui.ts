@@ -1,4 +1,6 @@
 import type { MarketingUiExtension } from "@/lib/i18n/marketing-ui-types";
+import { marketingUiEs } from "@/lib/i18n/marketing-ui-es";
+import { marketingUiPt } from "@/lib/i18n/marketing-ui-pt";
 import type { Locale } from "@/lib/i18n/locales";
 
 const en: MarketingUiExtension = {
@@ -789,7 +791,7 @@ const fr: MarketingUiExtension = {
   ]
 };
 
-const byLocale: Record<Locale, MarketingUiExtension> = { en, nl, de, fr };
+const byLocale: Record<Locale, MarketingUiExtension> = { en, nl, de, fr, es: marketingUiEs, pt: marketingUiPt };
 
 export function getMarketingUi(locale: Locale): MarketingUiExtension {
   return byLocale[locale] ?? en;

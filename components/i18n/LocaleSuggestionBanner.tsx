@@ -28,6 +28,14 @@ const BANNER_COPY: Record<
   fr: {
     prefer: (language) => `Préférez le ${language} ?`,
     viewIn: (language) => `Voir en ${language}`
+  },
+  es: {
+    prefer: (language) => `¿Prefieres ${language}?`,
+    viewIn: (language) => `Ver en ${language}`
+  },
+  pt: {
+    prefer: (language) => `Prefere ${language}?`,
+    viewIn: (language) => `Ver em ${language}`
   }
 };
 

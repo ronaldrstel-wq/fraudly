@@ -220,7 +220,7 @@ body {
   }
 
   /* NL / DE / FR: slightly tighter marketing type when layout sets lang */
-  :where([lang="nl"], [lang="de"], [lang="fr"]) .fraudly-marketing-card-title {
+  :where([lang="nl"], [lang="de"], [lang="fr"], [lang="es"], [lang="pt"]) .fraudly-marketing-card-title {
     @apply text-[15px] leading-snug;
   }
 
