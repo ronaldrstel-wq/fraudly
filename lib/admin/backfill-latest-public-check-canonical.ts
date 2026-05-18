@@ -1,6 +1,11 @@
 import { normalizeDomain } from "@/lib/cache";
 import { db } from "@/lib/db";
 import {
+  detectLatestPublicCheckSchemaCapabilities,
+  type LatestPublicCheckBackfillMode,
+  type LatestPublicCheckSchemaCapabilities
+} from "@/lib/latest-public-checks/detectSchemaCapabilities";
+import {
   invalidateLatestPublicChecksCaches,
   type InvalidateLatestPublicChecksCachesResult
 } from "@/lib/latest-public-checks/invalidateCaches";
@@ -57,13 +62,14 @@ export type BackfillColumnChange = {
 export type BackfillChangedRow = {
   id: string;
   domain: string;
-  schemaMode: BackfillSelectMode;
+  schemaMode: LatestPublicCheckBackfillMode;
   changes: BackfillColumnChange[];
 };
 
 export type BackfillBatchResult = {
   dryRun: boolean;
-  schemaMode: BackfillSelectMode;
+  schemaMode: LatestPublicCheckBackfillMode;
+  schemaCheck: LatestPublicCheckSchemaCapabilities;
   scanned: number;
   updated: number;
   skipped: number;
@@ -73,6 +79,7 @@ export type BackfillBatchResult = {
   failureExamples: Array<{ id: string; domain: string; reason: string }>;
   changedRows: BackfillChangedRow[];
   cacheInvalidation: InvalidateLatestPublicChecksCachesResult | null;
+  blockedReason: string | null;
 };
 
 export type BackfillSummary = BackfillBatchResult & {
@@ -262,88 +269,68 @@ const backfillSelectLegacy = {
   statusLabel: true
 } as const;
 
-export type BackfillSelectMode = "full" | "no_payload" | "legacy";
+export type BackfillSelectMode = LatestPublicCheckBackfillMode;
 
-function isMissingColumnError(err: unknown): boolean {
-  return err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2022";
+function selectForCapabilities(caps: LatestPublicCheckSchemaCapabilities) {
+  if (caps.backfillSelectMode === "full") return backfillSelectFull;
+  if (caps.backfillSelectMode === "no_payload") return backfillSelectNoPayload;
+  return backfillSelectLegacy;
 }
 
 async function fetchBackfillRows(
   limit: number,
+  caps: LatestPublicCheckSchemaCapabilities,
   cursor?: string
-): Promise<{ rows: BackfillRowInput[]; mode: BackfillSelectMode }> {
+): Promise<{ rows: BackfillRowInput[]; mode: LatestPublicCheckBackfillMode }> {
   const paging = {
     take: limit,
     ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
     orderBy: { id: "asc" as const }
   };
 
-  try {
-    const rows = await db.latestPublicCheck.findMany({
-      ...paging,
-      select: backfillSelectFull
-    });
-    return { rows, mode: "full" };
-  } catch (err) {
-    if (!isMissingColumnError(err)) throw err;
-  }
-
-  try {
-    const rows = await db.latestPublicCheck.findMany({
-      ...paging,
-      select: backfillSelectNoPayload
-    });
-    return { rows, mode: "no_payload" };
-  } catch (err) {
-    if (!isMissingColumnError(err)) throw err;
-  }
-
   const rows = await db.latestPublicCheck.findMany({
     ...paging,
-    select: backfillSelectLegacy
+    select: selectForCapabilities(caps)
   });
-  return { rows, mode: "legacy" };
+  return { rows, mode: caps.backfillSelectMode };
 }
 
-function updateDataForMode(
+/** Writes only columns that exist in the database (never touches missing canonical fields). */
+export function buildBackfillUpdateForCapabilities(
   update: NonNullable<BackfillRowPlan["update"]>,
-  mode: BackfillSelectMode
+  caps: LatestPublicCheckSchemaCapabilities
 ): Prisma.LatestPublicCheckUpdateInput {
-  if (mode === "full") return update;
-  if (mode === "no_payload") {
-    const { publicResultPayload: _removed, ...rest } = update;
-    return rest;
-  }
-  return {
+  const data: Prisma.LatestPublicCheckUpdateInput = {
     riskScoreSnapshot: update.riskScoreSnapshot
   };
+
+  if (caps.canWriteCanonicalColumns) {
+    data.consumerVerdict = update.consumerVerdict;
+    data.consumerVerdictLabel = update.consumerVerdictLabel;
+    data.consumerVerdictBand = update.consumerVerdictBand;
+    data.normalizedTrustScore = update.normalizedTrustScore;
+    data.normalizedRiskScore = update.normalizedRiskScore;
+  }
+
+  if (caps.hasPublicResultPayload && update.publicResultPayload !== undefined) {
+    data.publicResultPayload = update.publicResultPayload;
+  }
+
+  return data;
 }
 
 async function applyBackfillUpdate(
   id: string,
   update: NonNullable<BackfillRowPlan["update"]>,
-  mode: BackfillSelectMode
+  caps: LatestPublicCheckSchemaCapabilities
 ): Promise<void> {
-  const data = updateDataForMode(update, mode);
-  try {
-    await db.latestPublicCheck.update({ where: { id }, data });
-    return;
-  } catch (err) {
-    if (!isMissingColumnError(err) || mode === "legacy") throw err;
-  }
+  const data = buildBackfillUpdateForCapabilities(update, caps);
+  await db.latestPublicCheck.update({ where: { id }, data });
+}
 
-  if (mode === "full") {
-    await db.latestPublicCheck.update({
-      where: { id },
-      data: updateDataForMode(update, "no_payload")
-    });
-    return;
-  }
-
-  await db.latestPublicCheck.update({
-    where: { id },
-    data: { riskScoreSnapshot: update.riskScoreSnapshot }
-  });
+/** Admin/startup probe — call before dryRun=false canonical backfill. */
+export async function getLatestPublicCheckBackfillSchemaCheck(): Promise<LatestPublicCheckSchemaCapabilities> {
+  return detectLatestPublicCheckSchemaCapabilities();
 }
 
 /** Processes a single cursor page (for API pagination). */
@@ -351,25 +338,42 @@ export async function backfillLatestPublicCheckCanonicalBatch(options: {
   dryRun: boolean;
   limit: number;
   cursor?: string | null;
+  /** When true (default), dryRun=false is blocked until canonical columns exist. */
+  requireCanonicalColumns?: boolean;
 }): Promise<BackfillBatchResult> {
   const limit = Math.max(1, Math.min(100, Math.round(options.limit)));
   const cursor = options.cursor?.trim() || undefined;
+  const requireCanonical = options.requireCanonicalColumns !== false;
 
-  const { rows, mode } = await fetchBackfillRows(limit, cursor);
+  const schemaCheck = await detectLatestPublicCheckSchemaCapabilities();
+  const blockedReason =
+    !options.dryRun && requireCanonical && schemaCheck.migrationRequired
+      ? (schemaCheck.migrationHint ?? "Canonical columns missing; run prisma migrate deploy.")
+      : null;
 
   const result: BackfillBatchResult = {
     dryRun: options.dryRun,
-    schemaMode: mode,
+    schemaMode: schemaCheck.backfillSelectMode,
+    schemaCheck,
     scanned: 0,
     updated: 0,
     skipped: 0,
     errors: 0,
     nextCursor: null,
-    hasMore: rows.length === limit,
+    hasMore: false,
     failureExamples: [],
     changedRows: [],
-    cacheInvalidation: null
+    cacheInvalidation: null,
+    blockedReason
   };
+
+  if (blockedReason) {
+    return result;
+  }
+
+  const { rows, mode } = await fetchBackfillRows(limit, schemaCheck, cursor);
+  result.schemaMode = mode;
+  result.hasMore = rows.length === limit;
 
   const updatedDomains: string[] = [];
 
@@ -382,7 +386,7 @@ export async function backfillLatestPublicCheckCanonicalBatch(options: {
         continue;
       }
       if (!options.dryRun) {
-        await applyBackfillUpdate(row.id, plan.update, mode);
+        await applyBackfillUpdate(row.id, plan.update, schemaCheck);
       }
       result.updated += 1;
       updatedDomains.push(plan.domain);
@@ -418,6 +422,8 @@ export async function backfillLatestPublicCheckCanonicalBatch(options: {
     console.info("[backfill/latest-public-check-canonical]", {
       dryRun: options.dryRun,
       schemaMode: mode,
+      migrationRequired: schemaCheck.migrationRequired,
+      missingCanonicalColumns: schemaCheck.missingCanonicalColumns,
       scanned: result.scanned,
       updated: result.updated,
       skipped: result.skipped,
@@ -445,9 +451,11 @@ export async function backfillLatestPublicCheckCanonicalTrust(options: {
   batchSize: number;
   maxRows?: number;
 }): Promise<BackfillSummary> {
+  const initialSchema = await detectLatestPublicCheckSchemaCapabilities();
   const summary: BackfillSummary = {
     dryRun: options.dryRun,
-    schemaMode: "full",
+    schemaMode: initialSchema.backfillSelectMode,
+    schemaCheck: initialSchema,
     scanned: 0,
     updated: 0,
     skipped: 0,
@@ -458,7 +466,8 @@ export async function backfillLatestPublicCheckCanonicalTrust(options: {
     hasMore: false,
     failureExamples: [],
     changedRows: [],
-    cacheInvalidation: null
+    cacheInvalidation: null,
+    blockedReason: null
   };
 
   let cursor: string | null = null;
@@ -469,8 +478,15 @@ export async function backfillLatestPublicCheckCanonicalTrust(options: {
     const batch = await backfillLatestPublicCheckCanonicalBatch({
       dryRun: options.dryRun,
       limit: take,
-      cursor
+      cursor,
+      requireCanonicalColumns: true
     });
+
+    if (batch.blockedReason) {
+      summary.blockedReason = batch.blockedReason;
+      summary.schemaCheck = batch.schemaCheck;
+      break;
+    }
 
     summary.scanned += batch.scanned;
     summary.updated += batch.updated;
@@ -483,6 +499,7 @@ export async function backfillLatestPublicCheckCanonicalTrust(options: {
     summary.nextCursor = batch.nextCursor;
     summary.hasMore = batch.hasMore;
     summary.schemaMode = batch.schemaMode;
+    summary.schemaCheck = batch.schemaCheck;
     if (batch.cacheInvalidation) {
       summary.cacheInvalidation = batch.cacheInvalidation;
     }

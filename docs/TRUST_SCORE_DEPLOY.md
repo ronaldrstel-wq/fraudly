@@ -26,8 +26,8 @@ npm test
 
 ### Vercel deployment order
 
-1. Deploy migration (or run `migrate deploy` against production `DATABASE_URL` from CI/CD **before** or as part of release).
-2. Deploy application build (`prisma generate` runs in `npm run build`).
+1. Application build runs **`prisma migrate deploy`** then `prisma generate` (`npm run build`). Requires `DATABASE_URL` at build time on Vercel.
+2. Alternatively run `npm run migrate:deploy` against production **before** deploy if you prefer migrations outside the build step.
 3. Run backfill (optional, recommended) — see below.
 4. Monitor structured logs: `type: "trust_display_alignment"`.
 
@@ -39,6 +39,15 @@ npm test
 npx prisma validate
 npx prisma migrate status
 ```
+
+Admin schema probe (production):
+
+```bash
+curl -sS "https://fraudly.app/api/admin/backfill-latest-public-check-canonical" \
+  -H "x-admin-key: $ADMIN_RECALC_KEY" | jq '.schemaCheck'
+```
+
+`readyForCanonicalBackfill` must be `true` before `dryRun=false` backfill (default). Use `?requireCanonical=false` only for legacy `riskScoreSnapshot`-only updates when migrations are still pending.
 
 ---
 

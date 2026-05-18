@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { diffBackfillColumnChanges, planBackfillRow } from "@/lib/admin/backfill-latest-public-check-canonical";
+import {
+  buildBackfillUpdateForCapabilities,
+  diffBackfillColumnChanges,
+  planBackfillRow
+} from "@/lib/admin/backfill-latest-public-check-canonical";
+import type { LatestPublicCheckSchemaCapabilities } from "@/lib/latest-public-checks/detectSchemaCapabilities";
 import {
   buildPublicResultPayloadV2,
   buildCanonicalTrustFieldsFromResult,
@@ -163,6 +168,35 @@ describe("backfill latest public check canonical", () => {
     expect(changes.some((c) => c.column === "normalizedTrustScore")).toBe(true);
     expect(changes.find((c) => c.column === "normalizedTrustScore")?.before).toBe(80);
     expect(changes.find((c) => c.column === "normalizedTrustScore")?.after).toBe(12);
+  });
+
+  it("buildBackfillUpdateForCapabilities legacy writes risk only", () => {
+    const plan = planBackfillRow({
+      id: "row-legacy-write",
+      normalizedValue: "orphan.com",
+      riskScoreSnapshot: 88,
+      statusLabel: "Mixed signals snapshot",
+      normalizedTrustScore: 80,
+      publicResultPayload: null
+    });
+    expect(plan.update).not.toBeNull();
+
+    const legacyCaps: LatestPublicCheckSchemaCapabilities = {
+      presentColumns: ["riskScoreSnapshot"],
+      hasPublicResultPayload: false,
+      hasCanonicalTrustColumns: false,
+      missingCanonicalColumns: ["consumerVerdict"],
+      backfillSelectMode: "legacy",
+      canWriteCanonicalColumns: false,
+      canWriteRiskSnapshot: true,
+      migrationRequired: true,
+      migrationHint: "migrate"
+    };
+
+    const data = buildBackfillUpdateForCapabilities(plan.update!, legacyCaps);
+    expect(data).toEqual({ riskScoreSnapshot: plan.update!.riskScoreSnapshot });
+    expect(data).not.toHaveProperty("consumerVerdict");
+    expect(data).not.toHaveProperty("normalizedTrustScore");
   });
 
   it("statusLabel does not change consumer verdict in plan", () => {

@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { backfillLatestPublicCheckCanonicalBatch } from "@/lib/admin/backfill-latest-public-check-canonical";
+import {
+  backfillLatestPublicCheckCanonicalBatch,
+  getLatestPublicCheckBackfillSchemaCheck
+} from "@/lib/admin/backfill-latest-public-check-canonical";
 import { isAdminRecalcAuthorized } from "@/lib/admin/adminKeyAuth";
 import { getCurrentUserIsAdmin } from "@/lib/auth/admin";
 
@@ -20,15 +23,42 @@ function parseLimit(url: URL): number {
   return Math.min(raw, 100);
 }
 
-export async function POST(request: Request) {
-  let isAdmin = false;
+async function isAuthorized(request: Request): Promise<boolean> {
   try {
-    isAdmin = await getCurrentUserIsAdmin();
+    if (await getCurrentUserIsAdmin()) return true;
   } catch {
-    isAdmin = false;
+    // fall through to admin key
+  }
+  return isAdminRecalcAuthorized(request);
+}
+
+/** Schema probe — run before canonical backfill on production. */
+export async function GET(request: Request) {
+  if (!(await isAuthorized(request))) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  if (!isAdmin && !isAdminRecalcAuthorized(request)) {
+  try {
+    const schemaCheck = await getLatestPublicCheckBackfillSchemaCheck();
+    return NextResponse.json({
+      ok: schemaCheck.canWriteCanonicalColumns,
+      schemaCheck,
+      readyForCanonicalBackfill: schemaCheck.canWriteCanonicalColumns,
+      deployCommand: "npx prisma migrate deploy"
+    });
+  } catch (err) {
+    return NextResponse.json(
+      {
+        error: "schema_check_failed",
+        message: err instanceof Error ? err.message : "Unknown error"
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  if (!(await isAuthorized(request))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
@@ -36,17 +66,35 @@ export async function POST(request: Request) {
   const dryRun = parseBoolParam(url.searchParams.get("dryRun"), true);
   const limit = parseLimit(url);
   const cursor = url.searchParams.get("cursor");
+  const requireCanonicalColumns = parseBoolParam(url.searchParams.get("requireCanonical"), true);
 
   try {
     const summary = await backfillLatestPublicCheckCanonicalBatch({
       dryRun,
       limit,
-      cursor
+      cursor,
+      requireCanonicalColumns
     });
+
+    if (summary.blockedReason) {
+      return NextResponse.json(
+        {
+          error: "migration_required",
+          message: summary.blockedReason,
+          dryRun: summary.dryRun,
+          schemaMode: summary.schemaMode,
+          schemaCheck: summary.schemaCheck,
+          blockedReason: summary.blockedReason,
+          deployCommand: "npx prisma migrate deploy"
+        },
+        { status: 409 }
+      );
+    }
 
     return NextResponse.json({
       dryRun: summary.dryRun,
       schemaMode: summary.schemaMode,
+      schemaCheck: summary.schemaCheck,
       scanned: summary.scanned,
       updated: summary.updated,
       skipped: summary.skipped,
@@ -56,6 +104,7 @@ export async function POST(request: Request) {
       failureExamples: summary.failureExamples,
       changedRows: summary.changedRows,
       cacheInvalidation: summary.cacheInvalidation,
+      blockedReason: summary.blockedReason,
       paginationNote:
         summary.hasMore && summary.nextCursor
           ? "limit applies per batch; pass nextCursor until hasMore is false."
