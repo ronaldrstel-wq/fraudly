@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { AuthMenuDynamic } from "@/components/navbar/AuthMenuDynamic";
 import { MarketingNavLinks } from "@/components/navbar/MarketingNavLinks";
-import { MarketingNavScanCta } from "@/components/navbar/MarketingNavScanCta";
 import { getMainNavLinks } from "@/lib/i18n/nav";
 import { homeHref } from "@/lib/i18n/paths";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
@@ -34,8 +33,7 @@ export async function NavbarShell({ locale = "en" }: NavbarShellProps) {
 
         <MarketingNavLinks locale={locale} links={links} />
 
-        <div className="flex min-h-9 shrink-0 items-center justify-end gap-2 sm:gap-2.5 md:gap-3">
-          <MarketingNavScanCta locale={locale} />
+        <div className="flex min-h-9 shrink-0 items-center justify-end gap-1.5 sm:gap-2">
           <AuthMenuDynamic />
         </div>
       </div>

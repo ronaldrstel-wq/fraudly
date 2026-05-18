@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { AuthMenuDynamic } from "@/components/navbar/AuthMenuDynamic";
 import { MarketingNavLinks } from "@/components/navbar/MarketingNavLinks";
-import { MarketingNavScanCta } from "@/components/navbar/MarketingNavScanCta";
 import { getMainNavLinks } from "@/lib/i18n/nav";
 import { homeHref } from "@/lib/i18n/paths";
 
@@ -37,8 +36,7 @@ export function NavbarView({ languageSwitcher = null, languageMobileRow = null }
 
         <MarketingNavLinks locale={locale} links={links} />
 
-        <div className="flex min-h-9 min-w-0 shrink-0 items-center justify-end gap-2 sm:gap-2.5 md:gap-3">
-          <MarketingNavScanCta locale={locale} />
+        <div className="flex min-h-9 min-w-0 shrink-0 items-center justify-end gap-1.5 sm:gap-2">
           {languageSwitcher}
           <AuthMenuDynamic />
         </div>

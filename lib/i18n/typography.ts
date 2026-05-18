@@ -42,15 +42,6 @@ export function marketingNavRowClass(locale: Locale): string {
     : "hidden min-w-0 flex-1 items-center justify-center gap-6 text-sm font-medium text-slate-600 md:flex";
 }
 
-/** Navbar primary scan CTA — visually dominant beside auth controls. */
-export function marketingNavScanCtaClass(locale: Locale): string {
-  const shared =
-    "fraudly-motion fraudly-focus-on-white inline-flex shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 font-semibold text-white shadow-md shadow-indigo-500/25 transition hover:brightness-110 active:scale-[0.98]";
-  return usesCompactCopy(locale)
-    ? `${shared} max-w-[9.5rem] px-3 py-2 text-center text-xs leading-snug sm:max-w-none sm:px-4 sm:text-sm`
-    : `${shared} px-4 py-2.5 text-sm`;
-}
-
 /** Navbar auth CTAs — tighter on NL/DE/FR to avoid overflow beside the language control. */
 export function marketingAuthButtonClass(locale: Locale, variant: "secondary" | "primary"): string {
   const base = variant === "secondary" ? "btn-secondary" : "btn-primary";

@@ -3,7 +3,6 @@
 import type { ReactNode } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import Link from "next/link";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import {
   marketingHeroBadgeClass,
@@ -11,7 +10,6 @@ import {
   marketingHeroTrustPillClass,
   marketingSectionEyebrowClass
 } from "@/lib/i18n/typography";
-import { EN_MESSAGES } from "@/lib/messages.en";
 import type { HomeSearchCardState } from "@/lib/scan/homeScanProgress";
 
 const WebsiteScanSearchCard = dynamic(
@@ -31,8 +29,6 @@ const WebsiteScanSearchCard = dynamic(
   )
   }
 );
-
-const defaultHome = EN_MESSAGES.home;
 
 function SparkleGlyph({ className }: { className?: string }) {
   return (
@@ -117,17 +113,14 @@ export function Hero({
     subhead,
     heroTrustFeatures,
     primaryCta,
-    secondaryCta,
     heroSearchHelper
   } = {
     heroBadge: hp.heroBadge,
     subhead: hp.heroSubtitle,
     heroTrustFeatures: hp.heroTrustFeatures,
     primaryCta: hp.primaryCta,
-    secondaryCta: hp.secondaryCta,
     heroSearchHelper: hp.heroSearchHelper
   };
-  const secondaryCtaHref = defaultHome.secondaryCtaHref;
   const howSteps = hp.howItWorksSteps;
 
   return (
@@ -239,19 +232,8 @@ export function Hero({
             ) : null}
           </div>
 
-          <div className="mt-4 flex justify-center">
-            <Link
-              href={secondaryCtaHref}
-              className="fraudly-motion inline-flex items-center gap-1.5 text-sm font-semibold text-violet-700 underline decoration-violet-500/35 underline-offset-4 hover:text-blue-700"
-            >
-              {secondaryCta}
-              <svg className="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="none" aria-hidden>
-                <path d="M4 10h11M11 6l4 4-4 4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </Link>
-          </div>
-          {extraBelowInput ? <div className="mt-3.5 max-w-none text-left">{extraBelowInput}</div> : null}
-          {authGate ? <div className="mt-3.5 sm:mt-4">{authGate}</div> : null}
+          {extraBelowInput ? <div className="mt-3 max-w-none text-left">{extraBelowInput}</div> : null}
+          {authGate ? <div className="mt-3 sm:mt-3.5">{authGate}</div> : null}
         </div>
 
         <div className="mx-auto mt-8 max-w-6xl">
