@@ -14,7 +14,8 @@ import {
 } from "@/lib/scoring/displayScore";
 import { getTrustPresentation, type SemanticTone } from "@/lib/scoring/trust-bands";
 import { clampScore } from "@/lib/clampScore";
-import type { ScamVerdict } from "@/lib/trustSystem";
+import { resolveCanonicalFromPersistedColumns } from "@/lib/trust/resolveCanonicalDisplay";
+import type { ScamVerdict } from "@/types/scam";
 import type { ConsumerVerdictLabel, NormalizedTrustResult } from "@/lib/trust/types";
 
 /** Trust score (0–100) from stored risk snapshot — delegates to {@link trustScoreFromRisk}. */
@@ -138,15 +139,29 @@ export function buildOverviewFromPublicCheck(row: {
   riskScoreSnapshot?: number | null;
   statusLabel?: string | null;
   normalizedTrustScore?: number | null;
+  normalizedRiskScore?: number | null;
   consumerVerdictLabel?: string | null;
+  consumerVerdictBand?: string | null;
+  consumerVerdict?: string | null;
 }): OverviewCardModel {
   void row.statusLabel;
-  const risk = Number.isFinite(row.riskScoreSnapshot) ? Number(row.riskScoreSnapshot) : FALLBACK_OVERVIEW_RISK;
-  const trustScore =
-    row.normalizedTrustScore != null && Number.isFinite(row.normalizedTrustScore)
-      ? clampScore(row.normalizedTrustScore)
-      : trustScoreFromRisk(risk);
+  const riskSnap = Number.isFinite(row.riskScoreSnapshot) ? Number(row.riskScoreSnapshot) : FALLBACK_OVERVIEW_RISK;
+  const hasCanonicalColumns =
+    (row.normalizedTrustScore != null && Number.isFinite(row.normalizedTrustScore)) ||
+    (row.normalizedRiskScore != null && Number.isFinite(row.normalizedRiskScore));
+  const canonical = hasCanonicalColumns
+    ? resolveCanonicalFromPersistedColumns({
+        riskScoreSnapshot: riskSnap,
+        normalizedTrustScore: row.normalizedTrustScore,
+        normalizedRiskScore: row.normalizedRiskScore,
+        consumerVerdictLabel: row.consumerVerdictLabel,
+        consumerVerdictBand: row.consumerVerdictBand,
+        consumerVerdict: row.consumerVerdict as ScamVerdict | null
+      })
+    : null;
+  const trustScore = canonical?.trustScore ?? trustScoreFromRisk(riskSnap);
   const consumerLabel =
+    canonical?.consumerVerdictLabel ??
     (row.consumerVerdictLabel as ConsumerVerdictLabel | null | undefined) ??
     standardVerdictLabel(trustScore);
   const legacyVerdict = scamVerdictFromConsumerLabel(consumerLabel);

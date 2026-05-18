@@ -12,14 +12,25 @@ describe("buildOverviewFromPublicCheck canonical fallback", () => {
     expect(m.verdictLabel).toBe("Mostly Safe");
   });
 
-  it("prefers persisted canonical columns over statusLabel", () => {
+  it("prefers aligned persisted canonical columns over statusLabel", () => {
+    const m = buildOverviewFromPublicCheck({
+      riskScoreSnapshot: 22,
+      statusLabel: PUBLIC_SNAPSHOT_LABEL_STRONG_RISK,
+      normalizedTrustScore: 78,
+      normalizedRiskScore: 22,
+      consumerVerdictLabel: "Mostly Safe"
+    });
+    expect(m.trustScore).toBe(78);
+    expect(m.verdictLabel).toBe("Mostly Safe");
+  });
+
+  it("reconciles drifted trust column against snapshot risk", () => {
     const m = buildOverviewFromPublicCheck({
       riskScoreSnapshot: 88,
       statusLabel: PUBLIC_SNAPSHOT_LABEL_STRONG_RISK,
       normalizedTrustScore: 78,
       consumerVerdictLabel: "Mostly Safe"
     });
-    expect(m.trustScore).toBe(78);
-    expect(m.verdictLabel).toBe("Mostly Safe");
+    expect(m.trustScore).toBe(12);
   });
 });

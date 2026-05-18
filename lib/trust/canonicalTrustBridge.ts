@@ -8,8 +8,8 @@ import {
   type TrustBandId
 } from "@/lib/scoring/trust-bands";
 import { normalizeRiskScore, trustScoreFromRisk } from "@/lib/scoring/displayScore";
-import { displayTrustScoreForResult } from "@/lib/scanPresentation";
 import { normalizeTrustResult } from "@/lib/trust/normalizeTrustResult";
+import { buildCanonicalTrustFieldsFromResult as buildCanonicalFromResult } from "@/lib/trust/resolveCanonicalDisplay";
 import type { NormalizedTrustResult } from "@/lib/trust/types";
 import type { ConfidenceLevel } from "@/types/site-outcome";
 import type { ScamCheckResult, ScamVerdict } from "@/types/scam";
@@ -58,17 +58,7 @@ export function attachRawToNormalized(
 
 /** Canonical display fields from a completed scan (live analysis, no snapshot lock). */
 export function buildCanonicalTrustFieldsFromResult(result: ScamCheckResult): CanonicalTrustFields {
-  const riskScore = normalizeRiskScore(result.score);
-  const trustScore = displayTrustScoreForResult(result) ?? trustScoreFromRisk(riskScore);
-  const consumerVerdictLabel = standardVerdictLabel(trustScore) as ConsumerVerdictLabel;
-  return {
-    trustScore,
-    riskScore,
-    consumerVerdict: scamVerdictFromConsumerLabel(consumerVerdictLabel),
-    consumerVerdictLabel,
-    consumerVerdictBand: getTrustBandFromScore(trustScore),
-    scoreConfidence: result.confidenceLevel ?? "medium"
-  };
+  return buildCanonicalFromResult(result);
 }
 
 export function buildCanonicalTrustFieldsFromNormalized(
@@ -234,7 +224,8 @@ export function assertPayloadMatchesCanonical(
     }
     result.score = canonical.riskScore;
   }
-  const trustFromResult = displayTrustScoreForResult(result) ?? trustScoreFromRisk(result.score);
+  const trustFromResult =
+    buildCanonicalTrustFieldsFromResult(result).trustScore;
   if (trustFromResult !== canonical.trustScore && process.env.NODE_ENV === "development") {
     console.warn("[canonicalTrustBridge] trust drift vs canonical", {
       source,
@@ -251,9 +242,13 @@ export type CheckApiCanonicalExtensions = CanonicalTrustFields & {
 };
 
 export function buildCheckApiCanonicalExtensions(result: ScamCheckResult): CheckApiCanonicalExtensions {
-  const normalized = buildNormalizedTrustFromLegacyResult(result, { route: "api/check" });
-  const canonical = buildCanonicalTrustFieldsFromNormalized(normalized, result);
-  const aligned = alignNormalizedTrustToCanonical(normalized, canonical, { scoreSource: "live_analysis" });
+  const canonical = buildCanonicalTrustFieldsFromResult(result);
+  const normalized = alignNormalizedTrustToCanonical(
+    buildNormalizedTrustFromLegacyResult(result, { route: "api/check" }),
+    canonical,
+    { scoreSource: "live_analysis" }
+  );
+  const aligned = normalized;
   return {
     ...canonical,
     normalizedTrustResult: serializeNormalizedTrustResult(aligned),

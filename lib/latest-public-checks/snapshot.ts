@@ -2,12 +2,7 @@ import { normalizeDomain } from "@/lib/cache";
 import { parsePublicResultPayload } from "@/lib/trust/canonicalTrustBridge";
 import { db } from "@/lib/db";
 import { Prisma } from "@prisma/client";
-import {
-  consumerDisplayBand,
-  getTrustBandFromScore,
-  standardVerdictLabel,
-  type TrustBandId
-} from "@/lib/scoring/trust-bands";
+import { consumerDisplayBand } from "@/lib/scoring/trust-bands";
 import {
   logDisplayScoreDebug,
   normalizeRiskScore,
@@ -15,9 +10,9 @@ import {
   type PublicDisplayScore
 } from "@/lib/scoring/displayScore";
 import { enrichScamCheckResultDomainAge } from "@/lib/domain/normalizeDomainAge";
-import { scamVerdictFromConsumerLabel } from "@/lib/scoring/consumerVerdictMap";
 import type { CanonicalTrustFields } from "@/lib/trust/canonicalTrustBridge";
-import type { ConsumerVerdictLabel, NormalizedTrustResult } from "@/lib/trust/types";
+import { resolveCanonicalFromPersistedColumns } from "@/lib/trust/resolveCanonicalDisplay";
+import type { NormalizedTrustResult } from "@/lib/trust/types";
 import type { ScamCheckResult, ScamVerdict } from "@/types/scam";
 
 export type SnapshotCanonicalTrust = CanonicalTrustFields;
@@ -85,23 +80,19 @@ function isPrismaReadSkipped(err: unknown): boolean {
 }
 
 function canonicalFromRow(row: SnapshotRowBase): SnapshotCanonicalTrust | null {
-  if (row.normalizedTrustScore == null || row.normalizedRiskScore == null) return null;
-  const trustScore = row.normalizedTrustScore;
-  const riskScore = row.normalizedRiskScore;
-  const consumerVerdictLabel =
-    (row.consumerVerdictLabel as ConsumerVerdictLabel | null) ??
-    (standardVerdictLabel(trustScore) as ConsumerVerdictLabel);
-  return {
-    trustScore,
-    riskScore,
-    consumerVerdict:
-      (row.consumerVerdict as ScamVerdict | null) ??
-      scamVerdictFromConsumerLabel(consumerVerdictLabel),
-    consumerVerdictLabel,
-    consumerVerdictBand:
-      (row.consumerVerdictBand as TrustBandId | null) ?? getTrustBandFromScore(trustScore),
-    scoreConfidence: "medium"
-  };
+  const hasTrust =
+    row.normalizedTrustScore != null && Number.isFinite(row.normalizedTrustScore);
+  const hasRisk = row.normalizedRiskScore != null && Number.isFinite(row.normalizedRiskScore);
+  if (!hasTrust && !hasRisk) return null;
+
+  return resolveCanonicalFromPersistedColumns({
+    riskScoreSnapshot: row.riskScoreSnapshot,
+    normalizedTrustScore: row.normalizedTrustScore,
+    normalizedRiskScore: row.normalizedRiskScore,
+    consumerVerdictLabel: row.consumerVerdictLabel,
+    consumerVerdictBand: row.consumerVerdictBand,
+    consumerVerdict: row.consumerVerdict as ScamVerdict | null | undefined
+  });
 }
 
 function displayFromRow(row: SnapshotRowBase, canonical: SnapshotCanonicalTrust | null): PublicDisplayScore & { scanId: string } {

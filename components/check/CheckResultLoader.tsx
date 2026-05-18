@@ -19,9 +19,11 @@ export async function CheckResultLoader({
   snapshotTrustScore?: number | null;
 }) {
   const t0 = performance.now();
-  const { result, normalized } = await loadTrustViewForDomain(domain, `CheckResultLoader:${routeSource}`);
+  const { result, normalized } = await loadTrustViewForDomain(domain, `CheckResultLoader:${routeSource}`, {
+    preferredScanId: scanId
+  });
   const liveAnalysisFetchMs = Math.round(performance.now() - t0);
-  const trustScore = snapshotTrustScore ?? alignedDisplay?.trustScore ?? normalized.trustScore;
+  void snapshotTrustScore;
 
   logCheckDetailPerf({
     routeSource,
@@ -33,9 +35,9 @@ export async function CheckResultLoader({
 
   return (
     <>
-      <CheckSummaryDl normalized={{ ...normalized, trustScore: trustScore ?? normalized.trustScore }} />
+      <CheckSummaryDl normalized={normalized} />
       <div className="mt-8 max-w-4xl">
-        <ResultCard result={result} normalizedTrust={{ ...normalized, trustScore: trustScore ?? normalized.trustScore }} alignedDisplay={alignedDisplay} />
+        <ResultCard result={result} normalizedTrust={normalized} alignedDisplay={alignedDisplay} />
       </div>
     </>
   );

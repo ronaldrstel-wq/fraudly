@@ -22,6 +22,8 @@ export const latestPublicCheckListSelect = {
 export const latestPublicCheckListSelectCanonical = {
   ...latestPublicCheckListSelect,
   normalizedTrustScore: true,
+  normalizedRiskScore: true,
+  consumerVerdict: true,
   consumerVerdictLabel: true,
   consumerVerdictBand: true
 } as const;
@@ -36,6 +38,8 @@ export type LatestPublicCheckListRow = {
   publicResultPath: string;
   lastSeenAt: Date;
   normalizedTrustScore?: number | null;
+  normalizedRiskScore?: number | null;
+  consumerVerdict?: string | null;
   consumerVerdictLabel?: string | null;
   consumerVerdictBand?: string | null;
 };

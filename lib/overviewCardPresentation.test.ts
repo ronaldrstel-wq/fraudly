@@ -32,16 +32,28 @@ describe("overviewCardPresentation", () => {
     expect(m.isCritical).toBe(false);
   });
 
-  it("feed overview prefers persisted normalizedTrustScore and consumerVerdictLabel", () => {
+  it("feed overview prefers aligned normalized trust/risk columns", () => {
+    const m = buildOverviewFromPublicCheck({
+      riskScoreSnapshot: 20,
+      statusLabel: PUBLIC_SNAPSHOT_LABEL_STRONG_RISK,
+      normalizedTrustScore: 80,
+      normalizedRiskScore: 20,
+      consumerVerdictLabel: "Mostly Safe"
+    });
+    expect(m.trustScore).toBe(80);
+    expect(m.verdictLabel).toBe("Mostly Safe");
+    expect(m.isCritical).toBe(false);
+  });
+
+  it("feed overview reconciles drifted trust column against snapshot risk", () => {
     const m = buildOverviewFromPublicCheck({
       riskScoreSnapshot: 88,
       statusLabel: PUBLIC_SNAPSHOT_LABEL_STRONG_RISK,
       normalizedTrustScore: 80,
       consumerVerdictLabel: "Mostly Safe"
     });
-    expect(m.trustScore).toBe(80);
-    expect(m.verdictLabel).toBe("Mostly Safe");
-    expect(m.isCritical).toBe(false);
+    expect(m.trustScore).toBe(12);
+    expect(m.verdictLabel).toBe("High Risk");
   });
 
   it("computes trust from risk snapshot", () => {

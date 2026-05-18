@@ -15,7 +15,7 @@ export { WEBSITE_ANALYSIS_CACHE_TAG_ALL, websiteAnalysisCacheTag } from "@/lib/t
 
 async function runAnalysisForDomain(domainLower: string) {
   const normalized = domainLower.toLowerCase();
-  const base = await runWebsiteAnalysis(`https://${normalized}`, "en", { scanKind: "basic" });
+  const base = await runWebsiteAnalysis(`https://${normalized}`, "en", { scanKind: "full" });
   const override = await db.domainAdminOverride.findUnique({ where: { domain: normalized } });
   return enrichScamCheckResultDomainAge(applyDomainOverrideToResult(base, override));
 }
@@ -28,7 +28,7 @@ export function getCachedWebsiteAnalysis(domainLower: string) {
   const normalized = domainLower.toLowerCase();
   return unstable_cache(
     () => runAnalysisForDomain(normalized),
-    ["website-analysis-v3-domain-age", normalized],
+    ["website-analysis-v4-full-scan", normalized],
     {
       revalidate: REVALIDATE_SECONDS,
       tags: [WEBSITE_ANALYSIS_CACHE_TAG_ALL, websiteAnalysisCacheTag(normalized)]

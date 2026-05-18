@@ -1,5 +1,6 @@
 import { getCachedWebsiteAnalysis } from "@/lib/analysis/cachedAnalysis";
 import { resolveLatestPublicCheckSnapshotForCheckPage } from "@/lib/latest-public-checks/snapshot";
+import { alignNormalizedTrustToCanonical } from "@/lib/trust/canonicalTrustBridge";
 import {
   displayLockFromSnapshot,
   normalizeTrustResult,
@@ -30,14 +31,9 @@ export async function resolveAnalysisResult(
   snapshot: LatestPublicCheckSnapshot | null,
   preferredScanId?: string
 ): Promise<{ result: ScamCheckResult; resultSource: "stored-payload" | "live-cache" }> {
+  void preferredScanId;
   if (snapshot?.storedResult) {
     return { result: snapshot.storedResult, resultSource: "stored-payload" };
-  }
-  if (preferredScanId && snapshot) {
-    return { result: await getCachedWebsiteAnalysis(domainLower), resultSource: "live-cache" };
-  }
-  if (snapshot?.canonical) {
-    return { result: await getCachedWebsiteAnalysis(domainLower), resultSource: "live-cache" };
   }
   return { result: await getCachedWebsiteAnalysis(domainLower), resultSource: "live-cache" };
 }
@@ -55,23 +51,18 @@ export async function loadTrustViewForDomain(
   const snapshot = await resolveLatestPublicCheckSnapshotForCheckPage(domainLower, preferredScanId);
   const { result, resultSource } = await resolveAnalysisResult(domainLower, snapshot, preferredScanId);
 
-  let normalized: NormalizedTrustResult;
+  let normalized = normalizeTrustResult(result, {
+    displayLock: snapshot ? displayLockFromSnapshot(snapshot) : null,
+    checkedAt: snapshot?.lastSeenAt ?? null,
+    submittedUrl: result.redirectChain?.finalUrl ?? `https://${domainLower}`,
+    route,
+    ...extra
+  });
 
-  if (snapshot?.storedNormalized) {
-    normalized = {
-      ...snapshot.storedNormalized,
-      raw: result,
+  if (snapshot?.canonical) {
+    normalized = alignNormalizedTrustToCanonical(normalized, snapshot.canonical, {
       scanId: snapshot.id,
-      scoreSource: "public_snapshot",
-      checkedAt: snapshot.lastSeenAt.toISOString()
-    };
-  } else {
-    normalized = normalizeTrustResult(result, {
-      displayLock: snapshot ? displayLockFromSnapshot(snapshot) : null,
-      checkedAt: snapshot?.lastSeenAt ?? null,
-      submittedUrl: result.redirectChain?.finalUrl ?? `https://${domainLower}`,
-      route,
-      ...extra
+      scoreSource: "public_snapshot"
     });
   }
 
