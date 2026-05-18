@@ -26,10 +26,15 @@ npm test
 
 ### Vercel deployment order
 
-1. Application build runs **`prisma migrate deploy`** then `prisma generate` (`npm run build`). Requires `DATABASE_URL` at build time on Vercel.
-2. Alternatively run `npm run migrate:deploy` against production **before** deploy if you prefer migrations outside the build step.
+1. Run migrations against production **before** or after deploy (not during `npm run build` — avoids advisory lock timeouts):
+   ```bash
+   npm run db:migrate:deploy
+   ```
+2. Deploy application (`postinstall` runs `prisma generate`; `npm run build` is `next build` only).
 3. Run backfill (optional, recommended) — see below.
 4. Monitor structured logs: `type: "trust_display_alignment"`.
+
+If `P1002` advisory lock errors appear on migrate, cancel overlapping Vercel deploys/builds and retry `db:migrate:deploy` once.
 
 **Do not** run `prisma migrate reset` on production.
 
