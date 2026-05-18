@@ -46,13 +46,20 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       dryRun: summary.dryRun,
+      schemaMode: summary.schemaMode,
       scanned: summary.scanned,
       updated: summary.updated,
       skipped: summary.skipped,
       errors: summary.errors,
       nextCursor: summary.hasMore ? summary.nextCursor : null,
       hasMore: summary.hasMore,
-      failureExamples: summary.failureExamples
+      failureExamples: summary.failureExamples,
+      changedRows: summary.changedRows,
+      cacheInvalidation: summary.cacheInvalidation,
+      paginationNote:
+        summary.hasMore && summary.nextCursor
+          ? "limit applies per batch; pass nextCursor until hasMore is false."
+          : null
     });
   } catch (err) {
     console.error("[admin/backfill-latest-public-check-canonical] batch failed", {

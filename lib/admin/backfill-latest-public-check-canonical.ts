@@ -1,6 +1,10 @@
 import { normalizeDomain } from "@/lib/cache";
 import { db } from "@/lib/db";
 import {
+  invalidateLatestPublicChecksCaches,
+  type InvalidateLatestPublicChecksCachesResult
+} from "@/lib/latest-public-checks/invalidateCaches";
+import {
   alignNormalizedTrustToCanonical,
   buildCanonicalTrustFieldsFromResult,
   buildNormalizedTrustFromLegacyResult,
@@ -41,10 +45,25 @@ export type BackfillRowPlan = {
     publicResultPayload?: Prisma.InputJsonValue;
   } | null;
   skipReason?: string;
+  columnChanges?: BackfillColumnChange[];
+};
+
+export type BackfillColumnChange = {
+  column: string;
+  before: string | number | null;
+  after: string | number | null;
+};
+
+export type BackfillChangedRow = {
+  id: string;
+  domain: string;
+  schemaMode: BackfillSelectMode;
+  changes: BackfillColumnChange[];
 };
 
 export type BackfillBatchResult = {
   dryRun: boolean;
+  schemaMode: BackfillSelectMode;
   scanned: number;
   updated: number;
   skipped: number;
@@ -52,12 +71,54 @@ export type BackfillBatchResult = {
   nextCursor: string | null;
   hasMore: boolean;
   failureExamples: Array<{ id: string; domain: string; reason: string }>;
+  changedRows: BackfillChangedRow[];
+  cacheInvalidation: InvalidateLatestPublicChecksCachesResult | null;
 };
 
 export type BackfillSummary = BackfillBatchResult & {
   processed: number;
   failed: number;
 };
+
+const BACKFILL_TRACKED_COLUMNS = [
+  "riskScoreSnapshot",
+  "normalizedTrustScore",
+  "normalizedRiskScore",
+  "consumerVerdict",
+  "consumerVerdictLabel",
+  "consumerVerdictBand",
+  "publicResultPayload"
+] as const;
+
+function serializeBackfillValue(value: unknown): string | number | null {
+  if (value == null) return null;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") return value;
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return "[object]";
+    }
+  }
+  return String(value);
+}
+
+/** Lists column deltas for logging / API output (no DB writes). */
+export function diffBackfillColumnChanges(
+  row: BackfillRowInput,
+  update: NonNullable<BackfillRowPlan["update"]>
+): BackfillColumnChange[] {
+  const changes: BackfillColumnChange[] = [];
+  for (const column of BACKFILL_TRACKED_COLUMNS) {
+    const before = serializeBackfillValue(row[column as keyof BackfillRowInput]);
+    const after = serializeBackfillValue(update[column as keyof typeof update]);
+    if (before !== after) {
+      changes.push({ column, before, after });
+    }
+  }
+  return changes;
+}
 
 function columnsMatchCanonical(row: BackfillRowInput, canonical: ReturnType<typeof resolveCanonicalFromPersistedColumns>): boolean {
   return (
@@ -151,18 +212,21 @@ export function planBackfillRow(row: BackfillRowInput): BackfillRowPlan {
     return { id: row.id, domain, update: null, skipReason: "already_canonical" };
   }
 
+  const update = {
+    consumerVerdict: canonical.consumerVerdict,
+    consumerVerdictLabel: canonical.consumerVerdictLabel,
+    consumerVerdictBand: canonical.consumerVerdictBand,
+    normalizedTrustScore: canonical.trustScore,
+    normalizedRiskScore: canonical.riskScore,
+    riskScoreSnapshot: canonical.riskScore,
+    ...(nextPayload ? { publicResultPayload: nextPayload } : {})
+  };
+
   return {
     id: row.id,
     domain,
-    update: {
-      consumerVerdict: canonical.consumerVerdict,
-      consumerVerdictLabel: canonical.consumerVerdictLabel,
-      consumerVerdictBand: canonical.consumerVerdictBand,
-      normalizedTrustScore: canonical.trustScore,
-      normalizedRiskScore: canonical.riskScore,
-      riskScoreSnapshot: canonical.riskScore,
-      ...(nextPayload ? { publicResultPayload: nextPayload } : {})
-    }
+    update,
+    columnChanges: diffBackfillColumnChanges(row, update)
   };
 }
 
@@ -198,7 +262,7 @@ const backfillSelectLegacy = {
   statusLabel: true
 } as const;
 
-type BackfillSelectMode = "full" | "no_payload" | "legacy";
+export type BackfillSelectMode = "full" | "no_payload" | "legacy";
 
 function isMissingColumnError(err: unknown): boolean {
   return err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2022";
@@ -295,14 +359,19 @@ export async function backfillLatestPublicCheckCanonicalBatch(options: {
 
   const result: BackfillBatchResult = {
     dryRun: options.dryRun,
+    schemaMode: mode,
     scanned: 0,
     updated: 0,
     skipped: 0,
     errors: 0,
     nextCursor: null,
     hasMore: rows.length === limit,
-    failureExamples: []
+    failureExamples: [],
+    changedRows: [],
+    cacheInvalidation: null
   };
+
+  const updatedDomains: string[] = [];
 
   for (const row of rows) {
     result.scanned += 1;
@@ -316,6 +385,15 @@ export async function backfillLatestPublicCheckCanonicalBatch(options: {
         await applyBackfillUpdate(row.id, plan.update, mode);
       }
       result.updated += 1;
+      updatedDomains.push(plan.domain);
+      if (result.changedRows.length < 50) {
+        result.changedRows.push({
+          id: plan.id,
+          domain: plan.domain,
+          schemaMode: mode,
+          changes: plan.columnChanges ?? diffBackfillColumnChanges(row, plan.update)
+        });
+      }
     } catch (err) {
       result.errors += 1;
       if (result.failureExamples.length < 5) {
@@ -332,6 +410,10 @@ export async function backfillLatestPublicCheckCanonicalBatch(options: {
     result.nextCursor = rows[rows.length - 1]!.id;
   }
 
+  if (!options.dryRun && result.updated > 0) {
+    result.cacheInvalidation = invalidateLatestPublicChecksCaches({ domains: updatedDomains });
+  }
+
   if (process.env.NODE_ENV !== "test") {
     console.info("[backfill/latest-public-check-canonical]", {
       dryRun: options.dryRun,
@@ -341,7 +423,16 @@ export async function backfillLatestPublicCheckCanonicalBatch(options: {
       skipped: result.skipped,
       errors: result.errors,
       hasMore: result.hasMore,
-      nextCursor: result.hasMore ? result.nextCursor : null
+      nextCursor: result.hasMore ? result.nextCursor : null,
+      changedRowCount: result.changedRows.length,
+      changedRows: result.changedRows,
+      cacheInvalidation: result.cacheInvalidation
+        ? {
+            tag: result.cacheInvalidation.tag,
+            pathCount: result.cacheInvalidation.paths.length,
+            domainPathCount: result.cacheInvalidation.domainPaths.length
+          }
+        : null
     });
   }
 
@@ -356,6 +447,7 @@ export async function backfillLatestPublicCheckCanonicalTrust(options: {
 }): Promise<BackfillSummary> {
   const summary: BackfillSummary = {
     dryRun: options.dryRun,
+    schemaMode: "full",
     scanned: 0,
     updated: 0,
     skipped: 0,
@@ -364,7 +456,9 @@ export async function backfillLatestPublicCheckCanonicalTrust(options: {
     failed: 0,
     nextCursor: null,
     hasMore: false,
-    failureExamples: []
+    failureExamples: [],
+    changedRows: [],
+    cacheInvalidation: null
   };
 
   let cursor: string | null = null;
@@ -385,8 +479,13 @@ export async function backfillLatestPublicCheckCanonicalTrust(options: {
     summary.processed += batch.scanned;
     summary.failed += batch.errors;
     summary.failureExamples.push(...batch.failureExamples);
+    summary.changedRows.push(...batch.changedRows);
     summary.nextCursor = batch.nextCursor;
     summary.hasMore = batch.hasMore;
+    summary.schemaMode = batch.schemaMode;
+    if (batch.cacheInvalidation) {
+      summary.cacheInvalidation = batch.cacheInvalidation;
+    }
 
     if (!batch.hasMore || batch.scanned === 0) break;
     cursor = batch.nextCursor;

@@ -146,22 +146,17 @@ export function buildOverviewFromPublicCheck(row: {
 }): OverviewCardModel {
   void row.statusLabel;
   const riskSnap = Number.isFinite(row.riskScoreSnapshot) ? Number(row.riskScoreSnapshot) : FALLBACK_OVERVIEW_RISK;
-  const hasCanonicalColumns =
-    (row.normalizedTrustScore != null && Number.isFinite(row.normalizedTrustScore)) ||
-    (row.normalizedRiskScore != null && Number.isFinite(row.normalizedRiskScore));
-  const canonical = hasCanonicalColumns
-    ? resolveCanonicalFromPersistedColumns({
-        riskScoreSnapshot: riskSnap,
-        normalizedTrustScore: row.normalizedTrustScore,
-        normalizedRiskScore: row.normalizedRiskScore,
-        consumerVerdictLabel: row.consumerVerdictLabel,
-        consumerVerdictBand: row.consumerVerdictBand,
-        consumerVerdict: row.consumerVerdict as ScamVerdict | null
-      })
-    : null;
-  const trustScore = canonical?.trustScore ?? trustScoreFromRisk(riskSnap);
+  const canonical = resolveCanonicalFromPersistedColumns({
+    riskScoreSnapshot: riskSnap,
+    normalizedTrustScore: row.normalizedTrustScore,
+    normalizedRiskScore: row.normalizedRiskScore,
+    consumerVerdictLabel: row.consumerVerdictLabel,
+    consumerVerdictBand: row.consumerVerdictBand,
+    consumerVerdict: row.consumerVerdict as ScamVerdict | null
+  });
+  const trustScore = canonical.trustScore;
   const consumerLabel =
-    canonical?.consumerVerdictLabel ??
+    canonical.consumerVerdictLabel ??
     (row.consumerVerdictLabel as ConsumerVerdictLabel | null | undefined) ??
     standardVerdictLabel(trustScore);
   const legacyVerdict = scamVerdictFromConsumerLabel(consumerLabel);

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { revalidatePath, revalidateTag } from "next/cache";
 import { isAdminRecalcAuthorized } from "@/lib/admin/adminKeyAuth";
 import { getDatabaseConnectionDiagnostics } from "@/lib/db/connectionDiagnostics";
 import { getPublicFeatureFlagsSnapshot } from "@/lib/env/publicFeatureFlags";
 import { fetchLatestPublicChecksFeedPage } from "@/lib/latest-public-checks/fetchFeedPage";
+import { invalidateLatestPublicChecksCaches } from "@/lib/latest-public-checks/invalidateCaches";
 import { probeLatestChecksDatabase } from "@/lib/latest-public-checks/dbProbe";
 import {
   assessLatestCheckRowRenderable,
@@ -13,7 +13,6 @@ import {
   fetchLatestPublicChecksPage,
   latestChecksCacheBypassEnabled
 } from "@/lib/latest-public-checks/listPublicChecks";
-import { LATEST_PUBLIC_CHECKS_CACHE_TAG } from "@/lib/trust/cacheTags";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -159,16 +158,13 @@ export async function POST(request: Request) {
 
   if (action === "revalidate-cache") {
     try {
-      revalidateTag(LATEST_PUBLIC_CHECKS_CACHE_TAG);
-      revalidatePath("/latest-checks");
-      for (let p = 2; p <= 20; p += 1) {
-        revalidatePath(`/latest-checks?page=${p}`);
-      }
+      const invalidated = invalidateLatestPublicChecksCaches();
       return NextResponse.json({
         ok: true,
         action,
-        tag: LATEST_PUBLIC_CHECKS_CACHE_TAG,
-        pathsRevalidated: ["/latest-checks", "/latest-checks?page=2..20"]
+        tag: invalidated.tag,
+        pathsRevalidated: invalidated.paths,
+        domainPathsRevalidated: invalidated.domainPaths
       });
     } catch (error) {
       return NextResponse.json(

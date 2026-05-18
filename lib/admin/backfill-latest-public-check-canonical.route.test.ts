@@ -20,13 +20,16 @@ describe("POST /api/admin/backfill-latest-public-check-canonical", () => {
     process.env.ADMIN_RECALC_KEY = "test-admin-recalc-key";
     batchMock.mockResolvedValue({
       dryRun: true,
+      schemaMode: "full",
       scanned: 2,
       updated: 1,
       skipped: 1,
       errors: 0,
       nextCursor: "row-2",
       hasMore: true,
-      failureExamples: []
+      failureExamples: [],
+      changedRows: [{ id: "row-1", domain: "example.com", schemaMode: "full", changes: [] }],
+      cacheInvalidation: null
     });
   });
 
@@ -56,6 +59,8 @@ describe("POST /api/admin/backfill-latest-public-check-canonical", () => {
     expect(body.dryRun).toBe(true);
     expect(body.scanned).toBe(2);
     expect(body.nextCursor).toBe("row-2");
+    expect(body.schemaMode).toBe("full");
+    expect(body.changedRows).toHaveLength(1);
     expect(batchMock).toHaveBeenCalledWith({
       dryRun: true,
       limit: 50,

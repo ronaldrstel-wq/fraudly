@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { planBackfillRow } from "@/lib/admin/backfill-latest-public-check-canonical";
+import { diffBackfillColumnChanges, planBackfillRow } from "@/lib/admin/backfill-latest-public-check-canonical";
 import {
   buildPublicResultPayloadV2,
   buildCanonicalTrustFieldsFromResult,
@@ -137,6 +137,32 @@ describe("backfill latest public check canonical", () => {
     expect(plan.update).not.toBeNull();
     expect(plan.update?.normalizedTrustScore).toBe(12);
     expect(plan.update?.publicResultPayload).toBeUndefined();
+  });
+
+  it("diffBackfillColumnChanges lists column deltas", () => {
+    const plan = planBackfillRow({
+      id: "row-diff",
+      normalizedValue: "orphan.com",
+      riskScoreSnapshot: 88,
+      statusLabel: "Mixed signals snapshot",
+      normalizedTrustScore: 80,
+      publicResultPayload: null
+    });
+    expect(plan.update).not.toBeNull();
+    const changes = diffBackfillColumnChanges(
+      {
+        id: "row-diff",
+        normalizedValue: "orphan.com",
+        riskScoreSnapshot: 88,
+        statusLabel: "Mixed signals snapshot",
+        normalizedTrustScore: 80,
+        publicResultPayload: null
+      },
+      plan.update!
+    );
+    expect(changes.some((c) => c.column === "normalizedTrustScore")).toBe(true);
+    expect(changes.find((c) => c.column === "normalizedTrustScore")?.before).toBe(80);
+    expect(changes.find((c) => c.column === "normalizedTrustScore")?.after).toBe(12);
   });
 
   it("statusLabel does not change consumer verdict in plan", () => {
