@@ -35,7 +35,7 @@ export default function IntelligenceIndexPage() {
         <p className="relative text-sm font-semibold uppercase tracking-widest text-blue-700">
           {INTELLIGENCE_BRAND.indexEyebrow}
         </p>
-        <h1 className="relative mt-3 max-w-2xl text-balance text-3xl font-bold tracking-tight text-slate-900 md:text-4xl lg:text-[2.5rem] lg:leading-tight">
+        <h1 className="relative mt-3 max-w-2xl text-balance text-3xl font-bold tracking-tight text-slate-950 md:text-4xl lg:text-[2.5rem] lg:leading-tight">
           Scam intelligence for safer shopping and browsing
         </h1>
         <p className="relative mt-4 max-w-2xl text-pretty text-base leading-relaxed text-slate-600 md:text-lg">
@@ -55,21 +55,21 @@ export default function IntelligenceIndexPage() {
           <h2 id="featured-intelligence-heading" className="text-sm font-semibold uppercase tracking-wide text-slate-500">
             {INTELLIGENCE_BRAND.featuredLabel}
           </h2>
-          <div className="mt-4">
+          <div className="mt-3">
             <BlogArticleCard article={featured} featured priorityImage />
           </div>
         </section>
       ) : null}
 
       {rest.length > 0 ? (
-        <section className="mt-14" aria-labelledby="latest-intelligence-heading">
-          <h2 id="latest-intelligence-heading" className="text-xl font-bold text-slate-900 md:text-2xl">
+        <section className="mt-12" aria-labelledby="latest-intelligence-heading">
+          <h2 id="latest-intelligence-heading" className="text-xl font-bold tracking-tight text-slate-950 md:text-2xl">
             {INTELLIGENCE_BRAND.latestHeading}
           </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-700">
             Consumer protection and threat awareness reports—updated regularly for Fraudly users and searchers.
           </p>
-          <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {rest.map((article) => (
               <li key={article.slug} className="h-full">
                 <BlogArticleCard article={article} />

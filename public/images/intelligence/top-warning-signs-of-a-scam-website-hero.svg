@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Scam website signs — misleading social ad and alert">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Scam website warning signs — social ad lure, risky URL, and red-flag checklist">
   <defs>
     <linearGradient id="topwarningsignsofascamwebsite-bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#eff6ff"/>
@@ -11,80 +11,104 @@
       <stop offset="100%" stop-color="#f8fafc"/>
     </linearGradient>
     <linearGradient id="topwarningsignsofascamwebsite-accent" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#3b82f6"/>
-      <stop offset="100%" stop-color="#8b5cf6"/>
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
     </linearGradient>
     <filter id="topwarningsignsofascamwebsite-shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#1e3a8a" flood-opacity="0.08"/>
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#1e3a8a" flood-opacity="0.11"/>
     </filter>
     <filter id="topwarningsignsofascamwebsite-shadow-sm" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#334155" flood-opacity="0.06"/>
+      <feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#334155" flood-opacity="0.09"/>
     </filter>
   </defs>
   <rect width="1200" height="630" fill="url(#topwarningsignsofascamwebsite-bg)"/>
-  <ellipse cx="920" cy="120" rx="200" ry="160" fill="#8b5cf6" fill-opacity="0.06"/>
-  <ellipse cx="180" cy="520" rx="240" ry="180" fill="#3b82f6" fill-opacity="0.07"/>
-  <ellipse cx="600" cy="80" rx="120" ry="80" fill="#10b981" fill-opacity="0.08"/>
+  <ellipse cx="920" cy="120" rx="200" ry="160" fill="#7c3aed" fill-opacity="0.1"/>
+  <ellipse cx="180" cy="520" rx="240" ry="180" fill="#2563eb" fill-opacity="0.11"/>
+  <ellipse cx="600" cy="80" rx="120" ry="80" fill="#059669" fill-opacity="0.1"/>
   
-  <g filter="url(#topwarningsignsofascamwebsite-shadow)">
-    <!-- Social ad card -->
-    <rect x="280" y="90" width="400" height="440" rx="24" fill="url(#topwarningsignsofascamwebsite-card)" stroke="#c7d2fe" stroke-width="2"/>
-    <circle cx="330" cy="140" r="24" fill="url(#topwarningsignsofascamwebsite-accent)" fill-opacity="0.2"/>
-    <circle cx="330" cy="140" r="24" fill="none" stroke="url(#topwarningsignsofascamwebsite-accent)" stroke-width="2"/>
-    <text x="370" y="136" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="#0f172a">Sponsored</text>
-    <text x="370" y="156" font-family="system-ui,sans-serif" font-size="12" fill="#94a3b8">2h ago · Ad</text>
-
-    <!-- Ad creative -->
-    <rect x="310" y="175" width="340" height="180" rx="16" fill="url(#topwarningsignsofascamwebsite-accent)" fill-opacity="0.1" stroke="#e2e8f0" stroke-width="1"/>
-    <text x="480" y="250" text-anchor="middle" font-family="system-ui,sans-serif" font-size="20" font-weight="800" fill="#8b5cf6">LIMITED OFFER</text>
-    <text x="480" y="280" text-anchor="middle" font-family="system-ui,sans-serif" font-size="36" font-weight="800" fill="#ef4444">90% OFF</text>
-
-    <!-- Discount lure tag -->
-    <g transform="translate(520,165) rotate(6)">
-      <rect width="100" height="36" rx="8" fill="#ef4444" filter="url(#topwarningsignsofascamwebsite-shadow-sm)"/>
-      <text x="12" y="24" font-family="system-ui,sans-serif" font-size="13" font-weight="800" fill="#fff">TODAY ONLY</text>
-    </g>
-
-    <rect x="310" y="375" width="340" height="48" rx="12" fill="url(#topwarningsignsofascamwebsite-accent)" fill-opacity="0.2"/>
-    <text x="480" y="406" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#3b82f6">Shop now →</text>
-
-    <rect x="310" y="440" width="200" height="12" rx="4" fill="#e2e8f0"/>
-    <rect x="310" y="462" width="140" height="12" rx="4" fill="#e2e8f0"/>
+  <!-- Central warning hub -->
+  <g transform="translate(600,300)" filter="url(#topwarningsignsofascamwebsite-shadow)">
+    <circle cx="0" cy="0" r="118" fill="#fffbeb" stroke="#d97706" stroke-width="3"/>
+    <circle cx="0" cy="0" r="98" fill="#fff" stroke="#fde68a" stroke-width="2"/>
+    <path d="M0 -58 L50 42 H-50 Z" fill="none" stroke="#d97706" stroke-width="4" stroke-linejoin="round"/>
+    <line x1="0" y1="-18" x2="0" y2="8" stroke="#d97706" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="0" cy="24" r="4" fill="#d97706"/>
+    <text y="78" text-anchor="middle" font-family="system-ui,sans-serif" font-size="15" font-weight="800" fill="#0f172a">Scam risk</text>
   </g>
 
-  <!-- Alert marker panel -->
-  <g transform="translate(740,130)" filter="url(#topwarningsignsofascamwebsite-shadow-sm)">
-    <rect width="260" height="360" rx="22" fill="#fff" stroke="#c7d2fe" stroke-width="2"/>
-    <text x="24" y="44" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#0f172a">Red flags</text>
+  <!-- Social ad card (top-left) -->
+  <g transform="translate(200,95) rotate(-4)" filter="url(#topwarningsignsofascamwebsite-shadow)">
+    <rect width="300" height="340" rx="22" fill="url(#topwarningsignsofascamwebsite-card)" stroke="#93c5fd" stroke-width="2.5"/>
+    <rect width="300" height="56" rx="22" fill="#f8fafc"/>
+    <rect y="32" width="300" height="24" fill="#f8fafc"/>
+    <circle cx="36" cy="28" r="16" fill="url(#topwarningsignsofascamwebsite-accent)" fill-opacity="0.25"/>
+    <text x="64" y="24" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#0f172a">Sponsored · Ad</text>
+    <text x="64" y="44" font-family="system-ui,sans-serif" font-size="11" fill="#64748b">Promoted deal</text>
+    <rect x="20" y="72" width="260" height="130" rx="14" fill="url(#topwarningsignsofascamwebsite-accent)" fill-opacity="0.14" stroke="#cbd5e1" stroke-width="1.5"/>
+    <text x="150" y="130" text-anchor="middle" font-family="system-ui,sans-serif" font-size="17" font-weight="800" fill="#7c3aed">MEGA SALE</text>
+    <text x="150" y="168" text-anchor="middle" font-family="system-ui,sans-serif" font-size="34" font-weight="900" fill="#dc2626">90% OFF</text>
+    <g transform="translate(210,62) rotate(8)">
+      <rect width="96" height="34" rx="8" fill="#dc2626"/>
+      <text x="10" y="23" font-family="system-ui,sans-serif" font-size="12" font-weight="800" fill="#fff">TODAY ONLY</text>
+    </g>
+    <rect x="20" y="220" width="260" height="44" rx="11" fill="url(#topwarningsignsofascamwebsite-accent)" fill-opacity="0.22"/>
+    <text x="150" y="249" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#2563eb">Shop now →</text>
+    <rect x="20" y="278" width="180" height="10" rx="4" fill="#e2e8f0"/>
+    <rect x="20" y="298" width="120" height="10" rx="4" fill="#e2e8f0"/>
+  </g>
 
-    <g transform="translate(24,70)">
-      <rect width="212" height="52" rx="12" fill="#fef2f2" stroke="#fecaca" stroke-width="1"/>
-      <circle cx="26" cy="26" r="14" fill="#ef4444" fill-opacity="0.15"/>
-      <text x="26" y="31" text-anchor="middle" font-size="16" fill="#ef4444">!</text>
-      <text x="50" y="32" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#0f172a">Extreme discount</text>
+  <!-- Browser / risky URL strip (top-right) -->
+  <g transform="translate(780,110)" filter="url(#topwarningsignsofascamwebsite-shadow-sm)">
+    <rect width="340" height="200" rx="20" fill="#fff" stroke="#93c5fd" stroke-width="2.5"/>
+    <rect width="340" height="44" rx="20" fill="#f1f5f9"/>
+    <rect y="20" width="340" height="24" fill="#f1f5f9"/>
+    <circle cx="32" cy="22" r="7" fill="#fca5a5"/><circle cx="52" cy="22" r="7" fill="#fcd34d"/><circle cx="72" cy="22" r="7" fill="#86efac"/>
+    <rect x="96" y="12" width="220" height="24" rx="7" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+    <text x="110" y="29" font-family="ui-monospace,monospace" font-size="12" font-weight="600" fill="#dc2626">mega-deals-now.shop</text>
+    <g transform="translate(24,68)">
+      <rect width="292" height="44" rx="10" fill="#fffbeb" stroke="#fde68a" stroke-width="1.5"/>
+      <circle cx="22" cy="22" r="12" fill="#d97706" fill-opacity="0.2"/>
+      <text x="22" y="27" text-anchor="middle" font-size="14" font-weight="700" fill="#d97706">!</text>
+      <text x="44" y="27" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#0f172a">Domain registered 12 days ago</text>
     </g>
-    <g transform="translate(24,140)">
-      <rect width="212" height="52" rx="12" fill="#fffbeb" stroke="#fde68a" stroke-width="1"/>
-      <circle cx="26" cy="26" r="14" fill="#f59e0b" fill-opacity="0.2"/>
-      <text x="26" y="31" text-anchor="middle" font-size="16" fill="#f59e0b">!</text>
-      <text x="50" y="32" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#0f172a">New domain</text>
-    </g>
-    <g transform="translate(24,210)">
-      <rect width="212" height="52" rx="12" fill="#eff6ff" stroke="#c7d2fe" stroke-width="1"/>
-      <circle cx="26" cy="26" r="14" fill="#3b82f6" fill-opacity="0.15"/>
-      <text x="26" y="31" text-anchor="middle" font-size="16" fill="#3b82f6">!</text>
-      <text x="50" y="32" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#0f172a">Urgency pressure</text>
-    </g>
-    <g transform="translate(24,280)">
-      <rect width="212" height="52" rx="12" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
-      <text x="20" y="32" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#10b981">✓ Check with Fraudly</text>
+    <g transform="translate(24,124)">
+      <rect width="292" height="44" rx="10" fill="#fef2f2" stroke="#fecaca" stroke-width="1.5"/>
+      <circle cx="22" cy="22" r="12" fill="#dc2626" fill-opacity="0.15"/>
+      <text x="22" y="27" text-anchor="middle" font-size="14" font-weight="700" fill="#dc2626">!</text>
+      <text x="44" y="27" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#0f172a">No real company address</text>
     </g>
   </g>
 
-  <g transform="translate(300,555)">
-    <rect width="118" height="28" rx="14" fill="#3b82f6" fill-opacity="0.1" stroke="#c7d2fe" stroke-width="1"/>
+  <!-- Red-flag checklist (bottom) -->
+  <g transform="translate(260,455)" filter="url(#topwarningsignsofascamwebsite-shadow-sm)">
+    <rect width="680" height="120" rx="20" fill="#fff" stroke="#93c5fd" stroke-width="2.5"/>
+    <text x="24" y="36" font-family="system-ui,sans-serif" font-size="14" font-weight="800" fill="#0f172a">Warning sign checklist</text>
+    <g transform="translate(24,52)">
+      <rect width="148" height="52" rx="12" fill="#fef2f2" stroke="#fecaca" stroke-width="1.5"/>
+      <text x="74" y="22" text-anchor="middle" font-size="18">🏷️</text>
+      <text x="74" y="42" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#dc2626">Fake discount</text>
+    </g>
+    <g transform="translate(184,52)">
+      <rect width="148" height="52" rx="12" fill="#fffbeb" stroke="#fde68a" stroke-width="1.5"/>
+      <text x="74" y="22" text-anchor="middle" font-size="18">⏱️</text>
+      <text x="74" y="42" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#d97706">Urgency trap</text>
+    </g>
+    <g transform="translate(344,52)">
+      <rect width="148" height="52" rx="12" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+      <text x="74" y="22" text-anchor="middle" font-size="18">🔗</text>
+      <text x="74" y="42" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#2563eb">Odd URL</text>
+    </g>
+    <g transform="translate(504,52)">
+      <rect width="148" height="52" rx="12" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
+      <text x="74" y="22" text-anchor="middle" font-size="18">🛡️</text>
+      <text x="74" y="42" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#059669">Verify first</text>
+    </g>
+  </g>
+
+  <g transform="translate(480,585)">
+    <rect width="118" height="28" rx="14" fill="#2563eb" fill-opacity="0.1" stroke="#93c5fd" stroke-width="1"/>
     <circle cx="16" cy="14" r="6" fill="url(#topwarningsignsofascamwebsite-accent)"/>
-    <text x="28" y="18" font-family="system-ui,-apple-system,sans-serif" font-size="11" font-weight="700" fill="#3b82f6" letter-spacing="0.04em">FRAUDLY</text>
+    <text x="28" y="18" font-family="system-ui,-apple-system,sans-serif" font-size="11" font-weight="700" fill="#2563eb" letter-spacing="0.04em">FRAUDLY</text>
   </g>
-  <text x="600" y="600" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="#94a3b8">Scam Intelligence</text>
+  <text x="600" y="618" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#475569">Scam Intelligence</text>
 </svg>

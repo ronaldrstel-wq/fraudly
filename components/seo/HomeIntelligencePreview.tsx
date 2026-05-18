@@ -14,14 +14,14 @@ export function HomeIntelligencePreview() {
     <section
       id="home-intelligence"
       aria-labelledby="home-intelligence-heading"
-      className="rounded-2xl border border-blue-100/80 bg-gradient-to-br from-blue-50/70 via-white to-violet-50/35 p-5 shadow-subtle sm:p-6 md:p-7"
+      className="rounded-2xl border border-blue-200/85 bg-gradient-to-br from-blue-50 via-white to-violet-50/45 p-5 shadow-[0_2px_8px_rgba(15,23,42,0.06),0_8px_22px_rgba(15,23,42,0.05)] ring-1 ring-blue-100/75 sm:p-6 md:p-7"
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="max-w-xl">
           <p className="text-xs font-semibold uppercase tracking-widest text-blue-700">
             {INTELLIGENCE_BRAND.indexEyebrow}
           </p>
-          <h2 id="home-intelligence-heading" className="mt-2 text-balance text-xl font-bold text-slate-900 md:text-2xl">
+          <h2 id="home-intelligence-heading" className="mt-2 text-balance text-xl font-bold tracking-tight text-slate-950 md:text-2xl">
             Scam awareness guides
           </h2>
           <p className="mt-2 text-pretty text-sm leading-relaxed text-slate-600">
@@ -48,7 +48,7 @@ export function HomeIntelligencePreview() {
               >
                 <div className="min-w-0 flex-1">
                   <IntelligenceCategoryBadge category={article.category} />
-                  <h3 className="mt-2 text-base font-semibold leading-snug text-slate-900 group-hover:text-blue-700 md:text-lg">
+                  <h3 className="mt-2 text-base font-bold leading-snug text-slate-950 group-hover:text-blue-700 md:text-lg">
                     {article.title}
                   </h3>
                   <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-slate-600">{article.excerpt}</p>

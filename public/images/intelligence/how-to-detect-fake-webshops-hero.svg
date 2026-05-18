@@ -11,50 +11,50 @@
       <stop offset="100%" stop-color="#f8fafc"/>
     </linearGradient>
     <linearGradient id="howtodetectfakewebshops-accent" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#3b82f6"/>
-      <stop offset="100%" stop-color="#8b5cf6"/>
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
     </linearGradient>
     <filter id="howtodetectfakewebshops-shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#1e3a8a" flood-opacity="0.08"/>
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#1e3a8a" flood-opacity="0.11"/>
     </filter>
     <filter id="howtodetectfakewebshops-shadow-sm" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#334155" flood-opacity="0.06"/>
+      <feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#334155" flood-opacity="0.09"/>
     </filter>
   </defs>
   <rect width="1200" height="630" fill="url(#howtodetectfakewebshops-bg)"/>
-  <ellipse cx="920" cy="120" rx="200" ry="160" fill="#8b5cf6" fill-opacity="0.06"/>
-  <ellipse cx="180" cy="520" rx="240" ry="180" fill="#3b82f6" fill-opacity="0.07"/>
-  <ellipse cx="600" cy="80" rx="120" ry="80" fill="#10b981" fill-opacity="0.08"/>
+  <ellipse cx="920" cy="120" rx="200" ry="160" fill="#7c3aed" fill-opacity="0.1"/>
+  <ellipse cx="180" cy="520" rx="240" ry="180" fill="#2563eb" fill-opacity="0.11"/>
+  <ellipse cx="600" cy="80" rx="120" ry="80" fill="#059669" fill-opacity="0.1"/>
   
   <g filter="url(#howtodetectfakewebshops-shadow)">
     <!-- Browser window -->
-    <rect x="280" y="95" width="640" height="420" rx="24" fill="url(#howtodetectfakewebshops-card)" stroke="#c7d2fe" stroke-width="2"/>
+    <rect x="280" y="95" width="640" height="420" rx="24" fill="url(#howtodetectfakewebshops-card)" stroke="#93c5fd" stroke-width="2"/>
     <rect x="280" y="95" width="640" height="52" rx="24" fill="#f1f5f9"/>
     <rect x="280" y="123" width="640" height="24" fill="#f1f5f9"/>
     <circle cx="318" cy="121" r="8" fill="#fca5a5"/><circle cx="346" cy="121" r="8" fill="#fcd34d"/><circle cx="374" cy="121" r="8" fill="#86efac"/>
-    <rect x="420" y="108" width="360" height="26" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <text x="440" y="126" font-family="system-ui,sans-serif" font-size="13" fill="#64748b">suspicious-deals-shop.net</text>
+    <rect x="420" y="108" width="360" height="26" rx="8" fill="#fff" stroke="#cbd5e1" stroke-width="1.5"/>
+    <text x="440" y="126" font-family="system-ui,sans-serif" font-size="13" fill="#475569">suspicious-deals-shop.net</text>
 
     <!-- Product card in browser -->
-    <rect x="320" y="175" width="260" height="300" rx="16" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect x="320" y="175" width="260" height="300" rx="16" fill="#fff" stroke="#cbd5e1" stroke-width="1.5"/>
     <rect x="340" y="195" width="220" height="140" rx="12" fill="url(#howtodetectfakewebshops-accent)" fill-opacity="0.12"/>
     <rect x="340" y="355" width="140" height="14" rx="4" fill="#e2e8f0"/>
     <rect x="340" y="380" width="90" height="12" rx="4" fill="#e2e8f0"/>
-    <text x="490" y="420" font-family="system-ui,sans-serif" font-size="22" font-weight="700" fill="#ef4444">-92%</text>
+    <text x="490" y="420" font-family="system-ui,sans-serif" font-size="22" font-weight="700" fill="#dc2626">-92%</text>
 
     <!-- Fake discount tag -->
     <g transform="translate(520,165) rotate(-8)">
-      <rect width="130" height="44" rx="10" fill="#f59e0b" filter="url(#howtodetectfakewebshops-shadow-sm)"/>
+      <rect width="130" height="44" rx="10" fill="#d97706" filter="url(#howtodetectfakewebshops-shadow-sm)"/>
       <text x="16" y="28" font-family="system-ui,sans-serif" font-size="15" font-weight="800" fill="#fff">FLASH SALE</text>
     </g>
 
     <!-- Warning badge -->
     <g transform="translate(720,200)">
-      <circle cx="52" cy="52" r="52" fill="#fef2f2" stroke="#ef4444" stroke-width="2.5"/>
-      <path d="M52 28 L68 72 H36 Z" fill="none" stroke="#ef4444" stroke-width="3" stroke-linejoin="round"/>
-      <line x1="52" y1="44" x2="52" y2="58" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
-      <circle cx="52" cy="66" r="2.5" fill="#ef4444"/>
-      <text x="52" y="128" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#ef4444">High risk</text>
+      <circle cx="52" cy="52" r="52" fill="#fef2f2" stroke="#dc2626" stroke-width="2.5"/>
+      <path d="M52 28 L68 72 H36 Z" fill="none" stroke="#dc2626" stroke-width="3" stroke-linejoin="round"/>
+      <line x1="52" y1="44" x2="52" y2="58" stroke="#dc2626" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="52" cy="66" r="2.5" fill="#dc2626"/>
+      <text x="52" y="128" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#dc2626">High risk</text>
     </g>
 
     <!-- Shopping bag icon -->
@@ -63,9 +63,9 @@
     </g>
   </g>
   <g transform="translate(320,520)">
-    <rect width="118" height="28" rx="14" fill="#3b82f6" fill-opacity="0.1" stroke="#c7d2fe" stroke-width="1"/>
+    <rect width="118" height="28" rx="14" fill="#2563eb" fill-opacity="0.1" stroke="#93c5fd" stroke-width="1"/>
     <circle cx="16" cy="14" r="6" fill="url(#howtodetectfakewebshops-accent)"/>
-    <text x="28" y="18" font-family="system-ui,-apple-system,sans-serif" font-size="11" font-weight="700" fill="#3b82f6" letter-spacing="0.04em">FRAUDLY</text>
+    <text x="28" y="18" font-family="system-ui,-apple-system,sans-serif" font-size="11" font-weight="700" fill="#2563eb" letter-spacing="0.04em">FRAUDLY</text>
   </g>
-  <text x="600" y="575" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="#94a3b8">Consumer Safety Guide</text>
+  <text x="600" y="575" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="#64748b">Consumer Safety Guide</text>
 </svg>

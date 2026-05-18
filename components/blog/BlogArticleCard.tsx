@@ -20,21 +20,21 @@ export function BlogArticleCard({ article, featured = false, priorityImage = fal
     return (
       <article className={intelligenceCard}>
         <Link href={href} className="grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-          <div className={`${intelligenceCardMedia} md:min-h-[260px] md:rounded-none md:rounded-l-2xl`}>
+          <div className={`${intelligenceCardMedia} md:min-h-[248px] md:rounded-none md:rounded-l-2xl md:border-b-0 md:border-r md:border-slate-100/90`}>
             <IntelligenceArticleVisual
               hero={article.hero}
               priority={priorityImage}
-              className="aspect-square w-full max-w-[220px] shadow-subtle"
+              className="aspect-square w-full max-w-[228px] shadow-[0_3px_12px_rgba(15,23,42,0.08)]"
               sizes="(max-width: 768px) 80vw, 280px"
             />
           </div>
-          <div className="flex flex-col justify-center border-t border-slate-100 p-6 sm:p-8 md:border-l md:border-t-0 md:p-10">
+          <div className="flex flex-col justify-center border-t border-slate-100/90 p-5 sm:p-7 md:border-l-0 md:border-t-0 md:p-8">
             <IntelligenceCategoryBadge category={article.category} />
-            <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 group-hover:text-blue-700 md:text-3xl">
+            <h2 className="mt-2.5 text-2xl font-bold tracking-tight text-slate-950 group-hover:text-blue-700 md:text-[1.75rem] md:leading-tight">
               {article.title}
             </h2>
-            <p className="mt-3 text-pretty text-base leading-relaxed text-slate-600">{article.excerpt}</p>
-            <p className="mt-5 text-sm font-medium text-slate-500">
+            <p className="mt-2.5 text-pretty text-base leading-relaxed text-slate-700">{article.excerpt}</p>
+            <p className="mt-4 text-sm font-semibold text-slate-600">
               {minutes} min read · {article.targetKeyword}
             </p>
           </div>
@@ -50,17 +50,17 @@ export function BlogArticleCard({ article, featured = false, priorityImage = fal
           <IntelligenceArticleVisual
             hero={article.hero}
             priority={priorityImage}
-            className="aspect-[4/3] w-full max-h-36 max-w-[200px]"
-            sizes="(max-width: 768px) 70vw, 200px"
+            className="aspect-[4/3] w-full max-h-[9.5rem] max-w-[210px]"
+            sizes="(max-width: 768px) 70vw, 210px"
           />
         </div>
-        <div className="flex flex-1 flex-col border-t border-slate-100 p-5 sm:p-6">
+        <div className="flex flex-1 flex-col border-t border-slate-100/90 p-4 sm:p-5">
           <IntelligenceCategoryBadge category={article.category} />
-          <h2 className="mt-3 text-lg font-bold leading-snug text-slate-900 group-hover:text-blue-700 md:text-xl">
+          <h2 className="mt-2 text-lg font-bold leading-snug text-slate-950 group-hover:text-blue-700 md:text-xl">
             {article.title}
           </h2>
-          <p className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-slate-600">{article.excerpt}</p>
-          <p className="mt-4 text-xs font-medium text-slate-500">{minutes} min read →</p>
+          <p className="mt-1.5 line-clamp-3 flex-1 text-sm leading-relaxed text-slate-700">{article.excerpt}</p>
+          <p className="mt-3 text-xs font-semibold text-slate-600">{minutes} min read →</p>
         </div>
       </Link>
     </article>

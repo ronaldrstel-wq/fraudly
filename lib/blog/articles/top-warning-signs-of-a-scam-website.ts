@@ -14,7 +14,7 @@ export const topWarningSignsOfAScamWebsite: BlogArticleDefinition = {
   publishedAt: "2026-05-09T09:00:00.000Z",
   hero: blogHero(
     "top-warning-signs-of-a-scam-website",
-    "Warning triangle illustration representing scam website red flags on a dark red and blue gradient background"
+    "Illustration of a scam website warning hub with sponsored ad discount lure, risky domain URL, and red-flag checklist"
   ),
   intro:
     "Scam websites evolve, but the same warning signs appear repeatedly. None of these signals is definitive alone—a small business can have typos; a new domain can be legitimate. Risk rises when multiple red flags cluster, especially before high-value purchases or credential entry. Use this checklist during your next unfamiliar link, then confirm with Fraudly’s [online scam detector](/online-scam-detector) and public [latest checks](/latest-checks) feed.",
