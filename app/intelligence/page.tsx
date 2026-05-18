@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BlogArticleCard } from "@/components/blog/BlogArticleCard";
 import { BlogCheckerCta } from "@/components/blog/BlogCheckerCta";
 import { IntelligenceTrustBadges } from "@/components/blog/IntelligenceTrustBadges";
+import { intelligencePageHero } from "@/components/blog/intelligenceUi";
 import { SeoConsumerLayout } from "@/components/seo/SeoConsumerLayout";
 import { INTELLIGENCE_BRAND } from "@/lib/blog/constants";
 import { getAllBlogArticles } from "@/lib/blog/registry";
@@ -22,31 +23,28 @@ export default function IntelligenceIndexPage() {
 
   return (
     <SeoConsumerLayout mainClassName="max-w-6xl">
-      <header className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-slate-950 via-blue-950 to-violet-950 px-6 py-10 text-white shadow-subtle sm:px-10 sm:py-12">
+      <header className={intelligencePageHero}>
         <div
-          className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-blue-400/20 blur-3xl"
+          className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-blue-200/25 blur-3xl"
           aria-hidden
         />
         <div
-          className="pointer-events-none absolute -bottom-16 left-1/3 h-48 w-48 rounded-full bg-violet-400/15 blur-3xl"
+          className="pointer-events-none absolute -bottom-12 left-1/4 h-40 w-40 rounded-full bg-violet-200/20 blur-3xl"
           aria-hidden
         />
-        <p className="relative text-sm font-semibold uppercase tracking-widest text-blue-200/90">
+        <p className="relative text-sm font-semibold uppercase tracking-widest text-blue-700">
           {INTELLIGENCE_BRAND.indexEyebrow}
         </p>
-        <h1 className="relative mt-3 max-w-2xl text-balance text-3xl font-bold tracking-tight md:text-4xl lg:text-[2.5rem] lg:leading-tight">
+        <h1 className="relative mt-3 max-w-2xl text-balance text-3xl font-bold tracking-tight text-slate-900 md:text-4xl lg:text-[2.5rem] lg:leading-tight">
           Scam intelligence for safer shopping and browsing
         </h1>
-        <p className="relative mt-4 max-w-2xl text-pretty text-base leading-relaxed text-slate-200/95 md:text-lg">
+        <p className="relative mt-4 max-w-2xl text-pretty text-base leading-relaxed text-slate-600 md:text-lg">
           {INTELLIGENCE_BRAND.tagline}. Research-backed guides on fake webshops, phishing, reviews, and warning
           signs—paired with live trust checks from the Fraudly platform.
         </p>
-        <IntelligenceTrustBadges onDark />
+        <IntelligenceTrustBadges />
         <div className="relative mt-8">
-          <Link
-            href="/#link-check"
-            className="btn-primary inline-flex border-0 bg-white px-6 text-slate-900 shadow-lg hover:bg-slate-100"
-          >
+          <Link href="/#link-check" className="btn-primary inline-flex px-6">
             Run free website check
           </Link>
         </div>
@@ -68,7 +66,7 @@ export default function IntelligenceIndexPage() {
           <h2 id="latest-intelligence-heading" className="text-xl font-bold text-slate-900 md:text-2xl">
             {INTELLIGENCE_BRAND.latestHeading}
           </h2>
-          <p className="mt-2 max-w-2xl text-sm text-slate-600">
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">
             Consumer protection and threat awareness reports—updated regularly for Fraudly users and searchers.
           </p>
           <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -89,7 +87,7 @@ export default function IntelligenceIndexPage() {
         />
       </div>
 
-      <section className="mt-10 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-subtle sm:p-8">
+      <section className="mt-10 fraudly-card border-slate-100 p-6 sm:p-8">
         <h2 className="text-lg font-bold text-slate-900">Platform tools</h2>
         <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm">
           <li>

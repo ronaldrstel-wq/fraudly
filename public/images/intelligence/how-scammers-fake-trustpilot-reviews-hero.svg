@@ -1,21 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Fake review manipulation intelligence">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Review awareness">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#020617"/>
-      <stop offset="45%" stop-color="#172554"/>
-      <stop offset="100%" stop-color="#3b0764"/>
+      <stop offset="0%" stop-color="#eff6ff"/>
+      <stop offset="55%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f5f3ff"/>
     </linearGradient>
-    <radialGradient id="glow" cx="72%" cy="28%" r="48%">
-      <stop offset="0%" stop-color="#c4b5fd" stop-opacity="0.5"/>
-      <stop offset="100%" stop-color="#c4b5fd" stop-opacity="0"/>
+    <radialGradient id="glow" cx="70%" cy="35%" r="50%">
+      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/>
     </radialGradient>
-    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
-      <path d="M48 0H0V48" fill="none" stroke="#ffffff" stroke-opacity="0.04"/>
-    </pattern>
   </defs>
   <rect width="1200" height="630" fill="url(#bg)"/>
-  <rect width="1200" height="630" fill="url(#grid)"/>
   <rect width="1200" height="630" fill="url(#glow)"/>
-  <g fill="#c4b5fd"><polygon points="70,210 88,155 132,155 95,122 108,65 70,98 32,65 45,122 8,155 52,155" opacity="0.95"/><polygon points="230,205 245,165 285,165 255,140 268,100 230,125 192,100 205,140 175,165 215,165" opacity="0.5"/></g>
+  <g fill="#8b5cf6" opacity="0.75"><polygon points="70,210 88,150 132,150 95,118 108,58 70,92 32,58 45,118 8,150 52,150"/></g>
 </svg>

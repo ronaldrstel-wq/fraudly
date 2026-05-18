@@ -14,11 +14,11 @@ export function HomeIntelligencePreview() {
     <section
       id="home-intelligence"
       aria-labelledby="home-intelligence-heading"
-      className="rounded-2xl border border-slate-200/80 bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-5 shadow-subtle sm:p-6 md:p-7"
+      className="rounded-2xl border border-blue-100/80 bg-gradient-to-br from-blue-50/70 via-white to-violet-50/35 p-5 shadow-subtle sm:p-6 md:p-7"
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="max-w-xl">
-          <p className="text-xs font-semibold uppercase tracking-widest text-violet-700/90">
+          <p className="text-xs font-semibold uppercase tracking-widest text-blue-700">
             {INTELLIGENCE_BRAND.indexEyebrow}
           </p>
           <h2 id="home-intelligence-heading" className="mt-2 text-balance text-xl font-bold text-slate-900 md:text-2xl">
