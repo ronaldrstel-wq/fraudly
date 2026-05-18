@@ -28,6 +28,8 @@ export const en: CoreDictionary = {
     support: "Support & FAQ",
     howItWorks: "How it works",
     learn: "Learn",
+    blog: "Blog",
+    intelligence: "Intelligence",
     scamChecker: "Scam checker",
     websiteScamChecker: "Website scam checker",
     checkIfWebsiteIsSafe: "Is this site safe?",

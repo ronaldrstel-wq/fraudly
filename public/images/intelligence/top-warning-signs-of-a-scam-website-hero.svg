@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Scam website warning signs">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#020617"/>
+      <stop offset="45%" stop-color="#172554"/>
+      <stop offset="100%" stop-color="#3b0764"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="72%" cy="28%" r="48%">
+      <stop offset="0%" stop-color="#f87171" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#f87171" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0V48" fill="none" stroke="#ffffff" stroke-opacity="0.04"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <g transform="translate(525 155)" fill="none" stroke="#e2e8f0" stroke-width="4"><path d="M115 42 L195 215 H35 Z"/><line x1="115" y1="98" x2="115" y2="168" stroke="#f87171" stroke-width="8"/><circle cx="115" cy="188" r="11" fill="#f87171"/></g>
+</svg>

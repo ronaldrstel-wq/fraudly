@@ -12,6 +12,16 @@ const nextConfig: NextConfig = {
         source: "/sitemap-0.xml",
         destination: "/sitemap.xml",
         permanent: true
+      },
+      {
+        source: "/blog",
+        destination: "/intelligence",
+        permanent: true
+      },
+      {
+        source: "/blog/:slug",
+        destination: "/intelligence/:slug",
+        permanent: true
       }
     ];
   },

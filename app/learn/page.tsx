@@ -48,7 +48,11 @@ export default function LearnHubPage() {
           Calm, practical context for high-intent searches like{" "}
           <em className="not-italic text-slate-800">fake webshop check</em>,{" "}
           <em className="not-italic text-slate-800">phishing link checker</em>, and{" "}
-          <em className="not-italic text-slate-800">is this website legit</em>. These pages complement Fraudly’s{" "}
+          <em className="not-italic text-slate-800">is this website legit</em>. For longer guides, visit the{" "}
+          <Link href="/intelligence" className="font-medium text-blue-600 hover:underline">
+            Fraudly Intelligence
+          </Link>
+          . These pages complement Fraudly’s{" "}
           <Link href="/#link-check" className="font-medium text-blue-600 hover:underline">
             free website trust check
           </Link>

@@ -25,6 +25,8 @@ export const nl: CoreDictionary = {
     support: "Support & FAQ",
     howItWorks: "Hoe het werkt",
     learn: "Leren",
+    blog: "Blog",
+    intelligence: "Intelligence",
     scamChecker: "Scamchecker",
     websiteScamChecker: "Website scam checker",
     checkIfWebsiteIsSafe: "Is deze site veilig?",

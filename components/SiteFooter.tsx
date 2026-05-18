@@ -28,6 +28,9 @@ export function SiteFooter({ locale = "en" }: SiteFooterProps) {
           <Link href="/learn" className="fraudly-footer-link">
             {dict.footer.learn}
           </Link>
+          <Link href="/intelligence" className="fraudly-footer-link">
+            {dict.footer.intelligence}
+          </Link>
           <Link href={localizedPath("/support", locale)} className="fraudly-footer-link">
             {dict.footer.support}
           </Link>

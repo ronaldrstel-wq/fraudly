@@ -15,6 +15,8 @@ export const SEO_TITLE = {
   howItWorks: "How It Works — Scam Checker & Phishing Detection",
   latestChecks: "Latest Website Trust Checks",
   learn: "Learn — Fake Webshop & Phishing Guides",
+  blog: "Blog — Scam Awareness & Website Safety Guides",
+  intelligence: "Fraudly Intelligence — Scam & Website Safety Guides",
   features: "Features — Phishing Detection & Trust Analysis",
   pulse: "Fraudly Pulse — Live Scam & Phishing Trends",
   scamAlerts: "Threat Alerts — Scam & Phishing Intelligence",
@@ -61,6 +63,10 @@ export const SEO_DESCRIPTION = {
     "Get help with Fraudly's website trust checker, scam checker results, phishing detection and online fraud protection—answers to common safety questions.",
   learn:
     "Guides on fake webshops, phishing links and website trust checks—practical online fraud protection tips from Fraudly's safe link checker education hub.",
+  blog:
+    "Fraudly blog: expert guides on fake webshops, PayPal phishing, scam website warning signs, and how to check if a website is safe—plus links to live trust checks.",
+  intelligence:
+    "Fraudly Intelligence: expert scam and website safety guides on fake webshops, PayPal phishing, warning signs, and trust checks—plus live public scan examples.",
   features:
     "Explore Fraudly scam checker tools: phishing detection, SSL review, fake webshop heuristics and website trust checks for everyday online fraud protection.",
   pulse:

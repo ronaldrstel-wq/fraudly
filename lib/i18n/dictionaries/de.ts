@@ -25,6 +25,8 @@ export const de: CoreDictionary = {
     support: "Support & FAQ",
     howItWorks: "So funktioniert's",
     learn: "Lernen",
+    blog: "Blog",
+    intelligence: "Intelligence",
     scamChecker: "Scam-Checker",
     websiteScamChecker: "Website-Scam-Checker",
     checkIfWebsiteIsSafe: "Ist die Website sicher?",

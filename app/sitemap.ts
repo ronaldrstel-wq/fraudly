@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { getAllBlogPaths } from "@/lib/blog/registry";
 import { allLocalizedMarketingUrls } from "@/lib/i18n/sitemap-paths";
 import { SITE_URL } from "@/lib/seo";
 
@@ -27,7 +28,7 @@ const OTHER_PUBLIC_PATHS = [
   "/disclaimer"
 ] as const;
 
-const PUBLIC_PATHS = [...allLocalizedMarketingUrls(), ...OTHER_PUBLIC_PATHS] as const;
+const PUBLIC_PATHS = [...allLocalizedMarketingUrls(), ...OTHER_PUBLIC_PATHS, ...getAllBlogPaths()] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();

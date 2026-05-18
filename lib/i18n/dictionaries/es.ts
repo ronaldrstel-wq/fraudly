@@ -25,6 +25,8 @@ export const es: CoreDictionary = {
     support: "Soporte y FAQ",
     howItWorks: "Cómo funciona",
     learn: "Aprender",
+    blog: "Blog",
+    intelligence: "Intelligence",
     scamChecker: "Comprobador de estafas",
     websiteScamChecker: "Comprobador de sitios scam",
     checkIfWebsiteIsSafe: "¿Es seguro este sitio?",

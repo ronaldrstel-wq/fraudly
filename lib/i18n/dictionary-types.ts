@@ -25,6 +25,8 @@ export type CoreDictionary = {
     support: string;
     howItWorks: string;
     learn: string;
+    blog: string;
+    intelligence: string;
     scamChecker: string;
     websiteScamChecker: string;
     checkIfWebsiteIsSafe: string;
