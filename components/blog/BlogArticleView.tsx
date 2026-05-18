@@ -82,7 +82,7 @@ export async function BlogArticleView({ article }: BlogArticleViewProps) {
       {recentChecks.length > 0 ? (
         <div className="mt-8">
           <InternalCheckLinksSection
-            id="blog-recent-checks"
+            id="intelligence-recent-checks"
             title="Recent website safety checks"
             description="Real public trust snapshots from Fraudly—open a full report for any domain."
             items={recentChecks}

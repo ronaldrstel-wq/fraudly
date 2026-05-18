@@ -16,12 +16,12 @@ const nextConfig: NextConfig = {
       {
         source: "/blog",
         destination: "/intelligence",
-        permanent: true
+        statusCode: 301
       },
       {
         source: "/blog/:slug",
         destination: "/intelligence/:slug",
-        permanent: true
+        statusCode: 301
       }
     ];
   },
