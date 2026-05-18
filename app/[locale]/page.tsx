@@ -39,9 +39,9 @@ export default async function LocalizedHomePage({ params }: PageProps) {
       <HomeFaqJsonLd />
       <HomeAuthProvider>
         <HomeNavbar />
-        <HomeClient>
+        <HomeClient showFooter={false} footerLocale={locale}>
           <Suspense fallback={<HomeBelowFoldFallback />}>
-            <HomeBelowFold />
+            <HomeBelowFold locale={locale} />
           </Suspense>
         </HomeClient>
         <SiteFooter locale={locale} />

@@ -47,3 +47,13 @@ export function suggestLocaleFromAcceptLanguage(header: string | null): Localize
 export function homeHref(locale: Locale): string {
   return localizedPath("/", locale);
 }
+
+/** Locale homepage scanner section — always root + hash, never the current path. */
+export function homeScannerHref(locale: Locale): string {
+  return `${homeHref(locale)}#link-check`;
+}
+
+/** True for `/`, `/nl`, `/de`, `/fr` (homepage variants only). */
+export function isHomepagePath(pathname: string): boolean {
+  return stripLocalePrefix(pathname || "/").path === "/";
+}

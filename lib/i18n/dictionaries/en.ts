@@ -1,9 +1,9 @@
-import type { Dictionary } from "@/lib/i18n/dictionary-types";
+import type { CoreDictionary } from "@/lib/i18n/dictionary-types";
 
 /**
  * English static UI dictionary for marketing pages (scan results stay in EN_MESSAGES).
  */
-export const en: Dictionary = {
+export const en: CoreDictionary = {
   localeBanner: {
     dismiss: "Dismiss"
   },
@@ -119,6 +119,7 @@ export const en: Dictionary = {
     subtitle: "Find official places to report scams and practical steps to protect yourself.",
     cta: "Check a suspicious website",
     ctaSection: "Check a website before you pay",
+    ctaButton: "Check a website before you pay",
     chooseCountry: "Choose your country",
     chooseCountryHint: "Select your country below to see official reporting organisations and practical next steps.",
     reportingForPrefix: "Reporting options for",

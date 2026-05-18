@@ -2,8 +2,9 @@ import "server-only";
 
 import Image from "next/image";
 import Link from "next/link";
-import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { AuthMenuDynamic } from "@/components/navbar/AuthMenuDynamic";
+import { MarketingNavLinks } from "@/components/navbar/MarketingNavLinks";
+import { MarketingNavScanCta } from "@/components/navbar/MarketingNavScanCta";
 import { getMainNavLinks } from "@/lib/i18n/nav";
 import { homeHref } from "@/lib/i18n/paths";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
@@ -31,22 +32,10 @@ export async function NavbarShell({ locale = "en" }: NavbarShellProps) {
           />
         </Link>
 
-        <div className="hidden min-w-0 flex-1 items-center justify-center gap-6 text-sm font-medium text-slate-600 md:flex">
-          {links.map((link) =>
-            link.href.startsWith("/") ? (
-              <Link key={link.href} href={link.href} className="fraudly-nav-link">
-                {link.label}
-              </Link>
-            ) : (
-              <a key={link.href} href={link.href} className="fraudly-nav-link">
-                {link.label}
-              </a>
-            )
-          )}
-        </div>
+        <MarketingNavLinks locale={locale} links={links} />
 
-        <div className="flex min-h-9 shrink-0 flex-wrap items-center justify-end gap-1 sm:gap-2 md:gap-3">
-          <LanguageSwitcher className="hidden sm:flex" />
+        <div className="flex min-h-9 shrink-0 items-center justify-end gap-2 sm:gap-2.5 md:gap-3">
+          <MarketingNavScanCta locale={locale} />
           <AuthMenuDynamic />
         </div>
       </div>

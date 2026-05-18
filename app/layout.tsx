@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { ClerkAppProvider } from "@/components/providers/ClerkAppProvider";
 import { CookieConsentProvider } from "@/components/CookieConsentProvider";
+import { LocalePreferenceBoundary } from "@/components/i18n/LocalePreferenceBoundary";
 import { logClerkProductionMisconfigWarnings } from "@/lib/clerkConfig";
 import { JsonLd } from "@/components/JsonLd";
 import { PwaServiceWorkerRegister } from "@/components/PwaServiceWorkerRegister";
@@ -80,6 +81,7 @@ export default function RootLayout({
         <JsonLd />
         <ClerkAppProvider>
           <CookieConsentProvider>
+            <LocalePreferenceBoundary />
             {children}
           </CookieConsentProvider>
         </ClerkAppProvider>

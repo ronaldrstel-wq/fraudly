@@ -3,6 +3,8 @@
 import type { ChangeEvent, KeyboardEvent } from "react";
 import { useEffect, useRef } from "react";
 import { EN_MESSAGES } from "@/lib/messages.en";
+import { homeScanCtaButtonClass } from "@/lib/i18n/typography";
+import { DEFAULT_LOCALE } from "@/lib/i18n/locales";
 import type { HomeSearchCardState } from "@/lib/scan/homeScanProgress";
 
 function ArrowRightGlyph({ className }: { className?: string }) {
@@ -35,6 +37,8 @@ export type WebsiteScanSearchCardProps = {
   onSubmit: () => void;
   disabled?: boolean;
   primaryCtaLabel: string;
+  /** Slightly smaller CTA when label is longer (NL/DE/FR). */
+  compactCta?: boolean;
   scanProgress: number;
   scanStatus: string;
   scanFailed?: boolean;
@@ -48,6 +52,7 @@ export function WebsiteScanSearchCard({
   onSubmit,
   disabled = false,
   primaryCtaLabel,
+  compactCta = false,
   scanProgress,
   scanStatus,
   scanFailed = false,
@@ -114,7 +119,7 @@ export function WebsiteScanSearchCard({
               type="button"
               onClick={handleSubmit}
               disabled={disabled || isScanning}
-              className="fraudly-motion fraudly-focus-on-white group inline-flex h-16 min-h-[4rem] w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-8 text-base font-bold text-white shadow-lg shadow-indigo-500/25 transition hover:scale-[1.01] hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto sm:min-w-[220px]"
+              className={`${homeScanCtaButtonClass(compactCta ? "nl" : DEFAULT_LOCALE)} group`}
             >
               {primaryCtaLabel}
               <ArrowRightGlyph className="h-5 w-5 transition-transform duration-150 group-hover:translate-x-0.5 sm:h-[1.15rem] sm:w-[1.15rem]" />

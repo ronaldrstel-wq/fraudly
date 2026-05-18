@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import { localizedPath } from "@/lib/i18n/paths";
 import type { Locale } from "@/lib/i18n/locales";
+import { marketingBadgeClass, marketingPageH1Class, marketingPrimaryCtaClass } from "@/lib/i18n/typography";
 
 function SectionCard({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
@@ -23,10 +24,8 @@ export function AboutPageView({ locale, dict }: { locale: Locale; dict: Dictiona
 
       <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-10 sm:pt-14 md:pt-16">
         <header className="text-center">
-          <div className="mx-auto mb-4 inline-flex items-center rounded-full border border-blue-100 bg-white px-4 py-1 text-xs font-semibold tracking-wide text-blue-700 shadow-sm">
-            {t.badge}
-          </div>
-          <h1 className="text-balance text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">{t.title}</h1>
+          <div className={`mx-auto mb-4 ${marketingBadgeClass(locale)}`}>{t.badge}</div>
+          <h1 className={marketingPageH1Class(locale)}>{t.title}</h1>
           <p className="mx-auto mt-4 max-w-2xl text-pretty text-base leading-relaxed text-slate-600 md:text-lg">{t.intro}</p>
         </header>
 
@@ -68,7 +67,7 @@ export function AboutPageView({ locale, dict }: { locale: Locale; dict: Dictiona
           <p className="text-base font-medium text-slate-900">{t.ctaPrompt}</p>
           <Link
             href={localizedPath("/", locale)}
-            className="mt-4 inline-flex rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition duration-200 hover:scale-[1.02] hover:brightness-110 active:scale-[0.98]"
+            className={`mt-4 ${marketingPrimaryCtaClass(locale)}`}
           >
             {t.ctaButton}
           </Link>

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { EN_MESSAGES } from "@/lib/messages.en";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
+import type { Locale } from "@/lib/i18n/locales";
 import {
   IconCalendar,
   IconLock,
@@ -18,8 +19,9 @@ const CARD_ICONS: ReactNode[] = [
   <IconSpark key="ai" className="h-5 w-5" />
 ];
 
-export function HomeWhatWeCheckSection() {
-  const { whatWeCheckTitle, whatWeCheckIntro, whatWeCheckCards } = EN_MESSAGES.home;
+export function HomeWhatWeCheckSection({ locale = "en" }: { locale?: Locale }) {
+  const { homeSections } = getDictionary(locale);
+  const { title: whatWeCheckTitle, intro: whatWeCheckIntro, cards: whatWeCheckCards } = homeSections.whatWeCheck;
 
   return (
     <section id="what-fraudly-analyzes" aria-labelledby="what-we-check-heading" className="scroll-mt-16">

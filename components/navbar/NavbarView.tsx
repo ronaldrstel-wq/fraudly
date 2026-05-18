@@ -1,21 +1,30 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { AuthMenuDynamic } from "@/components/navbar/AuthMenuDynamic";
+import { MarketingNavLinks } from "@/components/navbar/MarketingNavLinks";
+import { MarketingNavScanCta } from "@/components/navbar/MarketingNavScanCta";
 import { getMainNavLinks } from "@/lib/i18n/nav";
 import { homeHref } from "@/lib/i18n/paths";
 
-export function NavbarView() {
+type NavbarViewProps = {
+  /** Homepage-only: language dropdown (desktop). */
+  languageSwitcher?: ReactNode;
+  /** Homepage-only: labeled language row (mobile). */
+  languageMobileRow?: ReactNode;
+};
+
+export function NavbarView({ languageSwitcher = null, languageMobileRow = null }: NavbarViewProps) {
   const { locale, dict } = useLocale();
   const links = getMainNavLinks(locale, dict);
 
   return (
     <nav className="sticky top-0 z-20 border-b border-slate-200/70 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4">
-        <Link href={homeHref(locale)} className="mr-2 inline-flex shrink-0 items-center opacity-90 transition-opacity hover:opacity-100">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-4 sm:gap-3">
+        <Link href={homeHref(locale)} className="mr-1 inline-flex shrink-0 items-center opacity-90 transition-opacity hover:opacity-100 sm:mr-2">
           <Image
             src="/logo.png"
             alt="Fraudly — scam and fraud checker"
@@ -26,25 +35,15 @@ export function NavbarView() {
           />
         </Link>
 
-        <div className="hidden min-w-0 flex-1 items-center justify-center gap-6 text-sm font-medium text-slate-600 md:flex">
-          {links.map((link) =>
-            link.href.startsWith("/") ? (
-              <Link key={link.href} href={link.href} className="fraudly-nav-link">
-                {link.label}
-              </Link>
-            ) : (
-              <a key={link.href} href={link.href} className="fraudly-nav-link">
-                {link.label}
-              </a>
-            )
-          )}
-        </div>
+        <MarketingNavLinks locale={locale} links={links} />
 
-        <div className="flex min-h-9 shrink-0 flex-wrap items-center justify-end gap-1 sm:gap-2 md:gap-3">
-          <LanguageSwitcher className="hidden sm:flex" />
+        <div className="flex min-h-9 min-w-0 shrink-0 items-center justify-end gap-2 sm:gap-2.5 md:gap-3">
+          <MarketingNavScanCta locale={locale} />
+          {languageSwitcher}
           <AuthMenuDynamic />
         </div>
       </div>
+      {languageMobileRow}
     </nav>
   );
 }

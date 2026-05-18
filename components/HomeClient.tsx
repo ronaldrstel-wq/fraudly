@@ -16,7 +16,9 @@ import {
   trackRegisteredCheckStarted
 } from "@/lib/analytics";
 import { parseFlexibleWebsiteInput } from "@/lib/check-input/normalizeWebsiteInput";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 import { EN_MESSAGES } from "@/lib/messages.en";
+import type { Locale } from "@/lib/i18n/locales";
 import { GENERIC_CHECK_ERROR } from "@/lib/messages";
 import {
   animateHomeScanProgressTo100,
@@ -51,7 +53,17 @@ const SiteFooter = dynamic(() => import("@/components/SiteFooter").then((m) => (
   loading: () => <footer className="min-h-[100px] border-t border-slate-200/80 bg-white/80 py-8" aria-hidden />
 });
 
-export function HomeClient({ children }: { children?: ReactNode }) {
+export function HomeClient({
+  children,
+  showFooter = true,
+  footerLocale
+}: {
+  children?: ReactNode;
+  showFooter?: boolean;
+  footerLocale?: Locale;
+}) {
+  const { locale: contextLocale } = useLocale();
+  const footerLang = footerLocale ?? contextLocale;
   const { signedIn: isSignedIn, isAdmin } = useHomeAuth();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -417,7 +429,7 @@ export function HomeClient({ children }: { children?: ReactNode }) {
         <div className="[content-visibility:auto] [contain-intrinsic-size:1px_2200px]">{children}</div>
       </main>
 
-      <SiteFooter />
+      {showFooter ? <SiteFooter locale={footerLang} /> : null}
     </div>
   );
 }

@@ -227,12 +227,12 @@ function FeedMetaBox({
   trailingActions?: ReactNode;
 }) {
   return (
-    <div className="flex w-full shrink-0 flex-col gap-1 md:ml-auto md:w-[288px] md:min-w-[288px] md:max-w-[288px]">
+    <div className="flex w-full shrink-0 flex-col gap-1 md:ml-auto md:min-w-[17rem] md:max-w-[20rem] md:flex-[0_1_20rem]">
       <div
-        className={`flex h-[64px] w-full items-center justify-between gap-3 rounded-xl px-3.5 py-2 ${visual.metaBox}`}
+        className={`flex min-h-[4rem] w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 sm:gap-3 sm:px-3.5 ${visual.metaBox}`}
       >
         <time
-          className="flex w-[4.25rem] shrink-0 items-center text-left text-[11px] font-medium leading-none tabular-nums text-slate-500 whitespace-nowrap"
+          className="min-w-0 shrink-0 text-left text-[11px] font-medium leading-snug tabular-nums text-slate-500"
           dateTime={timeIso}
           title={timeTitle}
         >

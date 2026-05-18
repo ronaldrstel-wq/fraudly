@@ -6,7 +6,8 @@ import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { formatPublicCheckRelativeTime } from "@/lib/latest-public-checks/relative-time";
 import { overviewFeedPrimaryLine } from "@/lib/overviewFeedDisplay";
-import { EN_MESSAGES } from "@/lib/messages.en";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
+import { homeHref, localizedPath } from "@/lib/i18n/paths";
 import { checkResultHref } from "@/lib/check/checkResultHref";
 import { buildOverviewFromPublicCheck } from "@/lib/overviewCardPresentation";
 import { logDisplayScoreDebug } from "@/lib/scoring/displayScore";
@@ -29,11 +30,12 @@ function clampPage(raw: string | undefined): number {
   return Math.min(n, 500);
 }
 
-function entityBadge(type: string | null | undefined): string {
-  const labels = EN_MESSAGES.latestChecks.entityLabels;
-  if (!type) return EN_MESSAGES.latestChecks.entityFallback;
+function entityBadge(type: string | null | undefined, locale: import("@/lib/i18n/locales").Locale): string {
+  const labels = getDictionary(locale).latestChecksPage.entityLabels;
+  const fallback = getDictionary(locale).latestChecksPage.entityFallback;
+  if (!type) return fallback;
   const k = type as keyof typeof labels;
-  return k in labels ? labels[k] : EN_MESSAGES.latestChecks.entityFallback;
+  return k in labels ? labels[k] : fallback;
 }
 
 function safeLastSeenIso(lastSeenAt: Date | string): string {
@@ -52,7 +54,8 @@ function safeCardHref(row: LatestPublicCheckListRow): string {
   }
 }
 
-function LatestCheckListItem({ row }: { row: LatestPublicCheckListRow }) {
+function LatestCheckListItem({ row, locale }: { row: LatestPublicCheckListRow; locale: import("@/lib/i18n/locales").Locale }) {
+  const ui = getDictionary(locale).latestChecksPage;
   try {
     const m = buildOverviewFromPublicCheck(row);
     logDisplayScoreDebug({
@@ -66,7 +69,7 @@ function LatestCheckListItem({ row }: { row: LatestPublicCheckListRow }) {
     });
     const iso = safeLastSeenIso(row.lastSeenAt);
     const primaryLine = overviewFeedPrimaryLine(row.checkedValue ?? row.normalizedValue);
-    const domainLine = primaryLine.primary || row.normalizedValue || EN_MESSAGES.latestChecks.entityFallback;
+    const domainLine = primaryLine.primary || row.normalizedValue || ui.entityFallback;
     const confidenceBadges = feedListRowConfidenceBadges({
       normalizedTrustScore: row.normalizedTrustScore,
       consumerVerdictLabel: row.consumerVerdictLabel,
@@ -94,7 +97,7 @@ function LatestCheckListItem({ row }: { row: LatestPublicCheckListRow }) {
         domainLine={domainLine}
         domainFullTitle={primaryLine.fullTitle || domainLine}
         href={safeCardHref(row)}
-        viewLabel={EN_MESSAGES.latestChecks.viewResultArrow}
+        viewLabel={ui.viewResultArrow}
         timeIso={iso}
         timeRelative={formatPublicCheckRelativeTime(iso)}
         timeTitle={
@@ -102,7 +105,7 @@ function LatestCheckListItem({ row }: { row: LatestPublicCheckListRow }) {
             ? row.lastSeenAt.toUTCString()
             : ""
         }
-        entityBadge={entityBadge(row.entityType)}
+        entityBadge={entityBadge(row.entityType, locale)}
         confidenceBadges={confidenceBadges}
       />
     );
@@ -117,7 +120,9 @@ import type { Locale } from "@/lib/i18n/locales";
 export type LatestChecksRenderProps = PageProps & { locale?: Locale };
 
 export async function renderLatestChecksPage({ searchParams, locale = "en" }: LatestChecksRenderProps) {
+  const ui = getDictionary(locale).latestChecksPage;
   const page = clampPage((await searchParams).page);
+  const listBase = localizedPath("/latest-checks", locale);
   const skip = (page - 1) * PAGE_SIZE;
 
   const feed = await fetchLatestPublicChecksFeedPage(page, PAGE_SIZE);
@@ -147,13 +152,13 @@ export async function renderLatestChecksPage({ searchParams, locale = "en" }: La
             className="mt-14 rounded-2xl border border-amber-200/80 bg-amber-50/80 px-6 py-14 text-center shadow-sm md:mt-16 md:px-10"
           >
             <p id="latest-unavailable" className="mx-auto max-w-xl text-sm leading-relaxed text-amber-950">
-              {EN_MESSAGES.latestChecks.unavailableState}
+              {ui.unavailableState}
             </p>
             <Link
-              href="/#link-check"
+              href={`${homeHref(locale)}#link-check`}
               className="mt-6 inline-flex rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-5 py-3 text-sm font-semibold text-white shadow-md hover:brightness-110"
             >
-              {EN_MESSAGES.latestChecks.ctaPrimary}
+              {ui.ctaPrimary}
             </Link>
           </section>
         ) : rows.length === 0 ? (
@@ -162,23 +167,25 @@ export async function renderLatestChecksPage({ searchParams, locale = "en" }: La
             className="mt-14 rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-14 text-center shadow-sm md:mt-16 md:px-10"
           >
             <p id="latest-empty" className="mx-auto max-w-xl text-sm leading-relaxed text-slate-600">
-              {EN_MESSAGES.latestChecks.emptyState}
+              {ui.emptyState}
             </p>
             <Link
-              href="/#link-check"
+              href={`${homeHref(locale)}#link-check`}
               className="mt-6 inline-flex rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-5 py-3 text-sm font-semibold text-white shadow-md hover:brightness-110"
             >
-              {EN_MESSAGES.latestChecks.ctaPrimary}
+              {ui.ctaPrimary}
             </Link>
           </section>
         ) : (
           <section className="mt-12 md:mt-14" aria-labelledby="latest-list-heading">
             <h2 id="latest-list-heading" className="sr-only">
-              {EN_MESSAGES.latestChecks.listAria}
+              {ui.listAria}
             </h2>
             <ol className="space-y-3 md:space-y-3.5">
               {rows.map((row) => (
-                <li key={row.id}><LatestCheckListItem row={row} /></li>
+                <li key={row.id}>
+                  <LatestCheckListItem row={row} locale={locale} />
+                </li>
               ))}
             </ol>
           </section>
@@ -192,28 +199,28 @@ export async function renderLatestChecksPage({ searchParams, locale = "en" }: La
             <div className="min-w-0">
               {prevPage !== null ? (
                 <Link
-                  href={prevPage === 1 ? "/latest-checks" : `/latest-checks?page=${prevPage}`}
+                  href={prevPage === 1 ? listBase : `${listBase}?page=${prevPage}`}
                   className="text-sm font-semibold text-blue-600 underline decoration-blue-600/35 underline-offset-2 hover:decoration-blue-600"
                 >
-                  ← {EN_MESSAGES.latestChecks.paginationPrev}
+                  ← {ui.pagination.prev}
                 </Link>
               ) : (
-                <span className="text-sm text-slate-400">{EN_MESSAGES.latestChecks.paginationPrevDisabled}</span>
+                <span className="text-sm text-slate-400">{ui.pagination.prevDisabled}</span>
               )}
             </div>
             <p className="text-center text-xs text-slate-500">
-              {EN_MESSAGES.latestChecks.paginationPage}: {page}
+              {ui.pagination.page}: {page}
             </p>
             <div className="text-right">
               {nextPage !== null ? (
                 <Link
-                  href={`/latest-checks?page=${nextPage}`}
+                  href={`${listBase}?page=${nextPage}`}
                   className="text-sm font-semibold text-blue-600 underline decoration-blue-600/35 underline-offset-2 hover:decoration-blue-600"
                 >
-                  {EN_MESSAGES.latestChecks.paginationNext} →
+                  {ui.pagination.next} →
                 </Link>
               ) : (
-                <span className="text-sm text-slate-400">{EN_MESSAGES.latestChecks.paginationNextDisabled}</span>
+                <span className="text-sm text-slate-400">{ui.pagination.nextDisabled}</span>
               )}
             </div>
           </nav>

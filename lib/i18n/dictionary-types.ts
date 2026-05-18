@@ -1,4 +1,6 @@
-export type Dictionary = {
+import type { MarketingUiExtension } from "@/lib/i18n/marketing-ui-types";
+
+export type CoreDictionary = {
   localeBanner: {
     dismiss: string;
   };
@@ -83,6 +85,7 @@ export type Dictionary = {
     subtitle: string;
     cta: string;
     ctaSection: string;
+    ctaButton: string;
     chooseCountry: string;
     chooseCountryHint: string;
     reportingForPrefix: string;
@@ -115,3 +118,5 @@ export type Dictionary = {
     latestChecks: { title: string; description: string };
   };
 };
+
+export type Dictionary = CoreDictionary & MarketingUiExtension;

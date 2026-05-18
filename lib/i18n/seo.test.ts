@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { allLocalizedMarketingUrls } from "@/lib/i18n/sitemap-paths";
-import { localizedPath } from "@/lib/i18n/paths";
+import { homeScannerHref, isHomepagePath, localizedPath } from "@/lib/i18n/paths";
 import { hreflangLanguages, localizedCanonicalUrl, normalizeSearchSuffix } from "@/lib/i18n/seo";
 import { LOCALIZED_MARKETING_PATHS, LOCALES } from "@/lib/i18n/locales";
 import { SITE_URL } from "@/lib/seo";
@@ -16,6 +16,41 @@ describe("localizedPath", () => {
     expect(localizedPath("/", "nl")).toBe("/nl");
     expect(localizedPath("/about", "de")).toBe("/de/about");
     expect(localizedPath("/latest-checks", "fr")).toBe("/fr/latest-checks");
+  });
+});
+
+describe("homeScannerHref", () => {
+  it("always targets the locale homepage scanner anchor", () => {
+    expect(homeScannerHref("en")).toBe("/#link-check");
+    expect(homeScannerHref("nl")).toBe("/nl#link-check");
+    expect(homeScannerHref("de")).toBe("/de#link-check");
+    expect(homeScannerHref("fr")).toBe("/fr#link-check");
+  });
+
+  it("does not use the current page path", () => {
+    expect(homeScannerHref("en")).not.toContain("/about");
+    expect(homeScannerHref("nl")).not.toContain("/about");
+    expect(homeScannerHref("de")).not.toContain("/scam-help");
+    expect(homeScannerHref("fr")).not.toContain("/latest-checks");
+  });
+});
+
+describe("isHomepagePath", () => {
+  it("matches locale homepages only", () => {
+    expect(isHomepagePath("/")).toBe(true);
+    expect(isHomepagePath("/nl")).toBe(true);
+    expect(isHomepagePath("/de")).toBe(true);
+    expect(isHomepagePath("/fr")).toBe(true);
+  });
+
+  it("rejects marketing subpages and check routes", () => {
+    expect(isHomepagePath("/about")).toBe(false);
+    expect(isHomepagePath("/nl/about")).toBe(false);
+    expect(isHomepagePath("/de/scam-help")).toBe(false);
+    expect(isHomepagePath("/fr/latest-checks")).toBe(false);
+    expect(isHomepagePath("/scam-alerts")).toBe(false);
+    expect(isHomepagePath("/support")).toBe(false);
+    expect(isHomepagePath("/check/example.com")).toBe(false);
   });
 });
 

@@ -2,38 +2,27 @@
 
 import Image from "next/image";
 import { useLocale } from "@/components/i18n/LocaleProvider";
-import { EN_MESSAGES } from "@/lib/messages.en";
+import { marketingPageH1Class } from "@/lib/i18n/typography";
 
 const HERO_IMAGE = "/images/latest-checks-hero.png";
 const HERO_ALT = "Fraudly website trust and scam detection illustration";
 
 export function LatestChecksHero() {
   const { locale, dict } = useLocale();
-  const lc = EN_MESSAGES.latestChecks;
-  const overline = locale === "en" ? lc.overline : dict.latestChecks.overline;
-  const pageTitle = locale === "en" ? lc.pageTitle : dict.latestChecks.title;
-  const intro = locale === "en" ? lc.intro : dict.latestChecks.intro;
-  const scoreExplainerFootnote = locale === "en" ? lc.scoreExplainerFootnote : dict.latestChecks.footnote;
+  const lc = dict.latestChecks;
 
   return (
     <header className="pb-2 pt-1 sm:pb-3 md:pb-4">
       <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-12 xl:gap-16">
         <div className="max-w-2xl text-center lg:text-left">
-          <p className="text-sm font-medium text-blue-700">{overline}</p>
-          <h1 className="mt-2.5 text-balance text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl md:text-[2.65rem] md:leading-[1.1]">
-            {pageTitle}
-          </h1>
-          <p className="mt-5 max-w-prose text-pretty text-base leading-relaxed text-slate-600 lg:mx-0 lg:mt-5">
-            {intro}
-          </p>
-          <p className="mt-3 max-w-prose text-pretty text-sm leading-relaxed text-slate-500 lg:mx-0">
-            {scoreExplainerFootnote}
-          </p>
+          <p className="text-sm font-medium text-blue-700">{lc.overline}</p>
+          <h1 className={`mt-2.5 ${marketingPageH1Class(locale)}`}>{lc.title}</h1>
+          <p className="mt-5 max-w-prose text-pretty text-base leading-relaxed text-slate-600 lg:mx-0 lg:mt-5">{lc.intro}</p>
+          <p className="mt-3 max-w-prose text-pretty text-sm leading-relaxed text-slate-500 lg:mx-0">{lc.footnote}</p>
           {locale !== "en" ? (
-            <p className="mt-2 max-w-prose text-pretty text-xs text-slate-500 lg:mx-0">{dict.latestChecks.resultsNote}</p>
+            <p className="mt-2 max-w-prose text-pretty text-xs text-slate-500 lg:mx-0">{lc.resultsNote}</p>
           ) : null}
         </div>
-
         <div className="relative mx-auto flex w-full max-w-[min(100%,28rem)] justify-center lg:mx-0 lg:max-w-none lg:justify-end">
           <div
             className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_70%_55%_at_50%_42%,rgba(59,130,246,0.16),transparent_68%),radial-gradient(ellipse_55%_48%_at_72%_68%,rgba(139,92,246,0.12),transparent_65%)]"

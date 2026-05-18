@@ -4,7 +4,8 @@ import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { formatHomeStatCount } from "@/lib/home/formatHomeStatCount";
 import type { HomeTrustStats } from "@/lib/home/getHomeTrustStats";
-import { EN_MESSAGES } from "@/lib/messages.en";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
+import type { Locale } from "@/lib/i18n/locales";
 import { IconAlert, IconAnalytics, IconGlobe, IconShield } from "@/components/home/HomeSectionIcons";
 
 type StatCardProps = {
@@ -84,9 +85,9 @@ function StatCard({ label, value, hint, icon, numericTarget, animateValue }: Sta
   );
 }
 
-export function HomeTrustActivitySection({ stats }: { stats: HomeTrustStats }) {
+export function HomeTrustActivitySection({ stats, locale = "en" }: { stats: HomeTrustStats; locale?: Locale }) {
   const { ref, visible } = useInViewOnce();
-  const copy = EN_MESSAGES.home.trustActivity;
+  const copy = getDictionary(locale).homeSections.trustActivity;
   const hasChecks = stats.websiteChecks > 0;
   const hasSignals = stats.threatSignalsAnalyzed > 0;
 

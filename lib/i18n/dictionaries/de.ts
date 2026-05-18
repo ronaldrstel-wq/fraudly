@@ -1,6 +1,6 @@
-import type { Dictionary } from "@/lib/i18n/dictionary-types";
+import type { CoreDictionary } from "@/lib/i18n/dictionary-types";
 
-export const de: Dictionary = {
+export const de: CoreDictionary = {
   localeBanner: {
     dismiss: "Schließen"
   },
@@ -116,6 +116,7 @@ export const de: Dictionary = {
     subtitle: "Offizielle Meldestellen und praktische Schritte zum Schutz finden.",
     cta: "Verdächtige Website prüfen",
     ctaSection: "Website prüfen, bevor du zahlst",
+    ctaButton: "Website prüfen, bevor du zahlst",
     chooseCountry: "Land wählen",
     chooseCountryHint: "Wähle unten dein Land für offizielle Meldeorganisationen und nächste Schritte.",
     reportingForPrefix: "Meldeoptionen für",

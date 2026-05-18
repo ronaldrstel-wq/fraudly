@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { localizedPath } from "@/lib/i18n/paths";
 import { LOCALE_LABELS, type LocalizedLocale } from "@/lib/i18n/locales";
+import { readStoredLocale } from "@/lib/i18n/locale-preference";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 
 const DISMISS_KEY = "fraudly-locale-banner-dismiss";
@@ -41,6 +42,8 @@ export function LocaleSuggestionBanner({ suggestedLocale, marketingPath }: Local
 
   useEffect(() => {
     if (locale !== "en") return;
+    const stored = readStoredLocale();
+    if (stored && stored !== "en") return;
     try {
       if (sessionStorage.getItem(DISMISS_KEY) === "1") return;
     } catch {

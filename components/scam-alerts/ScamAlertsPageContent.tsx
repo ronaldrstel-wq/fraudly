@@ -7,15 +7,16 @@ import { ScamAlertsSummaryStrip } from "@/components/scam-alerts/ScamAlertsSumma
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import {
-  buildScamAlertsQuery,
   clusterDomainKey,
   type ListFilterKey,
   parseListFilterKey,
   parseScamAlertsPageParam,
   parseScamAlertsTimeWindow
 } from "@/lib/scam-alerts/presentation";
-import { EN_MESSAGES } from "@/lib/messages.en";
 import type { Locale } from "@/lib/i18n/locales";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
+import { homeHref, localizedPath } from "@/lib/i18n/paths";
+import { localizedScamAlertsHref } from "@/lib/i18n/scam-alerts-path";
 import {
   getPublishedScamAlertsPageResult,
   getScamAlertsIndexStats,
@@ -29,6 +30,8 @@ export type ScamAlertsPageContentProps = {
 };
 
 export async function ScamAlertsPageContent({ searchParams, locale = "en" }: ScamAlertsPageContentProps) {
+  const dict = getDictionary(locale);
+  const ui = dict.scamAlertsPage;
   const params = await searchParams;
   const now = new Date();
   const selectedType = typeof params.type === "string" ? params.type : "";
@@ -90,38 +93,43 @@ export async function ScamAlertsPageContent({ searchParams, locale = "en" }: Sca
         <ScamAlertsSummaryStrip stats={stats} filteredTotal={total} rangeStart={rangeStart} rangeEnd={rangeEnd} />
 
         <div className="mt-5">
-          <ScamAlertsFilterBar activeFilter={filter} activeTime={timeWindow} selectedType={selectedType} types={types} />
+          <ScamAlertsFilterBar
+            locale={locale}
+            activeFilter={filter}
+            activeTime={timeWindow}
+            selectedType={selectedType}
+            types={types}
+          />
         </div>
 
         {alerts.length === 0 ? (
           <section className="mt-10 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
-            <h2 className="text-xl font-semibold text-slate-900">
-              {stats.total === 0
-                ? EN_MESSAGES.scamAlertsUi.emptyStateZeroTitle
-                : EN_MESSAGES.scamAlertsUi.emptyStateFilteredTitle}
+            <h2 className="text-balance text-xl font-semibold text-slate-900">
+              {stats.total === 0 ? ui.empty.zeroTitle : ui.empty.filteredTitle}
             </h2>
-            <p className="mt-2 mx-auto max-w-lg text-sm leading-relaxed text-slate-600">
-              {stats.total === 0 ? EN_MESSAGES.scamAlertsUi.emptyStateZeroBody : EN_MESSAGES.scamAlertsUi.emptyStateFilteredBody}
+            <p className="mx-auto mt-2 max-w-lg text-pretty text-sm leading-relaxed text-slate-600">
+              {stats.total === 0 ? ui.empty.zeroBody : ui.empty.filteredBody}
             </p>
             {stats.total > 0 && timeWindow !== "all" ? (
               <p className="mt-3 text-center text-sm">
                 <Link
-                  href={`/scam-alerts${buildScamAlertsQuery({
+                  href={localizedScamAlertsHref({
+                    locale,
                     time: "all",
-                    filter: filter === "all" ? undefined : filter,
-                    type: selectedType || undefined
-                  })}`}
+                    filter: filter === "all" ? "all" : filter,
+                    type: selectedType
+                  })}
                   className="font-semibold text-blue-700 underline-offset-2 hover:underline"
                 >
-                  {EN_MESSAGES.scamAlertsUi.emptyStateViewAllTimeCta}
+                  {ui.empty.viewAllTimeCta}
                 </Link>
               </p>
             ) : null}
             <Link
-              href="/#link-check"
-              className="mt-6 inline-flex rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-5 py-3 text-sm font-semibold text-white shadow-md hover:brightness-110"
+              href={`${homeHref(locale)}#link-check`}
+              className="mt-6 inline-flex max-w-full rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-5 py-3 text-center text-sm font-semibold leading-snug text-white shadow-md hover:brightness-110"
             >
-              {EN_MESSAGES.scamAlertsUi.emptyStateCheckWebsiteCta}
+              {ui.empty.checkWebsiteCta}
             </Link>
           </section>
         ) : (
@@ -135,7 +143,14 @@ export async function ScamAlertsPageContent({ searchParams, locale = "en" }: Sca
                 return <ScamAlertCard key={alert.id} alert={alert} now={now} showRelatedHint={showRelated} />;
               })}
             </section>
-            <ScamAlertsPagination filter={filter} time={timeWindow} selectedType={selectedType} page={page} maxPage={maxPage} />
+            <ScamAlertsPagination
+              locale={locale}
+              filter={filter}
+              time={timeWindow}
+              selectedType={selectedType}
+              page={page}
+              maxPage={maxPage}
+            />
           </>
         )}
       </main>

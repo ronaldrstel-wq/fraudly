@@ -1,6 +1,6 @@
-import type { Dictionary } from "@/lib/i18n/dictionary-types";
+import type { CoreDictionary } from "@/lib/i18n/dictionary-types";
 
-export const nl: Dictionary = {
+export const nl: CoreDictionary = {
   localeBanner: {
     dismiss: "Sluiten"
   },
@@ -116,6 +116,7 @@ export const nl: Dictionary = {
     subtitle: "Vind officiële meldpunten en praktische stappen om jezelf te beschermen.",
     cta: "Controleer een verdachte website",
     ctaSection: "Check een website voordat je betaalt",
+    ctaButton: "Controleer een website voordat je betaalt",
     chooseCountry: "Kies je land",
     chooseCountryHint: "Selecteer hieronder je land voor officiële meldorganisaties en vervolgstappen.",
     reportingForPrefix: "Meldopties voor",

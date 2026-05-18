@@ -1,9 +1,12 @@
 import Link from "next/link";
 import type { ListFilterKey } from "@/lib/scam-alerts/presentation";
-import { buildScamAlertsQuery } from "@/lib/scam-alerts/presentation";
 import type { ScamAlertsTimeWindow } from "@/lib/scam-alerts/service";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
+import { localizedScamAlertsHref } from "@/lib/i18n/scam-alerts-path";
+import type { Locale } from "@/lib/i18n/locales";
 
 type Props = {
+  locale: Locale;
   filter: ListFilterKey;
   time: ScamAlertsTimeWindow;
   selectedType: string;
@@ -11,16 +14,8 @@ type Props = {
   maxPage: number;
 };
 
-function href(page: number, filter: ListFilterKey, type: string, time: ScamAlertsTimeWindow) {
-  return `/scam-alerts${buildScamAlertsQuery({
-    time,
-    filter: filter === "all" ? undefined : filter,
-    type: type || undefined,
-    page
-  })}`;
-}
-
-export function ScamAlertsPagination({ filter, time, selectedType, page, maxPage }: Props) {
+export function ScamAlertsPagination({ locale, filter, time, selectedType, page, maxPage }: Props) {
+  const { scamAlertsPage: ui } = getDictionary(locale);
   if (maxPage <= 1) return null;
 
   const prevPage = page > 1 ? page - 1 : null;
@@ -32,35 +27,35 @@ export function ScamAlertsPagination({ filter, time, selectedType, page, maxPage
         {prevPage ? (
           <Link
             rel="prev"
-            href={href(prevPage, filter, selectedType, time)}
+            href={localizedScamAlertsHref({ locale, time, filter, type: selectedType, page: prevPage })}
             scroll={false}
             className="btn-secondary border-slate-200/90 px-4 py-2"
           >
-            ← Previous
+            ← {ui.pagination.prev}
           </Link>
         ) : (
           <span className="inline-flex min-h-11 cursor-not-allowed items-center rounded-xl border border-slate-100 bg-slate-50/90 px-4 py-2 text-sm font-semibold text-slate-400">
-            ← Previous
+            ← {ui.pagination.prevDisabled}
           </span>
         )}
       </div>
       <p className="text-sm text-slate-600">
-        Page <span className="font-semibold text-slate-900">{page}</span> of{" "}
+        {ui.pagination.page} <span className="font-semibold text-slate-900">{page}</span> /{" "}
         <span className="font-semibold text-slate-900">{maxPage}</span>
       </p>
       <div>
         {nextPage ? (
           <Link
             rel="next"
-            href={href(nextPage, filter, selectedType, time)}
+            href={localizedScamAlertsHref({ locale, time, filter, type: selectedType, page: nextPage })}
             scroll={false}
             className="btn-secondary border-slate-200/90 px-4 py-2"
           >
-            Next →
+            {ui.pagination.next} →
           </Link>
         ) : (
           <span className="inline-flex min-h-11 cursor-not-allowed items-center rounded-xl border border-slate-100 bg-slate-50/90 px-4 py-2 text-sm font-semibold text-slate-400">
-            Next →
+            {ui.pagination.nextDisabled} →
           </span>
         )}
       </div>

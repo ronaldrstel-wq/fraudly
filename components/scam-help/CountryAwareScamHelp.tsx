@@ -79,7 +79,7 @@ export function CountryAwareScamHelp({ detectedCountryCode, countries }: Country
       <section className="mt-10" aria-labelledby="reporting-options-heading">
         {showReporting && activeCountry ? (
           <>
-            <h2 id="reporting-options-heading" className="text-center text-xl font-bold text-slate-900 md:text-2xl">
+            <h2 id="reporting-options-heading" className="text-balance text-center text-xl font-bold leading-snug text-slate-900 md:text-2xl">
               {t.reportingForPrefix} {activeCountry.name}
             </h2>
             <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-slate-600">{t.privacyHint}</p>
@@ -109,7 +109,7 @@ export function CountryAwareScamHelp({ detectedCountryCode, countries }: Country
           </>
         ) : (
           <>
-            <h2 id="reporting-options-heading" className="text-center text-xl font-bold text-slate-900 md:text-2xl">
+            <h2 id="reporting-options-heading" className="text-balance text-center text-xl font-bold leading-snug text-slate-900 md:text-2xl">
               {t.chooseCountry}
             </h2>
             <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-slate-600">{t.chooseCountryHint}</p>
@@ -122,7 +122,7 @@ export function CountryAwareScamHelp({ detectedCountryCode, countries }: Country
 
       {showReporting ? (
         <section className="mt-12 sm:mt-14" aria-labelledby="immediate-actions-heading">
-          <h2 id="immediate-actions-heading" className="text-xl font-bold text-slate-900 md:text-2xl">
+          <h2 id="immediate-actions-heading" className="text-balance text-xl font-bold leading-snug text-slate-900 md:text-2xl">
             {t.immediateActions}
           </h2>
           <ul className="mt-6 space-y-3">
