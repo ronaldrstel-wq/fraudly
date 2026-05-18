@@ -40,6 +40,7 @@ import { enrichScamCheckResultDomainAge } from "@/lib/domain/normalizeDomainAge"
 import { parseDomainParts } from "@/lib/domain/parseDomain";
 import { resolveRedirectChain } from "@/lib/checks/redirectChain";
 import type { ScoreSignal } from "@/lib/scoringEngine";
+import { classifySiteType } from "@/lib/siteClassification/classifySiteType";
 import { wrapEvidence } from "@/lib/checks/providers/shared";
 
 const EMPTY_BEHAVIOR: PendingPageBehaviorSignals = {};
@@ -98,6 +99,12 @@ export async function runWebsiteAnalysis(
   }
 
   const websiteText = websiteSignals?.text ?? "";
+  const siteClassification = classifySiteType({
+    url: analysisUrl,
+    hostname: normalizedDomain,
+    pageText: websiteText,
+    htmlSnippet: websiteSignals?.htmlSnippet
+  });
   const supplyChainSignals = await getSupplyChainSignals(normalizedDomain, websiteText);
 
   const { scoreSignals: finalIntelSignals, breakdown: finalIntelBreakdown } = buildIntelScoring(externalChecks);
@@ -249,7 +256,8 @@ export async function runWebsiteAnalysis(
     externalSignals: [...finalIntelSignals, ...originalIntelSignals, ...redirectSignals],
     scoringContext,
     intelSurface,
-    mailDnsHints
+    mailDnsHints,
+    siteClassification
   };
 
   const scorePre = calculateScamScore({

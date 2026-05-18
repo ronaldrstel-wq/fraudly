@@ -40,7 +40,7 @@ function minimalResult(overrides: Partial<ScamCheckResult> = {}): ScamCheckResul
 
 describe("trustHighlightFacts", () => {
   it("formats young domain as caution", () => {
-    expect(formatDomainAgeConsumerLine(12)).toMatch(/only 12 days old/i);
+    expect(formatDomainAgeConsumerLine(12)).toMatch(/relatively new/i);
     expect(domainAgeHighlightBucket(12)).toBe("caution");
   });
 
@@ -114,7 +114,9 @@ describe("trustHighlightFacts", () => {
       domainIntelligence: { source: "RDAP", warnings: [], ageDays: 12 }
     });
     const normalized = normalizeConsumerSignalsForResult(result);
-    expect(normalized.watch.some((l) => /only 12 days old/i.test(l))).toBe(true);
+    expect(normalized.watch.some((l) => /relatively new/i.test(l) && /limited public history/i.test(l))).toBe(
+      true
+    );
   });
 
   it("extracts hero highlight rows", () => {

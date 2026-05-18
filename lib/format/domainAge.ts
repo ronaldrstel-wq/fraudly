@@ -102,7 +102,10 @@ export function formatDomainAgeSignal(days?: number | null): string | null {
 
   const d = Math.max(0, Math.round(days ?? 0));
   if (d <= YOUNG_DOMAIN_DAYS) {
-    return `This domain is only ${formatted} old.`;
+    return `This website is relatively new (${formatted}), so there is limited public history.`;
+  }
+  if (d < ESTABLISHED_DOMAIN_DAYS) {
+    return `This website is relatively new (${formatted}), so there is limited public history.`;
   }
   if (d >= ESTABLISHED_DOMAIN_DAYS) {
     return `This domain has existed for ${formatted}.`;

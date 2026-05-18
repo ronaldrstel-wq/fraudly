@@ -38,8 +38,14 @@ export const REVIEW_SCORE_IMPACT = {
   usedInTrustScore: "Used in trust score",
   notEnoughData: "Checked, not enough data",
   noPublicReviews: "Checked, no public reviews found",
-  possibleMismatch: "Checked, possible mismatch"
+  possibleMismatch: "Checked, possible mismatch",
+  customerExperience: "Customer experience — not a fraud signal",
+  customerExperienceCaution:
+    "Mixed reviews — check delivery, returns and policy before ordering"
 } as const;
+
+const CUSTOMER_EXPERIENCE_BODY =
+  "Mixed customer experiences reported. Check reviews, delivery times and return policy before ordering.";
 
 function reputationLabelFromRating(rating: number): ReviewReputationLabel {
   if (rating >= 4) return "Positive";
@@ -179,6 +185,8 @@ function buildChannelPresentation(args: {
   const usedInTrustScore = meetsScoreGate(found, rating, reviewCount, confidenceScore);
 
   if (hasRatingAndCount && reviewCount >= MIN_REVIEWS_FOR_TRUST_SCORE) {
+    const reputationLabel = reputationLabelFromRating(rating);
+    const customerExperienceOnly = rating < 3.5;
     return {
       source,
       found: true,
@@ -187,12 +195,16 @@ function buildChannelPresentation(args: {
       confidenceScore,
       usedInTrustScore,
       displayState: "strong",
-      reputationLabel: reputationLabelFromRating(rating),
-      scoreImpactLabel: usedInTrustScore
-        ? REVIEW_SCORE_IMPACT.usedInTrustScore
-        : REVIEW_SCORE_IMPACT.notEnoughData,
+      reputationLabel,
+      scoreImpactLabel: customerExperienceOnly
+        ? rating < 3
+          ? REVIEW_SCORE_IMPACT.customerExperienceCaution
+          : REVIEW_SCORE_IMPACT.customerExperience
+        : usedInTrustScore
+          ? REVIEW_SCORE_IMPACT.usedInTrustScore
+          : REVIEW_SCORE_IMPACT.notEnoughData,
       showMetrics: true,
-      bodyMessage: ""
+      bodyMessage: customerExperienceOnly ? CUSTOMER_EXPERIENCE_BODY : ""
     };
   }
 

@@ -40,11 +40,15 @@ describe("formatDomainAgeFromDays", () => {
 
 describe("formatDomainAgeSignal", () => {
   it("formats young domain copy", () => {
-    expect(formatDomainAgeSignal(12)).toBe("This domain is only 12 days old.");
+    expect(formatDomainAgeSignal(12)).toBe(
+      "This website is relatively new (12 days), so there is limited public history."
+    );
   });
 
   it("formats mid-age domain copy", () => {
-    expect(formatDomainAgeSignal(45)).toBe("This domain is 1 month, 15 days old.");
+    expect(formatDomainAgeSignal(45)).toBe(
+      "This website is relatively new (1 month, 15 days), so there is limited public history."
+    );
   });
 
   it("formats established domain copy", () => {

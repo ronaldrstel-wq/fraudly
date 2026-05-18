@@ -17,7 +17,9 @@ describe("consumerSignalCopy", () => {
   });
 
   it("rewrites young domain for caution section", () => {
-    expect(consumerSignalSummary("Very new domain registration", "12 days old", "caution")).toMatch(/only 12 days old/i);
+    expect(consumerSignalSummary("Very new domain registration", "12 days old", "caution")).toMatch(
+      /relatively new|limited public history/i
+    );
   });
 
   it("rewrites limited review data for caution section", () => {

@@ -110,8 +110,8 @@ describe("normalizeConsumerSignalsForResult domain age", () => {
     } as Pick<ScamCheckResult, "trustSignals" | "domainIntelligence" | "ssl">;
 
     const { helpful, watch } = normalizeConsumerSignalsForResult(result);
-    expect(watch.some((l) => /only 12 days old/i.test(l))).toBe(true);
-    expect([...helpful, ...watch].join(" ")).not.toMatch(/\b12\s*days\b(?!\s*old)/i);
+    expect(watch.some((l) => /relatively new/i.test(l) && /limited public history/i.test(l))).toBe(true);
+    expect([...helpful, ...watch].join(" ")).not.toMatch(/\b12\s*days\b(?!\s*old|\))/i);
   });
 
   it("surfaces established domain under Helpful signals", () => {

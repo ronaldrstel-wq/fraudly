@@ -48,8 +48,16 @@ const CAUTION_RULES: ReadonlyArray<{ pattern: RegExp; summary: string }> = [
     summary: FEED_HIT_SUMMARY
   },
   {
-    pattern: /\b(very new domain|young domain|recently registered|short initial registration|only about \d+ days)\b/i,
-    summary: "This domain was registered recently."
+    pattern: /\b(limited public history|relatively new)\b/i,
+    summary: "This website is relatively new, so there is limited public history."
+  },
+  {
+    pattern: /\b(very new webshop|shopping\/payment caution|shopping-risk)\b/i,
+    summary: "Shopping/payment risk: this store is new or missing policies—check before you pay."
+  },
+  {
+    pattern: /\b(very new domain|young domain).*(scam|fraud|throwaway)\b/i,
+    summary: "This domain was registered recently and shows higher fraud-style risk cues."
   },
   {
     pattern: /\b(limited|no |missing|unavailable).*(review|reputation|rating)|limited reputation\b/i,

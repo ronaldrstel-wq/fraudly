@@ -1,7 +1,10 @@
 import type { ReviewChannelDisplayState, ReviewReputationLabel } from "@/lib/reputation/reviewChannelPresentation";
 import type { ReviewMatchConfidence } from "@/lib/reputation/reviewMatchConfidence";
 import type { ConsumerVerdictLabel } from "@/lib/scoring/trust-bands";
+import type { SiteRiskDimensions, SiteType } from "@/lib/siteClassification/types";
 import type { ScamFeedThreatStatus } from "@/lib/signals/feedConsumerSignals";
+
+export type { SiteType, SiteRiskDimensions } from "@/lib/siteClassification/types";
 
 export type { ConsumerVerdictLabel } from "@/lib/scoring/trust-bands";
 
@@ -70,6 +73,10 @@ export type NormalizedTrustResult = {
   helpfulSignals: string[];
   cautionSignals: string[];
   showLimitedPublicStrip: boolean;
+
+  /** Page-type classification used for scoring calibration (not shown as a separate UI block). */
+  siteType: SiteType | null;
+  riskProfile: SiteRiskDimensions | null;
 
   /** Raw scan retained for expandable technical sections only. */
   raw: import("@/types/scam").ScamCheckResult;

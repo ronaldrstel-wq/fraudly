@@ -83,13 +83,18 @@ export function detectFakeWebshopSignals(input: FakeWebshopDetectInput): {
 
   const age = input.domainAgeDays;
   const veryNew = typeof age === "number" && age >= 0 && age < 45;
-  const established = typeof age === "number" && age > 365;
+  const established = typeof age === "number" && age >= 730;
 
   const payBlob = [...(input.paymentMethods ?? []), combined].join(" ").toLowerCase();
   const cryptoHeavy = CRYPTO_PAY.test(payBlob) && !/\b(visa|mastercard|paypal|ideal|apple pay|google pay)\b/i.test(payBlob);
   const wireHeavy = WIRE_ONLY.test(payBlob);
 
-  if (veryNew && (DISCOUNT_HYPE.test(combined) || LUXURY_HINTS.test(combined))) {
+  const shopSurface =
+    DISCOUNT_HYPE.test(combined) ||
+    /\b(add to cart|checkout|shopping cart|buy now|shop now)\b/i.test(combined) ||
+    /\b(shipping|returns?|delivery policy)\b/i.test(combined);
+
+  if (veryNew && shopSurface && (DISCOUNT_HYPE.test(combined) || LUXURY_HINTS.test(combined))) {
     delta += 8;
     signals.push({
       id: "new_domain_shop_hype",
@@ -97,17 +102,17 @@ export function detectFakeWebshopSignals(input: FakeWebshopDetectInput): {
       severity: "high",
       explanation: "The domain looks recently registered while the page pushes discounts or luxury-brand language—often seen with pop-up stores."
     });
-  } else if (veryNew) {
+  } else if (veryNew && shopSurface) {
     delta += 4;
     signals.push({
       id: "new_domain",
-      label: "Recently registered domain",
+      label: "Recently registered shop-like site",
       severity: "medium",
-      explanation: "Very new domains are not automatically fraudulent, but they deserve extra caution for purchases."
+      explanation: "Very new shop-style sites are not automatically fraudulent, but they deserve extra caution before you pay or share delivery details."
     });
   }
 
-  if (DISCOUNT_HYPE.test(combined)) {
+  if (DISCOUNT_HYPE.test(combined) && !established) {
     delta += 5;
     signals.push({
       id: "discount_hype",

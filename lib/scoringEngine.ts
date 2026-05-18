@@ -2,6 +2,17 @@ import type { DomainPatternAnalysis } from "@/lib/domainPatternHeuristics";
 import { analyzeDomainPatterns } from "@/lib/domainPatternHeuristics";
 import { parseDomainParts } from "@/lib/domain/parseDomain";
 import type { ReviewSignals } from "@/lib/reviewSignals";
+import {
+  assessEstablishedWebshopLegitimacy,
+  CUSTOMER_EXPERIENCE_REVIEW_NOTE,
+  ESTABLISHED_REVIEW_MAX_DOWN,
+  establishedWebshopMaxRisk,
+  hasThreatFeedScamHit
+} from "@/lib/scoring/establishedWebshop";
+import type { EstablishedWebshopLegitimacy } from "@/lib/scoring/establishedWebshop";
+import { buildSiteRiskDimensions, LIMITED_HISTORY_WARNING } from "@/lib/scoring/siteRiskDimensions";
+import type { SiteClassification } from "@/lib/siteClassification/types";
+import type { SiteRiskDimensions } from "@/lib/siteClassification/types";
 import type { ScoringIdentityContext } from "@/lib/scoringIdentityContext";
 import { computeTrustAnchors } from "@/lib/scoringIdentityContext";
 import type { SupplyChainSignals } from "@/lib/supplyChainSignals";
@@ -44,6 +55,8 @@ export interface ScoreResult {
   trustScoreCap?: number;
   /** When set, “Trusted” was blocked because no anchored identity/reputation evidence was available. */
   trustedBlockedReason?: "no_trust_anchor";
+  siteClassification?: SiteClassification;
+  riskDimensions?: SiteRiskDimensions;
 }
 
 export type AddressSignalsInput = {
@@ -597,7 +610,8 @@ function anchorsAdjustFloor(
   if (ctx.domainPatterns.officialRegistrableExempt) return 88;
   if (anchors.hasStrongReputation) return 86;
   if (anchors.hasAnchoredReputation) return 80;
-  if (!ctx.rdapFailed && typeof ctx.ageDaysKnown === "number" && ctx.ageDaysKnown >= 730) return 78;
+  if (!ctx.rdapFailed && typeof ctx.ageDaysKnown === "number" && ctx.ageDaysKnown >= 1825) return 80;
+  if (!ctx.rdapFailed && typeof ctx.ageDaysKnown === "number" && ctx.ageDaysKnown >= 730) return 76;
   return 74;
 }
 
@@ -634,7 +648,13 @@ function pushAiRiskSignals(level: AiRiskSignalsInput["level"], out: ScoreSignal[
   }
 }
 
-function pushReviewSignals(review: ReviewSignals, out: ScoreSignal[]): void {
+function pushReviewSignals(
+  review: ReviewSignals,
+  out: ScoreSignal[],
+  established: EstablishedWebshopLegitimacy
+): void {
+  const reputationOnly = established.eligible;
+
   const addGoogle = () => {
     if (!review.googleFound || review.googleRating == null || review.googleReviewCount == null) {
       out.push({
@@ -685,22 +705,28 @@ function pushReviewSignals(review: ReviewSignals, out: ScoreSignal[]): void {
     if (r <= 2.5 && c >= 10) {
       out.push({
         id: "reviews-google-poor",
-        label: "Poor Google reviews",
+        label: reputationOnly ? "Mixed Google customer reviews" : "Poor Google reviews",
         category: "reviews",
-        impact: 20,
-        confidence: "high",
-        reason: `Google rating ${r.toFixed(1)} with ${c} reviews is a strong warning signal.`
+        impact: reputationOnly ? 6 : 20,
+        confidence: reputationOnly ? "medium" : "high",
+        evidenceTier: reputationOnly ? "neutral_observation" : "risk_indicator",
+        reason: reputationOnly
+          ? `${CUSTOMER_EXPERIENCE_REVIEW_NOTE} (Google ${r.toFixed(1)} / ${c} reviews).`
+          : `Google rating ${r.toFixed(1)} with ${c} reviews is a strong warning signal.`
       });
       return;
     }
     if (r <= 3.2 && c >= 25) {
       out.push({
         id: "reviews-google-weak",
-        label: "Weak Google reviews",
+        label: reputationOnly ? "Below-average Google customer reviews" : "Weak Google reviews",
         category: "reviews",
-        impact: 10,
+        impact: reputationOnly ? 4 : 10,
         confidence: "medium",
-        reason: `Google rating ${r.toFixed(1)} with ${c} reviews is below typical trust levels.`
+        evidenceTier: reputationOnly ? "neutral_observation" : "risk_indicator",
+        reason: reputationOnly
+          ? `${CUSTOMER_EXPERIENCE_REVIEW_NOTE} (Google ${r.toFixed(1)} / ${c} reviews).`
+          : `Google rating ${r.toFixed(1)} with ${c} reviews is below typical trust levels.`
       });
     }
   };
@@ -741,20 +767,26 @@ function pushReviewSignals(review: ReviewSignals, out: ScoreSignal[]): void {
     } else if (r <= 2.5 && c >= 10) {
       out.push({
         id: "reviews-trustpilot-poor",
-        label: "Poor Trustpilot reviews",
+        label: reputationOnly ? "Mixed Trustpilot customer reviews" : "Poor Trustpilot reviews",
         category: "reviews",
-        impact: 20,
-        confidence: "high",
-        reason: `Trustpilot rating ${r.toFixed(1)} with ${c} reviews is a strong warning signal.`
+        impact: reputationOnly ? 6 : 20,
+        confidence: reputationOnly ? "medium" : "high",
+        evidenceTier: reputationOnly ? "neutral_observation" : "risk_indicator",
+        reason: reputationOnly
+          ? `${CUSTOMER_EXPERIENCE_REVIEW_NOTE} (Trustpilot ${r.toFixed(1)} / ${c} reviews).`
+          : `Trustpilot rating ${r.toFixed(1)} with ${c} reviews is a strong warning signal.`
       });
     } else if (r <= 3.2 && c >= 25) {
       out.push({
         id: "reviews-trustpilot-weak",
-        label: "Weak Trustpilot reviews",
+        label: reputationOnly ? "Below-average Trustpilot customer reviews" : "Weak Trustpilot reviews",
         category: "reviews",
-        impact: 10,
+        impact: reputationOnly ? 4 : 10,
         confidence: "medium",
-        reason: `Trustpilot rating ${r.toFixed(1)} with ${c} reviews is below typical trust levels.`
+        evidenceTier: reputationOnly ? "neutral_observation" : "risk_indicator",
+        reason: reputationOnly
+          ? `${CUSTOMER_EXPERIENCE_REVIEW_NOTE} (Trustpilot ${r.toFixed(1)} / ${c} reviews).`
+          : `Trustpilot rating ${r.toFixed(1)} with ${c} reviews is below typical trust levels.`
       });
     }
   };
@@ -812,7 +844,12 @@ function pushSupplyChainSignals(sc: SupplyChainSignals, out: ScoreSignal[], allo
   }
 }
 
-function pushBusinessIdentitySignals(addr: AddressSignalsInput | undefined, websiteText: string, out: ScoreSignal[]): void {
+function pushBusinessIdentitySignals(
+  addr: AddressSignalsInput | undefined,
+  websiteText: string,
+  out: ScoreSignal[],
+  isWebshop: boolean
+): void {
   const t = websiteText.trim();
   const hasData = t.length >= 180;
 
@@ -841,34 +878,125 @@ function pushBusinessIdentitySignals(addr: AddressSignalsInput | undefined, webs
   if (hasData && addr && addr.hasClearBusinessAddress === false) {
     out.push({
       id: "biz-no-address",
-      label: "No clear business address in snippet",
+      label: isWebshop ? "No clear business address on shop pages" : "No business address in snippet",
       category: "business_identity",
-      impact: 15,
-      confidence: "medium",
+      impact: isWebshop ? 14 : 5,
+      confidence: isWebshop ? "medium" : "low",
       evidenceTier: "risk_indicator",
-      reason: "Enough text was captured but no obvious physical business or return address was found."
+      reason: isWebshop
+        ? "Enough shop text was captured but no obvious business or return address was found—this matters more when you may pay or share delivery details."
+        : "No obvious physical address in the captured text; for blogs, SaaS landing pages and portfolios that is often normal."
     });
   }
 }
 
-function pushDomainAgeSignals(age: DomainAgeSignalsInput | undefined, out: ScoreSignal[]): void {
+function pushDomainAgeSignals(
+  age: DomainAgeSignalsInput | undefined,
+  site: SiteClassification | undefined,
+  patterns: DomainPatternAnalysis,
+  out: ScoreSignal[]
+): void {
   if (!age) return;
-  if (typeof age.ageDays === "number" && age.ageDays >= 0 && age.ageDays < 30) {
+
+  const days =
+    typeof age.ageDays === "number"
+      ? age.ageDays
+      : typeof age.ageYears === "number"
+        ? Math.round(age.ageYears * 365)
+        : null;
+
+  const isWebshop = site?.isWebshop ?? false;
+  const ws = site?.webshop;
+  const impersonation =
+    patterns.fakeAuthoritySubstringInApex && patterns.tldRiskTier !== "none";
+  const webshopHighRiskCombo =
+    isWebshop &&
+    days != null &&
+    days < 90 &&
+    Boolean(
+      ws?.discountHeavy ||
+        ws?.missingContactOrPolicies ||
+        patterns.hasStrongLexicalSuspicion ||
+        impersonation
+    );
+
+  if (days != null && days >= 0 && days < 30) {
+    if (webshopHighRiskCombo) {
+      out.push({
+        id: "domain-age-very-new-webshop",
+        label: "Very new webshop with several shopping-risk cues",
+        category: "domain",
+        impact: 16,
+        confidence: "high",
+        evidenceTier: "risk_indicator",
+        reason: `Domain is about ${days} days old and the site looks like a shop with limited policies, discounts, or impersonation-style cues—shopping caution is warranted.`
+      });
+    } else {
+      out.push({
+        id: "domain-age-limited-history",
+        label: isWebshop ? "New webshop with limited track record" : "Limited public history (young domain)",
+        category: "domain",
+        impact: isWebshop ? 7 : 3,
+        confidence: isWebshop ? "medium" : "low",
+        evidenceTier: "neutral_observation",
+        reason: isWebshop
+          ? `Domain is about ${days} days old. Limited history raises shopping/payment caution—not proof of fraud by itself.`
+          : `${LIMITED_HISTORY_WARNING} (about ${days} days).`
+      });
+    }
+  } else if (days != null && days >= 30 && days < 180 && !isWebshop) {
     out.push({
-      id: "domain-age-very-new",
-      label: "Very new domain registration",
+      id: "domain-age-recent-general",
+      label: "Relatively new website",
       category: "domain",
-      impact: 25,
+      impact: 2,
+      confidence: "low",
+      evidenceTier: "neutral_observation",
+      reason: LIMITED_HISTORY_WARNING
+    });
+  } else if (days != null && days >= 30 && days < 180 && isWebshop) {
+    out.push({
+      id: "domain-age-young-webshop",
+      label: "Young webshop domain",
+      category: "domain",
+      impact: 5,
+      confidence: "low",
+      evidenceTier: "neutral_observation",
+      reason:
+        "The domain is under six months old. That is common for new stores but means less public track record before you pay or share delivery details."
+    });
+  }
+
+  if (days == null) return;
+
+  if (days >= 1825) {
+    out.push({
+      id: "domain-age-very-established",
+      label: "Long-established domain registration",
+      category: "domain",
+      impact: -18,
       confidence: "high",
-      reason: `Domain age is about ${age.ageDays} days, which is common for short-lived scam shops.`
+      evidenceTier: "positive_trust",
+      reason: `Domain has been registered for roughly ${Math.round(days / 365)} years—a strong legitimacy signal.`
+    });
+  } else if (days != null && days >= 730) {
+    out.push({
+      id: "domain-age-established",
+      label: "Established domain registration",
+      category: "domain",
+      impact: -12,
+      confidence: "medium",
+      evidenceTier: "positive_trust",
+      reason: `Domain has been registered for more than two years, reducing throwaway-shop risk.`
     });
   } else if (typeof age.ageYears === "number" && age.ageYears > 3) {
     out.push({
-      id: "domain-age-established",
-      label: "Established domain age",
+      id: "domain-age-mature",
+      label: "Mature domain age",
       category: "domain",
       impact: -8,
       confidence: "medium",
+      evidenceTier: "positive_trust",
       reason: `Domain appears older than ${age.ageYears.toFixed(1)} years, slightly reducing throwaway risk.`
     });
   }
@@ -925,6 +1053,7 @@ export function calculateScamScore(input: {
   /** Tier‑1 threat matches + connectivity hints for trust caps and verdicts. */
   intelSurface?: IntelSurfaceInput;
   mailDnsHints?: MailDnsHints | null;
+  siteClassification?: SiteClassification;
 }): ScoreResult {
   void input.heuristicReasons;
 
@@ -934,18 +1063,38 @@ export function calculateScamScore(input: {
   const patterns: DomainPatternAnalysis =
     input.scoringContext?.domainPatterns ?? analyzeDomainPatterns(domain);
 
+  const establishedLegitimacy = assessEstablishedWebshopLegitimacy({
+    scoringContext: input.scoringContext,
+    intelSurface: input.intelSurface,
+    patterns,
+    externalSignals: input.externalSignals
+  });
+
   pushDomainSignals(domain, signals);
   pushDomainPatternSignals(patterns, signals);
-  if (input.reviewSignals) pushReviewSignals(input.reviewSignals, signals);
+  if (input.reviewSignals) pushReviewSignals(input.reviewSignals, signals, establishedLegitimacy);
+  const site = input.siteClassification;
+
   if (input.supplyChainSignals) {
-    const allowSupplyRisk = input.supplyChainSignals.scoreAdjustment > 0;
+    const allowSupplyRisk =
+      input.supplyChainSignals.scoreAdjustment > 0 &&
+      !establishedLegitimacy.eligible &&
+      (site == null || site.isWebshop);
     pushSupplyChainSignals(input.supplyChainSignals, signals, allowSupplyRisk);
   }
 
   const inferredAddr = inferAddressSignals(input.websiteText ?? "");
   const addr: AddressSignalsInput = { ...inferredAddr, ...input.addressSignals };
-  pushBusinessIdentitySignals(addr, input.websiteText ?? "", signals);
-  pushDomainAgeSignals(input.domainAgeSignals, signals);
+  pushBusinessIdentitySignals(addr, input.websiteText ?? "", signals, site?.isWebshop ?? false);
+  const domainAgeInput =
+    input.domainAgeSignals ??
+    (typeof input.scoringContext?.ageDaysKnown === "number"
+      ? {
+          ageDays: input.scoringContext.ageDaysKnown,
+          ageYears: input.scoringContext.ageDaysKnown / 365
+        }
+      : undefined);
+  pushDomainAgeSignals(domainAgeInput, site, patterns, signals);
   pushUnknownIdentitySignals(input.scoringContext, signals);
   pushDomainTrustSignals(domain, signals, reviewTier, input.scoringContext);
   pushAiRiskSignals(input.aiRiskSignals?.level, signals, reviewTier);
@@ -965,7 +1114,8 @@ export function calculateScamScore(input: {
   }
   pushMailDnsTrustSignals(input.mailDnsHints, signals);
 
-  const reviewW = scaleCategoryWeights(signals, "reviews", REVIEW_MAX_UP, REVIEW_MAX_DOWN);
+  const reviewMaxDown = establishedLegitimacy.eligible ? ESTABLISHED_REVIEW_MAX_DOWN : REVIEW_MAX_DOWN;
+  const reviewW = scaleCategoryWeights(signals, "reviews", REVIEW_MAX_UP, reviewMaxDown);
 
   const supplyRiskIds = new Set(["supply-china-fulfillment", "supply-dropshipping"]);
   const supplyLocalIds = new Set(["supply-local-stock"]);
@@ -1030,11 +1180,17 @@ export function calculateScamScore(input: {
 
   let finalScore = Math.max(0, Math.min(100, Math.round(total)));
 
+  const feedOrConfirmedScam = inferConfirmedMalicious(signals, input.intelSurface);
+
   let trustScoreCap: number | undefined;
   let trustedBlockedReason: ScoreResult["trustedBlockedReason"];
   let anchorsForContext: ReturnType<typeof computeTrustAnchors> | undefined;
 
-  const confirmedMalicious = inferConfirmedMalicious(signals, input.intelSurface);
+  const confirmedMalicious = feedOrConfirmedScam;
+
+  if (feedOrConfirmedScam && finalScore < 52) {
+    finalScore = 52;
+  }
 
   if (input.scoringContext) {
     const lexicalStrong = patterns.hasStrongLexicalSuspicion;
@@ -1083,6 +1239,7 @@ export function calculateScamScore(input: {
       input.scoringContext.ageDaysKnown >= 365;
 
     const limitedEvidenceOnly =
+      !establishedLegitimacy.eligible &&
       input.scoringContext.limitedPublicReputation &&
       !input.scoringContext.domainPatterns.officialRegistrableExempt &&
       !lexicalStrong &&
@@ -1099,7 +1256,42 @@ export function calculateScamScore(input: {
     if (limitedEvidenceOnly && finalScore < 41) {
       finalScore = 41;
     }
+
+    if (establishedLegitimacy.eligible && !confirmedMalicious && !lexicalStrong) {
+      const maxRisk = establishedWebshopMaxRisk(establishedLegitimacy.tier);
+      if (maxRisk != null && finalScore > maxRisk) {
+        finalScore = maxRisk;
+      }
+    }
+
+    if (
+      site &&
+      !site.isWebshop &&
+      !confirmedMalicious &&
+      !hasThreatFeedScamHit(signals) &&
+      !lexicalStrong &&
+      typeof input.scoringContext.ageDaysKnown === "number" &&
+      input.scoringContext.ageDaysKnown < 180
+    ) {
+      const maxRisk = input.scoringContext.ageDaysKnown < 60 ? 44 : 48;
+      if (finalScore > maxRisk) finalScore = maxRisk;
+    }
   }
+
+  const ageDaysKnown =
+    typeof input.scoringContext?.ageDaysKnown === "number" ? input.scoringContext.ageDaysKnown : null;
+  const riskDimensions =
+    site != null
+      ? buildSiteRiskDimensions({
+          classification: site,
+          finalRisk: finalScore,
+          signals,
+          reviewSignals: input.reviewSignals,
+          confirmedMalicious,
+          ageDays: ageDaysKnown,
+          lexicalStrong: patterns.hasStrongLexicalSuspicion
+        })
+      : undefined;
 
   const verdict = verdictFromAssessment({
     riskScore: finalScore,
@@ -1127,6 +1319,8 @@ export function calculateScamScore(input: {
     topPositiveSignals: topPositive,
     topNegativeSignals: topNegative,
     trustScoreCap: input.scoringContext ? trustScoreCap : undefined,
-    trustedBlockedReason
+    trustedBlockedReason,
+    siteClassification: site,
+    riskDimensions
   };
 }

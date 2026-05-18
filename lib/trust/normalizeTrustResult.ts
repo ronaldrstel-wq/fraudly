@@ -130,6 +130,31 @@ function feedMatchedSources(result: ScamCheckResult): string[] {
   return out;
 }
 
+function mergeRiskProfileCautions(
+  watch: string[],
+  riskProfile: import("@/lib/siteClassification/types").SiteRiskDimensions | null
+): string[] {
+  if (!riskProfile) return watch;
+  const out = [...watch];
+  const seen = new Set(watch.map((l) => l.toLowerCase()));
+  const push = (line: string | null) => {
+    if (!line) return;
+    const key = line.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(line);
+  };
+  if (riskProfile.scamRiskLevel === "high") {
+    push("Fraud/scam risk: elevated based on threat intelligence or strong impersonation cues.");
+  }
+  if (riskProfile.shoppingRiskLevel === "elevated" || riskProfile.shoppingRiskLevel === "high") {
+    push("Shopping/payment risk: extra caution before paying or sharing delivery details on this site.");
+  }
+  push(riskProfile.customerExperienceWarning);
+  push(riskProfile.limitedHistoryWarning);
+  return out;
+}
+
 function feedDisplayForStatus(status: ReturnType<typeof assessScamFeedThreatStatus>): string | null {
   if (status === "hit") return FEED_HIT_SUMMARY;
   if (status === "clean") return FEED_CLEAN_SUMMARY;
@@ -179,6 +204,8 @@ export function normalizeTrustResult(
 
   const feedStatus = assessScamFeedThreatStatus(result.trustSignals);
   const consumerSignals = normalizeConsumerSignalsForResult(result);
+  const riskProfile = result.scoreResult?.riskDimensions ?? null;
+  const siteType = result.scoreResult?.siteClassification?.siteType ?? riskProfile?.siteType ?? null;
 
   const reviewSignals: ReviewSignals = result.reviewSignals ?? {
     googleFound: false,
@@ -262,8 +289,10 @@ export function normalizeTrustResult(
     },
     summary,
     helpfulSignals: consumerSignals.helpful,
-    cautionSignals: consumerSignals.watch,
+    cautionSignals: mergeRiskProfileCautions(consumerSignals.watch, riskProfile),
     showLimitedPublicStrip,
+    siteType,
+    riskProfile,
     raw: result
   };
 
