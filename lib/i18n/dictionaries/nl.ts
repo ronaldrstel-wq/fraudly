@@ -40,6 +40,7 @@ export const nl: CoreDictionary = {
     terms: "Voorwaarden",
     disclaimer: "Disclaimer",
     cookies: "Cookiebeleid",
+    deleteAccount: "Account verwijderen",
     contact: "Contact"
   },
   homepage: {

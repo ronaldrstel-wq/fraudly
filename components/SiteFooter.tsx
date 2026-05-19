@@ -80,6 +80,9 @@ export function SiteFooter({ locale = "en" }: SiteFooterProps) {
           <Link href={href("/cookies")} className="fraudly-footer-link">
             {dict.footer.cookies}
           </Link>
+          <Link href={href("/delete-account")} className="fraudly-footer-link">
+            {dict.footer.deleteAccount}
+          </Link>
           <CookieSettingsLink />
           <a href="mailto:support@fraudly.app" className="fraudly-footer-link">
             {dict.footer.contact}

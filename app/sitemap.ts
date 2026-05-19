@@ -25,6 +25,7 @@ const OTHER_PUBLIC_PATHS = [
   "/privacy",
   "/cookies",
   "/terms",
+  "/delete-account",
   "/disclaimer"
 ] as const;
 

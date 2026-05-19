@@ -40,6 +40,7 @@ export const pt: CoreDictionary = {
     terms: "Termos",
     disclaimer: "Aviso legal",
     cookies: "Política de cookies",
+    deleteAccount: "Eliminar conta",
     contact: "Contacto"
   },
   homepage: {

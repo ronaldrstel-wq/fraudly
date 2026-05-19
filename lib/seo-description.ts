@@ -33,6 +33,7 @@ export const SEO_TITLE = {
   privacy: "Privacy Policy",
   terms: "Terms of Service",
   cookies: "Cookie Policy",
+  deleteAccount: "Delete Account",
   disclaimer: "Disclaimer — Scam Checker Limits",
   scamHelp: "Scam Help — What to Do If You Were Scammed",
   scamHelpCountry: (country: string) => `Scam Help — ${country}`,
@@ -97,6 +98,8 @@ export const SEO_DESCRIPTION = {
     "Terms for using Fraudly's scam checker, website trust checks and online fraud protection features—including subscriptions, limits and acceptable use.",
   cookies:
     "Cookie policy for Fraudly—necessary, analytics and marketing cookies when you use our scam checker, phishing detection and website trust check tools.",
+  deleteAccount:
+    "Learn how to request deletion of your Fraudly account and associated personal data.",
   disclaimer:
     "Disclaimer for Fraudly scam checker and website trust check results—limits of phishing detection, third-party data and online fraud protection guidance.",
   scamHelp:

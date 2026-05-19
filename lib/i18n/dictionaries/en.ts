@@ -43,6 +43,7 @@ export const en: CoreDictionary = {
     terms: "Terms",
     disclaimer: "Disclaimer",
     cookies: "Cookie Policy",
+    deleteAccount: "Delete account",
     contact: "Contact"
   },
   homepage: {

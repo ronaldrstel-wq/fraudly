@@ -40,6 +40,7 @@ export type CoreDictionary = {
     terms: string;
     disclaimer: string;
     cookies: string;
+    deleteAccount: string;
     contact: string;
   };
   homepage: {
