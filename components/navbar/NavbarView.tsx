@@ -3,22 +3,31 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useLocale } from "@/components/i18n/LocaleProvider";
+import type { Dictionary } from "@/lib/i18n/dictionary-types";
 import { AuthMenuDynamic } from "@/components/navbar/AuthMenuDynamic";
-import { MarketingNavLinks } from "@/components/navbar/MarketingNavLinks";
-import { getMainNavLinks } from "@/lib/i18n/nav";
+import { MarketingNavLinks, type MarketingNavLink } from "@/components/navbar/MarketingNavLinks";
 import { homeHref } from "@/lib/i18n/paths";
+import type { Locale } from "@/lib/i18n/locales";
+
+export type { MarketingNavLink };
 
 type NavbarViewProps = {
+  locale: Locale;
+  dict: Dictionary;
+  links: MarketingNavLink[];
   /** Homepage-only: language dropdown (desktop). */
   languageSwitcher?: ReactNode;
   /** Homepage-only: labeled language row (mobile). */
   languageMobileRow?: ReactNode;
 };
 
-export function NavbarView({ languageSwitcher = null, languageMobileRow = null }: NavbarViewProps) {
-  const { locale, dict } = useLocale();
-  const links = getMainNavLinks(locale, dict);
+export function NavbarView({
+  locale,
+  dict,
+  links,
+  languageSwitcher = null,
+  languageMobileRow = null
+}: NavbarViewProps) {
 
   return (
     <nav className="sticky top-0 z-20 border-b border-slate-200/70 bg-white/90 backdrop-blur">

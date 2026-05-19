@@ -19,7 +19,8 @@ export function HomeAuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+
+    const loadAuthStatus = async () => {
       try {
         const res = await fetch("/api/auth/status", { credentials: "same-origin" });
         if (!res.ok) {
@@ -52,9 +53,24 @@ export function HomeAuthProvider({ children }: { children: ReactNode }) {
       } finally {
         if (!cancelled) setAuthReady(true);
       }
-    })();
+    };
+
+    const schedule = () => {
+      void loadAuthStatus();
+    };
+
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(schedule, { timeout: 2800 });
+      return () => {
+        cancelled = true;
+        window.cancelIdleCallback(idleId);
+      };
+    }
+
+    const timeoutId = setTimeout(schedule, 600);
     return () => {
       cancelled = true;
+      clearTimeout(timeoutId);
     };
   }, []);
 

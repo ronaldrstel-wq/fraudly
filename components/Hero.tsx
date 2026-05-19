@@ -3,14 +3,16 @@
 import type { ReactNode } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { useLocale } from "@/components/i18n/LocaleProvider";
 import {
   marketingHeroBadgeClass,
   marketingHeroTitleSizeClass,
   marketingHeroTrustPillClass,
   marketingSectionEyebrowClass
 } from "@/lib/i18n/typography";
+import type { Dictionary } from "@/lib/i18n/dictionary-types";
+import type { Locale } from "@/lib/i18n/locales";
 import type { HomeSearchCardState } from "@/lib/scan/homeScanProgress";
+import type { CheckFlowSearchCopy } from "@/components/home/WebsiteScanSearchCard";
 
 const WebsiteScanSearchCard = dynamic(
   () => import("@/components/home/WebsiteScanSearchCard").then((m) => ({ default: m.WebsiteScanSearchCard })),
@@ -74,6 +76,9 @@ const FEATURE_ICONS = [
 ] as const;
 
 interface HeroProps {
+  locale: Locale;
+  homepage: Dictionary["homepage"];
+  checkFlowSearch: CheckFlowSearchCopy;
   url: string;
   onUrlChange: (value: string) => void;
   onSubmit: () => void;
@@ -91,6 +96,9 @@ interface HeroProps {
 }
 
 export function Hero({
+  locale,
+  homepage: hp,
+  checkFlowSearch,
   url,
   onUrlChange,
   onSubmit,
@@ -105,9 +113,7 @@ export function Hero({
   belowSearchCard,
   extraBelowInput
 }: HeroProps) {
-  const { locale, dict } = useLocale();
   const heroTitleSize = marketingHeroTitleSizeClass(locale);
-  const hp = dict.homepage;
   const {
     heroBadge,
     subhead,
@@ -198,6 +204,7 @@ export function Hero({
 
         <div className="mx-auto mt-10 w-full md:mt-11">
           <WebsiteScanSearchCard
+            checkFlowSearch={checkFlowSearch}
             state={searchState}
             value={url}
             onChange={onUrlChange}

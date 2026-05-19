@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { HomeTrustActivitySection } from "@/components/home/HomeTrustActivitySection";
+import { HomeTrustActivitySectionLazy } from "@/components/home/HomeTrustActivitySectionLazy";
 import { HomeWhatWeCheckSection } from "@/components/home/HomeWhatWeCheckSection";
 import { getHomeTrustStats } from "@/lib/home/getHomeTrustStats";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
@@ -18,7 +18,7 @@ export async function HomeBelowFold({ locale = "en" }: HomeBelowFoldProps) {
 
   return (
     <div className="mx-auto mt-10 max-w-6xl space-y-14 [content-visibility:auto] [contain-intrinsic-size:1px_2800px] sm:mt-12 md:mt-14 md:space-y-16">
-      <HomeTrustActivitySection stats={trustStats} locale={locale} />
+      <HomeTrustActivitySectionLazy stats={trustStats} copy={dict.homeSections.trustActivity} />
       <HomeWhatWeCheckSection locale={locale} />
 
       <section id="trust-safety" aria-labelledby="trust-safety-heading" className="rounded-2xl border border-slate-100 bg-white p-6 shadow-subtle md:p-8">

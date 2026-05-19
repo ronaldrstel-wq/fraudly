@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import { ClerkAppProvider } from "@/components/providers/ClerkAppProvider";
+import { ClerkAppProviderLazy } from "@/components/providers/ClerkAppProviderLazy";
 import { CookieConsentProvider } from "@/components/CookieConsentProvider";
 import { LocalePreferenceBoundary } from "@/components/i18n/LocalePreferenceBoundary";
 import { logClerkProductionMisconfigWarnings } from "@/lib/clerkConfig";
@@ -82,12 +82,12 @@ export default async function RootLayout({
       <body className={`${inter.className} min-h-screen antialiased`}>
         <PwaServiceWorkerRegister />
         <JsonLd />
-        <ClerkAppProvider>
+        <ClerkAppProviderLazy>
           <CookieConsentProvider>
             <LocalePreferenceBoundary />
             {children}
           </CookieConsentProvider>
-        </ClerkAppProvider>
+        </ClerkAppProviderLazy>
       </body>
     </html>
   );

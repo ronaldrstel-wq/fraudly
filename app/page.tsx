@@ -6,6 +6,8 @@ import { HomeAuthProvider } from "@/components/home/HomeAuthContext";
 import { HomeNavbar } from "@/components/home/HomeNavbar";
 import { HomeFaqJsonLd } from "@/components/HomeFaqJsonLd";
 import { HomeClient } from "@/components/HomeClient";
+import { LocaleProvider } from "@/components/i18n/LocaleProvider";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { OG_IMAGE } from "@/lib/seo-metadata";
 import { LocaleSuggestionServer } from "@/components/i18n/LocaleSuggestionServer";
 import { hreflangLanguages } from "@/lib/i18n/seo";
@@ -52,18 +54,22 @@ function HomeBelowFoldFallback() {
 }
 
 export default function HomePage() {
+  const dict = getDictionary("en");
+
   return (
     <>
       <HomeFaqJsonLd />
       <HomeAuthProvider>
-        <LocaleSuggestionServer marketingPath="/" />
-        <HomeNavbar />
-        <HomeClient>
-          <HomePublicChecksDiscovery />
-          <Suspense fallback={<HomeBelowFoldFallback />}>
-            <HomeBelowFold />
-          </Suspense>
-        </HomeClient>
+        <LocaleProvider locale="en" dict={dict}>
+          <LocaleSuggestionServer marketingPath="/" />
+          <HomeNavbar />
+          <HomeClient>
+            <HomePublicChecksDiscovery />
+            <Suspense fallback={<HomeBelowFoldFallback />}>
+              <HomeBelowFold />
+            </Suspense>
+          </HomeClient>
+        </LocaleProvider>
       </HomeAuthProvider>
     </>
   );

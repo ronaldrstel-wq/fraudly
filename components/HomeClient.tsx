@@ -7,14 +7,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useHomeAuth } from "@/components/home/HomeAuthContext";
 import { Hero } from "@/components/Hero";
 import { hasUsedAnonymousFreeCheck, markAnonymousFreeCheckUsed } from "@/lib/accessControl";
-import {
-  trackAnonymousCheckCompleted,
-  trackAnonymousCheckStarted,
-  trackCheckFailed,
-  trackEvent,
-  trackRegisteredCheckCompleted,
-  trackRegisteredCheckStarted
-} from "@/lib/analytics";
 import { parseFlexibleWebsiteInput } from "@/lib/check-input/normalizeWebsiteInput";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import type { Locale } from "@/lib/i18n/locales";
@@ -26,8 +18,9 @@ import {
   nextHomeScanSimulatedProgress,
   type HomeSearchCardState
 } from "@/lib/scan/homeScanProgress";
-import { normalizeTrustResult } from "@/lib/trust/normalizeTrustResult";
 import { isCheckApiResponse, type ScamCheckResult } from "@/types/scam";
+import { DeferredFeatureCards } from "@/components/home/DeferredFeatureCards";
+import type { NormalizedTrustResult } from "@/lib/trust/types";
 
 const SCAN_PROGRESS_START = 4;
 const RESULT_DISPLAY_HOLD_MS = 520;
@@ -37,18 +30,17 @@ async function yieldOneUiFrame() {
 }
 
 const ResultCard = dynamic(() => import("@/components/ResultCard").then((m) => ({ default: m.ResultCard })), {
+  ssr: false,
   loading: () => <div className="min-h-[280px] w-full animate-pulse rounded-2xl bg-slate-100" aria-hidden />
 });
 
-const FeatureCards = dynamic(() => import("@/components/FeatureCards").then((m) => ({ default: m.FeatureCards })), {
-  loading: () => <div className="h-44 w-full animate-pulse rounded-2xl bg-slate-100 md:h-36" aria-hidden />
-});
-
 const PostScanAppPromo = dynamic(() => import("@/components/PostScanAppPromo").then((m) => ({ default: m.PostScanAppPromo })), {
+  ssr: false,
   loading: () => <div className="h-32 w-full animate-pulse rounded-2xl bg-slate-100" aria-hidden />
 });
 
 const SiteFooter = dynamic(() => import("@/components/SiteFooter").then((m) => ({ default: m.SiteFooter })), {
+  ssr: false,
   loading: () => <footer className="min-h-[100px] border-t border-slate-200/80 bg-white/80 py-8" aria-hidden />
 });
 
@@ -89,9 +81,30 @@ export function HomeClient({
 
   const disabled = useMemo(() => url.trim().length === 0 && !loading, [url, loading]);
   const searchState: HomeSearchCardState = loading ? "scanning" : scanPhaseComplete ? "complete" : "idle";
-  const normalizedTrust = useMemo(
-    () => (result ? normalizeTrustResult(result, { route: "HomeClient" }) : null),
-    [result]
+  const [normalizedTrust, setNormalizedTrust] = useState<NormalizedTrustResult | null>(null);
+
+  useEffect(() => {
+    if (!result) {
+      setNormalizedTrust(null);
+      return;
+    }
+    let cancelled = false;
+    void import("@/lib/trust/normalizeTrustResult").then(({ normalizeTrustResult }) => {
+      if (!cancelled) {
+        setNormalizedTrust(normalizeTrustResult(result, { route: "HomeClient" }));
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [result]);
+
+  const checkFlowSearch = useMemo(
+    () => ({
+      check: { urlPlaceholder: flow.check.urlPlaceholder, urlFieldLabel: flow.check.urlFieldLabel },
+      scanProgress: { complete: flow.scanProgress.complete }
+    }),
+    [flow.check.urlFieldLabel, flow.check.urlPlaceholder, flow.scanProgress.complete]
   );
   const displayCheckedLabel = result?.domain ?? checkedLabel;
 
@@ -133,15 +146,17 @@ export function HomeClient({
     if (!isSignedIn && hasUsedFreeCheck) {
       setShowSignupPrompt(true);
       setError(null);
-      trackEvent("second_check_attempted", { url: trimmed });
-      trackEvent("signup_prompt_shown", { source: "checker" });
+      void import("@/lib/analytics").then(({ trackEvent }) => {
+        trackEvent("second_check_attempted", { url: trimmed });
+        trackEvent("signup_prompt_shown", { source: "checker" });
+      });
       return;
     }
 
     const parsedInput = parseFlexibleWebsiteInput(trimmed);
     if (!parsedInput.ok) {
       setError(flow.check.invalidWebsiteInput);
-      trackCheckFailed("invalid_url_client");
+      void import("@/lib/analytics").then(({ trackCheckFailed }) => trackCheckFailed("invalid_url_client"));
       return;
     }
 
@@ -171,11 +186,10 @@ export function HomeClient({
     }, HOME_SCAN_SIM_INTERVAL_MS);
 
     try {
-      if (isSignedIn) {
-        trackRegisteredCheckStarted();
-      } else {
-        trackAnonymousCheckStarted();
-      }
+      void import("@/lib/analytics").then(({ trackAnonymousCheckStarted, trackRegisteredCheckStarted }) => {
+        if (isSignedIn) trackRegisteredCheckStarted();
+        else trackAnonymousCheckStarted();
+      });
 
       const response = await fetch("/api/check", {
         method: "POST",
@@ -216,8 +230,10 @@ export function HomeClient({
         setError(msg);
         setShowSignupPrompt(true);
         failStrip(flow.scanProgress.stoppedSignIn);
-        trackEvent("signup_prompt_shown", { source: "api_401" });
-        trackCheckFailed("unauthorized");
+        void import("@/lib/analytics").then(({ trackCheckFailed, trackEvent }) => {
+          trackEvent("signup_prompt_shown", { source: "api_401" });
+          trackCheckFailed("unauthorized");
+        });
         return;
       }
 
@@ -226,8 +242,10 @@ export function HomeClient({
         setShowSignupPrompt(true);
         setError(flow.auth.loginForAnotherCheck);
         failStrip(flow.scanProgress.stoppedLimit);
-        trackEvent("signup_prompt_shown", { source: "api_402" });
-        trackCheckFailed("rate_limit");
+        void import("@/lib/analytics").then(({ trackCheckFailed, trackEvent }) => {
+          trackEvent("signup_prompt_shown", { source: "api_402" });
+          trackCheckFailed("rate_limit");
+        });
         return;
       }
 
@@ -238,7 +256,7 @@ export function HomeClient({
         setError(msg);
         failStrip(msg);
         const reason = typeof payload?.reason === "string" ? payload.reason : "unknown";
-        trackCheckFailed(`rate_${reason}`);
+        void import("@/lib/analytics").then(({ trackCheckFailed }) => trackCheckFailed(`rate_${reason}`));
         return;
       }
 
@@ -276,7 +294,7 @@ export function HomeClient({
           failStrip(flow.scanProgress.failedGeneric);
         }
 
-        trackCheckFailed(`http_${response.status}`);
+        void import("@/lib/analytics").then(({ trackCheckFailed }) => trackCheckFailed(`http_${response.status}`));
         return;
       }
 
@@ -288,7 +306,7 @@ export function HomeClient({
             : `Unexpected API response (HTTP ${response.status}). Body: ${rawBody.slice(0, 180)}`
         );
         failStrip(flow.scanProgress.stoppedInvalidResponse);
-        trackCheckFailed("invalid_response_shape");
+        void import("@/lib/analytics").then(({ trackCheckFailed }) => trackCheckFailed("invalid_response_shape"));
         return;
       }
 
@@ -307,11 +325,10 @@ export function HomeClient({
         setHasUsedFreeCheck(true);
         markAnonymousFreeCheckUsed();
       }
-      if (isSignedIn) {
-        trackRegisteredCheckCompleted(payload.result.score);
-      } else {
-        trackAnonymousCheckCompleted(payload.result.score);
-      }
+      void import("@/lib/analytics").then(({ trackAnonymousCheckCompleted, trackRegisteredCheckCompleted }) => {
+        if (isSignedIn) trackRegisteredCheckCompleted(payload.result.score);
+        else trackAnonymousCheckCompleted(payload.result.score);
+      });
       setLoading(false);
       window.setTimeout(() => {
         if (mountedRef.current) setScanPhaseComplete(false);
@@ -328,7 +345,7 @@ export function HomeClient({
       setScanStatus(flow.scanProgress.failedNetwork);
       setScanPhaseComplete(false);
       setLoading(false);
-      trackCheckFailed("network");
+      void import("@/lib/analytics").then(({ trackCheckFailed }) => trackCheckFailed("network"));
     } finally {
       clearProgressSimulation();
       inFlight.current = false;
@@ -348,7 +365,7 @@ export function HomeClient({
     <Link
       href="/sign-up"
       className="btn-primary inline-flex px-5"
-      onClick={() => trackEvent("signup_started", { source: "signup_prompt" })}
+      onClick={() => void import("@/lib/analytics").then(({ trackEvent }) => trackEvent("signup_started", { source: "signup_prompt" }))}
     >
       {flow.freemium.createFreeAccount}
     </Link>
@@ -373,7 +390,7 @@ export function HomeClient({
               <Link
                 href="/sign-in"
                 className="btn-secondary inline-flex px-5"
-                onClick={() => trackEvent("login_started", { source: "signup_prompt" })}
+                onClick={() => void import("@/lib/analytics").then(({ trackEvent }) => trackEvent("login_started", { source: "signup_prompt" }))}
               >
                 {flow.auth.loginCta}
               </Link>
@@ -408,6 +425,9 @@ export function HomeClient({
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
       <main className="mx-auto w-full max-w-6xl px-4 pb-14 pt-0">
         <Hero
+          locale={contextLocale}
+          homepage={dict.homepage}
+          checkFlowSearch={checkFlowSearch}
           url={url}
           onUrlChange={setUrl}
           onSubmit={handleCheck}
@@ -423,7 +443,7 @@ export function HomeClient({
 
         {!result && (
           <section className="mt-5 [content-visibility:auto] [contain-intrinsic-size:1px_220px] sm:mt-7">
-            <FeatureCards />
+            <DeferredFeatureCards />
           </section>
         )}
         <div className="[content-visibility:auto] [contain-intrinsic-size:1px_2200px]">{children}</div>

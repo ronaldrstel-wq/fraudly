@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { LocaleSuggestionBanner } from "@/components/i18n/LocaleSuggestionBanner";
+import { LocaleSuggestionLazy } from "@/components/i18n/LocaleSuggestionLazy";
 import { suggestLocaleFromAcceptLanguage } from "@/lib/i18n/paths";
 import type { LocalizedMarketingPath } from "@/lib/i18n/locales";
 
@@ -7,5 +7,5 @@ export async function LocaleSuggestionServer({ marketingPath }: { marketingPath:
   const acceptLanguage = (await headers()).get("accept-language");
   const suggested = suggestLocaleFromAcceptLanguage(acceptLanguage);
   if (!suggested) return null;
-  return <LocaleSuggestionBanner suggestedLocale={suggested} marketingPath={marketingPath} />;
+  return <LocaleSuggestionLazy suggestedLocale={suggested} marketingPath={marketingPath} />;
 }

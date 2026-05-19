@@ -9,6 +9,7 @@
     "dev": "next dev",
     "postinstall": "prisma generate",
     "build": "next build",
+    "analyze": "ANALYZE=true next build",
     "db:migrate:deploy": "prisma migrate deploy",
     "migrate:deploy": "prisma migrate deploy",
     "start": "next start",
@@ -38,6 +39,7 @@
     "tldts": "^7.0.30"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^15.5.15",
     "@types/node": "22.15.21",
     "@types/react": "19.1.5",
     "@types/react-dom": "19.1.5",
