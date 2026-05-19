@@ -157,6 +157,33 @@ export const nl: CoreDictionary = {
       "Scores worden automatisch gegenereerd met vertrouwen, reputatie, technische checks, scamfeeds en AI—geen absoluut oordeel.",
     resultsNote: "Individuele checkresultaten blijven in het Engels."
   },
+  deleteAccountPage: {
+    badge: "Account",
+    title: "Je Fraudly-account verwijderen",
+    intro:
+      "Je kunt permanente verwijdering van je Fraudly-account en de bijbehorende persoonsgegevens aanvragen. Op deze pagina staat hoe je dat doet—inloggen is niet nodig.",
+    howTitle: "Verwijdering aanvragen",
+    howP1BeforeEmail: "Mail ons op",
+    howP1AfterEmail: "met als onderwerp",
+    howSubject: "Account verwijderen",
+    howP1AfterSubject: "Vermeld het e-mailadres waarmee je bij Fraudly bent geregistreerd, zodat we je account kunnen vinden.",
+    howP2BeforeDays: "We verwerken geverifieerde verwijderingsverzoeken binnen",
+    howP2Days: "30 dagen",
+    howP2AfterDays: "We kunnen contact opnemen als we je identiteit moeten bevestigen.",
+    afterTitle: "Wat er na verwijdering gebeurt",
+    afterP1:
+      "Na afronding verwijderen of anonimiseren we persoonsgegevens die aan je account zijn gekoppeld, zoals je profiel en privé scanhistorie, voor zover de wet dat toelaat.",
+    afterP2:
+      "Beperkte gegevens kunnen worden bewaard wanneer de wet dat vereist of toestaat—bijvoorbeeld transactiegegevens, fraudepreventielogs of gegevens voor geschillen of compliance.",
+    storesTitle: "App Store-abonnementen",
+    storesP1Before: "Het verwijderen van je Fraudly-account",
+    storesP1Bold: "annuleert niet",
+    storesP1After:
+      "automatisch een actief abonnement via de Apple App Store of Google Play. Annuleer abonnementen in je Apple- of Google Play-account. Fraudly kan store-facturering niet voor je stopzetten.",
+    emailCta: "Verwijdering per e-mail aanvragen",
+    privacyLink: "Privacybeleid",
+    termsLink: "Servicevoorwaarden"
+  },
   meta: {
     home: {
       title: "Is een website of webshop veilig? | Fraudly",
@@ -187,6 +214,10 @@ export const nl: CoreDictionary = {
       title: "Laatste website-vertrouwenschecks",
       description:
         "Bekijk recente openbare websitechecks en scamchecker-resultaten van Fraudly in realtime samenvattingen."
+    },
+    deleteAccount: {
+      title: "Account verwijderen | Fraudly",
+      description: "Lees hoe je verwijdering van je Fraudly-account en bijbehorende persoonsgegevens kunt aanvragen."
     }
   }
 };

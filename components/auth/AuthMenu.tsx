@@ -2,8 +2,10 @@
 
 import { useAuth, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { SignedOutAuthNavLinks } from "@/components/auth/SignedOutAuthNavLinks";
+import type { Dictionary } from "@/lib/i18n/dictionary-types";
+import type { Locale } from "@/lib/i18n/locales";
 import { EN_MESSAGES } from "@/lib/messages.en";
 
 function logAuthStatusFailure(context: string, err: unknown) {
@@ -20,7 +22,13 @@ function logAuthStatusFailure(context: string, err: unknown) {
  * While Clerk is still loading, we still render Sign in / Create account so the navbar
  * never looks empty if Clerk keys or scripts are slow or misconfigured.
  */
-export function AuthMenu() {
+type AuthMenuProps = {
+  locale?: Locale;
+  auth?: Dictionary["auth"];
+  fallback?: ReactNode;
+};
+
+export function AuthMenu({ locale, auth, fallback }: AuthMenuProps) {
   const { isLoaded, userId } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -52,9 +60,11 @@ export function AuthMenu() {
 
   if (!isLoaded) {
     return (
-      <div className="flex min-h-9 shrink-0 flex-wrap items-center justify-end gap-1 sm:gap-2 md:gap-3">
-        <SignedOutAuthNavLinks />
-      </div>
+      fallback ?? (
+        <div className="flex min-h-9 shrink-0 flex-wrap items-center justify-end gap-1 sm:gap-2 md:gap-3">
+          <SignedOutAuthNavLinks locale={locale} auth={auth} />
+        </div>
+      )
     );
   }
 
@@ -104,7 +114,7 @@ export function AuthMenu() {
 
   return (
     <div className="flex min-h-9 shrink-0 flex-wrap items-center justify-end gap-1 sm:gap-2 md:gap-3">
-      <SignedOutAuthNavLinks />
+      <SignedOutAuthNavLinks locale={locale} auth={auth} />
     </div>
   );
 }

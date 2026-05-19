@@ -157,6 +157,33 @@ export const pt: CoreDictionary = {
       "As pontuações são geradas automaticamente com confiança, reputação, verificações técnicas, feeds de fraudes e análise com IA.",
     resultsNote: "Os resultados individuais permanecem em inglês."
   },
+  deleteAccountPage: {
+    badge: "Conta",
+    title: "Eliminar a sua conta Fraudly",
+    intro:
+      "Pode pedir a eliminação permanente da sua conta Fraudly e dos dados pessoais associados. Esta página explica como—sem iniciar sessão.",
+    howTitle: "Como pedir eliminação",
+    howP1BeforeEmail: "Envie-nos um e-mail para",
+    howP1AfterEmail: "com o assunto",
+    howSubject: "Eliminar conta",
+    howP1AfterSubject: "Inclua o e-mail que usou para se registar na Fraudly para localizarmos a sua conta.",
+    howP2BeforeDays: "Tratamos pedidos verificados no prazo de",
+    howP2Days: "30 dias",
+    howP2AfterDays: "Podemos contactá-lo se precisarmos de confirmar a sua identidade.",
+    afterTitle: "O que acontece depois",
+    afterP1:
+      "Após concluir o pedido, eliminamos ou anonimizamos dados pessoais ligados à sua conta, como perfil e histórico privado, nos termos da lei.",
+    afterP2:
+      "Alguns registos podem ser mantidos quando a lei o exige ou permite—transações, prevenção de fraude, conformidade, etc.",
+    storesTitle: "Subscrições nas lojas de apps",
+    storesP1Before: "Eliminar a sua conta Fraudly",
+    storesP1Bold: "não",
+    storesP1After:
+      "cancela automaticamente uma subscrição ativa na App Store ou Google Play. Cancele nas definições da Apple ou Google Play. A Fraudly não pode cancelar a faturação da loja.",
+    emailCta: "Pedir eliminação por e-mail",
+    privacyLink: "Política de privacidade",
+    termsLink: "Termos de serviço"
+  },
   meta: {
     home: {
       title: "Um site ou loja online é seguro? | Fraudly",
@@ -187,6 +214,10 @@ export const pt: CoreDictionary = {
       title: "Últimas verificações de confiança web",
       description:
         "Veja verificações públicas recentes e resultados do verificador — sinais de phishing e lojas falsas em tempo real."
+    },
+    deleteAccount: {
+      title: "Eliminar conta | Fraudly",
+      description: "Saiba como pedir a eliminação da sua conta Fraudly e dos dados pessoais associados."
     }
   }
 };

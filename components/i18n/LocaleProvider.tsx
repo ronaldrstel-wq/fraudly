@@ -9,7 +9,7 @@ type LocaleContextValue = {
   dict: Dictionary;
 };
 
-const LocaleContext = createContext<LocaleContextValue | null>(null);
+export const LocaleContext = createContext<LocaleContextValue | null>(null);
 
 export function LocaleProvider({
   locale,
@@ -23,8 +23,12 @@ export function LocaleProvider({
   return <LocaleContext.Provider value={{ locale, dict }}>{children}</LocaleContext.Provider>;
 }
 
+export function useLocaleOptional(): LocaleContextValue | null {
+  return useContext(LocaleContext);
+}
+
 export function useLocale(): LocaleContextValue {
-  const ctx = useContext(LocaleContext);
+  const ctx = useLocaleOptional();
   if (!ctx) {
     throw new Error("useLocale must be used within LocaleProvider");
   }

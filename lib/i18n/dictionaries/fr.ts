@@ -157,6 +157,33 @@ export const fr: CoreDictionary = {
       "Les scores sont générés automatiquement avec confiance, réputation, contrôles techniques, flux scam et IA—pas un verdict absolu.",
     resultsNote: "Les résultats individuels restent en anglais."
   },
+  deleteAccountPage: {
+    badge: "Compte",
+    title: "Supprimer votre compte Fraudly",
+    intro:
+      "Vous pouvez demander la suppression définitive de votre compte Fraudly et des données personnelles associées. Cette page explique comment—sans connexion.",
+    howTitle: "Demander la suppression",
+    howP1BeforeEmail: "Écrivez-nous à",
+    howP1AfterEmail: "avec l’objet",
+    howSubject: "Supprimer le compte",
+    howP1AfterSubject: "Indiquez l’adresse e-mail utilisée pour Fraudly afin que nous trouvions votre compte.",
+    howP2BeforeDays: "Nous traitons les demandes vérifiées sous",
+    howP2Days: "30 jours",
+    howP2AfterDays: "Nous pouvons vous contacter pour confirmer votre identité.",
+    afterTitle: "Après la suppression",
+    afterP1:
+      "Une fois la demande traitée, nous supprimons ou anonymisons les données liées à votre compte (profil, historique privé), dans la limite de la loi.",
+    afterP2:
+      "Certaines données peuvent être conservées si la loi l’exige ou l’autorise—transactions, prévention de fraude, conformité, etc.",
+    storesTitle: "Abonnements App Store",
+    storesP1Before: "Supprimer votre compte Fraudly",
+    storesP1Bold: "n’annule pas",
+    storesP1After:
+      "automatiquement un abonnement actif via l’App Store ou Google Play. Annulez dans les réglages Apple ou Google Play. Fraudly ne peut pas résilier la facturation des stores.",
+    emailCta: "Demande par e-mail",
+    privacyLink: "Politique de confidentialité",
+    termsLink: "Conditions d’utilisation"
+  },
   meta: {
     home: {
       title: "Un site ou une boutique est-il sûr ? | Fraudly",
@@ -187,6 +214,11 @@ export const fr: CoreDictionary = {
       title: "Derniers contrôles de confiance de sites",
       description:
         "Consultez les contrôles publics récents et résultats scam checker de Fraudly en résumés temps réel."
+    },
+    deleteAccount: {
+      title: "Supprimer le compte | Fraudly",
+      description:
+        "Découvrez comment demander la suppression de votre compte Fraudly et des données personnelles associées."
     }
   }
 };

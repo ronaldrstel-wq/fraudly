@@ -157,6 +157,33 @@ export const de: CoreDictionary = {
       "Scores werden automatisch aus Vertrauen, Reputation, technischen Checks, Scam-Feeds und KI erzeugt—kein absolutes Urteil.",
     resultsNote: "Einzelne Check-Ergebnisse bleiben auf Englisch."
   },
+  deleteAccountPage: {
+    badge: "Konto",
+    title: "Ihr Fraudly-Konto löschen",
+    intro:
+      "Sie können die dauerhafte Löschung Ihres Fraudly-Kontos und der zugehörigen personenbezogenen Daten beantragen. Diese Seite erklärt, wie—ohne Anmeldung.",
+    howTitle: "Löschung beantragen",
+    howP1BeforeEmail: "Schreiben Sie uns an",
+    howP1AfterEmail: "mit dem Betreff",
+    howSubject: "Konto löschen",
+    howP1AfterSubject: "Bitte nennen Sie die E-Mail-Adresse Ihrer Fraudly-Registrierung, damit wir Ihr Konto finden.",
+    howP2BeforeDays: "Wir bearbeiten bestätigte Löschanfragen innerhalb von",
+    howP2Days: "30 Tagen",
+    howP2AfterDays: "Wir können Sie kontaktieren, wenn wir Ihre Identität bestätigen müssen.",
+    afterTitle: "Was nach der Löschung passiert",
+    afterP1:
+      "Nach Abschluss löschen oder anonymisieren wir personenbezogene Daten Ihres Kontos, z. B. Profil und private Scan-Historie, soweit gesetzlich zulässig.",
+    afterP2:
+      "Begrenzte Aufzeichnungen können bleiben, wenn Gesetz oder Berechtigung es erfordern—z. B. Transaktionen, Betrugsprävention oder Compliance.",
+    storesTitle: "App-Store-Abonnements",
+    storesP1Before: "Die Löschung Ihres Fraudly-Kontos",
+    storesP1Bold: "beendet nicht",
+    storesP1After:
+      "automatisch ein aktives Abo über Apple App Store oder Google Play. Kündigen Sie Abos in Ihren Apple- oder Google-Play-Einstellungen. Fraudly kann Store-Abrechnung nicht für Sie stoppen.",
+    emailCta: "Löschanfrage per E-Mail",
+    privacyLink: "Datenschutz",
+    termsLink: "Nutzungsbedingungen"
+  },
   meta: {
     home: {
       title: "Ist eine Website oder ein Shop sicher? | Fraudly",
@@ -187,6 +214,10 @@ export const de: CoreDictionary = {
       title: "Neueste Website-Vertrauenschecks",
       description:
         "Sieh aktuelle öffentliche Website-Checks und Scam-Checker-Ergebnisse von Fraudly in Echtzeit-Zusammenfassungen."
+    },
+    deleteAccount: {
+      title: "Konto löschen | Fraudly",
+      description: "Erfahren Sie, wie Sie die Löschung Ihres Fraudly-Kontos und zugehöriger personenbezogener Daten beantragen."
     }
   }
 };

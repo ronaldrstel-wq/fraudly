@@ -47,7 +47,7 @@ export function NavbarView({
 
         <div className="flex min-h-9 min-w-0 shrink-0 items-center justify-end gap-1.5 sm:gap-2">
           {languageSwitcher}
-          <AuthMenuDynamic />
+          <AuthMenuDynamic locale={locale} auth={dict.auth} />
         </div>
       </div>
       {languageMobileRow}

@@ -160,6 +160,34 @@ export const en: CoreDictionary = {
       "Scores are generated automatically using trust, reputation where available, technical checks, scam intelligence feeds, and AI-assisted analysis—not a verdict on goodness or badness by itself.",
     resultsNote: "Individual check results remain in English."
   },
+  deleteAccountPage: {
+    badge: "Account",
+    title: "Delete your Fraudly account",
+    intro:
+      "You can request permanent deletion of your Fraudly account and the personal data we associate with it. This page explains how to submit a request—no sign-in required.",
+    howTitle: "How to request deletion",
+    howP1BeforeEmail: "Email us at",
+    howP1AfterEmail: "with the subject line",
+    howSubject: "Delete Account",
+    howP1AfterSubject:
+      "Please include the email address you used to sign up for Fraudly so we can locate your account.",
+    howP2BeforeDays: "We process verified deletion requests within",
+    howP2Days: "30 days",
+    howP2AfterDays: "We may contact you if we need to confirm your identity before completing the request.",
+    afterTitle: "What happens after deletion",
+    afterP1:
+      "When your request is completed, we delete or anonymize personal data linked to your account, such as your profile and private scan history, subject to applicable law.",
+    afterP2:
+      "Some limited records may be retained where we are legally required or permitted to do so—for example transaction records, fraud-prevention logs, security incident records, or data needed to resolve disputes or comply with regulatory obligations.",
+    storesTitle: "App store subscriptions",
+    storesP1Before: "Deleting your Fraudly account does",
+    storesP1Bold: "not",
+    storesP1After:
+      "automatically cancel an active subscription purchased through the Apple App Store or Google Play. You must cancel subscriptions in your Apple or Google Play account settings. Fraudly cannot cancel store billing on your behalf.",
+    emailCta: "Email deletion request",
+    privacyLink: "Privacy Policy",
+    termsLink: "Terms of Service"
+  },
   meta: {
     home: {
       title: "Check if a Website or Webshop Is Safe | Fraudly",
@@ -190,6 +218,10 @@ export const en: CoreDictionary = {
       title: "Latest Website Trust Checks",
       description:
         "View recent website trust checks and scam checker results from Fraudly—phishing detection and fake webshop signals in real-time public summaries."
+    },
+    deleteAccount: {
+      title: "Delete Account | Fraudly",
+      description: "Learn how to request deletion of your Fraudly account and associated personal data."
     }
   }
 };

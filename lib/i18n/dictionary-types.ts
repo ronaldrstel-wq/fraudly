@@ -116,6 +116,29 @@ export type CoreDictionary = {
     footnote: string;
     resultsNote: string;
   };
+  deleteAccountPage: {
+    badge: string;
+    title: string;
+    intro: string;
+    howTitle: string;
+    howP1BeforeEmail: string;
+    howP1AfterEmail: string;
+    howSubject: string;
+    howP1AfterSubject: string;
+    howP2BeforeDays: string;
+    howP2Days: string;
+    howP2AfterDays: string;
+    afterTitle: string;
+    afterP1: string;
+    afterP2: string;
+    storesTitle: string;
+    storesP1Before: string;
+    storesP1Bold: string;
+    storesP1After: string;
+    emailCta: string;
+    privacyLink: string;
+    termsLink: string;
+  };
   meta: {
     home: { title: string; description: string };
     about: { title: string; description: string };
@@ -123,6 +146,7 @@ export type CoreDictionary = {
     scamHelp: { title: string; description: string };
     scamAlerts: { title: string; description: string };
     latestChecks: { title: string; description: string };
+    deleteAccount: { title: string; description: string };
   };
 };
 
