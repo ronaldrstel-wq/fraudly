@@ -1,12 +1,21 @@
 import Link from "next/link";
 import { IntelligenceCategoryBadge } from "@/components/blog/IntelligenceTrustBadges";
-import { INTELLIGENCE_BRAND, intelligenceArticlePath } from "@/lib/blog/constants";
+import { intelligenceArticlePath } from "@/lib/blog/constants";
 import { getAllBlogArticles } from "@/lib/blog/registry";
 import { estimateReadingTimeMinutes, articlePlainText } from "@/lib/blog/reading-time";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
+import { fillTemplate } from "@/lib/i18n/fill-template";
+import type { Locale } from "@/lib/i18n/locales";
 
 const PREVIEW_LIMIT = 4;
 
-export function HomeIntelligencePreview() {
+type HomeIntelligencePreviewProps = {
+  locale?: Locale;
+};
+
+/** Homepage Intelligence / scam awareness guides — article cards stay English until translated. */
+export function HomeIntelligencePreview({ locale = "en" }: HomeIntelligencePreviewProps) {
+  const copy = getDictionary(locale).homeDiscovery;
   const articles = getAllBlogArticles().slice(0, PREVIEW_LIMIT);
   if (articles.length === 0) return null;
 
@@ -18,22 +27,17 @@ export function HomeIntelligencePreview() {
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="max-w-xl">
-          <p className="text-xs font-semibold uppercase tracking-widest text-blue-700">
-            {INTELLIGENCE_BRAND.indexEyebrow}
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-blue-700">{copy.intelligenceEyebrow}</p>
           <h2 id="home-intelligence-heading" className="mt-2 text-balance text-xl font-bold tracking-tight text-slate-950 md:text-2xl">
-            Scam awareness guides
+            {copy.intelligenceTitle}
           </h2>
-          <p className="mt-2 text-pretty text-sm leading-relaxed text-slate-600">
-            Practical, editorial reports on fake webshops, phishing, and warning signs—written to help you shop and
-            browse more safely.
-          </p>
+          <p className="mt-2 text-pretty text-sm leading-relaxed text-slate-600">{copy.intelligenceIntro}</p>
         </div>
         <Link
           href="/intelligence"
           className="shrink-0 text-sm font-semibold text-blue-600 underline decoration-blue-600/35 underline-offset-2 hover:text-blue-800"
         >
-          View all intelligence →
+          {copy.viewAllIntelligence}
         </Link>
       </div>
 
@@ -53,7 +57,9 @@ export function HomeIntelligencePreview() {
                   </h3>
                   <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-slate-600">{article.excerpt}</p>
                 </div>
-                <span className="shrink-0 text-xs font-medium text-slate-500 sm:pt-8">{minutes} min read</span>
+                <span className="shrink-0 text-xs font-medium text-slate-500 sm:pt-8">
+                  {fillTemplate(copy.minRead, { minutes })}
+                </span>
               </Link>
             </li>
           );

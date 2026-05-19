@@ -157,6 +157,23 @@ export const es: CoreDictionary = {
       "Las puntuaciones se generan automáticamente con confianza, reputación, comprobaciones técnicas, feeds de estafas y análisis asistido por IA.",
     resultsNote: "Los resultados individuales siguen en inglés."
   },
+  homeDiscovery: {
+    intelligenceEyebrow: "Fraudly Intelligence",
+    intelligenceTitle: "Guías de concienciación sobre estafas",
+    intelligenceIntro:
+      "Informes prácticos sobre tiendas falsas, phishing y señales de alerta—para comprar y navegar con más seguridad.",
+    viewAllIntelligence: "Ver toda la intelligence →",
+    minRead: "{minutes} min de lectura",
+    latestChecksTitle: "Últimas comprobaciones de seguridad web",
+    latestChecksDescription:
+      "Instantáneas públicas recientes del feed comunitario de Fraudly. Cada enlace abre un informe de seguridad completo.",
+    browseAllLatestChecks: "Ver todas las últimas comprobaciones →",
+    exploreFooterBefore: "Explore",
+    exploreScamAlertsLink: "alertas de estafas",
+    exploreFooterMiddle: "y nuestras guías del",
+    exploreWebsiteScamCheckerLink: "comprobador de sitios web",
+    exploreFooterAfter: "para más contexto."
+  },
   deleteAccountPage: {
     badge: "Cuenta",
     title: "Eliminar tu cuenta de Fraudly",

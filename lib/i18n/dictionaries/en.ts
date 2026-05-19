@@ -160,6 +160,23 @@ export const en: CoreDictionary = {
       "Scores are generated automatically using trust, reputation where available, technical checks, scam intelligence feeds, and AI-assisted analysis—not a verdict on goodness or badness by itself.",
     resultsNote: "Individual check results remain in English."
   },
+  homeDiscovery: {
+    intelligenceEyebrow: "Fraudly Intelligence",
+    intelligenceTitle: "Scam awareness guides",
+    intelligenceIntro:
+      "Practical, editorial reports on fake webshops, phishing, and warning signs—written to help you shop and browse more safely.",
+    viewAllIntelligence: "View all intelligence →",
+    minRead: "{minutes} min read",
+    latestChecksTitle: "Latest website safety checks",
+    latestChecksDescription:
+      "Recent public trust snapshots from the Fraudly community feed. Each link opens a full safety report for that domain.",
+    browseAllLatestChecks: "Browse all latest checks →",
+    exploreFooterBefore: "Explore",
+    exploreScamAlertsLink: "scam alerts",
+    exploreFooterMiddle: "and our",
+    exploreWebsiteScamCheckerLink: "website scam checker",
+    exploreFooterAfter: "guides for more context."
+  },
   deleteAccountPage: {
     badge: "Account",
     title: "Delete your Fraudly account",

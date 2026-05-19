@@ -1,17 +1,25 @@
 import Link from "next/link";
 import { HomeIntelligencePreview } from "@/components/seo/HomeIntelligencePreview";
 import { InternalCheckLinksSection } from "@/components/seo/InternalCheckLinksSection";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
+import { localizedPath } from "@/lib/i18n/paths";
+import type { Locale } from "@/lib/i18n/locales";
 import { fetchPublicCheckLinkItems } from "@/lib/seo/public-check-links";
 
 const LATEST_LIMIT = 16;
 
-export async function HomePublicChecksDiscovery() {
+type HomePublicChecksDiscoveryProps = {
+  locale?: Locale;
+};
+
+export async function HomePublicChecksDiscovery({ locale = "en" }: HomePublicChecksDiscoveryProps) {
+  const copy = getDictionary(locale).homeDiscovery;
   const latest = await fetchPublicCheckLinkItems(LATEST_LIMIT);
 
   if (latest.length === 0) {
     return (
       <div className="mx-auto mt-10 w-full max-w-6xl sm:mt-12">
-        <HomeIntelligencePreview />
+        <HomeIntelligencePreview locale={locale} />
       </div>
     );
   }
@@ -20,25 +28,25 @@ export async function HomePublicChecksDiscovery() {
     <div className="mx-auto mt-10 w-full max-w-6xl space-y-8 sm:mt-12">
       <InternalCheckLinksSection
         id="home-latest-checks"
-        title="Latest website safety checks"
-        description="Recent public trust snapshots from the Fraudly community feed. Each link opens a full safety report for that domain."
+        title={copy.latestChecksTitle}
+        description={copy.latestChecksDescription}
         items={latest}
-        footerHref="/latest-checks"
-        footerLabel="Browse all latest checks →"
+        footerHref={localizedPath("/latest-checks", locale)}
+        footerLabel={copy.browseAllLatestChecks}
       />
 
-      <HomeIntelligencePreview />
+      <HomeIntelligencePreview locale={locale} />
 
       <p className="text-center text-xs text-slate-500">
-        Explore{" "}
-        <Link href="/scam-alerts" className="font-medium text-blue-600 hover:underline">
-          scam alerts
+        {copy.exploreFooterBefore}{" "}
+        <Link href={localizedPath("/scam-alerts", locale)} className="font-medium text-blue-600 hover:underline">
+          {copy.exploreScamAlertsLink}
         </Link>{" "}
-        and our{" "}
+        {copy.exploreFooterMiddle}{" "}
         <Link href="/website-scam-checker" className="font-medium text-blue-600 hover:underline">
-          website scam checker
+          {copy.exploreWebsiteScamCheckerLink}
         </Link>{" "}
-        guides for more context.
+        {copy.exploreFooterAfter}
       </p>
     </div>
   );

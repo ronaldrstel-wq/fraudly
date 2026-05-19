@@ -1,15 +1,13 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
-import { HomeBelowFold } from "@/components/HomeBelowFold";
-import { HomePublicChecksDiscovery } from "@/components/seo/HomePublicChecksDiscovery";
+import { HomePageMainSections } from "@/components/home/HomePageMainSections";
 import { HomeAuthProvider } from "@/components/home/HomeAuthContext";
 import { HomeNavbar } from "@/components/home/HomeNavbar";
 import { HomeFaqJsonLd } from "@/components/HomeFaqJsonLd";
 import { HomeClient } from "@/components/HomeClient";
 import { LocaleProvider } from "@/components/i18n/LocaleProvider";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
-import { OG_IMAGE } from "@/lib/seo-metadata";
 import { LocaleSuggestionServer } from "@/components/i18n/LocaleSuggestionServer";
+import { OG_IMAGE } from "@/lib/seo-metadata";
 import { hreflangLanguages } from "@/lib/i18n/seo";
 import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo-description";
 import { defaultKeywords, publicRobots, SITE_URL } from "@/lib/seo";
@@ -43,16 +41,6 @@ export const metadata: Metadata = {
 /** Hint CDN / data cache refresh for the marketing shell (no `force-static` — incompatible with Clerk + prerender). */
 export const revalidate = 3600;
 
-function HomeBelowFoldFallback() {
-  return (
-    <div className="mx-auto mt-14 max-w-6xl space-y-6 sm:mt-16 md:mt-20" aria-hidden>
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="h-44 w-full animate-pulse rounded-2xl bg-slate-100" />
-      ))}
-    </div>
-  );
-}
-
 export default function HomePage() {
   const dict = getDictionary("en");
 
@@ -64,10 +52,7 @@ export default function HomePage() {
           <LocaleSuggestionServer marketingPath="/" />
           <HomeNavbar />
           <HomeClient>
-            <HomePublicChecksDiscovery />
-            <Suspense fallback={<HomeBelowFoldFallback />}>
-              <HomeBelowFold />
-            </Suspense>
+            <HomePageMainSections locale="en" />
           </HomeClient>
         </LocaleProvider>
       </HomeAuthProvider>

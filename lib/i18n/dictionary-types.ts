@@ -116,6 +116,21 @@ export type CoreDictionary = {
     footnote: string;
     resultsNote: string;
   };
+  homeDiscovery: {
+    intelligenceEyebrow: string;
+    intelligenceTitle: string;
+    intelligenceIntro: string;
+    viewAllIntelligence: string;
+    minRead: string;
+    latestChecksTitle: string;
+    latestChecksDescription: string;
+    browseAllLatestChecks: string;
+    exploreFooterBefore: string;
+    exploreScamAlertsLink: string;
+    exploreFooterMiddle: string;
+    exploreWebsiteScamCheckerLink: string;
+    exploreFooterAfter: string;
+  };
   deleteAccountPage: {
     badge: string;
     title: string;

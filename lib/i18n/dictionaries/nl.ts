@@ -157,6 +157,23 @@ export const nl: CoreDictionary = {
       "Scores worden automatisch gegenereerd met vertrouwen, reputatie, technische checks, scamfeeds en AI—geen absoluut oordeel.",
     resultsNote: "Individuele checkresultaten blijven in het Engels."
   },
+  homeDiscovery: {
+    intelligenceEyebrow: "Fraudly Intelligence",
+    intelligenceTitle: "Gidsen voor scambewustzijn",
+    intelligenceIntro:
+      "Praktische redactionele artikelen over nepwinkels, phishing en waarschuwingssignalen—om veiliger te winkelen en browsen.",
+    viewAllIntelligence: "Bekijk alle intelligence →",
+    minRead: "{minutes} min lezen",
+    latestChecksTitle: "Laatste website-veiligheidschecks",
+    latestChecksDescription:
+      "Recente openbare vertrouwenssnapshots uit de Fraudly-communityfeed. Elke link opent een volledig veiligheidsrapport voor dat domein.",
+    browseAllLatestChecks: "Bekijk alle laatste checks →",
+    exploreFooterBefore: "Ontdek",
+    exploreScamAlertsLink: "scamalerts",
+    exploreFooterMiddle: "en onze",
+    exploreWebsiteScamCheckerLink: "website-scamchecker",
+    exploreFooterAfter: "gidsen voor meer context."
+  },
   deleteAccountPage: {
     badge: "Account",
     title: "Je Fraudly-account verwijderen",
