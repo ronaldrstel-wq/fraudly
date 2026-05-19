@@ -1,4 +1,5 @@
-import { EN_MESSAGES } from "@/lib/messages.en";
+import type { ResultFlowMessages } from "@/lib/i18n/result-flow";
+import { resultFlowOrDefault } from "@/lib/i18n/result-flow/messages";
 import type { CriticalThreatKind } from "@/lib/scanPresentation";
 import type { TrustLevel } from "@/lib/trustSystem";
 import type { ConfidenceLevel, SiteStatus } from "@/types/site-outcome";
@@ -6,19 +7,23 @@ import type { ConfidenceLevel, SiteStatus } from "@/types/site-outcome";
 /**
  * Short, deterministic “why” line for the top of scan results (no AI).
  */
-export function whyThisResultSummary(args: {
-  threatActive: boolean;
-  threatKind: CriticalThreatKind | null;
-  siteStatus: SiteStatus;
-  trustLevel: TrustLevel;
-}): string {
+export function whyThisResultSummary(
+  args: {
+    threatActive: boolean;
+    threatKind: CriticalThreatKind | null;
+    siteStatus: SiteStatus;
+    trustLevel: TrustLevel;
+  },
+  flow?: ResultFlowMessages
+): string {
+  const messages = resultFlowOrDefault(flow);
   const { threatActive, threatKind, siteStatus, trustLevel } = args;
 
-  if (siteStatus === "nonexistent") return EN_MESSAGES.scanResult.why.nonexistent;
-  if (siteStatus === "inactive") return EN_MESSAGES.scanResult.why.inactive;
+  if (siteStatus === "nonexistent") return messages.scanResult.why.nonexistent;
+  if (siteStatus === "inactive") return messages.scanResult.why.inactive;
 
   if (threatActive && threatKind) {
-    const w = EN_MESSAGES.scanResult.whyThreat;
+    const w = messages.scanResult.whyThreat;
     switch (threatKind) {
       case "phishing_feed":
         return w.phishingFeed;
@@ -38,10 +43,10 @@ export function whyThisResultSummary(args: {
   }
 
   if (siteStatus === "confirmed_malicious") {
-    return EN_MESSAGES.scanResult.why.confirmedMaliciousGeneric;
+    return messages.scanResult.why.confirmedMaliciousGeneric;
   }
 
-  const b = EN_MESSAGES.scanResult.whyTrustBand;
+  const b = messages.scanResult.whyTrustBand;
   switch (trustLevel) {
     case "trusted":
       return b.trusted;
@@ -59,23 +64,27 @@ export function whyThisResultSummary(args: {
 }
 
 /** Action-oriented line beneath status / coverage. */
-export function scanRecommendation(args: {
-  threatActive: boolean;
-  threatKind: CriticalThreatKind | null;
-  siteStatus: SiteStatus;
-  trustLevel: TrustLevel;
-}): string {
+export function scanRecommendation(
+  args: {
+    threatActive: boolean;
+    threatKind: CriticalThreatKind | null;
+    siteStatus: SiteStatus;
+    trustLevel: TrustLevel;
+  },
+  flow?: ResultFlowMessages
+): string {
+  const messages = resultFlowOrDefault(flow);
   const { threatActive, threatKind, siteStatus, trustLevel } = args;
 
   if (siteStatus === "nonexistent") {
-    return EN_MESSAGES.scanResult.recommend.nonexistent;
+    return messages.scanResult.recommend.nonexistent;
   }
   if (siteStatus === "inactive") {
-    return EN_MESSAGES.scanResult.recommend.inactive;
+    return messages.scanResult.recommend.inactive;
   }
 
   if (threatActive && threatKind) {
-    const r = EN_MESSAGES.scanResult.recommendThreat;
+    const r = messages.scanResult.recommendThreat;
     switch (threatKind) {
       case "phishing_feed":
       case "safe_browsing_phishing":
@@ -93,10 +102,10 @@ export function scanRecommendation(args: {
   }
 
   if (siteStatus === "confirmed_malicious") {
-    return EN_MESSAGES.scanResult.recommend.confirmedMalicious;
+    return messages.scanResult.recommend.confirmedMalicious;
   }
 
-  const t = EN_MESSAGES.scanResult.recommendTrustBand;
+  const t = messages.scanResult.recommendTrustBand;
   switch (trustLevel) {
     case "trusted":
       return t.trusted;

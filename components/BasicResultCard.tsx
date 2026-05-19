@@ -1,7 +1,7 @@
 "use client";
 
 import type { BasicCheckResult } from "@/types/scam";
-import { EN_MESSAGES } from "@/lib/messages.en";
+import { useResultFlow } from "@/components/i18n/useResultFlow";
 import {
   humanRecGlyph,
   humanRecHeadline,
@@ -26,13 +26,14 @@ function toSafeHttpUrl(input: string | null | undefined): string | null {
 }
 
 export function BasicResultCard({ result }: { result: BasicCheckResult }) {
+  const flow = useResultFlow();
   const trustStyle = trustScoreFromRisk(result.score);
   const trust = trustPresentationFromScore(trustStyle);
   const trustColors = getTrustColors(trustStyle);
   const humanKind = resolveHumanRecKindForBasicCheck(result.verdict, result.score);
-  const humanHeadline = humanRecHeadline(humanKind);
+  const humanHeadline = humanRecHeadline(humanKind, flow);
   const humanTone = humanRecHeadlineTone(humanKind, trustStyle);
-  const shortEx = shortExplainForBasic(result.verdict, result.score);
+  const shortEx = shortExplainForBasic(result.verdict, result.score, flow);
   const trustedVisitUrl = toSafeHttpUrl(`https://${result.domain}`);
   const showVisitWebsiteCta = trustStyle >= 85 && trust.level === "trusted" && Boolean(trustedVisitUrl);
 
@@ -41,12 +42,12 @@ export function BasicResultCard({ result }: { result: BasicCheckResult }) {
       className={`w-full rounded-2xl border p-6 shadow-md sm:p-7 ${trustColors.border} ${trustColors.surfaceGradient}`}
     >
       <div className="flex flex-col gap-4">
-        <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">{EN_MESSAGES.basicResult.heading}</h2>
+        <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">{flow.basicResult.heading}</h2>
       </div>
-      <p className="mt-2 text-sm text-slate-600">{EN_MESSAGES.basicResult.intro}</p>
+      <p className="mt-2 text-sm text-slate-600">{flow.basicResult.intro}</p>
 
       <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{EN_MESSAGES.basicResult.checkedLink}</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{flow.basicResult.checkedLink}</p>
         <p className="mt-1 break-all text-base font-semibold text-slate-900 sm:text-lg">{result.domain}</p>
       </div>
 
@@ -65,16 +66,16 @@ export function BasicResultCard({ result }: { result: BasicCheckResult }) {
 
       <section
         className={`mt-5 rounded-xl border px-4 py-3 ${trustColors.softBorder} ${trustColors.softBg}`}
-        aria-label={`${EN_MESSAGES.scanResult.technicalStatusHeading}: ${trust.label}`}
+        aria-label={`${flow.scanResult.technicalStatusHeading}: ${trust.label}`}
       >
         <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-          {EN_MESSAGES.scanResult.technicalStatusHeading}
+          {flow.scanResult.technicalStatusHeading}
         </p>
         <p className={`mt-1 text-sm font-semibold ${trustColors.headlineText}`}>{trust.label}</p>
       </section>
 
       <section className="mt-5 border-t border-slate-100 pt-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{EN_MESSAGES.scanResult.trustScoreLabel}</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{flow.scanResult.trustScoreLabel}</p>
         <p className="mt-2">
           <span
             className={`inline-flex items-center rounded-xl border px-2.5 py-1 text-lg font-semibold tabular-nums ${trustColors.scorePill}`}
@@ -83,7 +84,7 @@ export function BasicResultCard({ result }: { result: BasicCheckResult }) {
             <span className={`font-medium ${trustColors.scorePillDim}`}> / 100</span>
           </span>
         </p>
-        <p className="mt-1 text-xs text-slate-500">{EN_MESSAGES.scanResult.trustScoreExplainer}</p>
+        <p className="mt-1 text-xs text-slate-500">{flow.scanResult.trustScoreExplainer}</p>
       </section>
 
       {showVisitWebsiteCta && trustedVisitUrl ? (
@@ -94,17 +95,17 @@ export function BasicResultCard({ result }: { result: BasicCheckResult }) {
             rel="noopener noreferrer nofollow"
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2"
           >
-            Visit website
+            {flow.checkPage.visitWebsiteCta}
             <span aria-hidden>↗</span>
           </a>
           <p className="mt-2 text-xs leading-relaxed text-slate-600">
-            Fraudly did not detect strong risk indicators in this scan. Always use your own judgment.
+            {flow.checkPage.visitWebsiteDisclaimer}
           </p>
         </section>
       ) : null}
 
       <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50 p-4">
-        <p className="text-sm font-medium text-blue-900">{EN_MESSAGES.basicResult.unlockHint}</p>
+        <p className="text-sm font-medium text-blue-900">{flow.basicResult.unlockHint}</p>
       </div>
       <ResultSupportBox className="mt-5" />
     </article>

@@ -1,3 +1,8 @@
+import {
+  formatDateTimeExact,
+  formatPublishedDateLong,
+  formatRelativeTime
+} from "@/lib/i18n/format-locale-date";
 import { safeAlertDate } from "@/lib/scam-alerts/safeDates";
 import type { PublicScamAlertListItem, ScamAlertsPublicFilter, ScamAlertsTimeWindow } from "@/lib/scam-alerts/service";
 
@@ -126,28 +131,14 @@ export function whyThisMattersLine(alert: Pick<PublicScamAlertListItem, "scamTyp
 
 /** e.g. "9 May 2026" for alert cards. */
 export function formatPublishedDateLongEn(date: Date): string {
-  const d = safeAlertDate(date);
-  if (!d) return "Unknown";
-  return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  return formatPublishedDateLong(date, "en");
 }
 
 export function formatRelativeTimeEn(date: Date, now: Date = new Date()): { label: string; title: string } {
-  const d = safeAlertDate(date);
-  if (!d) return { label: "Unknown", title: "Unknown" };
-  const title = d.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
-  const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-  const diffSec = (d.getTime() - now.getTime()) / 1000;
-  const absSec = Math.abs(diffSec);
-  const sign = diffSec < 0 ? -1 : 1;
-
-  if (absSec < 60) return { label: rtf.format(Math.round(diffSec), "second"), title };
-  if (absSec < 3600) return { label: rtf.format(sign * Math.round(absSec / 60), "minute"), title };
-  if (absSec < MS_DAY / 1000) return { label: rtf.format(sign * Math.round(absSec / 3600), "hour"), title };
-  if (absSec < 7 * (MS_DAY / 1000)) return { label: rtf.format(sign * Math.round(absSec / 86400), "day"), title };
-  if (absSec < 30 * (MS_DAY / 1000)) return { label: rtf.format(sign * Math.round(absSec / (86400 * 7)), "week"), title };
-  if (absSec < 365 * (MS_DAY / 1000)) return { label: rtf.format(sign * Math.round(absSec / (86400 * 30)), "month"), title };
-  return { label: rtf.format(sign * Math.round(absSec / (86400 * 365)), "year"), title };
+  return formatRelativeTime(date, "en", now);
 }
+
+export { formatDateTimeExact, formatPublishedDateLong, formatRelativeTime };
 
 /** Normalize domain for “related” hints (best-effort; not a full PSL parser). */
 export function clusterDomainKey(domain: string | null | undefined): string | null {

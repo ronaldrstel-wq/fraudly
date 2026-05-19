@@ -1,8 +1,12 @@
 import type { MarketingUiExtension } from "@/lib/i18n/marketing-ui-types";
 import { getCheckFlowMessages } from "@/lib/i18n/check-flow";
+import { getResultFlowMessages } from "@/lib/i18n/result-flow";
+import { getRecentSearchesUi } from "@/lib/i18n/recent-searches-ui";
 
 export const marketingUiEn: MarketingUiExtension = {
   checkFlow: getCheckFlowMessages("en"),
+  resultFlow: getResultFlowMessages("en"),
+  recentSearchesUi: getRecentSearchesUi("en"),
   common: { languageLabel: "Language" },
   scamAlertsPage: {
     filters: {
@@ -50,7 +54,21 @@ export const marketingUiEn: MarketingUiExtension = {
     },
     card: {
       technicalMatchStrength: "Match strength",
-      technicalSignals: "Corroborating signals"
+      technicalSignals: "Corroborating signals",
+      relatedAlertSameDomain: "Related alert · same domain",
+      published: "Published",
+      updated: "Updated",
+      source: "Source",
+      unknown: "Unknown",
+      domainSr: "Domain:",
+      severitySr: "Severity:",
+      technicalDetails: "Technical details",
+      readFullAlert: "Read full alert →",
+      publishedExact: "Published (exact)",
+      rawType: "Raw type",
+      originalTitle: "Original title",
+      domain: "Domain",
+      url: "URL"
     },
     pagination: {
       prev: "Previous page",
@@ -62,6 +80,8 @@ export const marketingUiEn: MarketingUiExtension = {
   },
   latestChecksPage: {
     trustScorePillLabel: "Trust Score",
+    trustScoreOutOf100Aria: "{label}: {score} out of 100",
+    dataConfidenceAria: "Data confidence",
     viewResultArrow: "View result →",
     emptyState:
       "No public checks published yet. As soon as privacy-safe summaries are available, they will appear here so you can see what others are looking up.",

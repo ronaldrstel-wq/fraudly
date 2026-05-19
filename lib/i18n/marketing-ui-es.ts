@@ -14,19 +14,20 @@ export const marketingUiEs: MarketingUiExtension = {
       phishing: "Phishing",
       severityTypeLabel: "Gravedad y tipo",
       exactTypeLabel: "Tipo exacto:",
-      anyType: "Todos"
+      anyType: "Cualquiera"
     },
     timeRange: {
       label: "Periodo",
       today: "Hoy",
-      todayHint: "Publicado desde medianoche UTC hoy",
+      todayHint: "Publicado desde medianoche UTC de hoy",
       last24h: "Últimas 24 h",
-      last24hHint: "Ventana móvil de 24 horas",
+      last24hHint: "Ventana móvil de las últimas 24 horas",
       last7d: "Últimos 7 días",
-      last7dHint: "Ventana móvil de siete días",
-      allAlerts: "Todos Alerts",
-      allAlertsHint: "Cada alerta publicada visible",
-      helper: "Standard zeigt alle veröffentlichten Alerts. Enger über URL auf Hoy (UTC) oder kürzere Fenster."
+      last7dHint: "Ventana móvil de los últimos siete días",
+      allAlerts: "Todas las alertas",
+      allAlertsHint: "Todas las alertas publicadas visibles",
+      helper:
+        "Por defecto se muestran todas las alertas publicadas. Restringe a Hoy (UTC) o ventanas más cortas desde la URL."
     },
     summary: {
       ...marketingUiEn.scamAlertsPage.summary,
@@ -43,21 +44,49 @@ export const marketingUiEs: MarketingUiExtension = {
     empty: {
       zeroTitle: "No hay alertas de fraude activas ahora",
       zeroBody:
-        "Fraudly monitoriza fuentes públicas de forma continua. Nuevas alertas aparecerán aquí con pruebas suficientes.",
+        "Fraudly monitoriza fuentes públicas de forma continua. Las nuevas alertas aparecerán aquí cuando haya pruebas suficientes.",
       filteredTitle: "Ninguna alerta coincide con esta vista",
-      filteredBody: "Versuchen Sie einen breiteren Periodo (z. B. „Todos Alerts“) oder einen anderen Filter.",
-      viewAllTimeCta: "Todos veröffentlichten Alerts anzeigen",
-      checkWebsiteCta: "Verificar un sitio ahora"
+      filteredBody:
+        "Prueba un periodo más amplio (por ejemplo «Todas las alertas») u otro filtro de gravedad. Los totales siguen reflejando todas las alertas publicadas.",
+      viewAllTimeCta: "Ver todas las alertas publicadas",
+      checkWebsiteCta: "Comprobar un sitio ahora"
     },
-    card: { technicalMatchStrength: "Fuerza de coincidencia", technicalSignals: "Señales de corroboración" },
-    pagination: { prev: "Página anterior", prevDisabled: "Anterior", next: "Página siguiente", nextDisabled: "Siguiente", page: "Página" }
+    card: {
+      technicalMatchStrength: "Fuerza de coincidencia",
+      technicalSignals: "Señales de corroboración",
+      relatedAlertSameDomain: "Alerta relacionada · mismo dominio",
+      published: "Publicado",
+      updated: "Actualizado",
+      source: "Fuente",
+      unknown: "Desconocido",
+      domainSr: "Dominio:",
+      severitySr: "Gravedad:",
+      technicalDetails: "Detalles técnicos",
+      readFullAlert: "Leer alerta completa →",
+      publishedExact: "Publicado (exacto)",
+      rawType: "Tipo bruto",
+      originalTitle: "Título original",
+      domain: "Dominio",
+      url: "URL"
+    },
+    pagination: {
+      prev: "Página anterior",
+      prevDisabled: "Anterior",
+      next: "Página siguiente",
+      nextDisabled: "Siguiente",
+      page: "Página"
+    }
   },
   latestChecksPage: {
     ...marketingUiEn.latestChecksPage,
     trustScorePillLabel: "Puntuación de confianza",
+    trustScoreOutOf100Aria: "{label}: {score} de 100",
+    dataConfidenceAria: "Confianza de los datos",
     viewResultArrow: "Ver resultado →",
-    emptyState: "Aún no hay comprobaciones públicas. Los resúmenes aparecerán aquí cuando estén disponibles.",
-    unavailableState: "Las últimas comprobaciones no están disponibles temporalmente. Aún puedes verificar un sitio arriba.",
+    emptyState:
+      "Aún no hay comprobaciones públicas. Los resúmenes aparecerán aquí en cuanto estén disponibles de forma respetuosa con la privacidad.",
+    unavailableState:
+      "Las últimas comprobaciones no están disponibles temporalmente. Aún puedes comprobar un sitio arriba.",
     ctaPrimary: "Iniciar comprobación",
     listAria: "Últimos resúmenes públicos de comprobaciones",
     entityFallback: "Elemento verificado",
@@ -66,31 +95,37 @@ export const marketingUiEs: MarketingUiExtension = {
       url: "URL",
       company: "Empresa / marca",
       crypto_wallet: "Monedero cripto",
-      username: "Nombre de usuario / handle"
+      username: "Usuario / identificador público"
     },
-    pagination: { prev: "Página anterior", prevDisabled: "Anterior", next: "Página siguiente", nextDisabled: "Siguiente", page: "Página" }
+    pagination: {
+      prev: "Página anterior",
+      prevDisabled: "Anterior",
+      next: "Página siguiente",
+      nextDisabled: "Siguiente",
+      page: "Página"
+    }
   },
   homeSections: {
     trustActivity: {
       title: "Fraudly ayuda a los usuarios a estar más seguros en línea",
       subtitle: "Escaneos con IA para detectar sitios sospechosos, phishing y estafas.",
-      footnote: "{count} comprobaciones públicas en 30 días — feed respetuoso con la privacidad.",
+      footnote: "{count} comprobaciones públicas en los últimos 30 días — feed respetuoso con la privacidad.",
       stats: {
         websiteChecksLabel: "Comprobaciones de sitios",
         websiteChecksHint: "Comprobaciones públicas en el feed de Fraudly.",
         websiteChecksFallback: "En crecimiento",
         threatSignalsLabel: "Señales de amenaza analizadas",
-        threatSignalsHint: "Comprobaciones recientes + alertas de fraude (30 días).",
+        threatSignalsHint: "Comprobaciones recientes y alertas de fraude publicadas (30 días).",
         threatSignalsFallback: "En construcción",
-        buildingHint: "Los datos de actividad aún se están generando.",
+        buildingHint: "Los datos de actividad aún se están generando — vuelve pronto.",
         aiLabel: "Análisis asistido por IA",
         aiValue: "24/7",
-        aiHint: "Heurísticas continuas + inteligencia pública.",
+        aiHint: "Heurísticas continuas e inteligencia pública.",
         growingLabel: "Crecimiento diario",
         growingValue: "Nuevos escaneos cada día",
-        growingValueActive: "Hoy aktiv",
-        growingHint: "Nuevas comprobaciones públicas aparecen continuamente.",
-        growingHintActive: "{count} comprobaciones públicas en las últimas 24 h."
+        growingValueActive: "Activo hoy",
+        growingHint: "Aparecen comprobaciones públicas nuevas a medida que la gente verifica sitios.",
+        growingHintActive: "{count} comprobaciones públicas en las últimas 24 horas."
       }
     },
     whatWeCheck: {
@@ -100,7 +135,7 @@ export const marketingUiEs: MarketingUiExtension = {
         { title: "Reputación del sitio", body: "Señales públicas de confianza y reseñas — con límites claros." },
         { title: "SSL y seguridad", body: "HTTPS, certificados y ajustes técnicos importantes." },
         { title: "Antigüedad del dominio", body: "Historial de registro — a menudo distinto en estafas." },
-        { title: "Indicadores de phishing", body: "Idioma, Dringlichkeit und typische Phishing-Muster." },
+        { title: "Indicadores de phishing", body: "Lenguaje, urgencia y patrones típicos de páginas engañosas." },
         { title: "Reportes de estafas", body: "Cruce con alertas publicadas e inteligencia pública." },
         { title: "Patrones de riesgo con IA", body: "Heurísticas para combinaciones inusuales de señales." }
       ]
@@ -108,7 +143,7 @@ export const marketingUiEs: MarketingUiExtension = {
     featureCards: [
       { title: "Señales, no ruido", description: "Reputación, feeds de estafas, SSL y dominio — en una vista clara." },
       { title: "Segundos, no suposiciones", description: "En el navegador. Sin instalación para la primera comprobación." },
-      { title: "Klare Idioma", description: "Consejos honestos con límites transparentes." }
+      { title: "Lenguaje claro", description: "Consejos honestos con límites transparentes." }
     ]
   },
   homeBelowFold: {
@@ -138,24 +173,25 @@ export const marketingUiEs: MarketingUiExtension = {
       items: [
         {
           question: "¿Fraudly es un verificador de estafas?",
-          answer: "Sí — para comprobar enlaces desconocidos con feeds de estafas, señales HTTPS/dominio y explicación con IA opcional."
+          answer:
+            "Sí — para comprobar enlaces desconocidos con feeds de estafas, señales HTTPS/dominio y explicación con IA opcional."
         },
         {
           question: "¿Fraudly garantiza un 100 % de seguridad?",
           answer: "Ninguna herramienta puede hacerlo. Usa Fraudly con sentido común y verificación oficial."
         },
         {
-          question: "¿Diferencia con un antivirus?",
-          answer: "Fraudly se centra en sitios engañosos: phishing, tiendas dudosas, SSL, feeds de estafas — no solo malware."
+          question: "¿En qué se diferencia de un antivirus?",
+          answer: "Fraudly se centra en sitios engañosos: phishing, tiendas dudosas, SSL y feeds de estafas — no solo malware."
         },
-        { question: "¿Coste de la primera comprobación?", answer: "La primera comprobación en el navegador es gratis sin cuenta." }
+        { question: "¿Cuánto cuesta la primera comprobación?", answer: "La primera comprobación en el navegador es gratis sin cuenta." }
       ]
     },
     testimonials: {
       title: "Lo que dicen los usuarios",
       items: [
-        { quote: "Gut, dass ich nicht gekauft habe — Fraudly zeigte eine riskante Página.", name: "Emma" },
-        { quote: "Verifico cada anuncio de Instagram con Fraudly.", name: "Noah" },
+        { quote: "Menos mal que no compré — Fraudly mostró que era un sitio arriesgado.", name: "Emma" },
+        { quote: "Compruebo cada anuncio de Instagram con Fraudly.", name: "Noah" },
         { quote: "Me evitó una tienda de zapatillas dudosa.", name: "Jason" },
         { quote: "En segundos supe que esa tienda de TikTok merecía una segunda mirada.", name: "Mila" },
         { quote: "El anuncio parecía legítimo. Fraudly mostró las señales de alerta.", name: "Olivia" },
@@ -167,7 +203,7 @@ export const marketingUiEs: MarketingUiExtension = {
       bodyPrefix: "Haz un escaneo gratis y comparte un resumen como",
       bodyLinkLabel: "/check/ejemplo.es",
       bodySuffix: "cuando te preguntan: «¿Este sitio parece bien?»",
-      button: "Verificar sitio web"
+      button: "Comprobar sitio web"
     }
   },
   supportFaq: [
@@ -201,7 +237,7 @@ export const marketingUiEs: MarketingUiExtension = {
       answer: "Algunos escaneos pueden aparecer de forma anónima en feeds públicos. No mostramos datos personales a propósito."
     },
     {
-      question: "¿Contactar soporte?",
+      question: "¿Cómo contactar con soporte?",
       answer: "Escribe a support@fraudly.app."
     }
   ]

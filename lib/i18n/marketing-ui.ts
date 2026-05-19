@@ -1,11 +1,14 @@
 import type { MarketingUiExtension } from "@/lib/i18n/marketing-ui-types";
 import { getCheckFlowMessages } from "@/lib/i18n/check-flow";
+import { getRecentSearchesUi } from "@/lib/i18n/recent-searches-ui";
+import { getResultFlowMessages } from "@/lib/i18n/result-flow";
 import { marketingUiEs } from "@/lib/i18n/marketing-ui-es";
 import { marketingUiPt } from "@/lib/i18n/marketing-ui-pt";
 import type { Locale } from "@/lib/i18n/locales";
 
 const en: MarketingUiExtension = {
   checkFlow: getCheckFlowMessages("en"),
+  resultFlow: getResultFlowMessages("en"),
   common: { languageLabel: "Language" },
   scamAlertsPage: {
     filters: {
@@ -53,7 +56,21 @@ const en: MarketingUiExtension = {
     },
     card: {
       technicalMatchStrength: "Match strength",
-      technicalSignals: "Corroborating signals"
+      technicalSignals: "Corroborating signals",
+      relatedAlertSameDomain: "Related alert · same domain",
+      published: "Published",
+      updated: "Updated",
+      source: "Source",
+      unknown: "Unknown",
+      domainSr: "Domain:",
+      severitySr: "Severity:",
+      technicalDetails: "Technical details",
+      readFullAlert: "Read full alert →",
+      publishedExact: "Published (exact)",
+      rawType: "Raw type",
+      originalTitle: "Original title",
+      domain: "Domain",
+      url: "URL"
     },
     pagination: {
       prev: "Previous page",
@@ -65,6 +82,8 @@ const en: MarketingUiExtension = {
   },
   latestChecksPage: {
     trustScorePillLabel: "Trust Score",
+    trustScoreOutOf100Aria: "{label}: {score} out of 100",
+    dataConfidenceAria: "Data confidence",
     viewResultArrow: "View result →",
     emptyState:
       "No public checks published yet. As soon as privacy-safe summaries are available, they will appear here so you can see what others are looking up.",
@@ -231,11 +250,13 @@ const en: MarketingUiExtension = {
       question: "How can I contact support?",
       answer: "You can contact us anytime at support@fraudly.app."
     }
-  ]
+  ],
+  recentSearchesUi: getRecentSearchesUi("en")
 };
 
 const nl: MarketingUiExtension = {
   checkFlow: getCheckFlowMessages("nl"),
+  resultFlow: getResultFlowMessages("nl"),
   common: { languageLabel: "Taal" },
   scamAlertsPage: {
     filters: {
@@ -283,7 +304,21 @@ const nl: MarketingUiExtension = {
     },
     card: {
       technicalMatchStrength: "Matchsterkte",
-      technicalSignals: "Ondersteunende signalen"
+      technicalSignals: "Ondersteunende signalen",
+      relatedAlertSameDomain: "Gerelateerde melding · zelfde domein",
+      published: "Gepubliceerd",
+      updated: "Bijgewerkt",
+      source: "Bron",
+      unknown: "Onbekend",
+      domainSr: "Domein:",
+      severitySr: "Ernst:",
+      technicalDetails: "Technische details",
+      readFullAlert: "Volledige melding lezen →",
+      publishedExact: "Gepubliceerd (exact)",
+      rawType: "Ruwe type",
+      originalTitle: "Originele titel",
+      domain: "Domein",
+      url: "URL"
     },
     pagination: {
       prev: "Vorige pagina",
@@ -295,6 +330,8 @@ const nl: MarketingUiExtension = {
   },
   latestChecksPage: {
     trustScorePillLabel: "Vertrouwensscore",
+    trustScoreOutOf100Aria: "{label}: {score} van 100",
+    dataConfidenceAria: "Datavertrouwen",
     viewResultArrow: "Bekijk resultaat →",
     emptyState:
       "Nog geen openbare checks gepubliceerd. Zodra privacyveilige samenvattingen beschikbaar zijn, verschijnen ze hier.",
@@ -461,12 +498,15 @@ const nl: MarketingUiExtension = {
       question: "Hoe neem ik contact op met support?",
       answer: "Mail ons op support@fraudly.app."
     }
-  ]
+  ],
+  recentSearchesUi: getRecentSearchesUi("nl")
 };
 
 // DE and FR: provide full translations (abbreviated structure same as nl)
 const de: MarketingUiExtension = {
   ...nl,
+  resultFlow: getResultFlowMessages("de"),
+  recentSearchesUi: getRecentSearchesUi("de"),
   common: { languageLabel: "Sprache" },
   scamAlertsPage: {
     ...nl.scamAlertsPage,
@@ -512,12 +552,31 @@ const de: MarketingUiExtension = {
       viewAllTimeCta: "Alle veröffentlichten Alerts anzeigen",
       checkWebsiteCta: "Jetzt Website prüfen"
     },
-    card: { technicalMatchStrength: "Match-Stärke", technicalSignals: "Bestätigende Signale" },
+    card: {
+      technicalMatchStrength: "Match-Stärke",
+      technicalSignals: "Bestätigende Signale",
+      relatedAlertSameDomain: "Verwandte Meldung · gleiche Domain",
+      published: "Veröffentlicht",
+      updated: "Aktualisiert",
+      source: "Quelle",
+      unknown: "Unbekannt",
+      domainSr: "Domain:",
+      severitySr: "Schweregrad:",
+      technicalDetails: "Technische Details",
+      readFullAlert: "Vollständige Meldung lesen →",
+      publishedExact: "Veröffentlicht (exakt)",
+      rawType: "Roh-Typ",
+      originalTitle: "Originaltitel",
+      domain: "Domain",
+      url: "URL"
+    },
     pagination: { prev: "Vorherige Seite", prevDisabled: "Zurück", next: "Nächste Seite", nextDisabled: "Weiter", page: "Seite" }
   },
   latestChecksPage: {
     ...nl.latestChecksPage,
     trustScorePillLabel: "Vertrauenswert",
+    trustScoreOutOf100Aria: "{label}: {score} von 100",
+    dataConfidenceAria: "Datenvertrauen",
     viewResultArrow: "Ergebnis ansehen →",
     emptyState: "Noch keine öffentlichen Checks veröffentlicht. Sobald Datenschutz-sichere Zusammenfassungen verfügbar sind, erscheinen sie hier.",
     unavailableState: "Neueste Checks vorübergehend nicht verfügbar. Sie können oben weiter eine Website prüfen.",
@@ -650,6 +709,8 @@ const de: MarketingUiExtension = {
 
 const fr: MarketingUiExtension = {
   ...nl,
+  resultFlow: getResultFlowMessages("fr"),
+  recentSearchesUi: getRecentSearchesUi("fr"),
   common: { languageLabel: "Langue" },
   scamAlertsPage: {
     ...nl.scamAlertsPage,
@@ -694,12 +755,31 @@ const fr: MarketingUiExtension = {
       viewAllTimeCta: "Voir toutes les alertes publiées",
       checkWebsiteCta: "Vérifier un site maintenant"
     },
-    card: { technicalMatchStrength: "Force de correspondance", technicalSignals: "Signaux corroborants" },
+    card: {
+      technicalMatchStrength: "Force de correspondance",
+      technicalSignals: "Signaux corroborants",
+      relatedAlertSameDomain: "Alerte liée · même domaine",
+      published: "Publié",
+      updated: "Mis à jour",
+      source: "Source",
+      unknown: "Inconnu",
+      domainSr: "Domaine :",
+      severitySr: "Gravité :",
+      technicalDetails: "Détails techniques",
+      readFullAlert: "Lire l’alerte complète →",
+      publishedExact: "Publié (exact)",
+      rawType: "Type brut",
+      originalTitle: "Titre original",
+      domain: "Domaine",
+      url: "URL"
+    },
     pagination: { prev: "Page précédente", prevDisabled: "Précédent", next: "Page suivante", nextDisabled: "Suivant", page: "Page" }
   },
   latestChecksPage: {
     ...nl.latestChecksPage,
     trustScorePillLabel: "Score de confiance",
+    trustScoreOutOf100Aria: "{label} : {score} sur 100",
+    dataConfidenceAria: "Confiance des données",
     viewResultArrow: "Voir le résultat →",
     emptyState: "Aucun contrôle public publié pour l’instant. Les résumés apparaîtront ici dès qu’ils seront disponibles.",
     unavailableState: "Derniers contrôles temporairement indisponibles. Vous pouvez encore vérifier un site ci-dessus.",
@@ -823,8 +903,18 @@ const byLocale: Record<Locale, MarketingUiExtension> = {
   nl,
   de,
   fr,
-  es: { ...marketingUiEs, checkFlow: getCheckFlowMessages("es") },
-  pt: { ...marketingUiPt, checkFlow: getCheckFlowMessages("pt") }
+  es: {
+    ...marketingUiEs,
+    checkFlow: getCheckFlowMessages("es"),
+    resultFlow: getResultFlowMessages("es"),
+    recentSearchesUi: getRecentSearchesUi("es")
+  },
+  pt: {
+    ...marketingUiPt,
+    checkFlow: getCheckFlowMessages("pt"),
+    resultFlow: getResultFlowMessages("pt"),
+    recentSearchesUi: getRecentSearchesUi("pt")
+  }
 };
 
 export function getMarketingUi(locale: Locale): MarketingUiExtension {

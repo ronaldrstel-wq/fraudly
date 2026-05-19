@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { FeedCardDevLogger } from "@/components/overview/FeedCardDevLogger";
-import { EN_MESSAGES } from "@/lib/messages.en";
+import { fillTemplate } from "@/lib/i18n/fill-template";
 import { TrustDataConfidenceBadge } from "@/components/trust/TrustDataConfidenceBadge";
 import type { OverviewCardModel } from "@/lib/overviewCardPresentation";
 import { getOverviewFeedCardVisual, type OverviewFeedCardVisual } from "@/lib/scoring/trust-bands";
@@ -117,12 +117,17 @@ function FeedViewResultCta({
 function TrustScoreBlock({
   score,
   visual,
+  trustScorePillLabel,
+  trustScoreOutOf100Aria,
   variant = "default"
 }: {
   score: number;
   visual: OverviewFeedCardVisual;
+  trustScorePillLabel: string;
+  trustScoreOutOf100Aria: string;
   variant?: "default" | "meta";
 }) {
+  const scoreAria = fillTemplate(trustScoreOutOf100Aria, { label: trustScorePillLabel, score });
   const pillClass = variant === "meta" ? visual.metaScorePill : visual.scorePill;
   const slashClass = variant === "meta" ? visual.metaScoreSlash : visual.scoreSlash;
 
@@ -131,7 +136,7 @@ function TrustScoreBlock({
       <div className="flex w-[88px] shrink-0 flex-col items-center justify-center">
         <div
           className={pillClass}
-          aria-label={`${EN_MESSAGES.latestChecks.trustScorePillLabel}: ${score} out of 100`}
+          aria-label={scoreAria}
         >
           <span className="inline-flex items-baseline justify-center gap-0.5 leading-none">
             <span className="font-bold tabular-nums">{score}</span>
@@ -139,7 +144,7 @@ function TrustScoreBlock({
           </span>
         </div>
         <span className="mt-0.5 w-full text-center text-[9px] font-medium uppercase tracking-wide leading-none text-slate-500">
-          {EN_MESSAGES.latestChecks.trustScorePillLabel}
+          {trustScorePillLabel}
         </span>
       </div>
     );
@@ -149,13 +154,13 @@ function TrustScoreBlock({
     <div className="flex w-full min-w-0 flex-col items-center gap-0.5">
       <div
         className={pillClass}
-        aria-label={`${EN_MESSAGES.latestChecks.trustScorePillLabel}: ${score} out of 100`}
+        aria-label={scoreAria}
       >
         <span>{score}</span>
         <span className={slashClass}>/100</span>
       </div>
       <span className="text-[11px] font-medium leading-none text-slate-500">
-        {EN_MESSAGES.latestChecks.trustScorePillLabel}
+        {trustScorePillLabel}
       </span>
     </div>
   );
@@ -174,10 +179,11 @@ function FeedMetaViewCta({
   headlineId?: string;
   decorative?: boolean;
 }) {
+  const label = viewLabel.replace(/\s*→\s*$/, "").trim() || viewLabel.trim();
   const cls = ["fraudly-focus", visual.metaViewBtn, decorative ? "" : "hover:border-slate-300"].join(" ");
   const content = (
     <>
-      View
+      {label}
       <span aria-hidden>→</span>
     </>
   );
@@ -209,6 +215,8 @@ function FeedMetaBox({
   timeRelative,
   timeTitle,
   trustScore,
+  trustScorePillLabel,
+  trustScoreOutOf100Aria,
   viewLabel,
   href,
   headlineId,
@@ -220,6 +228,8 @@ function FeedMetaBox({
   timeRelative: string;
   timeTitle: string;
   trustScore: number;
+  trustScorePillLabel: string;
+  trustScoreOutOf100Aria: string;
   viewLabel: string;
   href?: string;
   headlineId: string;
@@ -240,7 +250,13 @@ function FeedMetaBox({
         </time>
 
         <div className="flex flex-1 items-center justify-center">
-          <TrustScoreBlock score={trustScore} visual={visual} variant="meta" />
+          <TrustScoreBlock
+            score={trustScore}
+            visual={visual}
+            trustScorePillLabel={trustScorePillLabel}
+            trustScoreOutOf100Aria={trustScoreOutOf100Aria}
+            variant="meta"
+          />
         </div>
 
         <div className="flex shrink-0 items-center justify-end">
@@ -266,6 +282,10 @@ export type CompactOverviewFeedBaseProps = {
   href: string;
   prefetch?: boolean;
   viewLabel: string;
+  trustScorePillLabel: string;
+  trustScoreOutOf100Aria: string;
+  dataConfidenceAria: string;
+  domainEntityFallback?: string;
   timeIso: string;
   timeRelative: string;
   timeTitle: string;
@@ -281,6 +301,10 @@ function FeedCardBody(props: {
   domainLine: string;
   domainFullTitle: string;
   entityBadge?: string;
+  domainEntityFallback: string;
+  trustScorePillLabel: string;
+  trustScoreOutOf100Aria: string;
+  dataConfidenceAria: string;
   timeIso: string;
   timeRelative: string;
   timeTitle: string;
@@ -297,6 +321,10 @@ function FeedCardBody(props: {
     domainLine,
     domainFullTitle,
     entityBadge,
+    domainEntityFallback,
+    trustScorePillLabel,
+    trustScoreOutOf100Aria,
+    dataConfidenceAria,
     timeIso,
     timeRelative,
     timeTitle,
@@ -307,8 +335,7 @@ function FeedCardBody(props: {
     confidenceBadges
   } = props;
 
-  const domainLabel =
-    entityBadge ?? EN_MESSAGES.latestChecks.entityLabels.domain.toUpperCase();
+  const domainLabel = entityBadge ?? domainEntityFallback;
 
   return (
     <div className={`flex w-full min-w-0 flex-col gap-2.5 ${CARD_PAD} md:flex-row md:items-center md:gap-3.5`}>
@@ -326,7 +353,7 @@ function FeedCardBody(props: {
           </p>
           <p className="line-clamp-2 text-sm font-normal leading-snug text-slate-600">{m.oneLiner}</p>
           {confidenceBadges && confidenceBadges.length > 0 ? (
-            <div className="flex flex-wrap gap-1 pt-0.5" aria-label="Data confidence">
+            <div className="flex flex-wrap gap-1 pt-0.5" aria-label={dataConfidenceAria}>
               {confidenceBadges.map((badge) => (
                 <TrustDataConfidenceBadge key={`${badge.indicator}-${badge.label}`} badge={badge} />
               ))}
@@ -342,6 +369,8 @@ function FeedCardBody(props: {
         timeRelative={timeRelative}
         timeTitle={timeTitle}
         trustScore={m.trustScore}
+        trustScorePillLabel={trustScorePillLabel}
+        trustScoreOutOf100Aria={trustScoreOutOf100Aria}
         viewLabel={viewLabel}
         href={href}
         headlineId={headlineId}
@@ -365,6 +394,10 @@ export function CompactOverviewFeedLinkCard(props: CompactOverviewFeedBaseProps 
     timeRelative,
     timeTitle,
     entityBadge,
+    trustScorePillLabel,
+    trustScoreOutOf100Aria,
+    dataConfidenceAria,
+    domainEntityFallback = "DOMAIN",
     ariaLabel,
     bgClassName,
     prefetch = true
@@ -382,6 +415,10 @@ export function CompactOverviewFeedLinkCard(props: CompactOverviewFeedBaseProps 
         domainLine={domainLine}
         domainFullTitle={domainFullTitle}
         entityBadge={entityBadge}
+        domainEntityFallback={domainEntityFallback}
+        trustScorePillLabel={trustScorePillLabel}
+        trustScoreOutOf100Aria={trustScoreOutOf100Aria}
+        dataConfidenceAria={dataConfidenceAria}
         timeIso={timeIso}
         timeRelative={timeRelative}
         timeTitle={timeTitle}
@@ -406,7 +443,11 @@ export function CompactOverviewFeedArticleCard(props: CompactOverviewFeedBasePro
     timeIso,
     timeRelative,
     timeTitle,
-    entityBadge
+    entityBadge,
+    trustScorePillLabel,
+    trustScoreOutOf100Aria,
+    dataConfidenceAria,
+    domainEntityFallback = "DOMAIN"
   } = props;
 
   const visual = getOverviewFeedCardVisual(m.trustScore);
@@ -430,6 +471,10 @@ export function CompactOverviewFeedArticleCard(props: CompactOverviewFeedBasePro
         domainLine={domainLine}
         domainFullTitle={domainFullTitle}
         entityBadge={entityBadge}
+        domainEntityFallback={domainEntityFallback}
+        trustScorePillLabel={trustScorePillLabel}
+        trustScoreOutOf100Aria={trustScoreOutOf100Aria}
+        dataConfidenceAria={dataConfidenceAria}
         timeIso={timeIso}
         timeRelative={timeRelative}
         timeTitle={timeTitle}

@@ -1,12 +1,14 @@
 import { InternalCheckLinksSection } from "@/components/seo/InternalCheckLinksSection";
 import { fetchPublicCheckLinkItems } from "@/lib/seo/public-check-links";
 import { pickPeopleAlsoChecked, pickRelatedPublicChecks } from "@/lib/seo/related-checks";
+import type { ResultFlowMessages } from "@/lib/i18n/result-flow";
 
 type CheckPageDiscoverySectionsProps = {
   domain: string;
+  copy: ResultFlowMessages["checkPage"]["discovery"];
 };
 
-export async function CheckPageDiscoverySections({ domain }: CheckPageDiscoverySectionsProps) {
+export async function CheckPageDiscoverySections({ domain, copy }: CheckPageDiscoverySectionsProps) {
   const pool = await fetchPublicCheckLinkItems(36);
   if (pool.length === 0) return null;
 
@@ -20,8 +22,8 @@ export async function CheckPageDiscoverySections({ domain }: CheckPageDiscoveryS
       {related.length > 0 ? (
         <InternalCheckLinksSection
           id="related-checks"
-          title="Related website checks"
-          description="Other recently reviewed sites with similar risk signals, region, or naming patterns."
+          title={copy.relatedTitle}
+          description={copy.relatedDescription}
           items={related}
           compact
         />
@@ -29,15 +31,14 @@ export async function CheckPageDiscoverySections({ domain }: CheckPageDiscoveryS
       {alsoChecked.length > 0 ? (
         <InternalCheckLinksSection
           id="people-also-checked"
-          title="People also checked"
-          description="Recent public checks from the Fraudly feed—explore other domains others are verifying."
+          title={copy.alsoCheckedTitle}
+          description={copy.alsoCheckedDescription}
           items={alsoChecked}
           compact
           footerHref="/latest-checks"
-          footerLabel="View latest checks →"
+          footerLabel={copy.footerLatestChecks}
         />
       ) : null}
     </div>
   );
 }
-

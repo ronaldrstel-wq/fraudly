@@ -7,6 +7,7 @@ import { logClerkProductionMisconfigWarnings } from "@/lib/clerkConfig";
 import { JsonLd } from "@/components/JsonLd";
 import { PwaServiceWorkerRegister } from "@/components/PwaServiceWorkerRegister";
 import { OG_IMAGE } from "@/lib/seo-metadata";
+import { getRequestHtmlLang } from "@/lib/i18n/request-locale";
 import {
   defaultDescription,
   defaultKeywords,
@@ -69,13 +70,15 @@ export const metadata: Metadata = {
 
 logClerkProductionMisconfigWarnings();
 
-export default function RootLayout({
+export default async function RootLayout({
   children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const htmlLang = await getRequestHtmlLang();
+
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang={htmlLang} className={inter.variable} suppressHydrationWarning>
       <body className={`${inter.className} min-h-screen antialiased`}>
         <PwaServiceWorkerRegister />
         <JsonLd />

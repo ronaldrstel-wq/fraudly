@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { EN_MESSAGES } from "@/lib/messages.en";
+import { useResultFlow } from "@/components/i18n/useResultFlow";
 
 export type PurchaseAction = "single_check" | "five_checks" | "twenty_checks" | "premium_monthly";
 
@@ -29,17 +29,16 @@ export function AnalysisPaywall({
   onPurchase,
   useCreditRow
 }: AnalysisPaywallProps) {
+  const flow = useResultFlow();
   const isNoFree = variant === "no_free_checks";
-  const title = isNoFree ? EN_MESSAGES.paywall.titleNoFree : EN_MESSAGES.paywall.titleUnlock;
-  const subtitle = isNoFree
-    ? EN_MESSAGES.paywall.subtitleNoFree
-    : EN_MESSAGES.paywall.subtitleUnlock;
+  const title = isNoFree ? flow.paywall.titleNoFree : flow.paywall.titleUnlock;
+  const subtitle = isNoFree ? flow.paywall.subtitleNoFree : flow.paywall.subtitleUnlock;
 
   const rows: { action: PurchaseAction; label: string; primary?: boolean }[] = [
-    { action: "single_check", label: EN_MESSAGES.paywall.unlockSingle, primary: true },
-    { action: "five_checks", label: EN_MESSAGES.paywall.bundleFive },
-    { action: "twenty_checks", label: EN_MESSAGES.paywall.bundleTwenty },
-    { action: "premium_monthly", label: EN_MESSAGES.paywall.premiumMonthly }
+    { action: "single_check", label: flow.paywall.unlockSingle, primary: true },
+    { action: "five_checks", label: flow.paywall.bundleFive },
+    { action: "twenty_checks", label: flow.paywall.bundleTwenty },
+    { action: "premium_monthly", label: flow.paywall.premiumMonthly }
   ];
 
   return (
@@ -71,7 +70,7 @@ export function AnalysisPaywall({
                   : "btn-secondary w-full border-slate-200 text-pretty"
               }
             >
-              {busy ? EN_MESSAGES.paywall.working : label}
+              {busy ? flow.paywall.working : label}
             </button>
           );
         })}
@@ -86,10 +85,10 @@ export function AnalysisPaywall({
             className="btn-credit"
           >
             {useCreditRow.loading
-              ? EN_MESSAGES.paywall.working
+              ? flow.paywall.working
               : useCreditRow.canUse
-                ? EN_MESSAGES.paywall.useCreditPremium
-                : EN_MESSAGES.paywall.noCredits}
+                ? flow.paywall.useCreditPremium
+                : flow.paywall.noCredits}
           </button>
         </div>
       ) : null}

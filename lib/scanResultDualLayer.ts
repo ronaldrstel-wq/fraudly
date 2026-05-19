@@ -1,4 +1,5 @@
-import { EN_MESSAGES } from "@/lib/messages.en";
+import type { ResultFlowMessages } from "@/lib/i18n/result-flow";
+import { resultFlowOrDefault } from "@/lib/i18n/result-flow/messages";
 import type { CriticalThreatKind } from "@/lib/scanPresentation";
 import { criticalThreatStatusHeadline } from "@/lib/scanPresentation";
 import { clampScore } from "@/lib/clampScore";
@@ -10,22 +11,23 @@ import type { TrustLevel } from "@/lib/trustSystem";
 import type { ScamVerdict } from "@/lib/trustSystem";
 import type { ConfidenceLevel, SiteStatus } from "@/types/site-outcome";
 
-function siteStatusUserLabel(status: SiteStatus): string {
+function siteStatusUserLabel(status: SiteStatus, flow: ResultFlowMessages): string {
+  const o = flow.siteOutcome;
   switch (status) {
     case "nonexistent":
-      return EN_MESSAGES.siteOutcome.nonexistent;
+      return o.nonexistent;
     case "inactive":
-      return EN_MESSAGES.siteOutcome.inactive;
+      return o.inactive;
     case "trusted":
-      return EN_MESSAGES.siteOutcome.trusted;
+      return o.trusted;
     case "unverified":
-      return EN_MESSAGES.siteOutcome.unverified;
+      return o.unverified;
     case "caution":
-      return EN_MESSAGES.siteOutcome.caution;
+      return o.caution;
     case "high_risk":
-      return EN_MESSAGES.siteOutcome.highRisk;
+      return o.highRisk;
     case "confirmed_malicious":
-      return EN_MESSAGES.siteOutcome.confirmedMalicious;
+      return o.confirmedMalicious;
   }
 }
 
@@ -85,8 +87,8 @@ export function resolveHumanRecKind(args: {
   }
 }
 
-export function humanRecHeadline(kind: HumanRecKind): string {
-  const h = EN_MESSAGES.scanResult.humanRec.headlines;
+export function humanRecHeadline(kind: HumanRecKind, flow?: ResultFlowMessages): string {
+  const h = resultFlowOrDefault(flow).scanResult.humanRec.headlines;
   switch (kind) {
     case "trusted":
       return h.trusted;
@@ -118,24 +120,28 @@ export function humanRecHeadline(kind: HumanRecKind): string {
 /**
  * Technical classification (secondary line): trust band label, threat intel label, or site-outcome label.
  */
-export function technicalStatusText(args: {
-  threatActive: boolean;
-  threatKind: CriticalThreatKind | null;
-  displayTrust: number | null;
-  siteStatus: SiteStatus;
-}): string {
+export function technicalStatusText(
+  args: {
+    threatActive: boolean;
+    threatKind: CriticalThreatKind | null;
+    displayTrust: number | null;
+    siteStatus: SiteStatus;
+  },
+  flow?: ResultFlowMessages
+): string {
+  const messages = resultFlowOrDefault(flow);
   const { threatActive, threatKind, displayTrust, siteStatus } = args;
 
   if (siteStatus === "nonexistent" || siteStatus === "inactive") {
-    return siteStatusUserLabel(siteStatus);
+    return siteStatusUserLabel(siteStatus, messages);
   }
 
   if (threatActive && threatKind) {
-    return criticalThreatStatusHeadline(threatKind);
+    return criticalThreatStatusHeadline(threatKind, messages);
   }
 
   if (siteStatus === "confirmed_malicious") {
-    return EN_MESSAGES.siteOutcome.confirmedMalicious;
+    return messages.siteOutcome.confirmedMalicious;
   }
 
   const trustScore = displayTrust ?? 0;
@@ -145,23 +151,27 @@ export function technicalStatusText(args: {
 /**
  * Short, plain explanation (layer 2 narrative — deterministic, not AI).
  */
-export function shortScanExplanation(args: {
-  threatActive: boolean;
-  threatKind: CriticalThreatKind | null;
-  siteStatus: SiteStatus;
-  /** Display trust score 0–100 (same basis as the gauge). */
-  displayTrust: number;
-  confidenceLevel: ConfidenceLevel;
-  hasActualRiskIndicators?: boolean;
-}): string {
+export function shortScanExplanation(
+  args: {
+    threatActive: boolean;
+    threatKind: CriticalThreatKind | null;
+    siteStatus: SiteStatus;
+    /** Display trust score 0–100 (same basis as the gauge). */
+    displayTrust: number;
+    confidenceLevel: ConfidenceLevel;
+    hasActualRiskIndicators?: boolean;
+  },
+  flow?: ResultFlowMessages
+): string {
+  const messages = resultFlowOrDefault(flow);
   const { threatActive, threatKind, siteStatus, displayTrust, confidenceLevel, hasActualRiskIndicators = true } = args;
-  const s = EN_MESSAGES.scanResult.shortExplain;
+  const s = messages.scanResult.shortExplain;
 
   if (siteStatus === "nonexistent") return s.invalidDomain;
   if (siteStatus === "inactive") return s.unreachable;
 
   if (threatActive && threatKind) {
-    const t = EN_MESSAGES.scanResult.whyThreat;
+    const t = messages.scanResult.whyThreat;
     switch (threatKind) {
       case "phishing_feed":
       case "safe_browsing_phishing":
@@ -191,8 +201,8 @@ export function shortScanExplanation(args: {
   return getTrustDescription(t);
 }
 
-export function humanRecGlyph(kind: HumanRecKind): string {
-  const g = EN_MESSAGES.scanResult.humanRec.glyphs;
+export function humanRecGlyph(kind: HumanRecKind, flow?: ResultFlowMessages): string {
+  const g = resultFlowOrDefault(flow).scanResult.humanRec.glyphs;
   switch (kind) {
     case "trusted":
     case "looksSafe":
@@ -241,8 +251,8 @@ export function humanRecKindFromTrustVerdict(trustScore: number, verdict: ScamVe
   return resolveHumanRecKindForBasicCheck(v, risk);
 }
 
-export function shortExplainForBasic(verdict: ScamVerdict, riskScore: number): string {
-  const s = EN_MESSAGES.scanResult.shortExplain;
+export function shortExplainForBasic(verdict: ScamVerdict, riskScore: number, flow?: ResultFlowMessages): string {
+  const s = resultFlowOrDefault(flow).scanResult.shortExplain;
   if (verdict === "scam") return s.avoidGeneric;
   if (verdict === "suspicious") return s.beCareful;
   return getTrustDescription(clampScore(100 - riskScore));

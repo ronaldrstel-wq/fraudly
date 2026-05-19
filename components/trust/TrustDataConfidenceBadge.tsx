@@ -20,10 +20,16 @@ export function TrustDataConfidenceBadge({ badge }: { badge: DataConfidenceBadge
   );
 }
 
-export function TrustDataConfidenceBadgeRow({ badges }: { badges: DataConfidenceBadgeModel[] }) {
+export function TrustDataConfidenceBadgeRow({
+  badges,
+  ariaLabel = "Data confidence"
+}: {
+  badges: DataConfidenceBadgeModel[];
+  ariaLabel?: string;
+}) {
   if (badges.length === 0) return null;
   return (
-    <div className="flex flex-wrap gap-1.5" role="list" aria-label="Data confidence">
+    <div className="flex flex-wrap gap-1.5" role="list" aria-label={ariaLabel}>
       {badges.map((badge) => (
         <span key={`${badge.indicator}-${badge.label}`} role="listitem">
           <TrustDataConfidenceBadge badge={badge} />

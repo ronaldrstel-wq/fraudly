@@ -1,4 +1,5 @@
-import { EN_MESSAGES } from "@/lib/messages.en";
+import { useResultFlow } from "@/components/i18n/useResultFlow";
+import { fillTemplate } from "@/lib/i18n/fill-template";
 import {
   getTrustColorsForDisplay,
   parseConsumerVerdictLabel,
@@ -47,6 +48,7 @@ export function VerdictHero({
   topReasons = [],
   trustHighlights = []
 }: VerdictHeroProps) {
+  const flow = useResultFlow();
   const previewReasons = topReasons.filter(Boolean).slice(0, 3);
   const colors = heroColors(verdict, trustScore);
   const glyph = heroGlyph(trustScore);
@@ -76,7 +78,7 @@ export function VerdictHero({
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                {EN_MESSAGES.scanResult.verdictMicroLabel}
+                {flow.scanResult.verdictMicroLabel}
               </p>
               <h2
                 id="fraudly-verdict-heading"
@@ -110,11 +112,14 @@ export function VerdictHero({
         {typeof trustScore === "number" ? (
           <div className="flex shrink-0 flex-col items-center gap-2 sm:items-end">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-              {EN_MESSAGES.scanResult.trustScoreLabel}
+              {flow.scanResult.trustScoreLabel}
             </p>
             <div
               className={`flex h-[5.5rem] w-[5.5rem] flex-col items-center justify-center rounded-full sm:h-24 sm:w-24 ${colors.heroScoreRing}`}
-              aria-label={`${EN_MESSAGES.scanResult.trustScoreLabel}: ${trustScore} out of 100`}
+              aria-label={fillTemplate(flow.scanResult.trustScoreOutOf100Aria, {
+                label: flow.scanResult.trustScoreLabel,
+                score: trustScore
+              })}
             >
               <span className="text-[1.65rem] font-bold tabular-nums leading-none sm:text-3xl">{trustScore}</span>
               <span className={`mt-0.5 text-[11px] font-semibold sm:text-xs ${colors.scorePillDim}`}>/ 100</span>

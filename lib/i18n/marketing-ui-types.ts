@@ -1,8 +1,10 @@
 import type { CheckFlowMessages } from "@/lib/i18n/check-flow";
+import type { ResultFlowMessages } from "@/lib/i18n/result-flow";
 
 /** Extended marketing UI strings merged into each locale dictionary. */
 export type MarketingUiExtension = {
   checkFlow: CheckFlowMessages;
+  resultFlow: ResultFlowMessages;
   common: {
     languageLabel: string;
   };
@@ -51,6 +53,20 @@ export type MarketingUiExtension = {
     card: {
       technicalMatchStrength: string;
       technicalSignals: string;
+      relatedAlertSameDomain: string;
+      published: string;
+      updated: string;
+      source: string;
+      unknown: string;
+      domainSr: string;
+      severitySr: string;
+      technicalDetails: string;
+      readFullAlert: string;
+      publishedExact: string;
+      rawType: string;
+      originalTitle: string;
+      domain: string;
+      url: string;
     };
     pagination: {
       prev: string;
@@ -62,6 +78,8 @@ export type MarketingUiExtension = {
   };
   latestChecksPage: {
     trustScorePillLabel: string;
+    trustScoreOutOf100Aria: string;
+    dataConfidenceAria: string;
     viewResultArrow: string;
     emptyState: string;
     unavailableState: string;
@@ -144,4 +162,5 @@ export type MarketingUiExtension = {
     };
   };
   supportFaq: readonly { question: string; answer: string }[];
+  recentSearchesUi: import("@/lib/i18n/recent-searches-ui").RecentSearchesUiMessages;
 };

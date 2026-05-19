@@ -92,6 +92,10 @@ function LatestCheckListItem({ row, locale }: { row: LatestPublicCheckListRow; l
         domainFullTitle={primaryLine.fullTitle || domainLine}
         href={safeCardHref(row)}
         viewLabel={ui.viewResultArrow}
+        trustScorePillLabel={ui.trustScorePillLabel}
+        trustScoreOutOf100Aria={ui.trustScoreOutOf100Aria}
+        dataConfidenceAria={ui.dataConfidenceAria}
+        domainEntityFallback={ui.entityLabels.domain.toUpperCase()}
         timeIso={iso}
         timeRelative={formatPublicCheckRelativeTime(iso)}
         timeTitle={

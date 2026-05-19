@@ -1,7 +1,7 @@
 "use client";
 
 import type { ChangeEvent, KeyboardEvent } from "react";
-import { EN_MESSAGES } from "@/lib/messages.en";
+import { useResultFlow } from "@/components/i18n/useResultFlow";
 
 interface URLInputProps {
   value: string;
@@ -44,6 +44,7 @@ export function URLInput({
   loadingLabel = "Checking website...",
   variant = "standard"
 }: URLInputProps) {
+  const flow = useResultFlow();
   const isHero = variant === "hero";
 
   const inputCommon = {
@@ -60,14 +61,14 @@ export function URLInput({
         if (!disabled && !loading) onSubmit();
       }
     },
-    placeholder: EN_MESSAGES.check.urlPlaceholder
+    placeholder: flow.check.urlPlaceholder
   };
 
   const shellInner = (
     <div className="flex w-full flex-col gap-2.5 sm:flex-row sm:items-stretch sm:gap-3">
       <div className="min-w-0 flex-1">
         <label htmlFor="fraudly-url-input" className="mb-1 block text-left text-sm font-medium text-slate-700">
-          {EN_MESSAGES.check.urlFieldLabel}
+          {flow.check.urlFieldLabel}
         </label>
         {helperText ? (
           <p className="mb-1.5 text-left text-xs leading-relaxed text-slate-500 sm:text-[13px]">{helperText}</p>
@@ -95,11 +96,11 @@ export function URLInput({
         <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-stretch">
           <div className="min-w-0 flex-1">
             <label htmlFor="fraudly-url-input" className="sr-only">
-              {EN_MESSAGES.check.urlFieldLabel}
+              {flow.check.urlFieldLabel}
             </label>
             <input
               {...inputCommon}
-              aria-label={EN_MESSAGES.check.urlFieldLabel}
+              aria-label={flow.check.urlFieldLabel}
               className="h-16 min-h-[4rem] w-full min-w-0 rounded-2xl border border-blue-100/60 bg-gradient-to-r from-sky-50 to-violet-50 px-6 text-lg text-slate-900 shadow-inner outline-none placeholder:text-slate-400 focus:border-blue-300/90 focus:ring-4 focus:ring-blue-100/80"
             />
           </div>

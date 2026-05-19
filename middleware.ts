@@ -1,6 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import type { NextFetchEvent, NextRequest } from "next/server";
+import { withRequestLocaleHeader } from "@/lib/i18n/middleware-locale";
 import {
   CANONICAL_PRODUCTION_HOST,
   isPrivateNoindexPath,
@@ -59,17 +60,19 @@ type ClerkMwResult = ReturnType<typeof authMiddleware>;
 
 function withCrawlerHeaders(result: ClerkMwResult, request: NextRequest): ClerkMwResult {
   if (result == null) {
-    return applyCrawlerHeaders(NextResponse.next(), request);
+    return applyCrawlerHeaders(withRequestLocaleHeader(request), request);
   }
   if (result instanceof Promise) {
     return result.then((res) =>
-      res instanceof Response ? applyCrawlerHeaders(res, request) : applyCrawlerHeaders(NextResponse.next(), request)
+      res instanceof Response
+        ? applyCrawlerHeaders(res, request)
+        : applyCrawlerHeaders(withRequestLocaleHeader(request), request)
     );
   }
   if (result instanceof Response) {
     return applyCrawlerHeaders(result, request);
   }
-  return applyCrawlerHeaders(NextResponse.next(), request);
+  return applyCrawlerHeaders(withRequestLocaleHeader(request), request);
 }
 
 export default function middleware(request: NextRequest, event: NextFetchEvent) {
@@ -91,7 +94,7 @@ export default function middleware(request: NextRequest, event: NextFetchEvent) 
   }
 
   if (process.env.PERF_BYPASS_AUTH === "1") {
-    return applyCrawlerHeaders(NextResponse.next(), request);
+    return applyCrawlerHeaders(withRequestLocaleHeader(request), request);
   }
   return withCrawlerHeaders(authMiddleware(request, event), request);
 }

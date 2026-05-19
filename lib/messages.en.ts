@@ -242,6 +242,8 @@ export const EN_MESSAGES = {
     trustScoreExplainerFootnote:
       "Higher scores usually mean fewer red flags appeared in this snapshot—not proof a site is safe or unsafe.",
     trustScoreLabel: "Trust score",
+    trustScoreOutOf100Aria: "{label}: {score} out of 100",
+    dataConfidenceAria: "Data confidence",
     recommendationHeading: "Recommendation",
     whyHeading: "Why this result?",
     mainDetailHeading: "What we observed",

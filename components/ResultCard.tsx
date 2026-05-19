@@ -27,7 +27,7 @@ import {
 import { ThreatBanner } from "@/components/ThreatBanner";
 import { VerdictHero } from "@/components/result/VerdictHero";
 import { ResultSupportBox } from "@/components/ResultSupportBox";
-import { EN_MESSAGES } from "@/lib/messages.en";
+import { useResultFlow } from "@/components/i18n/useResultFlow";
 import { shouldShowTrustGauge } from "@/lib/trustGaugeDisplay";
 import { trustLevelFromScore, trustMeterColors, type TrustLevel } from "@/lib/trustSystem";
 import { getTrustColorsForDisplay, getTrustPresentation } from "@/lib/scoring/trust-bands";
@@ -67,7 +67,15 @@ function toneForTrustSignal(signal: Pick<TrustSignal, "type">): string {
   }
 }
 
-function SignalList({ signals, empty }: { signals: TrustSignal[]; empty: string }) {
+function SignalList({
+  signals,
+  empty,
+  flow
+}: {
+  signals: TrustSignal[];
+  empty: string;
+  flow: ReturnType<typeof useResultFlow>;
+}) {
   if (signals.length === 0) return <p className="mt-2 text-sm text-slate-600">{empty}</p>;
   return (
     <ul className="mt-3 space-y-2">
@@ -76,10 +84,14 @@ function SignalList({ signals, empty }: { signals: TrustSignal[]; empty: string 
           <p className="font-semibold">{signal.title}</p>
           <p className="mt-0.5">{signal.description}</p>
           <div className="mt-1 flex flex-wrap gap-x-2 text-xs opacity-80">
-            {signal.source ? <span>Source: {signal.source}</span> : null}
+            {signal.source ? (
+              <span>
+                {flow.checkPage.resultCardUi.signalSourcePrefix} {signal.source}
+              </span>
+            ) : null}
             {signal.confidence ? (
               <span>
-                {EN_MESSAGES.scanResult.signalReliability}: {signal.confidence}
+                {flow.scanResult.signalReliability}: {signal.confidence}
               </span>
             ) : null}
           </div>
@@ -97,15 +109,19 @@ const TIER_ORDER: ScoreEvidenceTier[] = [
   "missing_data"
 ];
 
-function labelForEvidenceTier(tier: ScoreEvidenceTier): string {
-  return EN_MESSAGES.scanResult.evidenceTierLabels[tier];
+function labelForEvidenceTier(tier: ScoreEvidenceTier, flow: ReturnType<typeof useResultFlow>): string {
+  return flow.scanResult.evidenceTierLabels[tier];
 }
 
-function consumerSummaryFor(trustLevel: TrustLevel, threatActive: boolean): string {
-  if (threatActive) return EN_MESSAGES.scanResult.consumerSummary.underThreat;
-  if (trustLevel === "trusted" || trustLevel === "mostlySafe") return EN_MESSAGES.scanResult.consumerSummary.positive;
-  if (trustLevel === "caution") return EN_MESSAGES.scanResult.consumerSummary.mixed;
-  return EN_MESSAGES.scanResult.consumerSummary.elevated;
+function consumerSummaryFor(
+  trustLevel: TrustLevel,
+  threatActive: boolean,
+  flow: ReturnType<typeof useResultFlow>
+): string {
+  if (threatActive) return flow.scanResult.consumerSummary.underThreat;
+  if (trustLevel === "trusted" || trustLevel === "mostlySafe") return flow.scanResult.consumerSummary.positive;
+  if (trustLevel === "caution") return flow.scanResult.consumerSummary.mixed;
+  return flow.scanResult.consumerSummary.elevated;
 }
 
 function trustMeterTone(score: number, threatActive: boolean): {
@@ -150,14 +166,14 @@ function tierIntel(rows: IntelScoreBreakdownEntry[]): Record<ScoreEvidenceTier, 
   return base;
 }
 
-function labelForScanCoverage(level: ConfidenceLevel): string {
+function labelForScanCoverage(level: ConfidenceLevel, flow: ReturnType<typeof useResultFlow>): string {
   switch (level) {
     case "high":
-      return EN_MESSAGES.siteOutcome.scanCoverageHighLabel;
+      return flow.siteOutcome.scanCoverageHighLabel;
     case "medium":
-      return EN_MESSAGES.siteOutcome.scanCoverageMediumLabel;
+      return flow.siteOutcome.scanCoverageMediumLabel;
     case "low":
-      return EN_MESSAGES.siteOutcome.scanCoverageLowLabel;
+      return flow.siteOutcome.scanCoverageLowLabel;
   }
 }
 
@@ -218,10 +234,11 @@ function isConfirmedIntelTrustSignal(signal: TrustSignal): boolean {
   return /safe browsing|openphish|urlhaus|politie|\bpolice\b/.test(blob);
 }
 
-const FALLBACK_VERDICT = "Use Caution";
-const FALLBACK_SUMMARY = "Fraudly could not verify all trust signals for this website.";
-
 export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCardProps) {
+  const flow = useResultFlow();
+  const ui = flow.checkPage.resultCardUi;
+  const rows = flow.checkPage.domainRows;
+  const empty = flow.checkPage.emptySignals;
   const safeResult = result;
   const normalized = useMemo(() => {
     if (normalizedTrust) return normalizedTrust;
@@ -272,32 +289,38 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
         scoreSignals.some((signal) => signal.evidenceTier === "risk_indicator" && signal.impact > 0) ||
         threat.active
     });
-  const humanHeadline = alignedDisplay?.humanHeadline ?? humanRecHeadline(humanKind);
+  const humanHeadline = alignedDisplay?.humanHeadline ?? humanRecHeadline(humanKind, flow);
   const primaryVerdict =
     threat.active || humanKind === "avoidWebsite" || humanKind === "dangerousWebsite"
       ? "High Risk"
-      : normalized.verdict || humanHeadline || FALLBACK_VERDICT;
-  const techStatus = alignedDisplay?.label ?? technicalStatusText({
-    threatActive: threat.active,
-    threatKind: threat.kind,
-    displayTrust,
-    siteStatus: safeResult.siteStatus
-  });
-  const computedShortExplain = shortScanExplanation({
-    threatActive: threat.active,
-    threatKind: threat.kind,
-    siteStatus: safeResult.siteStatus,
-    displayTrust: displayTrust ?? 0,
-    confidenceLevel: safeResult.confidenceLevel ?? "medium",
-    hasActualRiskIndicators:
-      scoreSignals.some((signal) => signal.evidenceTier === "risk_indicator" && signal.impact > 0) || threat.active
-  });
-  const shortExplain = hasLimitedInspection
-    ? "The website responded, but some page details could not be fully inspected during this scan."
-    : computedShortExplain;
+      : normalized.verdict || humanHeadline || flow.checkPage.fallbackVerdict;
+  const techStatus =
+    alignedDisplay?.label ??
+    technicalStatusText(
+      {
+        threatActive: threat.active,
+        threatKind: threat.kind,
+        displayTrust,
+        siteStatus: safeResult.siteStatus
+      },
+      flow
+    );
+  const computedShortExplain = shortScanExplanation(
+    {
+      threatActive: threat.active,
+      threatKind: threat.kind,
+      siteStatus: safeResult.siteStatus,
+      displayTrust: displayTrust ?? 0,
+      confidenceLevel: safeResult.confidenceLevel ?? "medium",
+      hasActualRiskIndicators:
+        scoreSignals.some((signal) => signal.evidenceTier === "risk_indicator" && signal.impact > 0) || threat.active
+    },
+    flow
+  );
+  const shortExplain = hasLimitedInspection ? flow.checkPage.limitedInspection : computedShortExplain;
   const showLimitedStrip = normalized.showLimitedPublicStrip;
 
-  const sec = EN_MESSAGES.scanResult.resultSections;
+  const sec = flow.scanResult.resultSections;
 
   const reviewSignals = safeResult.reviewSignals ?? {
     googleFound: false,
@@ -440,10 +463,10 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
 
   const heroSummary =
     (threat.active
-      ? EN_MESSAGES.scanResult.consumerSummary.underThreat
+      ? flow.scanResult.consumerSummary.underThreat
       : hasLimitedInspection
         ? shortExplain
-        : normalized.summary) || FALLBACK_SUMMARY;
+        : normalized.summary) || flow.checkPage.fallbackSummary;
   const topReasonLines = heroPreviewReasonsForResult(safeResult);
   const heroTrustScore =
     showNonexistentHeadline || hasUnavailableSite
@@ -464,9 +487,13 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
     <div className={`fraudly-motion w-full rounded-2xl p-4 shadow-subtle sm:p-5 md:p-6 ${resultCardShell}`}>
       <div className="space-y-4 md:space-y-5">
         {threat.active ? (
-          <ThreatBanner variant="critical" title={criticalThreatBannerTitle(threat.kind)} body={EN_MESSAGES.threatOverride.bannerBody} />
+          <ThreatBanner
+            variant="critical"
+            title={criticalThreatBannerTitle(threat.kind, flow)}
+            body={flow.threatOverride.bannerBody}
+          />
         ) : showLimitedStrip ? (
-          <ThreatBanner variant="neutral" title={EN_MESSAGES.scanResult.limitedStripTitle} body={EN_MESSAGES.scanResult.limitedStripBody} />
+          <ThreatBanner variant="neutral" title={flow.scanResult.limitedStripTitle} body={flow.scanResult.limitedStripBody} />
         ) : null}
 
         <div className="space-y-5">
@@ -488,24 +515,20 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
             </p>
           ) : null}
           {result.redirectChain?.crossDomainRedirect ? (
-            <p className="text-sm leading-relaxed text-slate-600">
-              This website redirects to another domain. Fraudly also checked the final destination.
-            </p>
+            <p className="text-sm leading-relaxed text-slate-600">{ui.redirectNotice}</p>
           ) : null}
           {hasLimitedInspection && !threat.active ? (
-            <p className="text-sm leading-relaxed text-slate-600">
-              Website responded, but some page details could not be fully inspected during this scan.
-            </p>
+            <p className="text-sm leading-relaxed text-slate-600">{ui.limitedInspectionShort}</p>
           ) : null}
 
           {showNonexistentHeadline ? (
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-950">
-              <p className="text-base font-semibold text-amber-950">{EN_MESSAGES.specialOutcomes.nonexistent.headline}</p>
-              <p className="mt-2 leading-relaxed">{EN_MESSAGES.specialOutcomes.nonexistent.subline}</p>
-              <p className="mt-2 text-xs text-amber-900/90">{EN_MESSAGES.siteOutcome.suppressedTrustExplanation}</p>
+              <p className="text-base font-semibold text-amber-950">{flow.specialOutcomes.nonexistent.headline}</p>
+              <p className="mt-2 leading-relaxed">{flow.specialOutcomes.nonexistent.subline}</p>
+              <p className="mt-2 text-xs text-amber-900/90">{flow.siteOutcome.suppressedTrustExplanation}</p>
             </div>
           ) : heroTrustScore == null && !showNonexistentHeadline ? (
-            <p className="text-sm text-slate-600">Trust score unavailable for this snapshot.</p>
+            <p className="text-sm text-slate-600">{ui.trustScoreUnavailable}</p>
           ) : null}
 
           {showVisitWebsiteCta && trustedVisitUrl ? (
@@ -516,29 +539,28 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
                   rel="noopener noreferrer nofollow"
                   className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2"
                 >
-                  Visit website
+                  {flow.checkPage.visitWebsiteCta}
                   <span aria-hidden>↗</span>
                 </a>
-                <p className="mt-2 text-xs leading-relaxed text-slate-600">
-                  Fraudly did not detect strong risk indicators in this scan. Always use your own judgment.
-                </p>
+                <p className="mt-2 text-xs leading-relaxed text-slate-600">{flow.checkPage.visitWebsiteDisclaimer}</p>
               </div>
             ) : null}
 
           <section className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5">
-            <h3 className="text-sm font-semibold text-slate-900">{EN_MESSAGES.scanResult.whyThisResultHeading}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">{EN_MESSAGES.scanResult.whyThisResultIntro}</p>
-            <p className="mt-3 text-xs leading-relaxed text-slate-500">{EN_MESSAGES.scanResult.consumerSummaryDisclaimer}</p>
+            <h3 className="text-sm font-semibold text-slate-900">{flow.scanResult.whyThisResultHeading}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">{flow.scanResult.whyThisResultIntro}</p>
+            <p className="mt-3 text-xs leading-relaxed text-slate-500">{flow.scanResult.consumerSummaryDisclaimer}</p>
             {registeredDomain !== checkedHostname ? (
               <p className="mt-2 text-xs text-slate-500">
-                Registered domain: <span className="font-medium text-slate-700">{registeredDomain}</span>
+                {ui.registeredDomainLabel}{" "}
+                <span className="font-medium text-slate-700">{registeredDomain}</span>
               </p>
             ) : null}
           </section>
 
           <section className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5">
-            <h3 className="text-sm font-semibold text-slate-900">{EN_MESSAGES.scanResult.reputationHeading}</h3>
-            <p className="mt-1 text-xs leading-relaxed text-slate-600">{EN_MESSAGES.scanResult.reputationIntro}</p>
+            <h3 className="text-sm font-semibold text-slate-900">{flow.scanResult.reputationHeading}</h3>
+            <p className="mt-1 text-xs leading-relaxed text-slate-600">{flow.scanResult.reputationIntro}</p>
             <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
               <PublicReviewChannelCard
                 source="Trustpilot"
@@ -557,8 +579,8 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
           consumerSafetySignals.watch.length > 0 ||
           neutralContextNotes.length > 0 ? (
             <section className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5">
-              <h3 className="text-sm font-semibold text-slate-900">{EN_MESSAGES.scanResult.safetySignalsHeading}</h3>
-              <p className="mt-1 text-xs leading-relaxed text-slate-600">{EN_MESSAGES.scanResult.safetySignalsIntro}</p>
+              <h3 className="text-sm font-semibold text-slate-900">{flow.scanResult.safetySignalsHeading}</h3>
+              <p className="mt-1 text-xs leading-relaxed text-slate-600">{flow.scanResult.safetySignalsIntro}</p>
               {consumerSafetySignals.helpful.length > 0 ? (
                 <div className="mt-3">
                   <p className="text-xs font-medium text-emerald-800">Helpful signals</p>
@@ -599,27 +621,27 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
 
       <details className="mt-5 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm sm:px-5">
         <summary className="cursor-pointer list-none py-1 [&::-webkit-details-marker]:hidden">
-          <span className="block text-base font-semibold text-slate-900">{EN_MESSAGES.scanResult.detailedFindingsToggle}</span>
+          <span className="block text-base font-semibold text-slate-900">{flow.scanResult.detailedFindingsToggle}</span>
           <span className="mt-1 block max-w-prose text-pretty text-xs font-normal leading-relaxed text-slate-500">
-            {EN_MESSAGES.scanResult.detailedFindingsHint}
+            {flow.scanResult.detailedFindingsHint}
           </span>
         </summary>
         <div className="mt-4 space-y-4 border-t border-slate-100 pt-4">
           {typeof heroTrustScore === "number" ? (
             <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
-              <p className="text-sm font-semibold text-slate-900">{EN_MESSAGES.scanResult.trustScoreLabel}</p>
+              <p className="text-sm font-semibold text-slate-900">{flow.scanResult.trustScoreLabel}</p>
               <p className="mt-1 text-sm tabular-nums text-slate-800">
                 {heroTrustScore}
                 <span className="text-slate-400"> / 100</span>
               </p>
-              <p className="mt-2 text-xs leading-relaxed text-slate-600">{EN_MESSAGES.scanResult.trustScoreExplainer}</p>
+              <p className="mt-2 text-xs leading-relaxed text-slate-600">{flow.scanResult.trustScoreExplainer}</p>
               {threat.active ? (
-                <p className="mt-2 text-xs text-rose-900">{EN_MESSAGES.scanResult.resultSections.trustScoreThreatNote}</p>
+                <p className="mt-2 text-xs text-rose-900">{flow.scanResult.resultSections.trustScoreThreatNote}</p>
               ) : null}
             </div>
           ) : null}
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
-            <p className="text-sm font-semibold text-slate-900">{EN_MESSAGES.scanResult.technicalStatusHeading}</p>
+            <p className="text-sm font-semibold text-slate-900">{flow.scanResult.technicalStatusHeading}</p>
             <p className="mt-1 text-xs text-slate-700">{techStatus}</p>
             {result.availability ? (
               <p className="mt-2 text-xs text-slate-600">
@@ -644,7 +666,8 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
             <p className="mt-1 text-xs leading-relaxed text-slate-500">{sec.confirmedIntelHint}</p>
             <SignalList
               signals={confirmedMaliciousSignals}
-              empty="No Safe Browsing, OpenPhish, URLhaus, or police-aligned list matches were returned in this crawl."
+              empty={empty.confirmedIntel}
+              flow={flow}
             />
           </div>
 
@@ -653,65 +676,75 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
             <p className="mt-1 text-xs leading-relaxed text-slate-500">{sec.otherRiskHint}</p>
             <SignalList
               signals={otherRiskSignals}
-              empty="No additional prioritized risk rows were raised beyond curated list matches."
+              empty={empty.otherRisk}
+              flow={flow}
             />
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
             <p className="text-sm font-semibold text-slate-900">{sec.trustNotesHeading}</p>
             <p className="mt-1 text-xs leading-relaxed text-slate-500">{sec.trustNotesHint}</p>
-            <SignalList signals={supportiveSignals} empty="No supportive or informational trust rows were returned." />
+            <SignalList
+              signals={supportiveSignals}
+              empty={empty.supportive}
+              flow={flow}
+            />
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
             <p className="text-sm font-semibold text-slate-900">{sec.domainBlockHeading}</p>
             {isSubdomain ? (
-              <p className="mt-2 text-xs leading-relaxed text-slate-600">
-                The submitted address is a subdomain. Fraudly also checked the registered domain because domain age and
-                ownership belong to the root domain.
-              </p>
+              <p className="mt-2 text-xs leading-relaxed text-slate-600">{ui.subdomainNote}</p>
             ) : null}
             <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-700">
               <li>
-                Checked URL/hostname: <span className="font-medium">{checkedHostname}</span>
+                {rows.checkedHostname} <span className="font-medium">{checkedHostname}</span>
               </li>
               <li>
-                Registered domain: <span className="font-medium">{registeredDomain}</span>
+                {rows.registeredDomain} <span className="font-medium">{registeredDomain}</span>
               </li>
               <li>
-                Registration date: <span className="font-medium">{result.domainIntelligence.registrationDate ?? "unknown"}</span>
+                {rows.registrationDate}{" "}
+                <span className="font-medium">{result.domainIntelligence.registrationDate ?? rows.unknown}</span>
               </li>
               <li>
-                Domain age:{" "}
+                {rows.domainAge}{" "}
                 <span className="font-medium">
                   {normalized.domainAge.display}
                 </span>
               </li>
               <li>
-                Registrar: <span className="font-medium">{result.domainIntelligence.registrar ?? "unknown"}</span>
+                {rows.registrar}{" "}
+                <span className="font-medium">{result.domainIntelligence.registrar ?? rows.unknown}</span>
               </li>
               <li>
-                Country: <span className="font-medium">{result.domainIntelligence.country ?? "unknown"}</span>
+                {rows.country}{" "}
+                <span className="font-medium">{result.domainIntelligence.country ?? rows.unknown}</span>
               </li>
               <li>
-                Expiration date: <span className="font-medium">{result.domainIntelligence.expirationDate ?? "unknown"}</span>
+                {rows.expirationDate}{" "}
+                <span className="font-medium">{result.domainIntelligence.expirationDate ?? rows.unknown}</span>
               </li>
               <li>
-                Privacy / redacted ownership hints:{" "}
-                <span className="font-medium">{result.domainIntelligence.hasPrivacyProtection ? "yes" : "no / unknown"}</span>
+                {rows.privacyHints}{" "}
+                <span className="font-medium">
+                  {result.domainIntelligence.hasPrivacyProtection ? rows.yes : rows.noOrUnknown}
+                </span>
               </li>
               {isSubdomain ? (
                 <li>
-                  Subdomain analysis:{" "}
+                  {rows.subdomainAnalysis}{" "}
                   <span className="font-medium">
                     {suspiciousSubTerms.length > 0
-                      ? `Potentially risky wording found (${suspiciousSubTerms.join(", ")}).`
-                      : "No high-risk wording detected in subdomain labels."}
+                      ? rows.subdomainRisky.replace("{terms}", suspiciousSubTerms.join(", "))
+                      : rows.subdomainClean}
                   </span>
                 </li>
               ) : null}
             </ul>
-            <p className="mt-2 text-xs text-slate-500">Source: {result.domainIntelligence.source}</p>
+            <p className="mt-2 text-xs text-slate-500">
+              {rows.sourcePrefix} {result.domainIntelligence.source}
+            </p>
           </div>
 
           {result.redirectChain ? (
@@ -807,7 +840,7 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
                 </div>
                 <p className="mt-1 text-xs text-slate-700">{row.description}</p>
                 <p className="mt-1 text-[11px] text-slate-500">
-                  Source: {row.source} · severity: {row.severity} · {EN_MESSAGES.scanResult.providerRowReliability}:{" "}
+                  Source: {row.source} · severity: {row.severity} · {flow.scanResult.providerRowReliability}:{" "}
                   {row.confidence}
                 </p>
               </li>
@@ -847,7 +880,7 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
                   </span>
                 </li>
                 <li>
-                  {EN_MESSAGES.scanResult.enrichmentCompletenessLabel}:{" "}
+                  {flow.scanResult.enrichmentCompletenessLabel}:{" "}
                   <span className="font-medium">{reputation.publicSignals.confidence}</span>
                 </li>
               </ul>
@@ -1016,7 +1049,7 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
               if (grouped.length === 0) return null;
               return (
                 <div key={`score-${tier}`}>
-                  <p className="text-xs font-semibold text-slate-800">{labelForEvidenceTier(tier)}</p>
+                  <p className="text-xs font-semibold text-slate-800">{labelForEvidenceTier(tier, flow)}</p>
                   <ul className="mt-1 space-y-1 text-xs text-slate-700">
                     {grouped.map((row) => (
                       <li key={row.id}>
@@ -1041,7 +1074,7 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
               if (grouped.length === 0) return null;
               return (
                 <div key={`intel-${tier}`}>
-                  <p className="text-xs font-semibold text-slate-800">{labelForEvidenceTier(tier)}</p>
+                  <p className="text-xs font-semibold text-slate-800">{labelForEvidenceTier(tier, flow)}</p>
                   <ul className="mt-1 space-y-1 text-xs text-slate-700">
                     {grouped.map((row) => (
                       <li key={row.id}>
@@ -1081,9 +1114,9 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
           {result.trustEvidence ? (
             <div className="space-y-4 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
               <div>
-                <p className="text-sm font-semibold text-slate-900">{EN_MESSAGES.scanResult.resultSections.optionalEvidenceHeading}</p>
+                <p className="text-sm font-semibold text-slate-900">{flow.scanResult.resultSections.optionalEvidenceHeading}</p>
                 <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-600">
-                  {EN_MESSAGES.scanResult.resultSections.optionalEvidenceBody}
+                  {flow.scanResult.resultSections.optionalEvidenceBody}
                 </p>
               </div>
               {result.trustEvidence.screenshotAd ? <EvidenceSignalsCard section={result.trustEvidence.screenshotAd} /> : null}
@@ -1094,9 +1127,9 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
 
           {result.siteStatus === "inactive" ? (
             <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm text-slate-800">
-              <p className="font-semibold text-slate-900">{EN_MESSAGES.specialOutcomes.inactive.headline}</p>
-              <p className="mt-2 leading-relaxed">{EN_MESSAGES.specialOutcomes.inactive.explain}</p>
-              <p className="mt-2 text-xs text-slate-600">{EN_MESSAGES.specialOutcomes.inactive.crawlNote}</p>
+              <p className="font-semibold text-slate-900">{flow.specialOutcomes.inactive.headline}</p>
+              <p className="mt-2 leading-relaxed">{flow.specialOutcomes.inactive.explain}</p>
+              <p className="mt-2 text-xs text-slate-600">{flow.specialOutcomes.inactive.crawlNote}</p>
             </div>
           ) : null}
 
@@ -1105,22 +1138,22 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
               <dl className="space-y-3">
                 <div>
                   <dt className="text-xs font-semibold uppercase tracking-wide text-rose-800/90">
-                    {EN_MESSAGES.domainInfrastructure.domainStatusHeading}
+                    {flow.domainInfrastructure.domainStatusHeading}
                   </dt>
-                  <dd className="mt-1 text-base font-semibold">{EN_MESSAGES.domainInfrastructure.notRegisteredLabel}</dd>
+                  <dd className="mt-1 text-base font-semibold">{flow.domainInfrastructure.notRegisteredLabel}</dd>
                 </div>
                 <div>
                   <dt className="text-xs font-semibold uppercase tracking-wide text-rose-800/90">
-                    {EN_MESSAGES.domainInfrastructure.riskLevelHeading}
+                    {flow.domainInfrastructure.riskLevelHeading}
                   </dt>
-                  <dd className="mt-1 text-base font-semibold">{EN_MESSAGES.domainInfrastructure.highRiskInvalidLabel}</dd>
+                  <dd className="mt-1 text-base font-semibold">{flow.domainInfrastructure.highRiskInvalidLabel}</dd>
                 </div>
                 <div>
                   <dt className="text-xs font-semibold uppercase tracking-wide text-rose-800/90">
-                    {EN_MESSAGES.domainInfrastructure.reasonHeading}
+                    {flow.domainInfrastructure.reasonHeading}
                   </dt>
                   <dd className="mt-1 leading-relaxed text-rose-950/95">
-                    {EN_MESSAGES.domainInfrastructure.invalidHostExplanation}
+                    {flow.domainInfrastructure.invalidHostExplanation}
                   </dd>
                 </div>
               </dl>
@@ -1143,7 +1176,7 @@ export function ResultCard({ result, normalizedTrust, alignedDisplay }: ResultCa
       <ResultSupportBox className="mt-6" />
 
       <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-xs leading-relaxed text-slate-600">
-        {EN_MESSAGES.scanResult.footerDisclaimer}
+        {flow.scanResult.footerDisclaimer}
       </div>
     </div>
   );

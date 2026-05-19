@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LocaleProvider } from "@/components/i18n/LocaleProvider";
 import { ScamAlertsPageHeader } from "@/components/scam-alerts/ScamAlertsPageHeader";
 import { ScamAlertCard } from "@/components/scam-alerts/ScamAlertCard";
 import { ScamAlertsFilterBar } from "@/components/scam-alerts/ScamAlertsFilterBar";
@@ -85,6 +86,7 @@ export async function ScamAlertsPageContent({ searchParams, locale = "en" }: Sca
   let prevDomainKey: string | null = null;
 
   return (
+    <LocaleProvider locale={locale} dict={dict}>
     <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
       <Navbar locale={locale} />
       <main className="mx-auto w-full max-w-6xl px-4 pb-14 pt-8 sm:pt-9">
@@ -162,5 +164,6 @@ export async function ScamAlertsPageContent({ searchParams, locale = "en" }: Sca
       </main>
       <SiteFooter locale={locale} />
     </div>
+    </LocaleProvider>
   );
 }

@@ -1,5 +1,6 @@
 import type { ExternalChecksResult } from "@/lib/checks/types";
-import { EN_MESSAGES } from "@/lib/messages.en";
+import type { ResultFlowMessages } from "@/lib/i18n/result-flow";
+import { resultFlowOrDefault } from "@/lib/i18n/result-flow/messages";
 import type { ScamCheckResult } from "@/types/scam";
 import { trustScoreFromRisk } from "@/lib/scoring/displayScore";
 import { clampScore } from "@/lib/trustSystem";
@@ -99,24 +100,27 @@ export function requiresCriticalTrustClamp(checks: ExternalChecksResult): boolea
   return hasTier1DangerIntel(checks.providerEvidence);
 }
 
-export function criticalThreatBannerTitle(kind: CriticalThreatKind | null): string {
-  if (kind === "malware_feed" || kind === "safe_browsing_malware") return EN_MESSAGES.threatOverride.bannerTitleMalware;
-  return EN_MESSAGES.threatOverride.bannerTitle;
+export function criticalThreatBannerTitle(kind: CriticalThreatKind | null, flow?: ResultFlowMessages): string {
+  const t = resultFlowOrDefault(flow).threatOverride;
+  if (kind === "malware_feed" || kind === "safe_browsing_malware") return t.bannerTitleMalware;
+  return t.bannerTitle;
 }
 
 /** User-facing line under threat status when Tier‑1 intel is active (overrides score-only labels). */
-export function criticalThreatStatusHeadline(kind: CriticalThreatKind | null): string {
+export function criticalThreatStatusHeadline(kind: CriticalThreatKind | null, flow?: ResultFlowMessages): string {
+  const t = resultFlowOrDefault(flow).threatOverride;
+  const site = resultFlowOrDefault(flow).siteOutcome;
   switch (kind) {
     case "phishing_feed":
     case "safe_browsing_phishing":
-      return EN_MESSAGES.threatOverride.confirmedPhishingRisk;
+      return t.confirmedPhishingRisk;
     case "malware_feed":
     case "safe_browsing_malware":
-      return EN_MESSAGES.threatOverride.malwareDetected;
+      return t.malwareDetected;
     case "government_warning":
     case "intel_danger":
-      return EN_MESSAGES.threatOverride.confirmedMalicious;
+      return t.confirmedMalicious;
     default:
-      return EN_MESSAGES.siteOutcome.confirmedMalicious;
+      return site.confirmedMalicious;
   }
 }

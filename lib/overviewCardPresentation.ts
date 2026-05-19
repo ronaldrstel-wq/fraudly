@@ -1,4 +1,5 @@
-import { EN_MESSAGES } from "@/lib/messages.en";
+import type { ResultFlowMessages } from "@/lib/i18n/result-flow";
+import { resultFlowOrDefault } from "@/lib/i18n/result-flow/messages";
 import { scamVerdictFromConsumerLabel } from "@/lib/scoring/consumerVerdictMap";
 import {
   type HumanRecKind,
@@ -27,8 +28,8 @@ export function isCriticalOverviewKind(kind: HumanRecKind): boolean {
   return kind === "avoidWebsite" || kind === "dangerousWebsite";
 }
 
-export function overviewOneLiner(kind: HumanRecKind): string {
-  const o = EN_MESSAGES.scanResult.overviewOneLine;
+export function overviewOneLiner(kind: HumanRecKind, flow?: ResultFlowMessages): string {
+  const o = resultFlowOrDefault(flow).scanResult.overviewOneLine;
   switch (kind) {
     case "trusted":
       return o.trusted;

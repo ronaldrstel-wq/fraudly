@@ -9,24 +9,25 @@ export const marketingUiPt: MarketingUiExtension = {
     filters: {
       allSeverities: "Todos os níveis",
       highRiskOnly: "Só alto risco",
-      highRiskSub: "Usa la pontuação de alerta agregada",
+      highRiskSub: "Usa a pontuação de alerta agregada",
       malware: "Malware",
       phishing: "Phishing",
-      severityTypeLabel: "Gravedad y tipo",
-      exactTypeLabel: "Tipo exacto:",
-      anyType: "Todos"
+      severityTypeLabel: "Gravidade e tipo",
+      exactTypeLabel: "Tipo exato:",
+      anyType: "Qualquer"
     },
     timeRange: {
       label: "Período",
       today: "Hoje",
-      todayHint: "Publicado desde medianoche UTC hoy",
+      todayHint: "Publicado desde a meia-noite UTC de hoje",
       last24h: "Últimas 24 h",
-      last24hHint: "Janela móvel de 24 horas",
-      last7d: "Últimos 7 días",
-      last7dHint: "Janela móvel de siete días",
-      allAlerts: "Todos Alerts",
-      allAlertsHint: "Cada alerta publicada visible",
-      helper: "Standard zeigt alle veröffentlichten Alerts. Enger über URL auf Hoje (UTC) oder kürzere Fenster."
+      last24hHint: "Janela móvel das últimas 24 horas",
+      last7d: "Últimos 7 dias",
+      last7dHint: "Janela móvel dos últimos sete dias",
+      allAlerts: "Todos os alertas",
+      allAlertsHint: "Todos os alertas publicados visíveis",
+      helper:
+        "Por defeito são mostrados todos os alertas publicados. Restringe a Hoje (UTC) ou janelas mais curtas através do URL."
     },
     summary: {
       ...marketingUiEn.scamAlertsPage.summary,
@@ -36,99 +37,133 @@ export const marketingUiPt: MarketingUiExtension = {
       totalPublished: "Total publicado",
       mostCommonType: "Tipo mais comum",
       showing: "A mostrar",
-      zeroPublished: "0 alertas publicadas",
-      rangeSingle: "{current} de {total} alertas publicadas",
-      rangeSpan: "{start}–{end} de {total} alertas publicadas"
+      zeroPublished: "0 alertas publicados",
+      rangeSingle: "{current} de {total} alertas publicados",
+      rangeSpan: "{start}–{end} de {total} alertas publicados"
     },
     empty: {
-      zeroTitle: "No hay alertas de fraude activas ahora",
+      zeroTitle: "Não há alertas de fraude ativos agora",
       zeroBody:
-        "Fraudly monitoriza fuentes públicas de forma continua. Nuevas alertas aparecerán aquí con pruebas suficientes.",
-      filteredTitle: "Nenhum alerta coincide con esta vista",
-      filteredBody: "Versuchen Sie einen breiteren Período (z. B. „Todos Alerts“) oder einen anderen Filter.",
-      viewAllTimeCta: "Todos veröffentlichten Alerts anzeigen",
+        "O Fraudly monitoriza fontes públicas de forma contínua. Novos alertas aparecerão aqui quando houver provas suficientes.",
+      filteredTitle: "Nenhum alerta corresponde a esta vista",
+      filteredBody:
+        "Experimente um período mais amplo (por exemplo «Todos os alertas») ou outro filtro de gravidade. Os totais acima refletem todos os alertas publicados.",
+      viewAllTimeCta: "Ver todos os alertas publicados",
       checkWebsiteCta: "Verificar um site agora"
     },
-    card: { technicalMatchStrength: "Fuerza de coincidencia", technicalSignals: "Señales de corroboración" },
-    pagination: { prev: "Página anterior", prevDisabled: "Anterior", next: "Página siguiente", nextDisabled: "Seguinte", page: "Página" }
+    card: {
+      technicalMatchStrength: "Força de correspondência",
+      technicalSignals: "Sinais de corroboração",
+      relatedAlertSameDomain: "Alerta relacionado · mesmo domínio",
+      published: "Publicado",
+      updated: "Atualizado",
+      source: "Fonte",
+      unknown: "Desconhecido",
+      domainSr: "Domínio:",
+      severitySr: "Gravidade:",
+      technicalDetails: "Detalhes técnicos",
+      readFullAlert: "Ler alerta completo →",
+      publishedExact: "Publicado (exato)",
+      rawType: "Tipo bruto",
+      originalTitle: "Título original",
+      domain: "Domínio",
+      url: "URL"
+    },
+    pagination: {
+      prev: "Página anterior",
+      prevDisabled: "Anterior",
+      next: "Página seguinte",
+      nextDisabled: "Seguinte",
+      page: "Página"
+    }
   },
   latestChecksPage: {
     ...marketingUiEn.latestChecksPage,
-    trustScorePillLabel: "Pontuação de confianza",
+    trustScorePillLabel: "Pontuação de confiança",
+    trustScoreOutOf100Aria: "{label}: {score} de 100",
+    dataConfidenceAria: "Confiança dos dados",
     viewResultArrow: "Ver resultado →",
-    emptyState: "Aún no hay verificações públicas. Los resúmenes aparecerán aquí quando estén disponibles.",
-    unavailableState: "Las últimas verificações no están disponibles temporalmente. Aún puedes verificar un site arriba.",
+    emptyState:
+      "Ainda não há verificações públicas. Os resumos aparecerão aqui assim que estiverem disponíveis de forma respeitosa com a privacidade.",
+    unavailableState:
+      "As últimas verificações estão temporariamente indisponíveis. Ainda pode verificar um site acima.",
     ctaPrimary: "Iniciar verificação",
-    listAria: "Últimos resúmenes públicos de verificações",
-    entityFallback: "Elemento verificado",
+    listAria: "Últimos resumos públicos de verificações",
+    entityFallback: "Item verificado",
     entityLabels: {
-      domain: "Dominio / site",
+      domain: "Domínio / site",
       url: "URL",
       company: "Empresa / marca",
-      crypto_wallet: "Monedero cripto",
-      username: "Nombre de usuario / handle"
+      crypto_wallet: "Carteira cripto",
+      username: "Utilizador / identificador público"
     },
-    pagination: { prev: "Página anterior", prevDisabled: "Anterior", next: "Página siguiente", nextDisabled: "Seguinte", page: "Página" }
+    pagination: {
+      prev: "Página anterior",
+      prevDisabled: "Anterior",
+      next: "Página seguinte",
+      nextDisabled: "Seguinte",
+      page: "Página"
+    }
   },
   homeSections: {
     trustActivity: {
-      title: "Fraudly ayuda a los utilizadores a estar más seguros en línea",
-      subtitle: "Verificações con IA para detectar sites sospechosos, phishing y fraudes.",
-      footnote: "{count} verificações públicas en 30 días — feed respetuoso con la privacidad.",
+      title: "O Fraudly ajuda os utilizadores a estar mais seguros online",
+      subtitle: "Verificações com IA para detetar sites suspeitos, phishing e fraudes.",
+      footnote: "{count} verificações públicas nos últimos 30 dias — feed respeitoso com a privacidade.",
       stats: {
         websiteChecksLabel: "Verificações de sites",
-        websiteChecksHint: "Verificações públicas en el feed de Fraudly.",
+        websiteChecksHint: "Verificações públicas no feed do Fraudly.",
         websiteChecksFallback: "A crescer",
-        threatSignalsLabel: "Señales de amenaza analizadas",
-        threatSignalsHint: "Verificações recientes + alertas de fraude (30 días).",
+        threatSignalsLabel: "Sinais de ameaça analisados",
+        threatSignalsHint: "Verificações recentes e alertas de fraude publicados (30 dias).",
         threatSignalsFallback: "Em construção",
-        buildingHint: "Los datos de actividad aún se están generando.",
-        aiLabel: "Análisis asistido por IA",
+        buildingHint: "Os dados de atividade ainda estão a ser gerados — volte em breve.",
+        aiLabel: "Análise assistida por IA",
         aiValue: "24/7",
-        aiHint: "Heurísticas continuas + inteligencia pública.",
-        growingLabel: "Crecimiento diario",
-        growingValue: "Nuevos verificações cada día",
-        growingValueActive: "Hoje aktiv",
-        growingHint: "Nuevas verificações públicas aparecen continuamente.",
-        growingHintActive: "{count} verificações públicas en las últimas 24 h."
+        aiHint: "Heurísticas contínuas e inteligência pública.",
+        growingLabel: "Crescimento diário",
+        growingValue: "Novas verificações todos os dias",
+        growingValueActive: "Ativo hoje",
+        growingHint: "Novas verificações públicas aparecem à medida que as pessoas verificam sites.",
+        growingHintActive: "{count} verificações públicas nas últimas 24 horas."
       }
     },
     whatWeCheck: {
       title: "O que o Fraudly analisa",
-      intro: "Fraudly combina señales de confianza, reputación y análisis con IA para detectar sites sospechosos.",
+      intro: "O Fraudly combina sinais de confiança, reputação e análise com IA para detetar sites suspeitos.",
       cards: [
-        { title: "Reputación del site", body: "Señales públicas de confianza y reseñas — con límites claros." },
-        { title: "SSL y seguridad", body: "HTTPS, certificados y ajustes técnicos importantes." },
-        { title: "Idade do domínio", body: "Historial de registro — a menudo distinto en fraudes." },
-        { title: "Indicadores de phishing", body: "Idioma, Dringlichkeit und typische Phishing-Muster." },
-        { title: "Reportes de fraudes", body: "Cruce con alertas publicadas e inteligencia pública." },
-        { title: "Padrões de risco com IA", body: "Heurísticas para combinaciones inusuales de señales." }
+        { title: "Reputação do site", body: "Sinais públicos de confiança e avaliações — com limites claros." },
+        { title: "SSL e segurança", body: "HTTPS, certificados e definições técnicas importantes." },
+        { title: "Idade do domínio", body: "Histórico de registo — muitas vezes diferente em fraudes." },
+        { title: "Indicadores de phishing", body: "Linguagem, urgência e padrões típicos de páginas enganadoras." },
+        { title: "Relatórios de fraudes", body: "Cruzamento com alertas publicados e inteligência pública." },
+        { title: "Padrões de risco com IA", body: "Heurísticas para combinações invulgares de sinais." }
       ]
     },
     featureCards: [
-      { title: "Sinais, não ruído", description: "Reputación, feeds de fraudes, SSL y dominio — en una vista clara." },
-      { title: "Segundos, não suposições", description: "En el navegador. Sin instalación para la primera verificação." },
-      { title: "Klare Idioma", description: "Conselhos honestos con límites transparentes." }
+      { title: "Sinais, não ruído", description: "Reputação, feeds de fraudes, SSL e domínio — numa vista clara." },
+      { title: "Segundos, não suposições", description: "No navegador. Sem instalação para a primeira verificação." },
+      { title: "Linguagem clara", description: "Conselhos honestos com limites transparentes." }
     ]
   },
   homeBelowFold: {
     trustSafety: {
       title: "Verificações tranquilas para as suas compras",
-      body: "Fraudly es un verificador de confianza para anúncios sociales, marketplaces y «¿esta URL es segura?» — señales estructuradas, sin alaras minhasmo.",
+      body: "O Fraudly é um verificador de confiança para anúncios sociais, marketplaces e «este URL é seguro?» — sinais estruturados, sem alarmismo.",
       bullets: [
-        "Inteligencia de fraudes + reputación, SSL y contexto histórico",
-        "Verificações profundos opcionales para más detalle técnico",
-        "«Últimas verificações» públicas y alertas de amenazas"
+        "Inteligência de fraudes + reputação, SSL e contexto histórico",
+        "Verificações profundas opcionais para mais detalhe técnico",
+        "«Últimas verificações» públicas e alertas de ameaças"
       ],
       featuresCta: "Ver funcionalidades",
       learnCta: "Aprender sobre fraudes online"
     },
     howItWorks: {
-      title: "Cómo funciona la verificação",
+      title: "Como funciona a verificação",
       steps: [
-        "Cole um URL antes de pagar, iniciar sesión o pulsar un anúncio dudoso.",
-        "Fraudly obtiene contexto de seguridad, historial, feeds de fraudes y reputación.",
-        "Vê uma pontuação, un resumo y detalles opcionales."
+        "Cole um URL antes de pagar, iniciar sessão ou clicar num anúncio duvidoso.",
+        "O Fraudly obtém contexto de segurança, histórico, feeds de fraudes e reputação.",
+        "Vê uma pontuação, um resumo e detalhes opcionais."
       ],
       footerPrefix: "O processo completo? Leia",
       footerLinkLabel: "como o Fraudly funciona"
@@ -137,28 +172,29 @@ export const marketingUiPt: MarketingUiExtension = {
       title: "Perguntas frequentes",
       items: [
         {
-          question: "¿Fraudly es un verificador de fraudes?",
-          answer: "Sí — para comprobar enlaces desconocidos con feeds de fraudes, señales HTTPS/dominio y explicación con IA opcional."
+          question: "O Fraudly é um verificador de fraudes?",
+          answer:
+            "Sim — para verificar links desconhecidos com feeds de fraudes, sinais HTTPS/domínio e explicação com IA opcional."
         },
         {
           question: "O Fraudly garante 100% de segurança?",
-          answer: "Ninguna herramienta puede hacerlo. Usa Fraudly con sentido común y verificación oficial."
+          answer: "Nenhuma ferramenta pode fazê-lo. Use o Fraudly com bom senso e verificação oficial."
         },
         {
-          question: "Diferença para um antivírus?",
-          answer: "Fraudly se centra en sites engañosos: phishing, tiendas dudosas, SSL, feeds de fraudes — no solo malware."
+          question: "Qual é a diferença para um antivírus?",
+          answer: "O Fraudly foca-se em sites enganadores: phishing, lojas duvidosas, SSL e feeds de fraudes — não só malware."
         },
-        { question: "¿Coste de la primera verificação?", answer: "La primera verificação en el navegador es gratis sin cuenta." }
+        { question: "Quanto custa a primeira verificação?", answer: "A primeira verificação no navegador é gratuita sem conta." }
       ]
     },
     testimonials: {
-      title: "Lo que dicen los utilizadores",
+      title: "O que dizem os utilizadores",
       items: [
-        { quote: "Gut, dass ich nicht gekauft habe — Fraudly zeigte eine riskante Página.", name: "Emma" },
-        { quote: "Verifico cada anúncio de Instagram con Fraudly.", name: "Noah" },
-        { quote: "Me evitó una tienda de zapatillas dudosa.", name: "Jason" },
-        { quote: "En segundos supe que esa tienda de TikTok merecía una segunda mirada.", name: "Mila" },
-        { quote: "El anúncio parecía legítimo. Fraudly mostró las señales de alerta.", name: "Olivia" },
+        { quote: "Ainda bem que não comprei — o Fraudly mostrou que era um site arriscado.", name: "Emma" },
+        { quote: "Verifico cada anúncio do Instagram com o Fraudly.", name: "Noah" },
+        { quote: "Evitou-me uma loja de ténis duvidosa.", name: "Jason" },
+        { quote: "Em segundos soube que aquela loja TikTok merecia uma segunda olhadela.", name: "Mila" },
+        { quote: "O anúncio parecia legítimo. O Fraudly mostrou os sinais de alerta.", name: "Olivia" },
         { quote: "Ideal para rever promoções sociais antes de comprar.", name: "Daan" }
       ]
     },
@@ -201,7 +237,7 @@ export const marketingUiPt: MarketingUiExtension = {
       answer: "Algumas verificações podem aparecer anonimamente em feeds públicos. Não mostramos dados pessoais de propósito."
     },
     {
-      question: "Contactar suporte?",
+      question: "Como contactar o suporte?",
       answer: "Escreva para support@fraudly.app."
     }
   ]

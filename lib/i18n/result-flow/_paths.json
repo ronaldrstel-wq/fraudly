@@ -1,0 +1,961 @@
+[
+  [
+    "basicResult.checkedLink",
+    "Checked link"
+  ],
+  [
+    "basicResult.heading",
+    "Basic result"
+  ],
+  [
+    "basicResult.highRiskExplanation",
+    "Multiple signals indicate an elevated fraud risk."
+  ],
+  [
+    "basicResult.highRiskLabel",
+    "High risk"
+  ],
+  [
+    "basicResult.highRiskRecommendation",
+    "Treat this as elevated risk until you can verify the site through an independent, official channel."
+  ],
+  [
+    "basicResult.intro",
+    "This is the quick first assessment of the checked link."
+  ],
+  [
+    "basicResult.recommendationHeading",
+    "Recommendation"
+  ],
+  [
+    "basicResult.riskStatus",
+    "Risk status"
+  ],
+  [
+    "basicResult.safeExplanation",
+    "The basic scan did not highlight major fraud indicators."
+  ],
+  [
+    "basicResult.safeLabel",
+    "Looks safe"
+  ],
+  [
+    "basicResult.safeRecommendation",
+    "No major risk indicators showed up in this quick scan—still verify payments and identities as usual."
+  ],
+  [
+    "basicResult.suspiciousExplanation",
+    "Signals were found that merit extra caution."
+  ],
+  [
+    "basicResult.suspiciousLabel",
+    "Some caution advised"
+  ],
+  [
+    "basicResult.suspiciousRecommendation",
+    "Some risk signals were present. Prefer contacting the organization through a channel you already trust before paying or signing in."
+  ],
+  [
+    "basicResult.unlockHint",
+    "Create a free account to continue checking more websites."
+  ],
+  [
+    "check.urlFieldLabel",
+    "Website, domain, or link"
+  ],
+  [
+    "check.urlPlaceholder",
+    "https://example.com"
+  ],
+  [
+    "checkPage.breadcrumbCheck",
+    "Check a website"
+  ],
+  [
+    "checkPage.breadcrumbHome",
+    "Home"
+  ],
+  [
+    "checkPage.ctaAnother",
+    "Check another website"
+  ],
+  [
+    "checkPage.ctaLatest",
+    "Latest public checks"
+  ],
+  [
+    "checkPage.discovery.alsoCheckedDescription",
+    "Recent public checks from the Fraudly feed—explore other domains others are verifying."
+  ],
+  [
+    "checkPage.discovery.alsoCheckedTitle",
+    "People also checked"
+  ],
+  [
+    "checkPage.discovery.footerLatestChecks",
+    "View latest checks →"
+  ],
+  [
+    "checkPage.discovery.relatedDescription",
+    "Other recently reviewed sites with similar risk signals, region, or naming patterns."
+  ],
+  [
+    "checkPage.discovery.relatedTitle",
+    "Related website checks"
+  ],
+  [
+    "checkPage.emptySignals.confirmedIntel",
+    "No Safe Browsing, OpenPhish, URLhaus, or police-aligned list matches were returned in this crawl."
+  ],
+  [
+    "checkPage.emptySignals.otherRisk",
+    "No additional prioritized risk rows were raised beyond curated list matches."
+  ],
+  [
+    "checkPage.emptySignals.supportive",
+    "No supportive or informational trust rows were returned."
+  ],
+  [
+    "checkPage.eyebrow",
+    "Website trust check"
+  ],
+  [
+    "checkPage.fallbackSummary",
+    "Automated trust snapshot for this domain."
+  ],
+  [
+    "checkPage.fallbackVerdict",
+    "Check complete"
+  ],
+  [
+    "checkPage.guideLinkAfter",
+    " trust intelligence page"
+  ],
+  [
+    "checkPage.guideLinkBefore",
+    "Open the "
+  ],
+  [
+    "checkPage.guidePrefix",
+    "Looking for the long-form trust guide (FAQs, scam vs. legit framing)? "
+  ],
+  [
+    "checkPage.introBefore",
+    "Below is an automated, evidence-based snapshot of "
+  ],
+  [
+    "checkPage.introMiddle",
+    " showing risk indicators, trust signals, and technical checks. Results are not legal or financial advice and are not a guarantee that a site is safe or unsafe."
+  ],
+  [
+    "checkPage.limitedInspection",
+    "The website responded, but some page details could not be fully inspected during this scan."
+  ],
+  [
+    "checkPage.metricsDomainAge",
+    "Domain age"
+  ],
+  [
+    "checkPage.metricsSsl",
+    "Secure connection"
+  ],
+  [
+    "checkPage.metricsTrustScore",
+    "Trust-style score"
+  ],
+  [
+    "checkPage.resultCardUi.fallbackSummary",
+    "Fraudly could not verify all trust signals for this website."
+  ],
+  [
+    "checkPage.resultCardUi.limitedInspectionShort",
+    "Website responded, but some page details could not be fully inspected during this scan."
+  ],
+  [
+    "checkPage.resultCardUi.redirectNotice",
+    "This website redirects to another domain. Fraudly also checked the final destination."
+  ],
+  [
+    "checkPage.resultCardUi.registeredDomainLabel",
+    "Registered domain:"
+  ],
+  [
+    "checkPage.resultCardUi.signalSourcePrefix",
+    "Source:"
+  ],
+  [
+    "checkPage.resultCardUi.subdomainNote",
+    "The submitted address is a subdomain. Fraudly also checked the registered domain because domain age and ownership belong to the root domain."
+  ],
+  [
+    "checkPage.resultCardUi.trustScoreUnavailable",
+    "Trust score unavailable for this snapshot."
+  ],
+  [
+    "checkPage.snapshotBody",
+    "Data comes from public feeds, technical checks, and limited page context. Phishing and scam sites change quickly—use your judgment and official channels when in doubt."
+  ],
+  [
+    "checkPage.snapshotTitle",
+    "Snapshot only."
+  ],
+  [
+    "checkPage.threatSummary",
+    "Confirmed threat intelligence affected this result."
+  ],
+  [
+    "checkPage.titlePrefix",
+    "Is "
+  ],
+  [
+    "checkPage.titleSuffix",
+    " safe to use?"
+  ],
+  [
+    "checkPage.visitWebsiteCta",
+    "Visit website"
+  ],
+  [
+    "checkPage.visitWebsiteDisclaimer",
+    "Fraudly did not detect strong risk indicators in this scan. Always use your own judgment."
+  ],
+  [
+    "domainInfrastructure.domainStatusHeading",
+    "Domain status"
+  ],
+  [
+    "domainInfrastructure.highRiskInvalidLabel",
+    "High Risk / Invalid"
+  ],
+  [
+    "domainInfrastructure.invalidHostExplanation",
+    "This domain does not appear to exist or cannot be verified through DNS/RDAP systems. Scam and phishing campaigns often use disposable or malformed domains."
+  ],
+  [
+    "domainInfrastructure.notRegisteredLabel",
+    "Not registered"
+  ],
+  [
+    "domainInfrastructure.reasonHeading",
+    "Reason"
+  ],
+  [
+    "domainInfrastructure.riskLevelHeading",
+    "Risk level"
+  ],
+  [
+    "paywall.bundleFive",
+    "5 checks for EUR 3.99"
+  ],
+  [
+    "paywall.bundleTwenty",
+    "20 checks for EUR 9.99"
+  ],
+  [
+    "paywall.noCredits",
+    "No credits available"
+  ],
+  [
+    "paywall.premiumMonthly",
+    "Premium EUR 6.99/mo"
+  ],
+  [
+    "paywall.subtitleNoFree",
+    "Buy individual checks or start Premium to keep viewing full analyses."
+  ],
+  [
+    "paywall.subtitleUnlock",
+    "You are currently seeing only the basic result. Unlock full explanations, risk signals, and guidance before continuing."
+  ],
+  [
+    "paywall.titleNoFree",
+    "Your free checks are used up"
+  ],
+  [
+    "paywall.titleUnlock",
+    "Unlock the full analysis"
+  ],
+  [
+    "paywall.unlockSingle",
+    "Unlock for EUR 0.99"
+  ],
+  [
+    "paywall.useCreditPremium",
+    "Use credit / Premium"
+  ],
+  [
+    "paywall.working",
+    "Working..."
+  ],
+  [
+    "scanResult.consumerSummary.elevated",
+    "This website shows several scam or phishing indicators."
+  ],
+  [
+    "scanResult.consumerSummary.mixed",
+    "This website has mixed signals. It may still be legitimate, but take a closer look before you pay or sign in."
+  ],
+  [
+    "scanResult.consumerSummary.positive",
+    "This website shows several positive trust indicators and no major scam signals in this scan."
+  ],
+  [
+    "scanResult.consumerSummary.underThreat",
+    "Known scam or phishing reports flag this website. Treat it as high risk until you can verify through a channel you already trust."
+  ],
+  [
+    "scanResult.consumerSummaryDisclaimer",
+    "Online risks can change over time. Always use your own judgment before purchasing or sharing personal information."
+  ],
+  [
+    "scanResult.detailedFindingsHint",
+    "Redirects, list matches, certificates, reputation snapshots, and model notes — for when you want the full picture."
+  ],
+  [
+    "scanResult.detailedFindingsToggle",
+    "Show technical details"
+  ],
+  [
+    "scanResult.enrichmentCompletenessLabel",
+    "Public-source data completeness"
+  ],
+  [
+    "scanResult.evidenceTierLabels.confirmed_malicious",
+    "Matches from scam intelligence"
+  ],
+  [
+    "scanResult.evidenceTierLabels.missing_data",
+    "Incomplete or unavailable data"
+  ],
+  [
+    "scanResult.evidenceTierLabels.neutral_observation",
+    "Website & technical observations"
+  ],
+  [
+    "scanResult.evidenceTierLabels.positive_trust",
+    "Trust-positive signals"
+  ],
+  [
+    "scanResult.evidenceTierLabels.risk_indicator",
+    "Detected risk patterns"
+  ],
+  [
+    "scanResult.footerDisclaimer",
+    "Fraudly summarizes public scam intelligence, reputation snapshots, and technical signals for awareness. It is not legal, financial, or flawless security advice—verify important decisions yourself."
+  ],
+  [
+    "scanResult.humanRec.glyphs.critical",
+    "⛔"
+  ],
+  [
+    "scanResult.humanRec.glyphs.info",
+    "ⓘ"
+  ],
+  [
+    "scanResult.humanRec.glyphs.positive",
+    "✓"
+  ],
+  [
+    "scanResult.humanRec.glyphs.warning",
+    "⚠"
+  ],
+  [
+    "scanResult.humanRec.headlines.avoidWebsite",
+    "Avoid This Website"
+  ],
+  [
+    "scanResult.humanRec.headlines.beCareful",
+    "Be careful"
+  ],
+  [
+    "scanResult.humanRec.headlines.dangerousWebsite",
+    "Dangerous Website"
+  ],
+  [
+    "scanResult.humanRec.headlines.highRisk",
+    "High risk detected"
+  ],
+  [
+    "scanResult.humanRec.headlines.invalidDomain",
+    "Domain Not Verified"
+  ],
+  [
+    "scanResult.humanRec.headlines.looksMostlySafe",
+    "Looks mostly safe"
+  ],
+  [
+    "scanResult.humanRec.headlines.looksSafe",
+    "No major risk indicators found"
+  ],
+  [
+    "scanResult.humanRec.headlines.notEnoughInfo",
+    "Not Enough Information"
+  ],
+  [
+    "scanResult.humanRec.headlines.risky",
+    "Risky"
+  ],
+  [
+    "scanResult.humanRec.headlines.trusted",
+    "Looks safe"
+  ],
+  [
+    "scanResult.humanRec.headlines.unreachable",
+    "Site Unavailable"
+  ],
+  [
+    "scanResult.limitedStripBody",
+    "No confirmed malicious indicators were detected. Public data availability was limited in this scan, which affects context completeness but is not a risk signal."
+  ],
+  [
+    "scanResult.limitedStripTitle",
+    "Limited public information available"
+  ],
+  [
+    "scanResult.mainDetailHeading",
+    "What we observed"
+  ],
+  [
+    "scanResult.overviewOneLine.avoidWebsite",
+    "Strong risk indicators — verify independently before interacting."
+  ],
+  [
+    "scanResult.overviewOneLine.beCareful",
+    "Some risk indicators were detected."
+  ],
+  [
+    "scanResult.overviewOneLine.dangerousWebsite",
+    "Possible malware or harmful content."
+  ],
+  [
+    "scanResult.overviewOneLine.highRisk",
+    "Elevated risk in this snapshot."
+  ],
+  [
+    "scanResult.overviewOneLine.invalidDomain",
+    "Hostname could not be verified as a normal website."
+  ],
+  [
+    "scanResult.overviewOneLine.looksMostlySafe",
+    "Mostly positive snapshot — confirm limited checks if you plan to pay or sign in."
+  ],
+  [
+    "scanResult.overviewOneLine.looksSafe",
+    "No major phishing indicators detected."
+  ],
+  [
+    "scanResult.overviewOneLine.notEnoughInfo",
+    "Limited public information available."
+  ],
+  [
+    "scanResult.overviewOneLine.risky",
+    "Elevated concern — verify through a channel you trust before checkout or logins."
+  ],
+  [
+    "scanResult.overviewOneLine.trusted",
+    "No major risk indicators detected."
+  ],
+  [
+    "scanResult.overviewOneLine.unreachable",
+    "No usable webpage was retrieved."
+  ],
+  [
+    "scanResult.providerRowReliability",
+    "reliability"
+  ],
+  [
+    "scanResult.recommend.confirmedMalicious",
+    "Do not trust this site for logins or payments unless independent corroboration contradicts the feeds."
+  ],
+  [
+    "scanResult.recommend.inactive",
+    "If you expected a real store here, verify the URL with the brand through a channel you trust."
+  ],
+  [
+    "scanResult.recommend.nonexistent",
+    "Do not treat this hostname as a trustworthy business until registration and DNS look correct from your side."
+  ],
+  [
+    "scanResult.recommendationHeading",
+    "Recommendation"
+  ],
+  [
+    "scanResult.recommendThreat.generic",
+    "Do not use this website for payments or sensitive data until the threat can be ruled out."
+  ],
+  [
+    "scanResult.recommendThreat.government",
+    "Treat this host as high risk until you can verify it through an official channel you opened yourself."
+  ],
+  [
+    "scanResult.recommendThreat.intelDanger",
+    "Avoid interacting with this site unless a trusted security professional or vendor clears it."
+  ],
+  [
+    "scanResult.recommendThreat.malware",
+    "Treat downloads and links as unsafe unless an independent security tool clears them."
+  ],
+  [
+    "scanResult.recommendThreat.phishing",
+    "This website was flagged by phishing intelligence sources. Do not enter passwords, card numbers, or recovery codes."
+  ],
+  [
+    "scanResult.recommendTrustBand.caution",
+    "Use caution before signing in, paying, or downloading. Prefer contacting the company through a known official route."
+  ],
+  [
+    "scanResult.recommendTrustBand.highRisk",
+    "Avoid sharing personal or payment details until you can verify the site through a separate trusted source."
+  ],
+  [
+    "scanResult.recommendTrustBand.mostlySafe",
+    "The snapshot looks broadly reassuring—if anything feels off, confirm the organisation through a channel you already trust."
+  ],
+  [
+    "scanResult.recommendTrustBand.risky",
+    "Pause before payments or account changes—verify the business and URL through an independent source you trust."
+  ],
+  [
+    "scanResult.recommendTrustBand.trusted",
+    "No major risk indicators showed up in this scan—still use normal care with payments and personal data."
+  ],
+  [
+    "scanResult.reputationHeading",
+    "Public reputation"
+  ],
+  [
+    "scanResult.reputationIntro",
+    "Trustpilot and Google review signals are always checked. Only reliable matches with enough reviews can influence the trust score."
+  ],
+  [
+    "scanResult.resultSections.aiFactorsHeading",
+    "Key factors explained"
+  ],
+  [
+    "scanResult.resultSections.aiFactorsHint",
+    "Blended notes from patterns we detected, scam intelligence scoring, and optional AI assistance—not legal or financial advice."
+  ],
+  [
+    "scanResult.resultSections.analyzedDomainHeading",
+    "Website checked"
+  ],
+  [
+    "scanResult.resultSections.baselineReviewsHeading",
+    "Quick review probes (baseline scan)"
+  ],
+  [
+    "scanResult.resultSections.baselineReviewsHint",
+    "Lightweight directory checks powering part of the model—hiccups here describe our snapshot, not the shop’s honesty."
+  ],
+  [
+    "scanResult.resultSections.confirmedIntelHeading",
+    "Matches from scam intelligence"
+  ],
+  [
+    "scanResult.resultSections.confirmedIntelHint",
+    "Structured hits from curated phishing, malware, or police-aligned feeds in this crawl."
+  ],
+  [
+    "scanResult.resultSections.domainBlockHeading",
+    "Domain & registration"
+  ],
+  [
+    "scanResult.resultSections.intelProvidersHeading",
+    "Scam intelligence sources"
+  ],
+  [
+    "scanResult.resultSections.intelProvidersHint",
+    "Normalized provider output. “Matched” means that source reported something relevant in this run."
+  ],
+  [
+    "scanResult.resultSections.optionalEvidenceBody",
+    "Screenshots, ad notes, or social context are layered on top of the URL scan. They sharpen the story but never replace technical checks."
+  ],
+  [
+    "scanResult.resultSections.optionalEvidenceHeading",
+    "Optional context you added"
+  ],
+  [
+    "scanResult.resultSections.otherRiskHeading",
+    "Detected risk patterns"
+  ],
+  [
+    "scanResult.resultSections.otherRiskHint",
+    "Extra risk-style signals scored in this snapshot. They are not definitive proof—a quick second opinion still helps."
+  ],
+  [
+    "scanResult.resultSections.reputationBlockHeading",
+    "Reputation enrichment"
+  ],
+  [
+    "scanResult.resultSections.reputationBlockHint",
+    "Optional broader reputation pass when available—beyond the quick baseline probes."
+  ],
+  [
+    "scanResult.resultSections.reputationChecking",
+    "Checking reputation and security signals…"
+  ],
+  [
+    "scanResult.resultSections.reputationEmptyHint",
+    "No enriched reputation profile surfaced. That limits context; it does not prove the site is unsafe."
+  ],
+  [
+    "scanResult.resultSections.reputationUnavailable",
+    "Reputation enrichment unavailable right now—your baseline scan findings still apply."
+  ],
+  [
+    "scanResult.resultSections.scoreDebugBaselineHeading",
+    "Review collector notes (neutral)"
+  ],
+  [
+    "scanResult.resultSections.scoreDebugCombinedHeading",
+    "Combined scoring signals (reviews, reputation, feeds, fulfillment…)"
+  ],
+  [
+    "scanResult.resultSections.scoreDebugTierHeading",
+    "Scam intelligence weighting (model)"
+  ],
+  [
+    "scanResult.resultSections.scoreDebugToggle",
+    "Scoring detail (advanced)"
+  ],
+  [
+    "scanResult.resultSections.sslBlockHeading",
+    "Security checks (HTTPS / certificates)"
+  ],
+  [
+    "scanResult.resultSections.supplyChainHeading",
+    "Fulfillment signals"
+  ],
+  [
+    "scanResult.resultSections.trustNotesHeading",
+    "Helpful signals & observations"
+  ],
+  [
+    "scanResult.resultSections.trustNotesHint",
+    "Facts and neutral checks that balance the picture. Missing a row usually means “not seen”, not proof either way."
+  ],
+  [
+    "scanResult.resultSections.trustScoreThreatNote",
+    "Authoritative scam intelligence overrides the headline score so guidance stays cautious when feeds disagree with the numeric model."
+  ],
+  [
+    "scanResult.safetySignalsHeading",
+    "Safety signals"
+  ],
+  [
+    "scanResult.safetySignalsIntro",
+    "Key checks from this scan, explained in plain language."
+  ],
+  [
+    "scanResult.shortExplain.avoidGeneric",
+    "Authoritative sources flagged serious problems with this website."
+  ],
+  [
+    "scanResult.shortExplain.avoidPhishing",
+    "This domain was flagged by phishing intelligence sources."
+  ],
+  [
+    "scanResult.shortExplain.beCareful",
+    "Some risk indicators were detected. Proceed carefully before entering personal or payment information."
+  ],
+  [
+    "scanResult.shortExplain.confirmedMalicious",
+    "At least one authoritative feed or reference flagged this host as malicious."
+  ],
+  [
+    "scanResult.shortExplain.dangerousMalware",
+    "This website may distribute malware or unsafe content."
+  ],
+  [
+    "scanResult.shortExplain.highRisk",
+    "Several strong risk signals were detected in this scan."
+  ],
+  [
+    "scanResult.shortExplain.invalidDomain",
+    "We could not verify this as a live, registered website hostname."
+  ],
+  [
+    "scanResult.shortExplain.looksSafe",
+    "No major scam or phishing indicators were detected in this scan."
+  ],
+  [
+    "scanResult.shortExplain.notEnoughInfo",
+    "Some public reputation data was limited. This affects how much extra context we can show, but it is not a risk signal by itself."
+  ],
+  [
+    "scanResult.shortExplain.notEnoughInfoLowCoverage",
+    "Some public reputation data was limited. This affects how much extra context we can show, but it is not a risk signal by itself."
+  ],
+  [
+    "scanResult.shortExplain.trusted",
+    "No major risk indicators were detected."
+  ],
+  [
+    "scanResult.shortExplain.unreachable",
+    "We could not load usable content from this address in this scan."
+  ],
+  [
+    "scanResult.signalReliability",
+    "Source reliability"
+  ],
+  [
+    "scanResult.technicalStatusHeading",
+    "Signals behind your score"
+  ],
+  [
+    "scanResult.trustMeterAxis.caution",
+    "Some caution advised"
+  ],
+  [
+    "scanResult.trustMeterAxis.highRisk",
+    "High risk"
+  ],
+  [
+    "scanResult.trustMeterAxis.looksSafe",
+    "Looks safe"
+  ],
+  [
+    "scanResult.trustScoreExplainer",
+    "The trust score combines technical checks, reputation signals where available, website history cues, scam intelligence, and AI-assisted analysis."
+  ],
+  [
+    "scanResult.trustScoreExplainerFootnote",
+    "Higher scores usually mean fewer red flags appeared in this snapshot—not proof a site is safe or unsafe."
+  ],
+  [
+    "scanResult.trustScoreLabel",
+    "Trust score"
+  ],
+  [
+    "scanResult.verdictMicroLabel",
+    "Fraudly verdict"
+  ],
+  [
+    "scanResult.why.confirmedMaliciousGeneric",
+    "At least one authoritative feed or reference flagged this host as malicious."
+  ],
+  [
+    "scanResult.why.inactive",
+    "The hostname may exist, but no usable website content was retrieved in this crawl."
+  ],
+  [
+    "scanResult.why.nonexistent",
+    "DNS and registration checks did not corroborate this hostname as a live, registered apex."
+  ],
+  [
+    "scanResult.whyHeading",
+    "Why this result?"
+  ],
+  [
+    "scanResult.whyThisResultHeading",
+    "Why this result?"
+  ],
+  [
+    "scanResult.whyThisResultIntro",
+    "Fraudly combines website security checks, scam intelligence feeds, and public reputation signals into one trust score. The summary above reflects the strongest signals we found in this scan."
+  ],
+  [
+    "scanResult.whyThreat.generic",
+    "Authoritative threat intelligence reported a serious match for this website."
+  ],
+  [
+    "scanResult.whyThreat.government",
+    "A public police or government scam-warning source overlapped with this domain."
+  ],
+  [
+    "scanResult.whyThreat.intelDanger",
+    "One or more intelligence sources reported a high-severity match for this host."
+  ],
+  [
+    "scanResult.whyThreat.malwareFeed",
+    "This host appeared in malware or harmful-URL intelligence."
+  ],
+  [
+    "scanResult.whyThreat.phishingFeed",
+    "This domain was identified in one or more phishing intelligence feeds."
+  ],
+  [
+    "scanResult.whyThreat.safeBrowsingMalware",
+    "Google Safe Browsing reported malware or harmful software linked to this URL."
+  ],
+  [
+    "scanResult.whyThreat.safeBrowsingPhishing",
+    "Google Safe Browsing reported phishing or deceptive content for this URL."
+  ],
+  [
+    "scanResult.whyTrustBand.caution",
+    "Some caution-style signals appeared—slow down before you trust links, logins, or checkout pages."
+  ],
+  [
+    "scanResult.whyTrustBand.highRisk",
+    "Several concerning signals accumulated in this scan relative to typical benign sites."
+  ],
+  [
+    "scanResult.whyTrustBand.mostlySafe",
+    "No major scam list matches appeared in this scan, though some automated checks were limited or worth a second look."
+  ],
+  [
+    "scanResult.whyTrustBand.risky",
+    "Multiple concerning patterns appeared in this snapshot compared with typical benign sites."
+  ],
+  [
+    "scanResult.whyTrustBand.trusted",
+    "This website showed strong trust signals and no known phishing or malware list matches in this scan."
+  ],
+  [
+    "siteOutcome.caution",
+    "Some caution advised"
+  ],
+  [
+    "siteOutcome.confidenceHeading",
+    "Public data availability"
+  ],
+  [
+    "siteOutcome.confidenceHelper",
+    "This reflects how much public and technical data was available during the scan. Limited data availability is not a risk signal by itself."
+  ],
+  [
+    "siteOutcome.confidenceHighLabel",
+    "High — multiple checks returned usable context."
+  ],
+  [
+    "siteOutcome.confidenceLowLabel",
+    "Limited public data available — this affects context depth, not direct risk."
+  ],
+  [
+    "siteOutcome.confidenceMediumLabel",
+    "Moderate — some sources succeeded while others were limited."
+  ],
+  [
+    "siteOutcome.confirmedMalicious",
+    "Confirmed malicious"
+  ],
+  [
+    "siteOutcome.highRisk",
+    "High risk"
+  ],
+  [
+    "siteOutcome.inactive",
+    "Inactive / unreachable web"
+  ],
+  [
+    "siteOutcome.nonexistent",
+    "Nonexistent domain"
+  ],
+  [
+    "siteOutcome.scanCoverageHeading",
+    "Public data availability"
+  ],
+  [
+    "siteOutcome.scanCoverageHelper",
+    "This reflects how much public and technical data was available during the scan. Limited data availability is not a risk signal by itself."
+  ],
+  [
+    "siteOutcome.scanCoverageHighLabel",
+    "High — multiple checks returned usable context."
+  ],
+  [
+    "siteOutcome.scanCoverageLowLabel",
+    "Limited public data available — this affects context depth, not direct risk."
+  ],
+  [
+    "siteOutcome.scanCoverageMediumLabel",
+    "Moderate — some sources succeeded while others were limited."
+  ],
+  [
+    "siteOutcome.statusHeading",
+    "Threat status"
+  ],
+  [
+    "siteOutcome.suppressedTrustExplanation",
+    "Because no registered/resolvable apex was verified for consumer trust grading, Fraudly hides the trust score gauge for this hostname."
+  ],
+  [
+    "siteOutcome.suppressedTrustMeter",
+    "Trust score withheld — this hostname is not treated as an active website."
+  ],
+  [
+    "siteOutcome.trusted",
+    "Trusted"
+  ],
+  [
+    "siteOutcome.unverified",
+    "Strong snapshot"
+  ],
+  [
+    "specialOutcomes.inactive.crawlNote",
+    "Fraudly only sees public fetch/TLS probes here—thin pages, redirects, or bot-blocking can look similar to downtime."
+  ],
+  [
+    "specialOutcomes.inactive.explain",
+    "The domain appears to exist, but no active website could be reached in this crawl. This is common for parked names or dormant projects; it does not prove a scam."
+  ],
+  [
+    "specialOutcomes.inactive.headline",
+    "Inactive or unreachable website"
+  ],
+  [
+    "specialOutcomes.nonexistent.confidenceRationale",
+    "We have high certainty that actionable website trust evidence is missing—not that the hostname is benign."
+  ],
+  [
+    "specialOutcomes.nonexistent.headline",
+    "Domain does not exist"
+  ],
+  [
+    "specialOutcomes.nonexistent.reasonLine",
+    "Fraudly did not run consumer-style trust grading because independent infrastructure checks did not corroborate a live registrable apex."
+  ],
+  [
+    "specialOutcomes.nonexistent.reviewSummary",
+    "This hostname did not corroborate as a registered/resolvable apex in Fraudly's snapshot."
+  ],
+  [
+    "specialOutcomes.nonexistent.subline",
+    "No active registered domain could be verified via public DNS/RDAP in this crawl. Phantom hosts should not be read as trustworthy."
+  ],
+  [
+    "threatOverride.bannerBody",
+    "This domain appeared in one or more public phishing or malware intelligence feeds. Avoid interacting with this website unless an official trusted source confirms it is safe."
+  ],
+  [
+    "threatOverride.bannerTitle",
+    "Confirmed phishing intelligence detected"
+  ],
+  [
+    "threatOverride.bannerTitleMalware",
+    "Malware or harmful URL intelligence detected"
+  ],
+  [
+    "threatOverride.confirmedMalicious",
+    "Confirmed malicious"
+  ],
+  [
+    "threatOverride.confirmedPhishingRisk",
+    "Confirmed phishing risk"
+  ],
+  [
+    "threatOverride.malwareDetected",
+    "Malware detected"
+  ],
+  ["checkPage.domainRows.checkedHostname", "Checked URL/hostname:"],
+  ["checkPage.domainRows.registeredDomain", "Registered domain:"],
+  ["checkPage.domainRows.registrationDate", "Registration date:"],
+  ["checkPage.domainRows.domainAge", "Domain age:"],
+  ["checkPage.domainRows.registrar", "Registrar:"],
+  ["checkPage.domainRows.country", "Country:"],
+  ["checkPage.domainRows.expirationDate", "Expiration date:"],
+  ["checkPage.domainRows.privacyHints", "Privacy / redacted ownership hints:"],
+  ["checkPage.domainRows.subdomainAnalysis", "Subdomain analysis:"],
+  ["checkPage.domainRows.unknown", "unknown"],
+  ["checkPage.domainRows.yes", "yes"],
+  ["checkPage.domainRows.no", "no"],
+  ["checkPage.domainRows.noOrUnknown", "no / unknown"],
+  ["checkPage.domainRows.possible", "possible"],
+  ["checkPage.domainRows.sourcePrefix", "Source:"],
+  ["checkPage.domainRows.subdomainRisky", "Potentially risky wording found ({terms})."],
+  ["checkPage.domainRows.subdomainClean", "No high-risk wording detected in subdomain labels."],
+  ["scanResult.trustScoreOutOf100Aria", "{label}: {score} out of 100"],
+  ["scanResult.dataConfidenceAria", "Data confidence"]
+]

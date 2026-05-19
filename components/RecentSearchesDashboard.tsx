@@ -6,9 +6,11 @@ import { useCallback, useEffect, useState } from "react";
 import { RecentSearchCard } from "@/components/recent/RecentSearchCard";
 import { CLEAR_ALL_CONFIRM_BODY } from "@/lib/recent-search/constants";
 import type { RecentSearchPublic } from "@/lib/recent-search/service";
-import { EN_MESSAGES } from "@/lib/messages.en";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 export function RecentSearchesDashboard({ initialItems }: { initialItems: RecentSearchPublic[] }) {
+  const { dict } = useLocale();
+  const ui = dict.recentSearchesUi;
   const router = useRouter();
   const [rows, setRows] = useState<RecentSearchPublic[]>(initialItems);
   const [loadError, setLoadError] = useState(false);
@@ -66,15 +68,15 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
     <>
       <header className="text-center sm:text-left">
         <h1 className="text-balance text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
-          {EN_MESSAGES.recentSearches.pageTitle}
+          {ui.pageTitle}
         </h1>
         <p className="mx-auto mt-3 max-w-2xl text-pretty text-sm text-slate-600 sm:mx-0 md:text-base">
-          {EN_MESSAGES.recentSearches.pageIntroPrivatelyStored}
+          {ui.pageIntroPrivatelyStored}
         </p>
       </header>
 
       {loadError ? (
-        <p className="mt-4 text-center text-sm text-rose-600 sm:text-left">{EN_MESSAGES.recentSearches.loadError}</p>
+        <p className="mt-4 text-center text-sm text-rose-600 sm:text-left">{ui.loadError}</p>
       ) : null}
 
       {rows.length > 0 && (
@@ -84,18 +86,18 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
             className="fraudly-focus-on-white inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-subtle hover:bg-slate-50"
             onClick={() => setShowClearModal(true)}
           >
-            {EN_MESSAGES.recentSearches.clearAll}
+            {ui.clearAll}
           </button>
-          <p className="text-xs text-slate-500">Private—you can delete snapshots anytime.</p>
+          <p className="text-xs text-slate-500">{ui.privateDeleteNote}</p>
         </div>
       )}
 
       {rows.length === 0 ? (
         <div className="mt-10 rounded-2xl border border-dashed border-slate-200 bg-white/90 p-8 text-center shadow-subtle sm:p-10">
-          <p className="mx-auto max-w-lg text-pretty text-sm leading-relaxed text-slate-600">{EN_MESSAGES.recentSearches.emptyState}</p>
+          <p className="mx-auto max-w-lg text-pretty text-sm leading-relaxed text-slate-600">{ui.emptyState}</p>
           <p className="mt-5 text-sm">
             <Link href="/#link-check" className="font-semibold text-blue-600 underline decoration-blue-600/30 underline-offset-2">
-              Run a check
+              {ui.emptyStateCta}
             </Link>
           </p>
         </div>
@@ -119,9 +121,9 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
           />
           <div role="dialog" aria-modal="true" aria-labelledby="recent-clear-title" className="fraudly-modal">
             <h2 id="recent-clear-title" className="text-lg font-semibold text-slate-900">
-              {EN_MESSAGES.recentSearches.clearModalTitle}
+              {ui.clearModalTitle}
             </h2>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">{EN_MESSAGES.recentSearches.clearModalBody}</p>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">{ui.clearModalBody}</p>
             <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button
                 type="button"
@@ -129,7 +131,7 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
                 className="btn-secondary px-5 disabled:opacity-50"
                 onClick={() => setShowClearModal(false)}
               >
-                {EN_MESSAGES.recentSearches.clearModalCancel}
+                {ui.clearModalCancel}
               </button>
               <button
                 type="button"
@@ -137,7 +139,7 @@ export function RecentSearchesDashboard({ initialItems }: { initialItems: Recent
                 className="btn-danger px-5 disabled:opacity-50"
                 onClick={() => void clearAll()}
               >
-                {clearBusy ? EN_MESSAGES.recentSearches.clearing : EN_MESSAGES.recentSearches.clearModalConfirm}
+                {clearBusy ? ui.clearing : ui.clearModalConfirm}
               </button>
             </div>
           </div>

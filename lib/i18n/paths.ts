@@ -1,6 +1,7 @@
 import {
   DEFAULT_LOCALE,
   isLocalizedLocale,
+  LOCALIZED_MARKETING_PATHS,
   type Locale,
   type LocalizedLocale,
   type LocalizedMarketingPath
@@ -59,4 +60,21 @@ export function homeScannerHref(locale: Locale): string {
 /** True for `/`, `/nl`, `/de`, `/fr`, `/es`, `/pt` (homepage variants only). */
 export function isHomepagePath(pathname: string): boolean {
   return stripLocalePrefix(pathname || "/").path === "/";
+}
+
+function isLocalizedMarketingPath(path: string): path is LocalizedMarketingPath {
+  return (LOCALIZED_MARKETING_PATHS as readonly string[]).includes(path);
+}
+
+/**
+ * Footer/internal link helper: prefix only routes that have localized pages.
+ * Non-marketing paths (e.g. /privacy, /intelligence) stay unprefixed.
+ */
+export function footerHref(path: string, locale: Locale): string {
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  if (locale === DEFAULT_LOCALE) return normalized;
+  if (isLocalizedMarketingPath(normalized)) {
+    return localizedPath(normalized, locale);
+  }
+  return normalized;
 }

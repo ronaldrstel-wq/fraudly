@@ -1,3 +1,4 @@
+import { writeLocaleCookie } from "@/lib/i18n/locale-cookie";
 import { DEFAULT_LOCALE, isLocale, type Locale } from "@/lib/i18n/locales";
 
 export const LOCALE_PREFERENCE_KEY = "fraudly_locale";
@@ -17,6 +18,7 @@ export function writeStoredLocale(locale: Locale): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(LOCALE_PREFERENCE_KEY, locale);
+    writeLocaleCookie(locale);
   } catch {
     /* ignore */
   }

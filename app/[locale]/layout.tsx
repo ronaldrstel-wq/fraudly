@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { LocaleProvider } from "@/components/i18n/LocaleProvider";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
-import { LOCALE_HTML_LANG, isLocalizedLocale } from "@/lib/i18n/locales";
+import { isLocalizedLocale } from "@/lib/i18n/locales";
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -25,10 +25,8 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
   const dict = getDictionary(raw);
 
   return (
-    <div lang={LOCALE_HTML_LANG[raw]}>
-      <LocaleProvider locale={raw} dict={dict}>
-        {children}
-      </LocaleProvider>
-    </div>
+    <LocaleProvider locale={raw} dict={dict}>
+      {children}
+    </LocaleProvider>
   );
 }
