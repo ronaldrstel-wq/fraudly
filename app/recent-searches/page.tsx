@@ -59,7 +59,7 @@ export default async function RecentSearchesPage() {
   return (
     <LocaleProvider locale={locale} dict={dict}>
       <div className="min-h-screen bg-[#F9FAFB] text-slate-900">
-        <Navbar />
+        <Navbar locale={locale} />
         <main className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:pt-10 md:pt-12">
           {hadLoadError ? (
             <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
@@ -68,7 +68,7 @@ export default async function RecentSearchesPage() {
           ) : null}
           <RecentSearchesDashboard initialItems={initialItems} />
         </main>
-        <SiteFooter />
+        <SiteFooter locale={locale} />
       </div>
     </LocaleProvider>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, type ReactNode } from "react";
+import { CLIENT_LOCALE_FALLBACK } from "@/lib/i18n/client-locale-fallback";
 import type { Dictionary } from "@/lib/i18n/dictionary-types";
 import type { Locale } from "@/lib/i18n/locales";
 
@@ -27,10 +28,7 @@ export function useLocaleOptional(): LocaleContextValue | null {
   return useContext(LocaleContext);
 }
 
+/** Full locale context, or English fallback — never throws on missing provider. */
 export function useLocale(): LocaleContextValue {
-  const ctx = useLocaleOptional();
-  if (!ctx) {
-    throw new Error("useLocale must be used within LocaleProvider");
-  }
-  return ctx;
+  return useLocaleOptional() ?? CLIENT_LOCALE_FALLBACK;
 }

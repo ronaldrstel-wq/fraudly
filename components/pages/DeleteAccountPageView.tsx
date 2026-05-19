@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
-import type { Dictionary } from "@/lib/i18n/get-dictionary";
+import { getDictionary, type Dictionary } from "@/lib/i18n/get-dictionary";
 import { footerHref } from "@/lib/i18n/paths";
 import type { Locale } from "@/lib/i18n/locales";
 import { marketingBadgeClass, marketingPageH1Class } from "@/lib/i18n/typography";
@@ -10,7 +10,7 @@ const SUPPORT_EMAIL = "support@fraudly.app";
 const DELETE_MAILTO = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent("Delete Account")}`;
 
 export function DeleteAccountPageView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
-  const t = dict.deleteAccountPage;
+  const t = dict.deleteAccountPage ?? getDictionary("en").deleteAccountPage;
   const privacyHref = footerHref("/privacy", locale);
   const termsHref = footerHref("/terms", locale);
 

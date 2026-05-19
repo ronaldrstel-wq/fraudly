@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CompactOverviewFeedArticleCard } from "@/components/overview/CompactOverviewFeedCard";
 import { formatPublicCheckRelativeTime } from "@/lib/latest-public-checks/relative-time";
 import { useLocale } from "@/components/i18n/LocaleProvider";
+import { getRecentSearchesUi } from "@/lib/i18n/recent-searches-ui";
 import { overviewFeedPrimaryLine } from "@/lib/overviewFeedDisplay";
 import { buildOverviewFromRecentSearch } from "@/lib/overviewCardPresentation";
 import { getTrustPresentation } from "@/lib/scoring/trust-bands";
@@ -19,7 +20,7 @@ type RecentSearchCardProps = {
  */
 export function RecentSearchCard({ row, busy, onDelete }: RecentSearchCardProps) {
   const { dict } = useLocale();
-  const ui = dict.recentSearchesUi;
+  const ui = dict.recentSearchesUi ?? getRecentSearchesUi("en");
   const feedUi = dict.latestChecksPage;
   const model = buildOverviewFromRecentSearch({
     trustScoreSnap: row.trustScoreSnap,

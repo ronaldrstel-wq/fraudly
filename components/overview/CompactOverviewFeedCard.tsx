@@ -84,7 +84,8 @@ function FeedViewResultCta({
   headlineId?: string;
   decorative?: boolean;
 }) {
-  const label = viewLabel.replace(/\s*→\s*$/, "").trim() || viewLabel.trim();
+  const safeLabel = viewLabel ?? "";
+  const label = safeLabel.replace(/\s*→\s*$/, "").trim() || safeLabel.trim();
   const cls = [
     "fraudly-focus inline-flex shrink-0 items-center gap-1 text-sm font-bold opacity-100",
     visual.ctaText,
@@ -179,7 +180,8 @@ function FeedMetaViewCta({
   headlineId?: string;
   decorative?: boolean;
 }) {
-  const label = viewLabel.replace(/\s*→\s*$/, "").trim() || viewLabel.trim();
+  const safeLabel = viewLabel ?? "";
+  const label = safeLabel.replace(/\s*→\s*$/, "").trim() || safeLabel.trim();
   const cls = ["fraudly-focus", visual.metaViewBtn, decorative ? "" : "hover:border-slate-300"].join(" ");
   const content = (
     <>
